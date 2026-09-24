@@ -109,22 +109,6 @@ describe('FxRevaluationService', () => {
     service = module.get<FxRevaluationService>(FxRevaluationService);
     glService = module.get<GlService>(GlService);
 
-    // Clean tables
-    await pg.db.delete(glJournalLines);
-    await pg.db.delete(glJournalEntries);
-    await pg.db.delete(goodsReceivedLines);
-    await pg.db.delete(goodsReceived);
-    await pg.db.delete(purchaseInvoices);
-    await pg.db.delete(purchaseOrders);
-    await pg.db.delete(salesInvoices);
-    await pg.db.delete(salesOrders);
-    await pg.db.delete(exchangeRates);
-    await pg.db.delete(suppliers);
-    await pg.db.delete(customers);
-    await pg.db.delete(locations);
-    await pg.db.delete(glSettings);
-    await pg.db.delete(glAccounts);
-
     // Seed Accounts
     apAccountId = randomUUID();
     arAccountId = randomUUID();
@@ -459,6 +443,7 @@ describe('FxRevaluationService', () => {
         .values({
           uomCode: 'ea',
           description: 'Each',
+          category: 'goods',
         })
         .onConflictDoNothing();
 

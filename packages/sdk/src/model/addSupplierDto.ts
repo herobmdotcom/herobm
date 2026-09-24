@@ -11,6 +11,12 @@ export interface AddSupplierDto {
   supplierPartNumber?: string;
   /** @minimum 0 */
   costPrice?: number;
+  /** @minimum 0 */
+  discountPercent?: number;
+  /** @minimum 0 */
+  minPurchaseQty?: number;
+  purchaseUnit?: string;
+  isPreferred?: boolean;
   effectiveFrom?: string;
   effectiveTo?: string;
 }

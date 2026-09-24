@@ -7,6 +7,7 @@ import {
   IsNumberString,
   IsUUID,
   IsEmail,
+  IsObject,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -23,11 +24,13 @@ export class CreatePurchaseOrderLineDto {
   @IsString()
   productDescription?: string;
 
+  @IsOptional()
   @IsNumberString()
-  quantity!: string;
+  quantity?: string;
 
+  @IsOptional()
   @IsNumberString()
-  pricePerUnit!: string;
+  pricePerUnit?: string;
 
   @IsOptional()
   @IsNumberString()
@@ -114,6 +117,11 @@ export class CreatePurchaseOrderDto {
   @ValidateNested({ each: true })
   @Type(() => CreatePurchaseOrderLineDto)
   lines?: CreatePurchaseOrderLineDto[];
+
+  @ApiPropertyOptional({ type: 'object', additionalProperties: true })
+  @IsOptional()
+  @IsObject()
+  metadata?: Record<string, unknown> | null;
 }
 
 export class UpdatePurchaseOrderDto {
@@ -148,6 +156,11 @@ export class UpdatePurchaseOrderDto {
   @IsOptional()
   @IsString()
   expectedDate?: string;
+
+  @ApiPropertyOptional({ type: 'object', additionalProperties: true })
+  @IsOptional()
+  @IsObject()
+  metadata?: Record<string, unknown> | null;
 }
 
 // ── PO Return DTOs ──
@@ -204,6 +217,7 @@ export class PurchaseOrderResponseDto {
   currencyCode!: string;
   notes?: string | null;
   customFields?: Record<string, unknown> | null;
+  metadata?: Record<string, unknown> | null;
   createdBy?: string | null;
   createdOn?: Date | null;
   modifiedOn?: Date | null;
@@ -235,6 +249,9 @@ export class PurchaseOrderLineResponseDto {
   totalAmount?: string | null;
   unitOfMeasure?: string | null;
   quantityReceived?: string | null;
+  minPurchaseQty?: string | null;
+  purchaseUnit?: string | null;
+  supplierPartNumber?: string | null;
 }
 
 export class EmptyBodyDto {}
@@ -269,3 +286,39 @@ export class PurchaseReturnResponseDto {
 }
 
 export { EmailDocumentDto } from '../orders/dto';
+
+export class UpdatePurchasingSettingsDto {
+  @ApiPropertyOptional({
+    description:
+      'JSON Schema definition for user-defined metadata on Purchase Orders',
+    type: 'object',
+    additionalProperties: true,
+  })
+  @IsOptional()
+  @IsObject()
+  purchaseOrderMetadataSchema?: Record<string, unknown> | null;
+
+  @ApiPropertyOptional({
+    description:
+      'JSON Schema definition for user-defined metadata on Debit Notes',
+    type: 'object',
+    additionalProperties: true,
+  })
+  @IsOptional()
+  @IsObject()
+  debitNoteMetadataSchema?: Record<string, unknown> | null;
+}
+
+export class PurchasingSettingsResponseDto {
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  purchasingSettingsId!: string;
+
+  @ApiPropertyOptional({ type: 'object', additionalProperties: true })
+  purchaseOrderMetadataSchema?: Record<string, unknown> | null;
+
+  @ApiPropertyOptional({ type: 'object', additionalProperties: true })
+  debitNoteMetadataSchema?: Record<string, unknown> | null;
+
+  @ApiProperty({ example: '2026-03-31T08:00:00Z' })
+  modifiedOn!: string;
+}

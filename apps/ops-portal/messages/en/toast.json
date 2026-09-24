@@ -1,0 +1,14 @@
+{
+  "accountCreated": "Customer created successfully",
+  "accountUpdated": "Customer updated successfully",
+  "invoiceGenerated": "Invoice generated successfully!",
+  "orderArchived": "Order has been archived",
+  "orderMovedTo": "Order moved to {state}",
+  "orderMovedToReason": "Order moved to {state} because {reason}.",
+  "orderStateUpdated": "Order State Updated",
+  "orderUnarchived": "Order has been unarchived",
+  "productAlreadyInOrder": "Product {productNumber} is already present in this order.",
+  "productCreated": "Product created successfully",
+  "productUpdated": "Product updated successfully",
+  "supplierCreated": "Supplier created successfully"
+}

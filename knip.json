@@ -19,7 +19,10 @@
         "**/scripts/**",
         "**/tools/**",
         "extensions/**",
-        "apps/ops-portal/components/shared/SnapshotTabContainer.tsx"
+        "apps/ops-portal/components/shared/SnapshotTabContainer.tsx",
+        "apps/ops-portal/app/demand/restock/DraftRestockPOsModal.tsx",
+        "apps/ops-portal/app/projects/[id]/components/CreateBudgetLineSlideOver.tsx",
+        "apps/ops-portal/app/projects/[id]/components/EditBudgetLineSlideOver.tsx"
       ],
       "ignoreDependencies": [
         "@asyncapi/specs",

@@ -10,6 +10,7 @@ export type GlControllerGetGeneralLedgerParams = {
 account?: string;
 fromDate?: string;
 toDate?: string;
+projectId?: string;
 limit?: string;
 page?: string;
 };

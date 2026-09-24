@@ -95,9 +95,9 @@ export default function BinContentsView() {
       }
     },
     { field: 'baseQuantity', headerName: tBins('columns.baseQty'), width: 100, type: 'numericColumn' },
-    { field: 'isConsignment', headerName: tBins('columns.consignment'), width: 110, valueFormatter: (params) => params.value ? 'true' : 'false' },
-    { field: 'isBonded', headerName: tBins('columns.bonded'), width: 90, valueFormatter: (params) => params.value ? 'true' : 'false' },
-    { field: 'isUnavailable', headerName: tBins('columns.unavailable'), width: 110, valueFormatter: (params) => params.value ? 'true' : 'false' },
+    { field: 'isConsignment', headerName: tBins('columns.consignment'), width: 110, cellDataType: 'text', valueFormatter: (params) => params.value ? 'true' : 'false' },
+    { field: 'isBonded', headerName: tBins('columns.bonded'), width: 90, cellDataType: 'text', valueFormatter: (params) => params.value ? 'true' : 'false' },
+    { field: 'isUnavailable', headerName: tBins('columns.unavailable'), width: 110, cellDataType: 'text', valueFormatter: (params) => params.value ? 'true' : 'false' },
     { field: 'binType', headerName: tBins('columns.binType'), width: 90 },
   ], [tCommon, tBins]);
 

@@ -49,14 +49,17 @@ flowchart TD
 ```
 
 ### 1. Multi-Stream Inbound Sources
-1. **PO Receipts**: Supplier deliveries verified and accepted at dock receiving.
-2. **Customer Sales Returns**: Returned products inspected and cleared for restocking.
-3. **Internal Transfers**: Stock arriving from another company warehouse facility.
-4. **Manufactured Assemblies**: Finished goods completed on manufacturing work orders.
+1. **PO Receipts**: Supplier deliveries verified and accepted at dock receiving (`[PO RECEIPT]`).
+2. **Customer Sales Returns**: Returned products inspected and cleared for restocking (`[SALES RETURN]`).
+3. **Internal Transfers & Project Staging / Returns**: Stock arriving from another warehouse or returning from an operational project (`[TRANSFER]`):
+   - **Project Staging Transfers**: Shows `Project: PRJ-XXXX` metadata. The candidate bin pre-selects the project's designated **Staging Bin** (`project.stagingBinId`).
+   - **Project Return Transfers**: Restocks returned unused project materials to central warehouse storage. Confirming putaway automatically posts a compensating cost credit to the Project Subledger (`recordProjectReturnCredit`).
+4. **Manufactured Assemblies**: Finished goods completed on manufacturing work orders (`[WORK ORDER]`).
 
-### 2. Candidate Bin Selection
+### 2. Candidate Bin Selection & Smart Routing
 When an operator processes a putaway item:
-* The system presents candidate storage bins in the destination warehouse.
+* **Project Staging Pre-selection**: If the transfer is staging materials for an active project, the system pre-selects the project's assigned staging bin.
+* **Warehouse Storage Default**: For standard receipts and project returns, the primary storage bin configured for the product at that location is pre-selected.
 * Operators can filter and select from active bins (`storage`, `pick`, `bulk`) where `is_unavailable = false`.
 * Registering the putaway executes an atomic inventory movement: deducting units from the dock/staging bin and incrementing units in the selected destination storage bin.
 

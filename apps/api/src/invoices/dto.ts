@@ -22,6 +22,8 @@ export class InvoiceLineResponseDto {
   @ApiPropertyOptional() productNumber?: string;
   @ApiPropertyOptional() glAccountId?: string;
   @ApiProperty() matchStatus!: string;
+  @ApiPropertyOptional() discountPercentage?: string;
+  @ApiPropertyOptional() taxAmount?: string;
   @ApiPropertyOptional() purchaseOrderId?: string;
   @ApiPropertyOptional() purchaseOrderNumber?: string;
   @ApiPropertyOptional() purchaseOrderLineId?: string;
@@ -72,6 +74,9 @@ export class SalesInvoiceResponseDto {
   @ApiProperty() stateCode!: string;
   @ApiPropertyOptional() notes?: string;
   @ApiPropertyOptional() salesOrderId?: string;
+  @ApiPropertyOptional() orderNumber?: string;
+  @ApiPropertyOptional() projectId?: string;
+  @ApiPropertyOptional() projectNumber?: string;
   @ApiPropertyOptional() earlyPaymentDiscount?: string;
   @ApiPropertyOptional() earlyPaymentDiscountDays?: number;
   @ApiProperty() createdBy!: string;
@@ -87,6 +92,9 @@ export class SalesInvoiceResponseDto {
 
   @ApiPropertyOptional({ type: () => [Object] })
   events?: Record<string, unknown>[];
+
+  @ApiPropertyOptional({ type: Object })
+  metadata?: Record<string, unknown>;
 
   @ApiPropertyOptional()
   termsDescription?: string;
@@ -109,6 +117,10 @@ export class CreateSalesInvoiceDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsDateString()
+  invoiceDate?: string;
 
   @IsOptional()
   @IsArray()

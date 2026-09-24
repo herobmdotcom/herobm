@@ -33,4 +33,10 @@ export interface PurchaseOrderLineResponseDto {
   unitOfMeasure?: string | null;
   /** @nullable */
   quantityReceived?: string | null;
+  /** @nullable */
+  minPurchaseQty?: string | null;
+  /** @nullable */
+  purchaseUnit?: string | null;
+  /** @nullable */
+  supplierPartNumber?: string | null;
 }

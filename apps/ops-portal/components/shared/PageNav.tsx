@@ -55,6 +55,32 @@ export default function PageNav({ sections }: PageNavProps) {
 
   if (visibleSections.length === 0) return null;
 
+  if (visibleSections.length === 1 && visibleSections[0].subtargets && visibleSections[0].subtargets.length > 0) {
+    const singleTabSubtargets = visibleSections[0].subtargets.filter((s) => s.show !== false);
+    if (singleTabSubtargets.length === 0) return null;
+
+    return (
+      <div className="flex items-center gap-1 lg:gap-0.5 px-2 lg:px-1.5 rounded-md overflow-x-auto transition-all min-h-[32px] lg:min-h-[24px] w-full lg:w-max hide-scrollbar">
+        {singleTabSubtargets.map((sub) => (
+          <Button
+            key={sub.id}
+            className="text-[13px] lg:text-[11px] px-3 py-1.5 lg:px-1.5 lg:py-0.5 rounded transition-colors whitespace-nowrap bg-transparent border-0 cursor-pointer text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[rgba(0,107,92,0.08)]"
+            onClick={() => {
+              if (sub.onClick) {
+                sub.onClick();
+              } else {
+                const el = document.getElementById(sub.id);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            }}
+          >
+            {sub.label}
+          </Button>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div
       className="flex flex-col gap-1 items-start lg:items-end self-center w-full lg:w-auto relative"

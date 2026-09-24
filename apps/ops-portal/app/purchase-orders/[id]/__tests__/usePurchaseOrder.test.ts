@@ -37,6 +37,7 @@ jest.mock('@herobm/sdk', () => ({
   allocationsControllerGetAllocationsByPo: () => Promise.resolve({ data: [] }),
   purchaseReturnsControllerFindReturns: () => Promise.resolve({ data: [] }),
   purchaseInvoiceControllerGetPurchaseBills: () => Promise.resolve({ data: [] }),
+  purchaseOrdersControllerGetSettings: () => Promise.resolve({ data: { purchaseOrderMetadataSchema: null } }),
 }));
 
 import { usePurchaseOrder } from '../usePurchaseOrder';

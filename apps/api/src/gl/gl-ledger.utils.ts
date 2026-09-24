@@ -6,6 +6,7 @@ export interface GeneralLedgerFilters {
   accountCode?: string;
   fromDate?: string;
   toDate?: string;
+  projectId?: string;
   limit?: number;
   page?: number;
 }
@@ -106,6 +107,9 @@ export async function fetchGeneralLedger(
   if (filters.toDate) {
     conditions.push(sql`je.entry_date <= ${filters.toDate}`);
   }
+  if (filters.projectId) {
+    conditions.push(sql`jl.project_id = ${filters.projectId}::uuid`);
+  }
 
   const whereClause =
     conditions.length > 0
@@ -150,12 +154,21 @@ export async function fetchGeneralLedger(
 
     if (targetAccount) {
       if (filters.fromDate) {
+        const openBalConditions: import('drizzle-orm').SQL[] = [
+          sql`jl.gl_account_id = ${targetAccount.glAccountId}`,
+          sql`je.entry_date < ${filters.fromDate}`,
+        ];
+        if (filters.projectId) {
+          openBalConditions.push(
+            sql`jl.project_id = ${filters.projectId}::uuid`,
+          );
+        }
+        const openBalWhere = sql`WHERE ${sql.join(openBalConditions, sql` AND `)}`;
         const openBalRes = await db.execute(sql`
           SELECT COALESCE(SUM(jl.debit - jl.credit), 0)::numeric AS opening_balance
           FROM herobm_core.gl_journal_lines jl
           JOIN herobm_core.gl_journal_entries je ON je.journal_entry_id = jl.journal_entry_id
-          WHERE jl.gl_account_id = ${targetAccount.glAccountId}
-            AND je.entry_date < ${filters.fromDate}
+          ${openBalWhere}
         `);
         const openRow = Array.isArray(openBalRes)
           ? openBalRes[0]
@@ -173,6 +186,9 @@ export async function fetchGeneralLedger(
       }
       if (filters.toDate) {
         summaryConditions.push(sql`je.entry_date <= ${filters.toDate}`);
+      }
+      if (filters.projectId) {
+        summaryConditions.push(sql`jl.project_id = ${filters.projectId}::uuid`);
       }
 
       const summaryWhere = sql`WHERE ${sql.join(summaryConditions, sql` AND `)}`;
@@ -232,6 +248,8 @@ export async function fetchGeneralLedger(
       jl.debit,
       jl.credit,
       jl.memo AS line_memo,
+      jl.project_id,
+      jl.project_task_id,
       je.created_by,
       je.created_on,
       ${runningBalanceSelect}
@@ -278,6 +296,8 @@ export async function fetchGeneralLedger(
     debit?: string;
     credit?: string;
     line_memo?: string;
+    project_id?: string | null;
+    project_task_id?: string | null;
     created_by: string;
     created_on: Date;
     running_balance?: string | null;
@@ -302,6 +322,8 @@ export async function fetchGeneralLedger(
     debit: row.debit,
     credit: row.credit,
     lineMemo: row.line_memo,
+    projectId: row.project_id || null,
+    projectTaskId: row.project_task_id || null,
     createdBy: row.created_by,
     createdOn: row.created_on,
     runningBalance:

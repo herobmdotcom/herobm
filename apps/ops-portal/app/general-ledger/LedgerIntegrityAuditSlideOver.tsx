@@ -18,7 +18,9 @@ export interface LedgerAnomaly {
     | 'missing_gl_journal'
     | 'missing_cancellation_reversal'
     | 'unbalanced_journal_entry'
-    | 'hash_chain_violation';
+    | 'hash_chain_violation'
+    | 'subledger_drift'
+    | 'trial_balance_unbalanced';
   invoiceNumber?: string;
   invoiceId?: string;
   journalEntryId?: string;
@@ -122,6 +124,8 @@ export default function LedgerIntegrityAuditSlideOver({
       hash_chain_violation: 0,
       timestamp_inversion: 0,
       missing_cancellation_reversal: 0,
+      subledger_drift: 0,
+      trial_balance_unbalanced: 0,
     };
     for (const a of anomalies) {
       if (counts[a.type] !== undefined) {
@@ -170,12 +174,19 @@ export default function LedgerIntegrityAuditSlideOver({
         return `Debit: ${String(details.totalDebit || 0)}, Credit: ${String(details.totalCredit || 0)} (Drift: ${String(details.drift || 0)})`;
       case 'hash_chain_violation':
         return `Corrupted hash at sequence #${String(details.brokenSequenceNumber || 0)}: ${String(details.error || 'Hash mismatch')}`;
+      case 'subledger_drift':
+        return `${String(details.subledgerName || 'Subledger')}: Subledger ${String(details.subledgerBalance ?? 0)}, GL ${String(details.glBalance ?? 0)} (Drift: ${String(details.drift ?? 0)})`;
+      case 'trial_balance_unbalanced':
+        return `Trial Balance Zero-Sum Failure: Total Debits ${String(details.totalDebit ?? 0)}, Total Credits ${String(details.totalCredit ?? 0)} (Drift: ${String(details.drift ?? 0)})`;
       default:
         return JSON.stringify(details);
     }
   };
 
   const getTargetLink = (anomaly: LedgerAnomaly) => {
+    if (anomaly.type === 'subledger_drift' || anomaly.type === 'trial_balance_unbalanced') {
+      return '/general-ledger/trial-balance';
+    }
     if (anomaly.invoiceId) {
       return `/sales-invoices/${anomaly.invoiceId}`;
     }
@@ -190,6 +201,9 @@ export default function LedgerIntegrityAuditSlideOver({
 
   const badgeColor = (type: string) => {
     switch (type) {
+      case 'subledger_drift':
+      case 'trial_balance_unbalanced':
+        return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20';
       case 'missing_gl_journal':
         return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
       case 'unbalanced_journal_entry':
@@ -345,6 +359,24 @@ export default function LedgerIntegrityAuditSlideOver({
                 onClick={() => setSelectedType('hash_chain_violation')}
               >
                 {t('types.hash_chain_violation')} ({categoryCounts.hash_chain_violation})
+              </Button>
+            )}
+            {categoryCounts.subledger_drift > 0 && (
+              <Button
+                variant={selectedType === 'subledger_drift' ? 'primary' : 'secondary'}
+                size="xs"
+                onClick={() => setSelectedType('subledger_drift')}
+              >
+                {t('types.subledger_drift')} ({categoryCounts.subledger_drift})
+              </Button>
+            )}
+            {categoryCounts.trial_balance_unbalanced > 0 && (
+              <Button
+                variant={selectedType === 'trial_balance_unbalanced' ? 'primary' : 'secondary'}
+                size="xs"
+                onClick={() => setSelectedType('trial_balance_unbalanced')}
+              >
+                {t('types.trial_balance_unbalanced')} ({categoryCounts.trial_balance_unbalanced})
               </Button>
             )}
             {categoryCounts.sequence_gap > 0 && (

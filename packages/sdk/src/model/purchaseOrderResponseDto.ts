@@ -7,6 +7,7 @@
  */
 import type { PurchaseOrderLineResponseDto } from './purchaseOrderLineResponseDto';
 import type { PurchaseOrderResponseDtoCustomFields } from './purchaseOrderResponseDtoCustomFields';
+import type { PurchaseOrderResponseDtoMetadata } from './purchaseOrderResponseDtoMetadata';
 
 export interface PurchaseOrderResponseDto {
   lines?: PurchaseOrderLineResponseDto[];
@@ -25,6 +26,8 @@ export interface PurchaseOrderResponseDto {
   notes?: string | null;
   /** @nullable */
   customFields?: PurchaseOrderResponseDtoCustomFields;
+  /** @nullable */
+  metadata?: PurchaseOrderResponseDtoMetadata;
   /** @nullable */
   createdBy?: string | null;
   /** @nullable */

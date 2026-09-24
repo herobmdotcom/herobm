@@ -9,4 +9,5 @@
 export interface CreateTransferOrderLineDto {
   productId: string;
   quantity: string;
+  projectTaskId?: string;
 }

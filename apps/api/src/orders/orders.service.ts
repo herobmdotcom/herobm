@@ -13,7 +13,11 @@ import {
   salesInvoices,
   salesInvoiceLines,
   opportunities,
+  salesSettings,
 } from '@herobm/db-schema';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
+import type { UpdateSalesSettingsDto } from './dto';
 import {
   PaginationQuery,
   parsePagination,
@@ -44,6 +48,7 @@ export interface UnifiedOrderRow {
   currencyCode: string | null;
   opportunityId?: string | null;
   opportunityName?: string | null;
+  metadata?: Record<string, unknown> | null;
   productQuantity?: number;
   productQuantityShipped?: number;
 }
@@ -707,6 +712,7 @@ export class OrdersService implements OnModuleInit {
         createdOn: salesOrders.createdOn,
         currencyCode: salesOrders.currencyCode,
         customFields: salesOrders.customFields,
+        metadata: salesOrders.metadata,
         opportunityId: salesOrders.opportunityId,
         opportunityName: opportunities.name,
         score: scoreSql,
@@ -857,6 +863,7 @@ export class OrdersService implements OnModuleInit {
       currencyCode: r.currencyCode ?? 'EUR',
       opportunityId: r.opportunityId ?? null,
       opportunityName: r.opportunityName ?? null,
+      metadata: r.metadata ?? null,
       ...(productId
         ? {
             productQuantity: productQuantityMap.get(r.id) ?? 0,
@@ -866,5 +873,75 @@ export class OrdersService implements OnModuleInit {
     }));
 
     return { data, page, limit, total: Number(count), nextCursor, prevCursor };
+  }
+
+  async getSettings(tx?: DrizzleDB) {
+    const db = tx || this.db;
+    const [settings] = await db.select().from(salesSettings).limit(1);
+    return (
+      settings || {
+        salesOrderMetadataSchema: null,
+        salesInvoiceMetadataSchema: null,
+        creditNoteMetadataSchema: null,
+      }
+    );
+  }
+
+  async updateSettings(data: UpdateSalesSettingsDto, tx?: DrizzleDB) {
+    const db = tx || this.db;
+    const [existing] = await db.select().from(salesSettings).limit(1);
+
+    if (!existing) {
+      const [created] = await db
+        .insert(salesSettings)
+        .values({
+          salesOrderMetadataSchema: data.salesOrderMetadataSchema ?? null,
+          salesInvoiceMetadataSchema: data.salesInvoiceMetadataSchema ?? null,
+          creditNoteMetadataSchema: data.creditNoteMetadataSchema ?? null,
+        })
+        .returning();
+
+      await emitEvent(db, {
+        entityType: EntityType.SALES_SETTINGS,
+        entityId: created.salesSettingsId,
+        entityDisplayName: 'Sales Settings',
+        eventType: EventType.UPDATED,
+        payload: { changes: data },
+        actor: 'system',
+      });
+
+      return created;
+    }
+
+    const [updated] = await db
+      .update(salesSettings)
+      .set({
+        salesOrderMetadataSchema:
+          data.salesOrderMetadataSchema !== undefined
+            ? data.salesOrderMetadataSchema
+            : existing.salesOrderMetadataSchema,
+        salesInvoiceMetadataSchema:
+          data.salesInvoiceMetadataSchema !== undefined
+            ? data.salesInvoiceMetadataSchema
+            : existing.salesInvoiceMetadataSchema,
+        creditNoteMetadataSchema:
+          data.creditNoteMetadataSchema !== undefined
+            ? data.creditNoteMetadataSchema
+            : existing.creditNoteMetadataSchema,
+        modifiedOn: new Date(),
+      })
+      .where(eq(salesSettings.salesSettingsId, existing.salesSettingsId))
+      .returning();
+
+    await emitEvent(db, {
+      entityType: EntityType.SALES_SETTINGS,
+      entityId: updated.salesSettingsId,
+      entityDisplayName: 'Sales Settings',
+      eventType: EventType.UPDATED,
+      payload: { changes: data },
+      actor: 'system',
+    });
+
+    return updated;
   }
 }

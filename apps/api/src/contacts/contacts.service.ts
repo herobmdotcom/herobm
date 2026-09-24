@@ -252,6 +252,7 @@ export class ContactsService {
           phone: dto.phone,
           mobile: dto.mobile,
           jobTitle: dto.jobTitle,
+          metadata: dto.metadata ?? {},
         })
         .returning();
 
@@ -318,6 +319,7 @@ export class ContactsService {
           phone: dto.phone,
           mobile: dto.mobile,
           jobTitle: dto.jobTitle,
+          ...(dto.metadata !== undefined ? { metadata: dto.metadata } : {}),
           modifiedOn: new Date(),
         })
         .where(eq(contacts.contactId, id))

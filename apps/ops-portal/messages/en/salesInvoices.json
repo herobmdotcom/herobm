@@ -1,0 +1,33 @@
+{
+  "columns": {
+    "allocatedAmount": "Allocated Amount",
+    "amount": "Amount",
+    "date": "Date",
+    "description": "Description",
+    "discount": "Disc %",
+    "paymentNo": "Payment No",
+    "price": "Price",
+    "product": "Product",
+    "projectNumber": "Project No.",
+    "qty": "Qty",
+    "tax": "Tax"
+  },
+  "customFields": "Custom Fields",
+  "customer": "Customer",
+  "customerPO": "Customer PO #",
+  "date": "Date",
+  "emailInvoice": "Email Invoice",
+  "errorLoading": "Error loading invoice: {message}",
+  "invoiceDetails": "Invoice Details",
+  "lineItems": "Line Items",
+  "loading": "Loading Invoice...",
+  "loadingEllipsis": "Loading...",
+  "notFound": "Invoice not found.",
+  "orderNo": "Order No.",
+  "paymentAllocations": "Payment Allocations",
+  "paymentAllocationsDesc": "When payments are allocated to this invoice from the Payment Manager, they will appear here.",
+  "printInvoice": "Print Invoice",
+  "projectNo": "Project No.",
+  "unknownCustomer": "Unknown Customer",
+  "viewProject": "View Project"
+}

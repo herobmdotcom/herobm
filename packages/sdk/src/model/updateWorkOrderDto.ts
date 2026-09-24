@@ -5,6 +5,7 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
+import type { UpdateWorkOrderDtoMetadata } from './updateWorkOrderDtoMetadata';
 
 export interface UpdateWorkOrderDto {
   /** Target quantity to produce */
@@ -31,4 +32,9 @@ export interface UpdateWorkOrderDto {
    * @nullable
    */
   additionalCost?: string | null;
+  /**
+   * User-defined dynamic metadata attributes
+   * @nullable
+   */
+  metadata?: UpdateWorkOrderDtoMetadata;
 }

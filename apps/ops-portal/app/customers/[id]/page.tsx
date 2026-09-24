@@ -16,6 +16,8 @@ import { formatLocalDate, toInputDateFormat, parseLocalDate } from "@/lib/date";
 import ActivityTimeline, { TimelineEvent } from "@/components/shared/ActivityTimeline";
 import { StateName } from "@/components/StateBadge";
 import DetailTabGrid from "@/components/shared/DetailTabGrid";
+import { SalesOrdersDetailGrid } from "@/components/shared/SalesOrdersDetailGrid";
+import { ProjectsDetailGrid } from "@/components/shared/ProjectsDetailGrid";
 import { ValidState } from "@/types/states";
 import PageNav from "@/components/shared/PageNav";
 import GroupSelect from "@/components/shared/GroupSelect";
@@ -35,6 +37,8 @@ import {
   CURRENCIES,
   COUNTRIES,
   CUSTOMER_STATE,
+  PROJECT_STATE,
+  PROJECT_BILLING_TYPE,
   getCurrencyForCountry,
   DATA_SOURCE_CONTEXT,
 } from "@herobm/shared";
@@ -57,6 +61,7 @@ export default function AccountDetailPage({
   const { baseCurrency, app } = useSettings();
   const t = useTranslations();
   const tSales = useTranslations("salesOrders");
+  const tProjects = useTranslations("projects");
   const tCommon = useTranslations("common");
   const tStates = useTranslations("common.states");
   const params = use(paramsPromise);
@@ -96,9 +101,9 @@ export default function AccountDetailPage({
 
 
   const searchParams = useSearchParams();
-  const initialTab = (searchParams.get('tab') as "details" | "contacts" | "delivery" | "salesOrders" | "invoices" | "payments") || "details";
+  const initialTab = (searchParams.get('tab') as "details" | "contacts" | "delivery" | "salesOrders" | "projects" | "invoices" | "payments") || "details";
   const [activeTab, setActiveTab] = useState<
-    "details" | "contacts" | "delivery" | "salesOrders" | "invoices" | "payments"
+    "details" | "contacts" | "delivery" | "salesOrders" | "projects" | "invoices" | "payments"
   >(initialTab);
 
   // Document Dialog State & PDF Generator
@@ -147,57 +152,7 @@ export default function AccountDetailPage({
 
 
 
-  const orderColumns = useMemo<any[] /* eslint-disable-line @typescript-eslint/no-explicit-any -- ColDef typing requires structural compatibility workaround */>(
-    () => [
-      {
-        field: "orderNumber",
-        headerName: tCommon("columns.orderNumber"),
-        width: 150,
-        pinned: "left" as const,
-      },
-      {
-        field: "name",
-        headerName: tCommon("columns.name"),
-        flex: 1,
-        minWidth: 160,
-      },
-      {
-        field: "stateCode",
-        headerName: tCommon("columns.status"),
-        width: 110,
-        valueFormatter: (p: { value?: unknown }) => {
-          if (!p.value) return "";
-          const s = String(p.value).toLowerCase();
-          return tStates.has(s as Parameters<typeof tStates>[0]) ? tStates(s as Parameters<typeof tStates>[0]) : String(p.value);
-        },
-      },
-      {
-        field: "customerOrderNumber",
-        headerName: tCommon("columns.customerPO"),
-        width: 140,
-      },
-      {
-        field: "totalPrice",
-        headerName: tCommon("columns.totalPrice"),
-        width: 120,
-        type: "numericColumn",
-        valueGetter: (p: { data?: { totalPrice?: string | number } }) =>
-          p.data?.totalPrice ? parseFloat(String(p.data.totalPrice)) : null,
-        valueFormatter: (p: { value?: number; data?: { currencyCode?: string } }) =>
-          !p.value || p.value === 0
-            ? "—"
-            : formatAmount(p.value, p.data?.currencyCode || baseCurrency),
-      },
-      {
-        field: "createdOn",
-        headerName: tCommon("columns.date"),
-        width: 110,
-        valueFormatter: (p: { value?: string | number | Date }) =>
-          formatLocalDate(p.value),
-      },
-    ],
-    [tCommon],
-  );
+
 
   const invoiceColumns = useMemo<any[] /* eslint-disable-line @typescript-eslint/no-explicit-any -- ColDef typing requires structural compatibility workaround */>(
     () => [
@@ -258,6 +213,8 @@ export default function AccountDetailPage({
     ],
     [tStates, baseCurrency],
   );
+
+
 
   if (loading)
     return (
@@ -403,6 +360,13 @@ export default function AccountDetailPage({
       onClick: () => setActiveTab("salesOrders"),
     },
     {
+      id: "tab-projects",
+      label: tProjects("title"),
+      isSubPage: true,
+      isActive: activeTab === "projects",
+      onClick: () => setActiveTab("projects"),
+    },
+    {
       id: "tab-invoices",
       label: t("customers.invoices"),
       isSubPage: true,
@@ -530,7 +494,7 @@ export default function AccountDetailPage({
                         updateField("overrideCreditHoldUntil", null);
                         saveField("overrideCreditHoldUntil", null);
                       }}
-                      disabled={!isEditable || saving}
+                      disabled={!isEditable}
                     >
                       {t("common.buttons.clear")}
                     </Button>
@@ -544,7 +508,7 @@ export default function AccountDetailPage({
                       className="input text-sm w-full md:w-auto bg-white"
                       value={toInputDateFormat(dto.overrideCreditHoldUntil)}
                       min={toInputDateFormat(new Date())}
-                      disabled={!isEditable || saving}
+                      disabled={!isEditable}
                       onChange={(e) => {
                         const date = e.target.value ? parseLocalDate(e.target.value) : null;
                         updateField("overrideCreditHoldUntil", date);
@@ -559,24 +523,18 @@ export default function AccountDetailPage({
         )}
 
         {activeTab === "salesOrders" && (
-          <DetailTabGrid
-            title={tSales("title")}
-            headerActions={
-              <Button asChild size="sm" variant="primary" className="bg-[#006b5c] hover:bg-[#005246] border-none text-white">
-                <Link href={`/sales-orders/new?customerId=${params.id}`}>
-                  {tSales("buttons.createOrder")}
-                </Link>
-              </Button>
-            }
-            endpoint={`/api/sales-orders?customerId=${encodeURIComponent(params.id)}&limit=50`}
-            columns={orderColumns}
-            gridKey="customer-orders"
-            urlPrefix="orders"
-            searchPlaceholder={tSales("placeholders.searchOrders")}
+          <SalesOrdersDetailGrid
+            customerId={params.id}
             exportFileName={`orders-${customer.customerNumber}`}
-            fetchAll
-            rowIdField="id"
-            rowHref={(order: { id: string }) => `/sales-orders/${order.id}`}
+            gridKey="customer-orders"
+          />
+        )}
+
+        {activeTab === "projects" && (
+          <ProjectsDetailGrid
+            customerId={params.id}
+            exportFileName={`projects-${customer.customerNumber}`}
+            gridKey="customer-projects"
           />
         )}
 

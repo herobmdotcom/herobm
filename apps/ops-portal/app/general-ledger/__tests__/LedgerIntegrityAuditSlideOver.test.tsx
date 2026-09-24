@@ -139,4 +139,51 @@ describe('LedgerIntegrityAuditSlideOver', () => {
     expect(screen.getByText('2 / 3')).toBeInTheDocument();
     expect(screen.queryByText('INV-2026-BIG-1')).not.toBeInTheDocument();
   });
+
+  it('renders subledger_drift and trial_balance_unbalanced with trial-balance jump link', () => {
+    const reconData: LedgerAuditData = {
+      hasAudit: true,
+      eventId: 'evt-recon-123',
+      anomaliesCount: 2,
+      anomalies: [
+        {
+          type: 'trial_balance_unbalanced',
+          details: { totalDebit: 1000, totalCredit: 800, drift: 200 },
+        },
+        {
+          type: 'subledger_drift',
+          details: {
+            subledger: 'accounts_receivable',
+            subledgerName: 'Accounts Receivable (AR)',
+            subledgerBalance: 1200,
+            glBalance: 1000,
+            drift: 200,
+          },
+        },
+      ],
+      verifiedInvoicesCount: 100,
+      verifiedJournalsCount: 80,
+    };
+
+    render(
+      <LedgerIntegrityAuditSlideOver
+        isOpen={true}
+        onClose={jest.fn()}
+        initialData={reconData}
+      />,
+    );
+
+    // Verify badges and descriptions render
+    expect(screen.getByText('types.trial_balance_unbalanced')).toBeInTheDocument();
+    expect(screen.getByText('types.subledger_drift')).toBeInTheDocument();
+    expect(screen.getByText(/Trial Balance Zero-Sum Failure/i)).toBeInTheDocument();
+    expect(screen.getByText(/Accounts Receivable \(AR\)/i)).toBeInTheDocument();
+
+    // Verify inspect links point to /general-ledger/trial-balance
+    const inspectLinks = screen.getAllByRole('link', { name: /inspect/i });
+    expect(inspectLinks.length).toBe(2);
+    for (const link of inspectLinks) {
+      expect(link).toHaveAttribute('href', '/general-ledger/trial-balance');
+    }
+  });
 });

@@ -27,12 +27,16 @@ export function useAutoSaveEntity<TEntity, TDto>({
   const updateFnRef = useRef(updateFn);
   const mapEntityToDtoRef = useRef(mapEntityToDto);
   const onRefreshRef = useRef(onRefresh);
+  const dtoRef = useRef(dto);
+  const entityRef = useRef(entity);
 
   useEffect(() => {
     fetchFnRef.current = fetchFn;
     updateFnRef.current = updateFn;
     mapEntityToDtoRef.current = mapEntityToDto;
     onRefreshRef.current = onRefresh;
+    dtoRef.current = dto;
+    entityRef.current = entity;
   });
 
   const loadEntity = useCallback(async () => {
@@ -55,66 +59,84 @@ export function useAutoSaveEntity<TEntity, TDto>({
   }, [loadEntity]);
 
   const updateField = useCallback((field: keyof TDto, value: unknown) => {
-    setDto((prev) => (prev ? { ...prev, [field]: value } : null));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic field update on dynamic DTO
+    setDto((prev) => (prev ? { ...prev, [field]: value as any } : null));
     setIsDirty(true);
   }, []);
 
   const saveField = useCallback(
     async (field: keyof TDto, value: unknown) => {
-      if (!entity || !dto) return;
+      const currentEntity = entityRef.current;
+      const currentDto = dtoRef.current;
+      if (!currentEntity || !currentDto) return;
 
       // Check if changed vs server state (using the mapping)
-      const serverValue = mapEntityToDtoRef.current(entity)[field];
+      const serverValue = mapEntityToDtoRef.current(currentEntity)[field];
       if (value === serverValue || (value === '' && (serverValue === null || serverValue === undefined))) return;
 
-      const nextDto = { ...dto, [field]: value };
-      setDto(nextDto);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic field update on dynamic DTO
+      const nextDto = { ...currentDto, [field]: value as any };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic field update on dynamic DTO
+      setDto((prev) => (prev ? { ...prev, [field]: value as any } : nextDto));
       setSaving(true);
 
       try {
         const res = await updateFnRef.current(id, nextDto);
-        setEntity({ ...res.data, events: (entity as any)?.events }); // Retain old events until reload completes
-        setDto(mapEntityToDtoRef.current(res.data));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Retain old events until reload completes
+        setEntity((prevEntity: any) => ({ ...res.data, events: prevEntity?.events }));
+        const savedDto = mapEntityToDtoRef.current(res.data);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Merge server state with any concurrent local edits
+        setDto((prev) => (prev ? { ...savedDto, ...prev, [field]: (savedDto as any)[field] } : savedDto));
         setIsDirty(false);
         toast.success('Saved');
 
         // Refresh to pull new timeline events
         const refreshedRes = await fetchFnRef.current(id);
         setEntity(refreshedRes.data);
-        setDto(mapEntityToDtoRef.current(refreshedRes.data));
+        const refreshedDto = mapEntityToDtoRef.current(refreshedRes.data);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Merge refreshed state with any concurrent local edits
+        setDto((prev) => (prev ? { ...refreshedDto, ...prev, [field]: (refreshedDto as any)[field] } : refreshedDto));
         onRefreshRef.current?.(refreshedRes.data);
       } catch (err) {
         toast.error(getErrorMessage(err));
-        // Rollback
-        setDto(mapEntityToDtoRef.current(entity));
+        // Rollback only the field that failed to save
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Type assertion for indexed rollback access
+        const rollbackVal = (mapEntityToDtoRef.current(currentEntity) as any)[field];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic field rollback on dynamic DTO
+        setDto((prev) => (prev ? { ...prev, [field]: rollbackVal } : null));
       } finally {
         setSaving(false);
       }
     },
-    [id, entity, dto]
+    [id]
   );
 
   const handleSave = useCallback(async () => {
-    if (!isDirty || saving || !dto || !entity) return;
+    const currentEntity = entityRef.current;
+    const currentDto = dtoRef.current;
+    if (!isDirty || saving || !currentDto || !currentEntity) return;
     setSaving(true);
     try {
-      const res = await updateFnRef.current(id, dto);
-      setEntity({ ...res.data, events: (entity as any)?.events });
-      setDto(mapEntityToDtoRef.current(res.data));
+      const res = await updateFnRef.current(id, currentDto);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Retain old events until reload completes
+      setEntity((prevEntity: any) => ({ ...res.data, events: prevEntity?.events }));
+      const savedDto = mapEntityToDtoRef.current(res.data);
+      setDto((prev) => (prev ? { ...savedDto, ...prev } : savedDto));
       setIsDirty(false);
       toast.success('Saved');
 
       // Refresh to pull new timeline events
       const refreshedRes = await fetchFnRef.current(id);
       setEntity(refreshedRes.data);
-      setDto(mapEntityToDtoRef.current(refreshedRes.data));
+      const refreshedDto = mapEntityToDtoRef.current(refreshedRes.data);
+      setDto((prev) => (prev ? { ...refreshedDto, ...prev } : refreshedDto));
       onRefreshRef.current?.(refreshedRes.data);
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
-  }, [id, dto, entity, isDirty, saving]);
+  }, [id, isDirty, saving]);
 
   return {
     entity,

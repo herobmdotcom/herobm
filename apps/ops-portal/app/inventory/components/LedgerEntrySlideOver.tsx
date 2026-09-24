@@ -85,7 +85,11 @@ export default function LedgerEntrySlideOver({ entryId, onClose }: LedgerEntrySl
               )}
               {details.relatedParty && (
                 <div>
-                  <span className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('relatedParty')}</span>
+                  <span className="block text-sm font-medium text-[var(--text-muted)] mb-1">
+                    {details.sourceType.startsWith('TO_') || details.sourceType.includes('TRANSFER')
+                      ? t('transferRoute')
+                      : t('relatedParty')}
+                  </span>
                   <div className="text-[#041627]">
                     {details.relatedParty.link ? (
                       <Link href={details.relatedParty.link} className="text-[var(--accent)] hover:underline" onClick={onClose}>
@@ -99,7 +103,7 @@ export default function LedgerEntrySlideOver({ entryId, onClose }: LedgerEntrySl
               )}
               <div>
                 <span className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('operationMemo')}</span>
-                <span className="text-[#041627]">{details.memo || '—'}</span>
+                <span className="text-[#041627]">{details.memo ? details.memo : '—'}</span>
               </div>
             </div>
           </div>

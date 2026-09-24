@@ -67,6 +67,7 @@ describe('Order Lifecycle Rules', () => {
     await pg.db.insert(uomDictionary).values({
       uomCode: 'EA',
       description: 'Each',
+      category: 'goods',
     });
 
     await pg.db.insert(locations).values({
@@ -325,6 +326,8 @@ describe('Order Lifecycle Rules', () => {
           salesOrderLineId: LINE_1_ID,
           quantityInvoiced: '10',
           pricePerUnit: '0',
+          discountPercentage: '0',
+          taxAmount: '0',
           amount: '0',
         },
         {
@@ -332,6 +335,8 @@ describe('Order Lifecycle Rules', () => {
           salesOrderLineId: LINE_2_ID,
           quantityInvoiced: '5',
           pricePerUnit: '0',
+          discountPercentage: '0',
+          taxAmount: '0',
           amount: '0',
         },
       ]);
@@ -366,6 +371,8 @@ describe('Order Lifecycle Rules', () => {
           salesOrderLineId: LINE_1_ID,
           quantityInvoiced: '10',
           pricePerUnit: '0',
+          discountPercentage: '0',
+          taxAmount: '0',
           amount: '0',
         },
         {
@@ -373,6 +380,8 @@ describe('Order Lifecycle Rules', () => {
           salesOrderLineId: LINE_2_ID,
           quantityInvoiced: '5',
           pricePerUnit: '0',
+          discountPercentage: '0',
+          taxAmount: '0',
           amount: '0',
         },
       ]);
@@ -401,6 +410,8 @@ describe('Order Lifecycle Rules', () => {
           salesOrderLineId: LINE_1_ID,
           quantityInvoiced: '10',
           pricePerUnit: '0',
+          discountPercentage: '0',
+          taxAmount: '0',
           amount: '0',
         },
         {
@@ -408,6 +419,8 @@ describe('Order Lifecycle Rules', () => {
           salesOrderLineId: LINE_2_ID,
           quantityInvoiced: '2', // Ordered 5, only 2 invoiced
           pricePerUnit: '0',
+          discountPercentage: '0',
+          taxAmount: '0',
           amount: '0',
         },
       ]);
@@ -466,6 +479,8 @@ describe('Order Lifecycle Rules', () => {
           salesOrderLineId: LINE_1_ID,
           quantityInvoiced: '10',
           pricePerUnit: '0',
+          discountPercentage: '0',
+          taxAmount: '0',
           amount: '0',
         },
         {
@@ -473,6 +488,8 @@ describe('Order Lifecycle Rules', () => {
           salesOrderLineId: LINE_2_ID,
           quantityInvoiced: '5',
           pricePerUnit: '0',
+          discountPercentage: '0',
+          taxAmount: '0',
           amount: '0',
         },
       ]);
@@ -507,6 +524,8 @@ describe('Order Lifecycle Rules', () => {
           salesOrderLineId: LINE_1_ID,
           quantityInvoiced: '10',
           pricePerUnit: '0',
+          discountPercentage: '0',
+          taxAmount: '0',
           amount: '0',
         },
         {
@@ -514,6 +533,8 @@ describe('Order Lifecycle Rules', () => {
           salesOrderLineId: LINE_2_ID,
           quantityInvoiced: '5',
           pricePerUnit: '0',
+          discountPercentage: '0',
+          taxAmount: '0',
           amount: '0',
         },
       ]);
@@ -581,6 +602,8 @@ describe('Order Lifecycle Rules', () => {
           salesOrderLineId: LINE_1_ID,
           quantityInvoiced: '10',
           pricePerUnit: '0',
+          discountPercentage: '0',
+          taxAmount: '0',
           amount: '0',
         },
         {
@@ -588,6 +611,8 @@ describe('Order Lifecycle Rules', () => {
           salesOrderLineId: LINE_2_ID,
           quantityInvoiced: '5',
           pricePerUnit: '0',
+          discountPercentage: '0',
+          taxAmount: '0',
           amount: '0',
         },
       ]);
@@ -629,6 +654,8 @@ describe('Order Lifecycle Rules', () => {
           salesOrderLineId: LINE_1_ID,
           quantityInvoiced: '10',
           pricePerUnit: '0',
+          discountPercentage: '0',
+          taxAmount: '0',
           amount: '0',
         },
         {
@@ -636,6 +663,8 @@ describe('Order Lifecycle Rules', () => {
           salesOrderLineId: LINE_2_ID,
           quantityInvoiced: '5',
           pricePerUnit: '0',
+          discountPercentage: '0',
+          taxAmount: '0',
           amount: '0',
         },
       ]);

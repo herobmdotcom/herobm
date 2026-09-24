@@ -1,0 +1,268 @@
+{
+  "dataExport": {
+    "availableEntities": "{count} available entities",
+    "backToDashboard": "Back to Dashboard",
+    "columnsCount": "{count} Columns",
+    "columnsPreview": "Columns included in export",
+    "downloadCsv": "Download CSV Export",
+    "downloading": "Exporting...",
+    "exportFailed": "Failed to export data",
+    "exportSuccess": "Export completed successfully",
+    "includeArchived": "Include Archived / Inactive records",
+    "includeArchivedDesc": "Export all records regardless of status",
+    "limitLabel": "Record Limit (Optional)",
+    "limitPlaceholder": "All records",
+    "options": "Export Options",
+    "searchTables": "Search entities...",
+    "selectEntity": "Select an entity to export",
+    "subtitle": "Download database records as CSV files.",
+    "targetTable": "Target Table",
+    "title": "Export Data (CSV)",
+    "uniqueKey": "Unique Key (for upsert)"
+  },
+  "dataImport": {
+    "abm": "Back",
+    "availableEntities": "{count} available entities",
+    "back": "Back",
+    "buttons": {
+      "continueToSummary": "Continue to Summary",
+      "goToDashboard": "Go to Dashboard",
+      "retryImport": "Retry Import",
+      "returnToDashboard": "Return to Dashboard",
+      "startExecution": "Start Import"
+    },
+    "chooseFile": "Choose File",
+    "connectSourceSystem": "Connect Source System",
+    "connectSourceSystemDesc": "Enter database credentials for the system you want to import from.",
+    "connectSourceSystemDescOdoo": "Enter database credentials for the Odoo PostgreSQL database.",
+    "continue": "Continue",
+    "criticalError": "Critical Error:",
+    "csvOutput": "CSV Import Output",
+    "customers": "Customers",
+    "dbPopulated": "The database has been populated and is ready for use.",
+    "defaultLocation": "Default Fulfillment Location",
+    "defaultLocationDesc": "Select the primary location from ABM that will act as the default fulfillment warehouse going forward.",
+    "defaultLocationDescOdoo": "Select the primary location from Odoo that will act as the default fulfillment warehouse going forward.",
+    "defaultTaxCategory": "Default Tax Category",
+    "defaultTaxCategoryDesc": "Select the default tax category to use when a category is missing or omitted.",
+    "descCompleted": "Done",
+    "descConfig": "Choose the herobm table to import data into.",
+    "descFailed": "Check the logs",
+    "descFinalisation": "Review the summary of data imported.",
+    "descPending": "Review settings",
+    "descPreview": "Upload your CSV file and select a merge strategy.",
+    "descRunning": "Please wait...",
+    "downloadTemplate": "Download CSV Template",
+    "errors": {
+      "criticalError": "Critical Error: {message}"
+    },
+    "fileUpload": "File Upload",
+    "goToDashboard": "Go to Dashboard",
+    "importSuccessful": "Import Successful",
+    "importSuccessfulDesc": "The CSV data has been merged and is ready for use.",
+    "insertNewOnly": "Insert New Only",
+    "insertNewOnlyDesc": "Inserts new records and ignores existing ones without failing.",
+    "insertOnly": "Insert Only",
+    "insertOnlyDesc": "Will fail if duplicate unique keys exist.",
+    "location": "Location",
+    "logs": "Execution Logs",
+    "mergeStrategy": "Merge Strategy",
+    "migrationLogs": "Migration Logs",
+    "noFileChosen": "No file chosen",
+    "noLogs": "No logs recorded yet.",
+    "options": {
+      "alreadyStaged": "Already staged: ",
+      "enableCustomImports": "Enable custom imports",
+      "enableCustomImportsDesc": "Executes any additional custom extract and transform scripts configured in the pipeline extensions directory.",
+      "fullExtractionDesc": "Extract everything from scratch.",
+      "fullExtractionTitle": "Full Extraction",
+      "glCutoffCurrentDateDesc": "Posts opening balances on today's date for an immediate mid-month live cutover.",
+      "glCutoffCurrentDateTitle": "Current Date (Go-Live Day)",
+      "glCutoffDesc": "Choose the effective date for taking on legacy General Ledger opening balances.",
+      "glCutoffStartOfMonthDesc": "Posts opening balances on the 1st of the active period (e.g. 01/08/2026), aligning with standard monthly financial reporting.",
+      "glCutoffStartOfMonthTitle": "Start of Current Fiscal Period",
+      "glCutoffTitle": "GL Opening Balance Cut-Off Date",
+      "legacyInvoicesDesc": "Invoices with a due date before this date will be considered paid and their outstanding balance zeroed. Defaults to the end of the month, three months ago.",
+      "legacyInvoicesTitle": "Legacy Invoices Paid Before Date",
+      "resumeModeDesc": "Skip already imported tables.",
+      "resumeModeTitle": "Resume from Checkpoint",
+      "tablesCached": "{count} Tables Cached"
+    },
+    "orders": "Orders",
+    "products": "Products",
+    "retryImport": "Retry Import",
+    "returnToDashboard": "Return to Dashboard",
+    "searchTables": "Search entities...",
+    "sections": {
+      "confirmedSettings": "Confirmed Settings",
+      "executionOptions": "Execution Options",
+      "terminal": "Terminal Output"
+    },
+    "startImport": "Start Import",
+    "subtitle": {
+      "completed": "Your legacy data has been successfully imported into the HeroBM platform.",
+      "failed": "The ABM extract-load-transform sequence failed to complete safely.",
+      "pending": "Your legacy Data Import task is ready to begin. Review extraction settings before confirming.",
+      "running": "Migrating legacy ERP records into HeroBM databases using dbt pipelines..."
+    },
+    "systemBaseCurrency": "System Base Currency",
+    "systemBaseCurrencyDesc": "Confirm the base currency to be used for transactions imported from this ABM instance.",
+    "systemBaseCurrencyDescOdoo": "Confirm the base currency to be used for transactions imported from this Odoo instance.",
+    "targetTable": "Target Table",
+    "taxFormat": "{name} ({rate}%) - {code}",
+    "title": {
+      "completed": "Data Import Complete",
+      "failed": "Data Import Failed",
+      "pending": "Data Import Staged",
+      "running": "Executing Data Import"
+    },
+    "titleCompleted": "Import Completed",
+    "titleConfig": "Select Target Table",
+    "titleFailed": "Import Failed",
+    "titleFinalisation": "Import Report",
+    "titlePending": "Configure Import",
+    "titlePreview": "Upload Data",
+    "titleRunning": "Import Running",
+    "upsertMerge": "Upsert / Merge",
+    "upsertMergeDesc": "Updates existing records if unique keys match, inserts otherwise."
+  },
+  "execution": {
+    "aborted": "Execution aborted. Please review error logs.",
+    "criticalError": "[CRITICAL]: {error}",
+    "failedDescription": "An error occurred during pipeline execution. Check the terminal below.",
+    "failedTitle": "Initialization Failed",
+    "goDashboard": "Go to Dashboard",
+    "runningDescription": "Please do not close this window. This process may take a few minutes if extracting data.",
+    "runningTitle": "Initializing System",
+    "terminalLabel": "Terminal (pipeline-execution.log)"
+  },
+  "extraction": {
+    "description": "Connect to an Advanced Business Manager MSSQL database to migrate historical accounting, inventory, and sales data.",
+    "fields": {
+      "database": "Database",
+      "host": "Host",
+      "password": "Password",
+      "port": "Port",
+      "username": "Username"
+    },
+    "resume": "Resume interrupted extraction",
+    "resumeNote": "(Skips fully loaded tables)",
+    "skip": "Skip extraction (Empty Base)",
+    "skipDesc": "Proceed directly to transformation. No new data will be extracted.",
+    "testConnection": "Test Connection & Continue",
+    "testing": "Testing...",
+    "title": "Source Pipeline Sync",
+    "toasts": {
+      "apiError": "API Error",
+      "connectionFailed": "Connection Failed",
+      "connectionVerified": "Connection Verified"
+    }
+  },
+  "gate": {
+    "loading": "Loading wizard...",
+    "unauthorized": {
+      "description": "This installation portal strictly requires a one-time cryptographic token.",
+      "instructions": "Please run <strong>make setup-wizard</strong> inside the host system CLI to generate a valid secure link.",
+      "title": "Unauthorized Access"
+    },
+    "verifying": "Verifying secure token..."
+  },
+  "page": {
+    "subtitle": "Initialize your business OS environment",
+    "title": "herobm"
+  },
+  "preview": {
+    "confirm": "Confirm Mapping",
+    "description": "Validating entities detected in the ABM MSSQL pipeline from <highlight>{database}</highlight> at <highlight>{host}</highlight>.",
+    "loading": "Scanning MSSQL schema...",
+    "noTables": "No tables returned by pipeline. Ensure extraction step succeeded.",
+    "title": "Source Preview Data"
+  },
+  "review": {
+    "confirm": "Compile Platform",
+    "description": "Your configuration is saved and ready to be compiled into the database.",
+    "executionPayload": "Execution Payload",
+    "payload": {
+      "billingMode": "Billing Mode",
+      "coaPreset": "COA Preset",
+      "companyName": "Company Name",
+      "currency": "Currency",
+      "defaultFulfillmentLocation": "Default Fulfillment Location",
+      "disabled": "DISABLED",
+      "enabled": "ENABLED",
+      "expenseRouting": "Expense Routing",
+      "fiscalStartMonth": "Fiscal Start Month",
+      "resume": "Resume",
+      "revenueRouting": "Revenue Routing",
+      "source": "Source",
+      "systemDefault": "System Default",
+      "valuationStrategy": "Valuation Strategy"
+    },
+    "title": "Ready to Initialize"
+  },
+  "settings": {
+    "description": "Set your core accounting and operational defaults.",
+    "fields": {
+      "baseCurrency": "Base Currency",
+      "coaPreset": "Chart of Accounts Preset",
+      "companyName": "Company Registered Name",
+      "expenseRouting": "Expense Routing Precedence",
+      "fiscalYearStart": "Fiscal Year Start Month",
+      "inventoryValuation": "Inventory Valuation",
+      "nonStockBilling": "Non-Stock Billing Mode",
+      "primaryLocation": "Select Primary Location",
+      "revenueRouting": "Revenue Routing Precedence"
+    },
+    "finalize": "Finalize Setup",
+    "fulfillmentHeading": "Default Fulfillment Location",
+    "loading": "Loading...",
+    "noLocations": "No Locations Found in Source",
+    "none": "-- None --",
+    "options": {
+      "billing": {
+        "finalInvoice": "Final Invoice Only",
+        "perShipment": "Per Shipment"
+      },
+      "currencies": {
+        "aud": "AUD - Australian Dollar"
+      },
+      "months": {
+        "april": "April",
+        "january": "January",
+        "july": "July",
+        "may": "May",
+        "october": "October"
+      },
+      "precedence": {
+        "customer": "Customer Priority",
+        "location": "Location Priority",
+        "product": "Product Priority",
+        "supplier": "Supplier Priority"
+      },
+      "valuation": {
+        "fifo": "FIFO",
+        "standard": "Standard Costing",
+        "weightedAverage": "Weighted Average"
+      }
+    },
+    "placeholders": {
+      "companyName": "Acme Logistics Corp.",
+      "selectBilling": "Select billing mode...",
+      "selectCoa": "Select COA preset...",
+      "selectLocation": "Select primary location...",
+      "selectMonth": "Select start month...",
+      "selectPrecedence": "Select precedence...",
+      "selectValuation": "Select valuation method..."
+    },
+    "title": "Application Configuration"
+  },
+  "wizard": {
+    "steps": {
+      "execution": "Execution",
+      "extraction": "Extraction",
+      "preview": "Preview",
+      "review": "Review",
+      "settings": "Settings"
+    }
+  }
+}

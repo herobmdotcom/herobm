@@ -9,6 +9,7 @@ export interface DataTableColumn<T> {
   width?: number | string;
   align?: 'left' | 'center' | 'right';
   hidden?: boolean;
+  className?: string;
 }
 
 export interface DataTableProps<T> {
@@ -46,14 +47,14 @@ export function DataTable<T>({
   return (
     <div className={className}>
       {/* Desktop Table View */}
-      <div className={`${mobileCard ? 'hidden lg:block' : ''} overflow-x-auto w-full`}>
+      <div className={`${mobileCard ? 'hidden lg:block print:block' : ''} overflow-x-auto w-full`}>
         <table className="table-lines w-full">
           <thead>
             <tr>
               {visibleCols.map((col, i) => (
                 <th
                   key={col.id || i}
-                  className={col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'}
+                  className={`${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'} ${col.className || ''}`}
                   /* inline-style-allowed: Dynamic column width specified by table column configuration */
                   style={{
                     ...(col.width ? { width: col.width } : {}),
@@ -87,7 +88,7 @@ export function DataTable<T>({
                       return (
                         <td
                           key={col.id || j}
-                          className={col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'}
+                          className={`${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'} ${col.className || ''}`}
                         >
                           {content}
                         </td>
@@ -123,9 +124,9 @@ export function DataTable<T>({
 
       {/* Mobile Card View */}
       {mobileCard && (
-        <div className="lg:hidden flex flex-col gap-3 w-full">
+        <div className="lg:hidden print:hidden flex flex-col gap-3 w-full">
           {data.length === 0 ? (
-            <div className="text-center text-slate-500 py-4 px-3 bg-slate-50 rounded-lg border border-slate-100 text-sm">
+            <div className="text-center text-[var(--text-muted)] py-4 px-3 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)] text-sm">
               {emptyMessage || 'No items'}
             </div>
           ) : (
@@ -151,9 +152,9 @@ export function DataTable<T>({
  */
 export function MobileCardField({ label, value, className = '' }: { label: React.ReactNode, value: React.ReactNode, className?: string }) {
   return (
-    <div className={`flex justify-between items-start gap-4 py-1.5 border-b border-slate-100 last:border-0 ${className}`}>
-      <span className="text-xs font-medium text-slate-500 shrink-0">{label}</span>
-      <div className="text-sm font-medium text-right text-slate-700 min-w-0 flex-1 break-words">{value}</div>
+    <div className={`flex justify-between items-start gap-4 py-1.5 border-b border-[var(--border)] last:border-0 ${className}`}>
+      <span className="text-xs font-medium text-[var(--text-muted)] shrink-0">{label}</span>
+      <div className="text-sm font-medium text-right text-[var(--text-primary)] min-w-0 flex-1 break-words">{value}</div>
     </div>
   );
 }

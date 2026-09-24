@@ -77,11 +77,30 @@ describe('Inventory Cycle (e2e)', () => {
       .expect(200);
     vendorId = suppliers.body.data[0].vendorId;
 
-    const locations = await request(app.getHttpServer())
+    const locationsRes = await request(app.getHttpServer())
       .get('/api/inventory/locations')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    locationId = locations.body[0].locationId;
+
+    let targetLocation = locationsRes.body.find((l: any) => l.code === 'MAIN');
+    if (!targetLocation && locationsRes.body.length > 0) {
+      for (const loc of locationsRes.body) {
+        const binsCheck = await request(app.getHttpServer())
+          .get(
+            `/api/inventory/locations/${loc.locationId}/bins?binType=storage`,
+          )
+          .set('Authorization', `Bearer ${adminToken}`);
+        if (
+          binsCheck.status === 200 &&
+          Array.isArray(binsCheck.body) &&
+          binsCheck.body.length > 0
+        ) {
+          targetLocation = loc;
+          break;
+        }
+      }
+    }
+    locationId = (targetLocation || locationsRes.body[0]).locationId;
 
     // Create a fresh product
     const productRes = await request(app.getHttpServer())
@@ -164,8 +183,15 @@ describe('Inventory Cycle (e2e)', () => {
       .send({
         vendorId,
         locationId,
+        purchaseOrderId: poId,
         packingSlipNumber: 'E2E-123',
-        lines: [{ productId, quantityReceived: '10' }],
+        lines: [
+          {
+            productId,
+            purchaseOrderLineId: poLineId,
+            quantityReceived: '10',
+          },
+        ],
       });
 
     if (grnRes.status !== 201) {
@@ -173,19 +199,65 @@ describe('Inventory Cycle (e2e)', () => {
     }
     expect(grnRes.status).toBe(201);
 
-    // NOTE: Per business rules, GoodsReceived does NOT update the products table cache (quantity_on_hand/WAC)
-    // until invoicing/put-away. We verify physical stock arrival via the inventory endpoint instead.
-    const inventoryRes = await request(app.getHttpServer())
-      .get(
-        `/api/inventory/by-products?productIds=${productId}&locationId=${locationId}`,
-      )
+    // Find a pickable storage bin in locationId and put away the received stock
+    const locBinsRes = await request(app.getHttpServer())
+      .get(`/api/inventory/locations/${locationId}/bins?binType=storage`)
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
-    const physicalStock = inventoryRes.body.find(
-      (d: any) => d.productId === productId && d.locationId === locationId,
-    );
-    expect(parseFloat(physicalStock?.quantityOnHand || '0')).toBe(0);
+    let storageBin =
+      (Array.isArray(locBinsRes.body) &&
+        locBinsRes.body.find((b: any) => b.binType === 'storage')) ||
+      (Array.isArray(locBinsRes.body) && locBinsRes.body[0]);
+
+    if (!storageBin) {
+      const topRes = await request(app.getHttpServer())
+        .get('/api/inventory/topography')
+        .set('Authorization', `Bearer ${adminToken}`);
+      const locTop =
+        Array.isArray(topRes.body) &&
+        topRes.body.find((l: any) => l.locationId === locationId);
+      let zoneId = locTop?.zones?.[0]?.zoneId;
+      if (!zoneId) {
+        const zoneRes = await request(app.getHttpServer())
+          .post('/api/inventory/zones')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({
+            locationId,
+            code: `Z-${Date.now()}`,
+            name: 'Test Storage Zone',
+          })
+          .expect(201);
+        zoneId = zoneRes.body.zoneId;
+      }
+      const binRes = await request(app.getHttpServer())
+        .post('/api/inventory/bins')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          zoneId,
+          binNumber: `BIN-${Date.now()}`,
+          binType: 'storage',
+        })
+        .expect(201);
+      storageBin = binRes.body;
+    }
+    const storageBinId = storageBin.binId;
+    const grnLineId = grnRes.body.lines[0].goodsReceivedLineId;
+
+    await request(app.getHttpServer())
+      .post('/api/inventory/putaway')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        putaways: [
+          {
+            lineId: grnLineId,
+            sourceType: 'goods_receipt',
+            destinationBinId: storageBinId,
+            quantity: '10',
+          },
+        ],
+      })
+      .expect(201);
 
     const invResAfter = await request(app.getHttpServer())
       .get(`/api/inventory/by-products?productIds=${productId}`)
@@ -194,8 +266,8 @@ describe('Inventory Cycle (e2e)', () => {
     const stockAfter = invResAfter.body.find(
       (d: any) => d.productId === productId && d.locationId === locationId,
     );
-    // QOH is 0 because the received goods are in the RECEIVING bin, which is excluded from availability
-    expect(parseFloat(stockAfter?.quantityOnHand || '0')).toBe(0);
+    // 10 units are now put away into storage, so available QOH is 10
+    expect(parseFloat(stockAfter?.quantityOnHand || '0')).toBe(10);
   });
 
   it('Step 3: Sales Dispatch should update QOH', async () => {
@@ -235,14 +307,15 @@ describe('Inventory Cycle (e2e)', () => {
       .send({ stateCode: 'picking' })
       .expect(200);
 
-    // Get bins for our specific product to ensure we pick from the correct RECEIVING bin
+    // Get bins for our specific product to ensure we pick from the pickable storage bin
     const binsRes = await request(app.getHttpServer())
       .get(`/api/inventory/bins?q=${productNumber}`)
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    const binData = binsRes.body.data.find(
-      (b: any) => b.productId === productId,
-    );
+    const binData =
+      binsRes.body.data.find(
+        (b: any) => b.productId === productId && b.binType === 'storage',
+      ) || binsRes.body.data.find((b: any) => b.productId === productId);
     const binId = binData?.binId;
 
     if (!binId) {
@@ -289,9 +362,8 @@ describe('Inventory Cycle (e2e)', () => {
     const stockAfter = invResAfter.body.find(
       (d: any) => d.productId === productId && d.locationId === locationId,
     );
-    // The picking occurred from the RECEIVING bin (excluded) into the SHIPPING bin (excluded),
-    // and the items were never put away into storage, so available QOH remains 0.
-    expect(parseFloat(stockAfter?.quantityOnHand || '0')).toBe(0);
+    // After shipping 4 out of 10 units, 6 remain available in storage
+    expect(parseFloat(stockAfter?.quantityOnHand || '0')).toBe(6);
   });
 
   it('Step 4: Sales Return should update QOH', async () => {
@@ -353,8 +425,8 @@ describe('Inventory Cycle (e2e)', () => {
     const stockAfter = invResAfter.body.find(
       (d: any) => d.productId === productId && d.locationId === locationId,
     );
-    // QOH remains 0 because returns are received into the RECEIVING dock bin
-    expect(parseFloat(stockAfter?.quantityOnHand || '0')).toBe(0);
+    // QOH remains 6 in storage because returns are received into the dock bin
+    expect(parseFloat(stockAfter?.quantityOnHand || '0')).toBe(6);
   });
 
   it('Step 5: Verify product inventory endpoint', async () => {
@@ -368,13 +440,11 @@ describe('Inventory Cycle (e2e)', () => {
     expect(invRes.body).toBeDefined();
     expect(Array.isArray(invRes.body)).toBe(true);
 
-    // After all operations, the available stock across all locations is 0.
-    // The physical 12 items (10 received + 2 returned) are in the receiving dock, and 4 in shipping, none in storage.
     const totalQoh = invRes.body.reduce(
       (sum: number, row: any) => sum + parseFloat(row.quantityOnHand || '0'),
       0,
     );
 
-    expect(totalQoh).toBe(0);
+    expect(totalQoh).toBe(6);
   });
 });

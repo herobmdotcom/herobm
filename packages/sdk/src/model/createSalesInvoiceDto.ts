@@ -9,5 +9,6 @@ import type { CreateSalesInvoiceLineDto } from './createSalesInvoiceLineDto';
 
 export interface CreateSalesInvoiceDto {
   notes?: string;
+  invoiceDate?: string;
   lines?: CreateSalesInvoiceLineDto[];
 }

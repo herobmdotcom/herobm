@@ -16,6 +16,8 @@ import {
   salesOrders,
   salesOrderLineItems,
   customers,
+  projects,
+  projectTasks,
 } from '@herobm/db-schema';
 import { EntityType, EventType } from '../../common/event-types';
 import { eq, desc } from 'drizzle-orm';
@@ -25,6 +27,9 @@ import {
   PRODUCT_STATE,
   SALES_ORDER_STATE,
   CUSTOMER_STATE,
+  PROJECT_STATE,
+  PROJECT_BILLING_TYPE,
+  PROJECT_TASK_STATE,
 } from '@herobm/shared';
 import { BackordersService } from '../backorders.service';
 
@@ -43,7 +48,7 @@ describe('TransfersWriteService', () => {
   beforeEach(async () => {
     await pg.db
       .insert(uomDictionary)
-      .values({ uomCode: 'EA', description: 'Each' });
+      .values({ uomCode: 'EA', description: 'Each', category: 'goods' });
     await pg.db.insert(taxCategories).values({
       taxCategoryId: '00000000-0000-4000-8000-000000000000',
       code: 'GST',
@@ -246,6 +251,99 @@ describe('TransfersWriteService', () => {
       expect(lines).toHaveLength(1);
       expect(lines[0].quantity).toBe('10');
     });
+
+    it('should create a project return transfer order with isProjectReturn=true and projectId', async () => {
+      const CUSTOMER_ID = '00000000-0000-4000-8000-000000000000';
+      const PROJECT_ID = '00000000-0000-4000-8000-000000000010';
+      const TASK_ID = '00000000-0000-4000-8000-000000000011';
+      await pg.db
+        .insert(customers)
+        .values({
+          customerId: CUSTOMER_ID,
+          customerNumber: 'C-001',
+          currencyCode: 'AUD',
+          stateCode: CUSTOMER_STATE.ACTIVE,
+          source: 'app',
+          createdBy: 'system',
+        })
+        .onConflictDoNothing();
+
+      await pg.db.insert(projects).values({
+        projectId: PROJECT_ID,
+        projectNumber: 'PRJ-2026-RET',
+        name: 'Return Test Project',
+        customerId: CUSTOMER_ID,
+        currencyCode: 'AUD',
+        billingType: PROJECT_BILLING_TYPE.TIME_AND_MATERIALS,
+        stateCode: PROJECT_STATE.ACTIVE,
+        stage: 'Planning',
+        createdBy: 'system',
+      });
+      await pg.db.insert(projectTasks).values({
+        projectTaskId: TASK_ID,
+        projectId: PROJECT_ID,
+        taskCode: '1.0',
+        name: 'Return Task',
+        stateCode: PROJECT_TASK_STATE.IN_PROGRESS,
+        isMilestone: false,
+        isBillable: true,
+        createdBy: 'system',
+      });
+
+      const result = await service.create(
+        {
+          sourceLocationId: LOCATION_SRC_ID,
+          destinationLocationId: LOCATION_DST_ID,
+          projectId: PROJECT_ID,
+          projectTaskId: TASK_ID,
+          isProjectReturn: true,
+          notes: 'Returning surplus parts to warehouse',
+          lines: [
+            { productId: PROD_ID, quantity: '3', projectTaskId: TASK_ID },
+          ],
+        },
+        'admin',
+      );
+
+      expect(result.transferOrderId).toBeDefined();
+
+      const [order] = await pg.db
+        .select()
+        .from(transferOrders)
+        .where(eq(transferOrders.transferOrderId, result.transferOrderId));
+      expect(order.projectId).toBe(PROJECT_ID);
+      expect(order.projectTaskId).toBe(TASK_ID);
+      expect(order.isProjectReturn).toBe(true);
+      expect(order.stateCode).toBe(TRANSFER_ORDER_STATE.CONFIRMED);
+
+      const lines = await pg.db
+        .select()
+        .from(transferOrderLines)
+        .where(eq(transferOrderLines.transferOrderId, result.transferOrderId));
+      expect(lines).toHaveLength(1);
+      expect(lines[0].quantity).toBe('3');
+      expect(lines[0].projectTaskId).toBe(TASK_ID);
+    });
+
+    it('should allow same warehouse staging transfer orders (sourceLocationId === destinationLocationId)', async () => {
+      const result = await service.create(
+        {
+          sourceLocationId: LOCATION_SRC_ID,
+          destinationLocationId: LOCATION_SRC_ID,
+          notes: 'Staging to workshop cell inside same warehouse',
+          lines: [{ productId: PROD_ID, quantity: '5' }],
+        },
+        'admin',
+      );
+
+      expect(result.transferOrderId).toBeDefined();
+      const [order] = await pg.db
+        .select()
+        .from(transferOrders)
+        .where(eq(transferOrders.transferOrderId, result.transferOrderId));
+      expect(order.sourceLocationId).toBe(LOCATION_SRC_ID);
+      expect(order.destinationLocationId).toBe(LOCATION_SRC_ID);
+    });
   });
 
   describe('update', () => {
@@ -300,6 +398,102 @@ describe('TransfersWriteService', () => {
       ).rejects.toThrow(
         'Cannot edit locations on an order that is already in progress',
       );
+    });
+
+    it('should create and update a transfer order with projectId and projectTaskId', async () => {
+      const CUST_ID = '00000000-0000-4000-8000-000000000091';
+      const PROJECT_ID = '00000000-0000-4000-8000-000000000099';
+      const TASK_ID = '00000000-0000-4000-8000-000000000098';
+      const NEW_TASK_ID = '00000000-0000-4000-8000-000000000097';
+
+      await pg.db.insert(customers).values({
+        customerId: CUST_ID,
+        customerNumber: 'CUST-TW-01',
+        currencyCode: 'AUD',
+        stateCode: CUSTOMER_STATE.ACTIVE,
+        source: 'app',
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(projects).values({
+        projectId: PROJECT_ID,
+        projectNumber: 'PRJ-2026-TW',
+        name: 'Test Project',
+        customerId: CUST_ID,
+        stateCode: PROJECT_STATE.ACTIVE,
+        billingType: PROJECT_BILLING_TYPE.TIME_AND_MATERIALS,
+        currencyCode: 'AUD',
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(projectTasks).values([
+        {
+          projectTaskId: TASK_ID,
+          projectId: PROJECT_ID,
+          taskCode: '1.0',
+          name: 'Task 1',
+          stateCode: PROJECT_TASK_STATE.NOT_STARTED,
+          isMilestone: false,
+          isBillable: true,
+          createdBy: 'system',
+        },
+        {
+          projectTaskId: NEW_TASK_ID,
+          projectId: PROJECT_ID,
+          taskCode: '2.0',
+          name: 'Task 2',
+          stateCode: PROJECT_TASK_STATE.NOT_STARTED,
+          isMilestone: false,
+          isBillable: true,
+          createdBy: 'system',
+        },
+      ]);
+
+      const { transferOrderId } = await service.create(
+        {
+          sourceLocationId: LOCATION_SRC_ID,
+          destinationLocationId: LOCATION_DST_ID,
+          projectId: PROJECT_ID,
+          projectTaskId: TASK_ID,
+          lines: [
+            {
+              productId: PROD_ID,
+              quantity: '3',
+              projectTaskId: TASK_ID,
+            },
+          ],
+        },
+        'admin',
+      );
+
+      const [to] = await pg.db
+        .select()
+        .from(transferOrders)
+        .where(eq(transferOrders.transferOrderId, transferOrderId));
+
+      expect(to.projectId).toBe(PROJECT_ID);
+      expect(to.projectTaskId).toBe(TASK_ID);
+
+      const lines = await pg.db
+        .select()
+        .from(transferOrderLines)
+        .where(eq(transferOrderLines.transferOrderId, transferOrderId));
+
+      expect(lines).toHaveLength(1);
+      expect(lines[0].projectTaskId).toBe(TASK_ID);
+
+      // Update projectTaskId
+      await service.update(
+        transferOrderId,
+        { projectTaskId: NEW_TASK_ID },
+        'admin',
+      );
+
+      const [updatedTo] = await pg.db
+        .select()
+        .from(transferOrders)
+        .where(eq(transferOrders.transferOrderId, transferOrderId));
+      expect(updatedTo.projectTaskId).toBe(NEW_TASK_ID);
     });
   });
 

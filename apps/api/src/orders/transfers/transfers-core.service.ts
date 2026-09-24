@@ -9,7 +9,9 @@ import {
   transferOrderShipmentLines,
   warehouseEvents,
   locations,
+  bins,
   products as coreProducts,
+  projects,
 } from '@herobm/db-schema';
 import { eq, and, inArray, sql, desc, or, ilike, asc } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
@@ -20,7 +22,10 @@ import {
 } from '../../common/pagination';
 import { TransferPaginationQuery } from './dto';
 import { EntityType } from '../../common/event-types';
-import { transferOrderReceipts } from '@herobm/db-schema';
+import {
+  transferOrderReceipts,
+  transferOrderReceiptLines,
+} from '@herobm/db-schema';
 
 @Injectable()
 export class TransfersCoreService {
@@ -123,18 +128,53 @@ export class TransfersCoreService {
       );
     }
 
+    if (query?.hasPendingReceipt) {
+      conditions.push(
+        sql`EXISTS (
+          SELECT 1 FROM ${transferOrderLines} tol 
+          WHERE tol.transfer_order_id = ${transferOrders.transferOrderId} 
+            AND CAST(COALESCE(tol.quantity_shipped, '0') AS NUMERIC) > CAST(COALESCE(tol.quantity_received, '0') AS NUMERIC)
+        )`,
+      );
+    }
+
+    if (query?.projectId) {
+      conditions.push(eq(transferOrders.projectId, query.projectId));
+    }
+
     const destLoc = alias(locations, 'destLoc');
     const sourceLoc = alias(locations, 'sourceLoc');
+    const stagingBin = alias(bins, 'stagingBin');
 
     let qb = this.db
       .select({
         id: transferOrders.transferOrderId,
+        transferOrderId: transferOrders.transferOrderId,
         orderNumber: transferOrders.orderNumber,
         stateCode: transferOrders.stateCode,
         sourceLocationId: transferOrders.sourceLocationId,
         sourceLocationName: sourceLoc.name,
         destinationLocationId: transferOrders.destinationLocationId,
         destinationLocationName: destLoc.name,
+        projectId: transferOrders.projectId,
+        projectTaskId: transferOrders.projectTaskId,
+        isProjectReturn: transferOrders.isProjectReturn,
+        projectNumber: projects.projectNumber,
+        projectName: projects.name,
+        stagingBinId: projects.stagingBinId,
+        stagingBinNumber: stagingBin.binNumber,
+        sourceBinId: sql<
+          string | null
+        >`CASE WHEN ${transferOrders.isProjectReturn} = true THEN ${projects.stagingBinId} ELSE NULL END`,
+        sourceBinNumber: sql<
+          string | null
+        >`CASE WHEN ${transferOrders.isProjectReturn} = true THEN ${stagingBin.binNumber} ELSE NULL END`,
+        destinationBinId: sql<
+          string | null
+        >`CASE WHEN ${transferOrders.isProjectReturn} = true THEN NULL ELSE ${projects.stagingBinId} END`,
+        destinationBinNumber: sql<
+          string | null
+        >`CASE WHEN ${transferOrders.isProjectReturn} = true THEN NULL ELSE ${stagingBin.binNumber} END`,
         createdBy: transferOrders.createdBy,
         createdOn: transferOrders.createdOn,
         notes: transferOrders.notes,
@@ -150,6 +190,8 @@ export class TransfersCoreService {
         destLoc,
         eq(transferOrders.destinationLocationId, destLoc.locationId),
       )
+      .leftJoin(projects, eq(transferOrders.projectId, projects.projectId))
+      .leftJoin(stagingBin, eq(projects.stagingBinId, stagingBin.binId))
       .$dynamic();
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -228,7 +270,100 @@ export class TransfersCoreService {
 
     const [{ count }] = await countQb;
 
-    return { data, page, limit, total: Number(count), nextCursor, prevCursor };
+    const orderIds = data.map((d) => d.transferOrderId);
+    const linesMap = new Map<
+      string,
+      Array<{
+        id: string;
+        transferOrderLineId: string;
+        productId: string;
+        productNumber: string | null;
+        productDescription: string | null;
+        quantity: string;
+        quantityShipped: string | null;
+        quantityReceived: string | null;
+        quantityPutaway?: string | null;
+        projectTaskId: string | null;
+      }>
+    >();
+
+    if (orderIds.length > 0) {
+      const allLines = await this.db
+        .select({
+          id: transferOrderLines.transferOrderLineId,
+          transferOrderLineId: transferOrderLines.transferOrderLineId,
+          transferOrderId: transferOrderLines.transferOrderId,
+          productId: transferOrderLines.productId,
+          productNumber: coreProducts.productNumber,
+          productDescription: coreProducts.name,
+          quantity: transferOrderLines.quantity,
+          quantityShipped: transferOrderLines.quantityShipped,
+          quantityReceived: transferOrderLines.quantityReceived,
+          projectTaskId: transferOrderLines.projectTaskId,
+        })
+        .from(transferOrderLines)
+        .innerJoin(
+          coreProducts,
+          eq(transferOrderLines.productId, coreProducts.productId),
+        )
+        .where(inArray(transferOrderLines.transferOrderId, orderIds));
+
+      const lineIds = allLines.map((l) => l.transferOrderLineId);
+      const putawayMap = new Map<string, number>();
+      if (lineIds.length > 0) {
+        const putawayRows = await this.db
+          .select({
+            transferOrderLineId: transferOrderReceiptLines.transferOrderLineId,
+            putawayQty:
+              sql<number>`COALESCE(SUM(CASE WHEN ${transferOrderReceiptLines.putawayStatus} = 'completed' THEN ${transferOrderReceiptLines.quantity}::numeric ELSE 0 END), 0)`.mapWith(
+                Number,
+              ),
+          })
+          .from(transferOrderReceiptLines)
+          .where(
+            inArray(transferOrderReceiptLines.transferOrderLineId, lineIds),
+          )
+          .groupBy(transferOrderReceiptLines.transferOrderLineId);
+
+        for (const pr of putawayRows) {
+          putawayMap.set(pr.transferOrderLineId, pr.putawayQty);
+        }
+      }
+
+      for (const line of allLines) {
+        if (!linesMap.has(line.transferOrderId)) {
+          linesMap.set(line.transferOrderId, []);
+        }
+        linesMap.get(line.transferOrderId)!.push({
+          id: line.id,
+          transferOrderLineId: line.transferOrderLineId,
+          productId: line.productId,
+          productNumber: line.productNumber,
+          productDescription: line.productDescription,
+          quantity: line.quantity,
+          quantityShipped: line.quantityShipped,
+          quantityReceived: line.quantityReceived,
+          quantityPutaway: String(
+            putawayMap.get(line.transferOrderLineId) || 0,
+          ),
+          projectTaskId: line.projectTaskId,
+        });
+      }
+    }
+
+    const enrichedData = data.map((row) => ({
+      ...row,
+      lines: linesMap.get(row.transferOrderId) || [],
+    }));
+
+    return {
+      data: enrichedData,
+      page,
+      limit,
+      total: Number(count),
+      nextCursor,
+      prevCursor,
+    };
   }
 
   async findShipments(transferOrderId: string) {
@@ -280,6 +415,7 @@ export class TransfersCoreService {
   async findOne(id: string) {
     const destLoc = alias(locations, 'destLoc');
     const sourceLoc = alias(locations, 'sourceLoc');
+    const stagingBin = alias(bins, 'stagingBin');
 
     const [order] = await this.db
       .select({
@@ -291,6 +427,25 @@ export class TransfersCoreService {
         sourceLocationName: sourceLoc.name,
         destinationLocationId: transferOrders.destinationLocationId,
         destinationLocationName: destLoc.name,
+        projectId: transferOrders.projectId,
+        projectTaskId: transferOrders.projectTaskId,
+        isProjectReturn: transferOrders.isProjectReturn,
+        projectNumber: projects.projectNumber,
+        projectName: projects.name,
+        stagingBinId: projects.stagingBinId,
+        stagingBinNumber: stagingBin.binNumber,
+        sourceBinId: sql<
+          string | null
+        >`CASE WHEN ${transferOrders.isProjectReturn} = true THEN ${projects.stagingBinId} ELSE NULL END`,
+        sourceBinNumber: sql<
+          string | null
+        >`CASE WHEN ${transferOrders.isProjectReturn} = true THEN ${stagingBin.binNumber} ELSE NULL END`,
+        destinationBinId: sql<
+          string | null
+        >`CASE WHEN ${transferOrders.isProjectReturn} = true THEN NULL ELSE ${projects.stagingBinId} END`,
+        destinationBinNumber: sql<
+          string | null
+        >`CASE WHEN ${transferOrders.isProjectReturn} = true THEN NULL ELSE ${stagingBin.binNumber} END`,
         createdBy: transferOrders.createdBy,
         createdOn: transferOrders.createdOn,
         notes: transferOrders.notes,
@@ -305,6 +460,8 @@ export class TransfersCoreService {
         destLoc,
         eq(transferOrders.destinationLocationId, destLoc.locationId),
       )
+      .leftJoin(projects, eq(transferOrders.projectId, projects.projectId))
+      .leftJoin(stagingBin, eq(projects.stagingBinId, stagingBin.binId))
       .where(eq(transferOrders.transferOrderId, id));
 
     if (!order) {
@@ -321,6 +478,7 @@ export class TransfersCoreService {
         quantity: transferOrderLines.quantity,
         quantityShipped: transferOrderLines.quantityShipped,
         quantityReceived: transferOrderLines.quantityReceived,
+        projectTaskId: transferOrderLines.projectTaskId,
       })
       .from(transferOrderLines)
       .innerJoin(
@@ -346,7 +504,32 @@ export class TransfersCoreService {
       )
       .orderBy(desc(warehouseEvents.createdOn));
 
-    return { ...order, lines, events };
+    const lineIds = lines.map((l) => l.transferOrderLineId);
+    const putawayMap = new Map<string, number>();
+    if (lineIds.length > 0) {
+      const putawayRows = await this.db
+        .select({
+          transferOrderLineId: transferOrderReceiptLines.transferOrderLineId,
+          putawayQty:
+            sql<number>`COALESCE(SUM(CASE WHEN ${transferOrderReceiptLines.putawayStatus} = 'completed' THEN ${transferOrderReceiptLines.quantity}::numeric ELSE 0 END), 0)`.mapWith(
+              Number,
+            ),
+        })
+        .from(transferOrderReceiptLines)
+        .where(inArray(transferOrderReceiptLines.transferOrderLineId, lineIds))
+        .groupBy(transferOrderReceiptLines.transferOrderLineId);
+
+      for (const pr of putawayRows) {
+        putawayMap.set(pr.transferOrderLineId, pr.putawayQty);
+      }
+    }
+
+    const linesWithPutaway = lines.map((line) => ({
+      ...line,
+      quantityPutaway: String(putawayMap.get(line.transferOrderLineId) || 0),
+    }));
+
+    return { ...order, lines: linesWithPutaway, events };
   }
 
   async findEvents(transferOrderId: string) {

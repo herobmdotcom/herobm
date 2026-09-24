@@ -19,6 +19,30 @@
       "dependsOn": ["^build"],
       "outputs": []
     },
+    "//#test:structural": {
+      "dependsOn": ["@herobm/shared#build", "@herobm/db-schema#build"],
+      "cache": true,
+      "inputs": [
+        "apps/**",
+        "!apps/**/dist/**",
+        "!apps/**/.next/**",
+        "!apps/**/node_modules/**",
+        "packages/**",
+        "!packages/**/dist/**",
+        "!packages/**/node_modules/**",
+        "extensions/**",
+        "!extensions/**/dist/**",
+        "!extensions/**/node_modules/**",
+        "infra/**",
+        "tools/**",
+        ".env.example",
+        "docker-compose.yml",
+        "knip.json*",
+        "package.json",
+        "tsconfig*.json"
+      ],
+      "outputs": []
+    },
     "verify-fast": {
       "dependsOn": ["typecheck", "lint", "test:unit"],
       "outputs": []

@@ -20,6 +20,7 @@ vendorId?: string;
 days?: number;
 purchaseOrderId?: string;
 productId?: string;
+productType?: string;
 opportunityId?: string;
 projectId?: string;
 sort?: string;

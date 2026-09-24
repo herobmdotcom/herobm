@@ -63,7 +63,7 @@ describe('PickingSlipService', () => {
     // Seed UOM
     await pg.db
       .insert(uomDictionary)
-      .values({ uomCode: 'EA', description: 'Each' });
+      .values({ uomCode: 'EA', description: 'Each', category: 'goods' });
 
     // Seed Tax Category
     await pg.db.insert(taxCategories).values({
@@ -193,6 +193,7 @@ describe('PickingSlipService', () => {
       orderNumber: 'TRF-001',
       sourceLocationId: LOCATION_SRC_ID,
       destinationLocationId: LOCATION_DEST_ID,
+      isProjectReturn: false,
       stateCode: TRANSFER_ORDER_STATE.CONFIRMED,
       createdBy: 'system',
     });

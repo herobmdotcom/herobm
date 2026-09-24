@@ -14,7 +14,7 @@ import { v5 as uuidv5 } from 'uuid';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 
-import { GLAccountType } from '@herobm/shared';
+import { GLAccountType, GLReportCategory } from '@herobm/shared';
 
 export function resolveChartsDir(dirnameFallback: string): string {
   // 1. Standard flat structure / ts-node
@@ -72,6 +72,7 @@ const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
 export interface CoaNode {
   root_type?: string;
   account_type?: string;
+  report_category?: string;
   account_number?: string;
   is_group?: number;
   description?: string;
@@ -218,6 +219,7 @@ export class CoaLoaderService {
       accountCode: string;
       name: string;
       accountType: GLAccountType;
+      reportCategory?: string;
       parentCode: string | null;
       isGroup: boolean;
       isSystem: boolean;
@@ -239,11 +241,13 @@ export class CoaLoaderService {
         const rawType = (node.account_type || '').toLowerCase();
         const isBankAccount =
           !isGroup && (rawType === 'bank' || rawType === 'cash');
+        const reportCategory = node.report_category;
 
         insertRows.push({
           accountCode: code,
           name,
           accountType,
+          reportCategory,
           parentCode,
           isGroup,
           isSystem: true, // seed accounts are system accounts
@@ -285,6 +289,8 @@ export class CoaLoaderService {
           ppv_account_code?: string;
           otc_cash_account_code?: string;
           otc_card_account_code?: string;
+          suspense_account_code?: string;
+          retained_earnings_account_code?: string;
         };
         trading_terms?: {
           code: string;
@@ -310,6 +316,7 @@ export class CoaLoaderService {
             accountCode: row.accountCode,
             name: row.name,
             accountType: row.accountType,
+            reportCategory: (row.reportCategory as GLReportCategory) || null,
             isGroup: row.isGroup,
             isSystem: row.isSystem,
             currencyCode: baseCurrency,
@@ -321,6 +328,7 @@ export class CoaLoaderService {
             set: {
               name: row.name,
               accountType: row.accountType,
+              reportCategory: (row.reportCategory as GLReportCategory) || null,
               isGroup: row.isGroup,
               isBankAccount: row.isBankAccount,
             },
@@ -399,6 +407,13 @@ export class CoaLoaderService {
             defaultOtcCardAccountId: defaults.otc_card_account_code
               ? codeToId.get(defaults.otc_card_account_code)
               : undefined,
+            defaultSuspenseAccountId: defaults.suspense_account_code
+              ? codeToId.get(defaults.suspense_account_code)
+              : undefined,
+            defaultRetainedEarningsAccountId:
+              defaults.retained_earnings_account_code
+                ? codeToId.get(defaults.retained_earnings_account_code)
+                : undefined,
             baseCurrency: settings.base_currency || 'AUD',
             bankMatchDateToleranceDays: 0,
             revenueRoutingPrecedence: 'product_first',
@@ -446,6 +461,13 @@ export class CoaLoaderService {
               defaultOtcCardAccountId: defaults.otc_card_account_code
                 ? codeToId.get(defaults.otc_card_account_code)
                 : undefined,
+              defaultSuspenseAccountId: defaults.suspense_account_code
+                ? codeToId.get(defaults.suspense_account_code)
+                : undefined,
+              defaultRetainedEarningsAccountId:
+                defaults.retained_earnings_account_code
+                  ? codeToId.get(defaults.retained_earnings_account_code)
+                  : undefined,
             },
           });
 

@@ -8,4 +8,5 @@
 
 export interface UpdateTransferOrderLineDto {
   quantity?: string;
+  projectTaskId?: string;
 }

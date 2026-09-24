@@ -31,10 +31,20 @@ export function UomCell({
     return <span className="tabular-nums text-xs">{currentUom}</span>;
   }
 
-  const selectOptions: Array<{ uomCode: string; ratio?: string | number }> =
+  const uomList: Array<{ uomCode: string; ratio?: string | number }> =
     (line.productUoms || []).length > 0
-      ? (line.productUoms as Array<{ uomCode: string; ratio?: string | number }>)
+      ? [...(line.productUoms as Array<{ uomCode: string; ratio?: string | number }>)]
       : [{ uomCode: defaultUom, ratio: 1 }];
+
+  if (
+    line.purchaseUnit &&
+    isNaN(Number(line.purchaseUnit)) &&
+    !uomList.some((o) => o.uomCode === line.purchaseUnit)
+  ) {
+    uomList.push({ uomCode: line.purchaseUnit, ratio: 1 });
+  }
+
+  const selectOptions = uomList;
 
   const handleUomChange = (newVal: string) => {
     const oldVal = currentUom;

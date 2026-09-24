@@ -90,6 +90,7 @@ function HelpContent() {
     'Inventory',
     'Purchasing',
     'Manufacturing',
+    'Projects',
     'CRM',
     'Finance',
     'Reporting',

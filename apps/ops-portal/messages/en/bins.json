@@ -1,0 +1,19 @@
+{
+  "columns": {
+    "baseQty": "Base Qty",
+    "bin": "Bin",
+    "binType": "Type",
+    "bonded": "Bonded",
+    "consignment": "Consignment",
+    "locationName": "Location Name",
+    "locationNo": "Location No",
+    "productNumber": "Product #",
+    "qtyOption": "(qty: {qty})",
+    "unavailable": "Unavailable",
+    "zone": "Zone"
+  },
+  "placeholders": {
+    "searchBins": "Search by bin number, product name, or product number..."
+  },
+  "title": "Bin Contents"
+}

@@ -20,6 +20,7 @@ import {
   getValidStates,
 } from '@herobm/shared';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
+import { isPickableBin } from '../inventory/inventory-math.utils';
 
 const VALID_PICK_STATES = getValidStates(SALES_ORDER_PICK_TRANSITIONS);
 
@@ -94,6 +95,29 @@ export class PickingActionService {
     if (binId === shippingBin.binId) {
       throw new BadRequestException(
         `Cannot pick from the SHIPPING bin. Stock is already staged for dispatch.`,
+      );
+    }
+
+    const [sourceBin] = await this.db
+      .select({
+        binId: bins.binId,
+        binNumber: bins.binNumber,
+        binType: bins.binType,
+        isUnavailable: bins.isUnavailable,
+        isBonded: bins.isBonded,
+        isConsignment: bins.isConsignment,
+      })
+      .from(bins)
+      .where(eq(bins.binId, binId))
+      .limit(1);
+
+    if (!sourceBin) {
+      throw new BadRequestException(`Source bin ${binId} not found.`);
+    }
+
+    if (!isPickableBin(sourceBin)) {
+      throw new BadRequestException(
+        `Cannot pick from bin '${sourceBin.binNumber}'. Bin is not eligible for sales picking (unavailable, bonded, consignment, or non-pickable type).`,
       );
     }
 

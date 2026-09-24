@@ -19,6 +19,7 @@ import OrgLogoUploader from '@/components/settings/OrgLogoUploader';
 interface UomEntry {
   uomCode: string;
   description: string;
+  category?: 'goods' | 'service';
 }
 
 interface Macro {
@@ -151,18 +152,35 @@ export default function SystemSettingsPage() {
 
   const uomColumns: InlineTableColumn<UomEntry>[] = useMemo(() => [
     { key: 'uomCode', title: tSettings('labels.code'), type: 'text', width: 120, placeholder: tSettings('placeholders.uomCode') },
-    { key: 'description', title: tSettings('labels.description'), type: 'text', placeholder: tSettings('placeholders.uomDescription') }
+    { key: 'description', title: tSettings('labels.description'), type: 'text', placeholder: tSettings('placeholders.uomDescription') },
+    { 
+      key: 'category', 
+      title: tSettings('labels.category'), 
+      type: 'select', 
+      options: [
+        { value: 'goods', label: tSettings('labels.goods') },
+        { value: 'service', label: tSettings('labels.service') },
+      ],
+      width: 140,
+      emptyLabel: null,
+      render: (row, isEditing) => isEditing ? undefined : (
+        <span className={`badge badge-sm font-semibold ${row.category === 'service' ? 'badge-info' : 'badge-neutral'}`}>
+          {row.category === 'service' ? tSettings('labels.service') : tSettings('labels.goods')}
+        </span>
+      ),
+    },
   ], [tSettings]);
 
   const handleUomSave = async (payload: Partial<UomEntry>, isNew: boolean) => {
     if (!payload.uomCode || !payload.description) { throw new Error(tCommon('errors.typeAndDateRequired')); }
     const codeToSave = payload.uomCode.toUpperCase();
+    const categoryToSave = (payload.category as 'goods' | 'service') || 'goods';
     try {
       if (isNew) {
-        await api.uomDictionaryControllerCreate({ uomCode: codeToSave, description: payload.description });
+        await api.uomDictionaryControllerCreate({ uomCode: codeToSave, description: payload.description, category: categoryToSave });
         toast.success(tSettings('toasts.uomCreated'));
       } else {
-        await api.uomDictionaryControllerUpdate(codeToSave, { description: payload.description });
+        await api.uomDictionaryControllerUpdate(codeToSave, { description: payload.description, category: categoryToSave });
         toast.success(tSettings('toasts.uomUpdated'));
       }
       loadUom();
@@ -596,6 +614,27 @@ export default function SystemSettingsPage() {
                 </select>
               </div>
             </div>
+
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                  {tSettings('allowNegativeInventoryLabel')}
+                </label>
+                <div className="flex items-center gap-3 mt-1">
+                  <input
+                    type="checkbox"
+                    id="allowNegativeInventory"
+                    className="checkbox checkbox-sm checkbox-primary"
+                    checked={!!appForm?.allowNegativeInventory}
+                    onChange={(e) => updateAppField('allowNegativeInventory', e.target.checked)}
+                    disabled={appLoading}
+                  />
+                  <label htmlFor="allowNegativeInventory" className="text-xs text-[var(--text-secondary)] cursor-pointer">
+                    {tSettings('allowNegativeInventoryDesc')}
+                  </label>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -630,7 +669,7 @@ export default function SystemSettingsPage() {
           rowKey={(row: UomEntry) => row.uomCode}
             onSave={handleUomSave}
             onDelete={handleUomDelete}
-            onAdd={() => ({ uomCode: '', description: '' })}
+            onAdd={() => ({ uomCode: '', description: '', category: 'goods' as const })}
             addLabel={tSettings('actions.create')}
             emptyLabel={uomLoading ? null : tSettings('uom.empty')}
           />

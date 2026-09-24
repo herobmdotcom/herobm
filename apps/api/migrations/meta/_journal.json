@@ -43,6 +43,76 @@
       "when": 1788983723899,
       "tag": "0005_add_shipment_shipping_notes",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789932774884,
+      "tag": "0006_projects_stocktakes_and_system_updates",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789932800000,
+      "tag": "0007_add_gl_settings_otc_accounts",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790069572347,
+      "tag": "0008_add_project_id_to_gl_journal_lines",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790070564890,
+      "tag": "0009_add_budget_line_to_ledger_entries",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790083613701,
+      "tag": "0010_add_project_resource_assignments",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1790087021766,
+      "tag": "0011_add_project_bin_type",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790108935004,
+      "tag": "0012_add_is_billable_to_project_ledger_entries",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790192124864,
+      "tag": "0013_snapshot_sales_invoice_line_tax_and_discount",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1790242411515,
+      "tag": "0014_add_project_trading_terms",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1790243229931,
+      "tag": "0015_remove_project_wip_method",
+      "breakpoints": true
     }
   ]
 }

@@ -8,7 +8,9 @@
 import type {
   CreateWorkOrderDto,
   EmptyBodyDto,
+  ManufacturingSettingsResponseDto,
   PickWorkOrderComponentDto,
+  UpdateManufacturingSettingsDto,
   UpdateWorkOrderComponentDto,
   UpdateWorkOrderDto,
   WorkOrderPickingSummaryDto,
@@ -17,6 +19,79 @@ import type {
 } from '../../model';
 
 import { customFetch } from '../../mutator';
+
+/**
+ * Retrieve manufacturing domain settings and metadata schemas.
+ * @summary Get Manufacturing Settings
+ */
+export type workOrdersControllerGetSettingsResponse200 = {
+  data: ManufacturingSettingsResponseDto
+  status: 200
+}
+    
+export type workOrdersControllerGetSettingsResponseSuccess = (workOrdersControllerGetSettingsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type workOrdersControllerGetSettingsResponse = (workOrdersControllerGetSettingsResponseSuccess)
+
+export const getWorkOrdersControllerGetSettingsUrl = () => {
+
+
+  
+
+  return `/manufacturing/work-orders/settings`
+}
+
+export const workOrdersControllerGetSettings = async ( options?: RequestInit): Promise<workOrdersControllerGetSettingsResponse> => {
+  
+  return customFetch<workOrdersControllerGetSettingsResponse>(getWorkOrdersControllerGetSettingsUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * Update manufacturing domain settings and metadata schemas.
+ * @summary Update Manufacturing Settings
+ */
+export type workOrdersControllerUpdateSettingsResponse200 = {
+  data: ManufacturingSettingsResponseDto
+  status: 200
+}
+    
+export type workOrdersControllerUpdateSettingsResponseSuccess = (workOrdersControllerUpdateSettingsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type workOrdersControllerUpdateSettingsResponse = (workOrdersControllerUpdateSettingsResponseSuccess)
+
+export const getWorkOrdersControllerUpdateSettingsUrl = () => {
+
+
+  
+
+  return `/manufacturing/work-orders/settings`
+}
+
+export const workOrdersControllerUpdateSettings = async (updateManufacturingSettingsDto: UpdateManufacturingSettingsDto, options?: RequestInit): Promise<workOrdersControllerUpdateSettingsResponse> => {
+  
+  return customFetch<workOrdersControllerUpdateSettingsResponse>(getWorkOrdersControllerUpdateSettingsUrl(),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateManufacturingSettingsDto,)
+  }
+);}
+
 
 /**
  * Get all work orders with optional filtering by days.

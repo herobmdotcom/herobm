@@ -112,6 +112,7 @@ export default function SalesCreditNotesPage() {
       <DataGrid
         columns={gridColumns}
         endpoint="/api/sales-credit-notes"
+        customFieldEntityType="salesCreditNotes"
         refreshTrigger={refreshTrigger}
         gridKey="sales-credit-notes-list"
         rowIdField="creditNoteId"

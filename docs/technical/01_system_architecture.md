@@ -145,5 +145,5 @@ Database migrations are tracked via a strict, sequential ledger managed by `driz
 
 System initialization is split between core operational values and legacy migration anchors:
 
-- **Core System Seeds (`make seed`)**: Managed by `apps/api/src/seeds/run.ts`. Inserts default admin credentials, tenant settings singletons, default currency definitions, document sequence counters, and baseline Chart of Accounts (COA) templates.
+- **Core System Seeds (`make seed`)**: Managed by `apps/api/src/seeds/run.ts`. Inserts default admin credentials, tenant settings singletons, default currency definitions, document sequence counters, Casbin permissions, and system report templates. Chart of Accounts (CoA) is intentionally left unseeded for explicit import or manual setup.
 - **Legacy Import Anchors**: Fixed, deterministic fallback UUIDs (e.g. `00000000-0000-0000-0000-000000000001`) used by dbt pipelines to reconcile unmapped legacy data while preserving foreign key integrity.

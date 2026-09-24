@@ -16,9 +16,9 @@ describe('UomService', () => {
   beforeEach(async () => {
     // Seed required UOMs
     await pg.db.insert(uomDictionary).values([
-      { uomCode: 'EA', description: 'Each' },
-      { uomCode: 'BOX', description: 'Box' },
-      { uomCode: 'VPE025', description: 'Pack 25' },
+      { uomCode: 'EA', description: 'Each', category: 'goods' },
+      { uomCode: 'BOX', description: 'Box', category: 'goods' },
+      { uomCode: 'VPE025', description: 'Pack 25', category: 'goods' },
     ]);
   });
 

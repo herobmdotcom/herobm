@@ -3,7 +3,8 @@ import { expectNoErrorBoundaries } from './helpers/forms';
 
 test.describe('Sidebar Section: Dashboard', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/', { waitUntil: 'networkidle' });
+    await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.abort());
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
   });
 

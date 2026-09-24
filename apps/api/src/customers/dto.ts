@@ -8,9 +8,10 @@ import {
   IsBoolean,
   IsDateString,
   IsDate,
+  IsObject,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { ApiProperty, PartialType } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 
 export class BaseCustomerDto {
   @IsOptional()
@@ -121,6 +122,11 @@ export class BaseCustomerDto {
   @IsOptional()
   @IsString()
   stateCode?: string;
+
+  @ApiPropertyOptional({ type: Object, description: 'Custom metadata object' })
+  @IsOptional()
+  @IsObject()
+  metadata?: Record<string, unknown>;
 }
 
 export class CreateCustomerDto extends BaseCustomerDto {}
@@ -225,6 +231,7 @@ export class CustomerResponseDto {
   createdBy?: string;
   createdOn?: Date;
   modifiedOn?: Date;
+  metadata?: Record<string, unknown> | null;
   parentCustomerId?: string | null;
   parentCustomerName?: string | null;
   childCustomers?: CustomerResponseDto[];

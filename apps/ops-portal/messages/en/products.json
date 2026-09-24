@@ -1,0 +1,210 @@
+{
+  "addComponent": "Add Component",
+  "addConversion": "Add Conversion",
+  "availableToAssemble": "Available to Assemble: {quantity}",
+  "baseUom": "Base UoM",
+  "baseUomLabel": "(Base: {uom})",
+  "buttons": {
+    "addProduct": "Add Product",
+    "copyProduct": "Copy Product"
+  },
+  "cards": {
+    "classification": "Classification",
+    "costs": "Costs",
+    "customFields": "Custom Fields",
+    "identity": "Identity",
+    "pricing": "Pricing",
+    "taxation": "Taxation"
+  },
+  "columns": {
+    "alternateProductNumber": "Alternate Product Number",
+    "barcode": "Barcode",
+    "baseUom": "Base UoM",
+    "externalTaxCode": "External Tax Code",
+    "image": "Image",
+    "listPrice": "List Price",
+    "name": "Name",
+    "notes": "Notes",
+    "parentQuantity": "Parent Quantity",
+    "priceLevel3": "Level 3",
+    "priceLevel4": "Level 4",
+    "productId": "Product ID",
+    "productNumber": "Product # (SKU)",
+    "purchaseTaxCategory": "Purchase Tax Category",
+    "quantity": "Component Quantity",
+    "quantityOnHand": "Qty On Hand",
+    "ratio": "Ratio",
+    "ratioBase": "Ratio (x Base)",
+    "salesTaxCategory": "Sales Tax Category",
+    "sequenceNumber": "Sequence Number",
+    "stdCost": "Standard cost",
+    "tradePrice": "Trade Price",
+    "uomCode": "UoM Code",
+    "vendor": "Default Vendor",
+    "weight": "Weight"
+  },
+  "componentProduct": "Component Product",
+  "confirmRemoveComponent": "Are you sure you want to remove this component?",
+  "confirmRemoveConversion": "Remove {uomCode} conversion?",
+  "copyModal": {
+    "cancel": "Cancel",
+    "copy": "Copy Product",
+    "copying": "Copying...",
+    "description": "Create a new product instance based on {productNumber} - {name}.",
+    "productName": "Product Name",
+    "productNumber": "Product # (SKU)",
+    "title": "Copy Product"
+  },
+  "costSummary": {
+    "discount": "Disc.",
+    "lastPurchase": "Last Purchase",
+    "lastPurchasePrice": "Last PO Price",
+    "loading": "Loading cost summary...",
+    "noPoHistory": "No purchase order history",
+    "noPreferredSupplier": "No preferred supplier configured",
+    "notSet": "Not set",
+    "preferredSupplier": "Preferred Supplier",
+    "standardCost": "Standard Cost",
+    "standardCostDesc": "Budgeted standard unit cost",
+    "title": "Costs",
+    "unitCost": "Unit Cost",
+    "weightedAverageCost": "Weighted Avg Cost (WAC)",
+    "weightedAverageCostDesc": "Valuation basis"
+  },
+  "costs": "Costs",
+  "defaultPurchaseUom": "Default Purchase UoM",
+  "defaultSalesUom": "Default Sales UoM",
+  "editComponent": "Edit Component",
+  "errors": {
+    "childProductRequired": "Component product is required"
+  },
+  "fractionalBehavior": {
+    "allow_fractional": "Allow Fractional",
+    "force_multiple": "Force Multiple",
+    "label": "Fractional Behavior",
+    "round_down": "Round Down",
+    "round_up": "Round Up"
+  },
+  "generalInfo": "General Information",
+  "help": {
+    "parentQuantity": "How many of the kit are needed to require the component quantity below. Usually 1."
+  },
+  "images": {
+    "change": "Change Image",
+    "confirmRemove": "Are you sure you want to remove this product image?",
+    "dropzone": "Drag & drop an image here, or click to browse",
+    "maxSize": "JPEG, PNG, WebP, GIF, SVG up to 5MB",
+    "remove": "Remove",
+    "removeSuccess": "Product image removed",
+    "title": "Product Image",
+    "upload": "Upload Image",
+    "uploadError": "Failed to upload image",
+    "uploadSuccess": "Product image uploaded successfully",
+    "uploading": "Uploading..."
+  },
+  "inventoryLevels": "Inventory Levels",
+  "management": "Product Management",
+  "newTitle": "New Product",
+  "noConversions": "No alternate packaging conversions configured.",
+  "packagingConversions": "Packaging Conversions",
+  "people": {
+    "assignPerson": "Assign Person",
+    "assignedOn": "Assigned On",
+    "assigning": "Assigning...",
+    "confirmRemove": "Are you sure you want to remove {name} from this service role?",
+    "description": "Team members assigned to deliver this service role.",
+    "email": "Email",
+    "empty": "No people assigned to this service role yet. Assign team members who can perform this service.",
+    "name": "Team Member",
+    "personRemoved": "Person removed from service role",
+    "selectPerson": "Select a team member...",
+    "title": "People"
+  },
+  "placeholders": {
+    "barcode": "EAN / UPC barcode",
+    "noProductGroup": "No Product Group",
+    "notes": "Handling instructions, storage requirements, or product description...",
+    "productDisplayName": "Product display name",
+    "productName": "e.g. Widget Deluxe",
+    "productNumber": "e.g. PROD-001",
+    "searchProduct": "Search for a product...",
+    "searchProducts": "Search by name, product number, or barcode..."
+  },
+  "pricing": "Pricing",
+  "productGroup": "Product Group",
+  "productName": "Product Name",
+  "storage": {
+    "addBinLink": "Link Bin",
+    "columns": {
+      "bin": "Bin",
+      "location": "Location",
+      "maxQty": "Max Qty",
+      "minQty": "Min Qty",
+      "primary": "Primary"
+    },
+    "confirmRemoveLink": "Are you sure you want to unlink this bin?",
+    "noBins": "No bins or storage links",
+    "toastLinkAdded": "Bin configuration added",
+    "toastLinkRemoved": "Bin configuration removed",
+    "toastLinkUpdated": "Bin configuration updated"
+  },
+  "structureType": "Structure",
+  "structures": {
+    "kit": "Kit",
+    "standard": "Standard"
+  },
+  "supplierModal": {
+    "buttons": {
+      "cancel": "Cancel",
+      "linkProduct": "Link Product",
+      "saveChanges": "Save Changes"
+    },
+    "editTitle": "Edit Supplier Link",
+    "inputs": {
+      "costPrice": "Cost Price",
+      "discountPercent": "Discount %",
+      "isPreferred": "Preferred Supplier",
+      "minPurchaseQty": "Min. Purchase Qty (MOQ)",
+      "noSuppliersFound": "No suppliers found matching \"{search}\"",
+      "purchaseUnit": "Purchase Unit",
+      "searchPlaceholder": "Type at least 2 characters to search...",
+      "searchSupplier": "Search & Select Supplier",
+      "supplierPartNo": "Supplier Part No.",
+      "supplierSelected": "Supplier selected and ready."
+    },
+    "messages": {
+      "selectDropdown": "Please select a supplier from the dropdown",
+      "success": "Supplier successfully linked",
+      "updateSuccess": "Supplier link updated successfully"
+    },
+    "title": "Link Supplier"
+  },
+  "tabs": {
+    "built": "Built",
+    "kitComponents": "Components",
+    "people": "People"
+  },
+  "title": "Products",
+  "toast": {
+    "componentAdded": "Component added successfully",
+    "componentRemoved": "Component removed",
+    "componentUpdated": "Component updated successfully",
+    "conversionAdded": "Conversion added",
+    "conversionRemoved": "Conversion removed",
+    "productCopied": "Product copied successfully"
+  },
+  "types": {
+    "freight": "Freight",
+    "inventory": "Stock Goods",
+    "nonStock": "Non-Stock Goods",
+    "service": "Service"
+  },
+  "unitsOfMeasure": "Units of Measure",
+  "unknownCategory": "Unknown Category ({id})",
+  "uomCategories": {
+    "goods": "Goods",
+    "service": "Service"
+  },
+  "uomCategory": "Category",
+  "uomRatioLabel": "{uom} (x{ratio})"
+}

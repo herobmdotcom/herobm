@@ -5,9 +5,12 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
+import type { CreatePurchaseOrderDtoMetadata } from './createPurchaseOrderDtoMetadata';
 import type { CreatePurchaseOrderLineDto } from './createPurchaseOrderLineDto';
 
 export interface CreatePurchaseOrderDto {
+  /** @nullable */
+  metadata?: CreatePurchaseOrderDtoMetadata;
   purchaseOrderId: string;
   orderNumber: string;
   deliveryLocationId: string;

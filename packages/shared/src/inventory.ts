@@ -1,4 +1,47 @@
 export type ProductType = 'inventory' | 'non-stock' | 'service' | 'freight';
+
+export type UomCategory = 'goods' | 'service';
+
+export const UOM_CATEGORY = {
+  GOODS: 'goods',
+  SERVICE: 'service',
+} as const;
+
+export const PRODUCT_TYPE = {
+  INVENTORY: 'inventory',
+  NON_STOCK: 'non-stock',
+  SERVICE: 'service',
+  FREIGHT: 'freight',
+} as const;
+
+export const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
+  inventory: 'Stock Goods',
+  'non-stock': 'Non-Stock Goods',
+  service: 'Service',
+  freight: 'Freight',
+};
+
+/**
+ * Returns true if the product type represents physical/tangible goods (Stock or Non-Stock).
+ */
+export function isGoodsProductType(type?: ProductType | string | null): boolean {
+  return type === 'inventory' || type === 'non-stock';
+}
+
+/**
+ * Returns true if the product type represents intangible labor/services.
+ */
+export function isServiceProductType(type?: ProductType | string | null): boolean {
+  return type === 'service';
+}
+
+/**
+ * Returns true if the product type represents shipping/freight.
+ */
+export function isFreightProductType(type?: ProductType | string | null): boolean {
+  return type === 'freight';
+}
+
 export enum BIN_TYPE {
   /** Standard racking or shelving intended for general long-term or short-term storage */
   STORAGE = 'storage',
@@ -14,6 +57,8 @@ export enum BIN_TYPE {
   IN_TRANSIT = 'in_transit',
   /** Work in progress bin for manufacturing component staging and build output */
   WIP = 'wip',
+  /** Dedicated project holding and staging bin */
+  PROJECT = 'project',
 }
 export interface InventoryLevelData {
   inventoryLevelId: string;
@@ -306,22 +351,31 @@ export function resolveSalesLineAvailabilityStatus(
     }
   }
 
-  const canFulfil = !params.hasGap;
-  if (canFulfil) {
+  const locAvail = params.localAvailableQuantity;
+  const totalAvail = params.totalAvailableQuantity ?? 0;
+  const gapQuantity = params.gapOrderedQuantity ?? params.orderedQuantity;
+
+  let hasLocalGap: boolean;
+  if (params.hasGap !== undefined) {
+    hasLocalGap = params.hasGap || (locAvail !== undefined ? locAvail < params.orderedQuantity : false);
+  } else if (locAvail !== undefined) {
+    hasLocalGap = locAvail < params.orderedQuantity;
+  } else if (params.totalAvailableQuantity !== undefined) {
+    hasLocalGap = totalAvail < params.orderedQuantity;
+  } else {
+    hasLocalGap = false;
+  }
+
+  if (!hasLocalGap) {
     return 'local';
   }
 
-  const totalAvail = params.totalAvailableQuantity ?? 0;
-  const gapQuantity = params.gapOrderedQuantity ?? params.orderedQuantity;
-  if (params.hasGap && totalAvail >= gapQuantity) {
+  if (totalAvail >= gapQuantity && totalAvail > 0) {
     return 'others';
   }
 
-  if (!params.isPreConfirmation) {
-    const locAvail = params.localAvailableQuantity ?? 0;
-    if (locAvail < 0) {
-      return 'at_risk';
-    }
+  if (!params.isPreConfirmation && locAvail !== undefined && locAvail < 0) {
+    return 'at_risk';
   }
 
   return 'shortage';

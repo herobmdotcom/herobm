@@ -56,6 +56,19 @@ interface ShipmentDetail {
   deliveryPostalCode?: string;
   deliveryCountry?: string;
   shippingNotes?: string;
+  stagingBinId?: string;
+  stagingBinNumber?: string;
+  sourceBinId?: string;
+  sourceBinNumber?: string;
+  destinationBinId?: string;
+  destinationBinNumber?: string;
+  projectId?: string;
+  projectNumber?: string;
+  projectName?: string;
+  isProjectReturn?: boolean;
+  sourceLocationId?: string;
+  destinationLocationId?: string;
+  isSameSite?: boolean;
 }
 
 export default function EditShipmentClient({ id }: { id: string }) {
@@ -238,25 +251,65 @@ export default function EditShipmentClient({ id }: { id: string }) {
               <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('columns.customer')}
               </label>
-              <div className="text-sm pt-1.5">
+              <div className="text-sm font-medium pt-1.5">
                 {shipment.customerName || '—'}
               </div>
             </div>
-            
-            <div>
-              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                {t('columns.tracking')}
-              </label>
-              <p className="text-sm pt-1.5">
-                {shipment.trackingNumber || '—'}
-              </p>
-            </div>
+
+            {shipment.projectId && (
+              <div>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                  {t('columns.project')}
+                </label>
+                <p className="text-sm font-medium pt-1.5">
+                  <Link
+                    href={`/projects/${shipment.projectId}`}
+                    className="text-[var(--accent)] hover:underline"
+                  >
+                    {shipment.projectNumber ? `${shipment.projectNumber} - ${shipment.projectName || ''}` : (shipment.projectName || shipment.projectId)}
+                  </Link>
+                </p>
+              </div>
+            )}
+
+            {shipment.sourceBinNumber && (
+              <div>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                  {t('columns.sourceBin')}
+                </label>
+                <p className="text-sm font-medium pt-1.5">
+                  {shipment.sourceBinNumber}
+                </p>
+              </div>
+            )}
+
+            {shipment.destinationBinNumber && (
+              <div>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                  {shipment.isSameSite ? t('columns.deliveredToBin') : t('columns.destinationBin')}
+                </label>
+                <p className="text-sm font-medium pt-1.5">
+                  {shipment.destinationBinNumber}
+                </p>
+              </div>
+            )}
+
+            {!shipment.isSameSite && (
+              <div>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                  {t('columns.tracking')}
+                </label>
+                <p className="text-sm font-medium pt-1.5">
+                  {shipment.trackingNumber || '—'}
+                </p>
+              </div>
+            )}
 
             <div>
               <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('columns.date')}
               </label>
-              <p className="text-sm pt-1.5">
+              <p className="text-sm font-medium pt-1.5">
                 {new Date(shipment.createdOn).toLocaleString()} {tCommon('by')} {shipment.createdBy || tCommon('system')}
               </p>
             </div>
@@ -265,15 +318,15 @@ export default function EditShipmentClient({ id }: { id: string }) {
               <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tCommon('notesCardHeading')}
               </label>
-              <p className="text-sm pt-1.5">
+              <p className="text-sm font-medium pt-1.5">
                 {shipment.notes || '—'}
               </p>
             </div>
           </div>
 
-          {(shipment.deliveryAddressLine1 || shipment.shippingNotes) && (
+          {((!shipment.isSameSite && shipment.deliveryAddressLine1) || shipment.shippingNotes) && (
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-                {shipment.deliveryAddressLine1 && (
+                {!shipment.isSameSite && shipment.deliveryAddressLine1 && (
                     <div className="flex-1">
                         <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                             Delivery Address

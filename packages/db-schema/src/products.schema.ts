@@ -8,6 +8,7 @@ import {
   unique,
   check,
   index,
+  jsonb,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { SupplierState, ProductState } from '@herobm/shared';
@@ -15,6 +16,7 @@ import { herobmCore } from './core.schema';
 import { glAccounts, costCenters, activities } from './gl.schema';
 import { customerGroups, customers, suppliers } from './crm.schema';
 import { taxCategories } from './tax.schema';
+import { users } from './system.schema';
 
 // ---------------------------------------------------------------------------
 export const productGroups = herobmCore.table('product_groups', {
@@ -101,6 +103,7 @@ export const productStructureEnum = herobmCore.enum('product_structure', [
 export const uomDictionary = herobmCore.table('uom_dictionary', {
   uomCode: text('uom_code').primaryKey(),
   description: text('description').notNull(),
+  category: text('category').notNull(),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
 });
 
@@ -146,6 +149,7 @@ export const products = herobmCore.table('products', {
   imagePath: text('image_path'),
   stateCode: text('state_code').$type<ProductState>().notNull(),
   notes: text('notes'),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>(),
   sourceId: text('source_id').unique(),
   source: text('source').notNull(),
   createdBy: text('created_by'),
@@ -254,3 +258,16 @@ export const productImages = herobmCore.table('product_images', {
   createdBy: text('created_by'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
 });
+
+// ---------------------------------------------------------------------------
+// product_settings (Domain-specific settings & metadata schema)
+// ---------------------------------------------------------------------------
+export const productSettings = herobmCore.table('product_settings', {
+  settingsId: uuid('settings_id').primaryKey().defaultRandom(),
+  productMetadataSchema: jsonb('product_metadata_schema').$type<Record<string, unknown>>(),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+
+
+

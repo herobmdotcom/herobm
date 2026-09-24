@@ -11,7 +11,9 @@ export interface TransferLineResponseDto {
   productId: string;
   productNumber?: string;
   productDescription?: string;
+  projectTaskId?: string;
   quantity: string;
   quantityShipped?: string;
   quantityReceived?: string;
+  quantityPutaway?: string;
 }

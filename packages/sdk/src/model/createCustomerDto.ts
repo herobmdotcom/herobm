@@ -5,8 +5,11 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
+import type { CreateCustomerDtoMetadata } from './createCustomerDtoMetadata';
 
 export interface CreateCustomerDto {
+  /** Custom metadata object */
+  metadata?: CreateCustomerDtoMetadata;
   organizationId?: string;
   customerNumber: string;
   name: string;

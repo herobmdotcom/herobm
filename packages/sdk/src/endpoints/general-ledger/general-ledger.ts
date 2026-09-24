@@ -10,6 +10,7 @@ import type {
   ActivityResponseDto,
   AutoMatchRequestDto,
   AutoMatchResponseDto,
+  BalanceSheetResponseDto,
   BankStatementBulkMatchDto,
   BankStatementConfirmMatchDto,
   BankStatementControllerGetLinesParams,
@@ -48,6 +49,7 @@ import type {
   GenerateFiscalPeriodsDto,
   GlAccountResponseDto,
   GlControllerGetAccountsParams,
+  GlControllerGetBalanceSheetParams,
   GlControllerGetCashFlowDrilldownParams,
   GlControllerGetCashFlowParams,
   GlControllerGetFiscalPeriodsParams,
@@ -56,6 +58,7 @@ import type {
   GlControllerGetGeneralLedgerParams,
   GlControllerGetJournalEntries200,
   GlControllerGetJournalEntriesParams,
+  GlControllerGetProfitAndLossParams,
   GlControllerGetSubledgerReconciliationParams,
   GlControllerGetTrialBalanceParams,
   ImportCsvDto,
@@ -66,6 +69,7 @@ import type {
   MatchConfirmedResponseDto,
   ParseCsvResponseDto,
   PostReconciliationResponseDto,
+  ProfitAndLossResponseDto,
   ReconciliationControllerGetLines200Item,
   ReconciliationControllerGetReconciliations200Item,
   ReconciliationDetailResponseDto,
@@ -980,6 +984,92 @@ export const getGlControllerGetTrialBalanceUrl = (params?: GlControllerGetTrialB
 export const glControllerGetTrialBalance = async (params?: GlControllerGetTrialBalanceParams, options?: RequestInit): Promise<glControllerGetTrialBalanceResponse> => {
   
   return customFetch<glControllerGetTrialBalanceResponse>(getGlControllerGetTrialBalanceUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * Calculate and retrieve the Profit and Loss statement (Income Statement) for a date range or fiscal period.
+ * @summary Get Profit and Loss Statement
+ */
+export type glControllerGetProfitAndLossResponse200 = {
+  data: ProfitAndLossResponseDto
+  status: 200
+}
+    
+export type glControllerGetProfitAndLossResponseSuccess = (glControllerGetProfitAndLossResponse200) & {
+  headers: Headers;
+};
+;
+
+export type glControllerGetProfitAndLossResponse = (glControllerGetProfitAndLossResponseSuccess)
+
+export const getGlControllerGetProfitAndLossUrl = (params: GlControllerGetProfitAndLossParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/gl/profit-and-loss?${stringifiedParams}` : `/gl/profit-and-loss`
+}
+
+export const glControllerGetProfitAndLoss = async (params: GlControllerGetProfitAndLossParams, options?: RequestInit): Promise<glControllerGetProfitAndLossResponse> => {
+  
+  return customFetch<glControllerGetProfitAndLossResponse>(getGlControllerGetProfitAndLossUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * Calculate and retrieve the Balance Sheet (Statement of Financial Position) as of a specific date.
+ * @summary Get Balance Sheet
+ */
+export type glControllerGetBalanceSheetResponse200 = {
+  data: BalanceSheetResponseDto
+  status: 200
+}
+    
+export type glControllerGetBalanceSheetResponseSuccess = (glControllerGetBalanceSheetResponse200) & {
+  headers: Headers;
+};
+;
+
+export type glControllerGetBalanceSheetResponse = (glControllerGetBalanceSheetResponseSuccess)
+
+export const getGlControllerGetBalanceSheetUrl = (params: GlControllerGetBalanceSheetParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/gl/balance-sheet?${stringifiedParams}` : `/gl/balance-sheet`
+}
+
+export const glControllerGetBalanceSheet = async (params: GlControllerGetBalanceSheetParams, options?: RequestInit): Promise<glControllerGetBalanceSheetResponse> => {
+  
+  return customFetch<glControllerGetBalanceSheetResponse>(getGlControllerGetBalanceSheetUrl(params),
   {      
     ...options,
     method: 'GET'

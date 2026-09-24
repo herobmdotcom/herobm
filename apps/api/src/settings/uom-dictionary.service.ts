@@ -39,11 +39,24 @@ export class UomDictionaryService {
     if (!dto.uomCode || !dto.description) {
       throw new BadRequestException('uomCode and description are required');
     }
+    const code = dto.uomCode.toUpperCase().trim();
+
+    const existing = await this.db
+      .select()
+      .from(uomDictionary)
+      .where(eq(uomDictionary.uomCode, code))
+      .limit(1);
+
+    if (existing.length > 0) {
+      throw new ConflictException(`UOM code '${code}' already exists`);
+    }
+
     const rows = await this.db
       .insert(uomDictionary)
       .values({
-        uomCode: dto.uomCode.toUpperCase().trim(),
+        uomCode: code,
         description: dto.description.trim(),
+        category: dto.category || 'goods',
       })
       .returning();
 

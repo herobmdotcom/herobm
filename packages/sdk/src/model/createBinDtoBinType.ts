@@ -18,4 +18,5 @@ export const CreateBinDtoBinType = {
   quarantine: 'quarantine',
   in_transit: 'in_transit',
   wip: 'wip',
+  project: 'project',
 } as const;

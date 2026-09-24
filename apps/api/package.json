@@ -1,6 +1,6 @@
 {
   "name": "api",
-  "version": "1.1.5",
+  "version": "1.2.0",
   "description": "HeroBM: Core Backend API Gateway & Domain Services",
   "private": true,
   "author": "Norbe Systems <support@herobm.com>",
@@ -30,11 +30,11 @@
     "test:cov": "cross-env NODE_OPTIONS=\"--experimental-vm-modules --max-old-space-size=8192\" jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest",
     "test:e2e": "cross-env ADMIN_PASSWORD=password tsx test/utils/provision-e2e-db.ts && cross-env ADMIN_PASSWORD=password USE_PGLITE=false POSTGRES_DB=herobm_e2e_test NODE_OPTIONS=\"--experimental-vm-modules --max-old-space-size=8192\" jest --config ./test/jest-e2e.js --forceExit",
-    "test:unit": "cross-env USE_PGLITE=true tsx src/test-utils/generate-snapshot.ts && cross-env USE_PGLITE=true NODE_OPTIONS=\"--experimental-vm-modules --max-old-space-size=8192\" jest --forceExit",
+    "test:unit": "cross-env USE_PGLITE=true tsx src/test-utils/generate-snapshot.ts && cross-env USE_PGLITE=true NODE_OPTIONS=\"--experimental-vm-modules --max-old-space-size=8192\" jest --maxWorkers=4 --forceExit",
     "test:unit:pglite": "npm run test:unit",
-    "test:changed": "cross-env USE_PGLITE=true NODE_OPTIONS=\"--experimental-vm-modules --max-old-space-size=8192\" jest --onlyChanged --passWithNoTests --forceExit",
+    "test:changed": "cross-env USE_PGLITE=true NODE_OPTIONS=\"--experimental-vm-modules --max-old-space-size=8192\" jest --maxWorkers=4 --onlyChanged --passWithNoTests --forceExit",
     "test:pglite": "npm run test:unit",
-    "test:e2e:fast": "cross-env ADMIN_PASSWORD=password USE_PGLITE=true tsx src/test-utils/generate-snapshot.ts && cross-env ADMIN_PASSWORD=password USE_PGLITE=true NODE_OPTIONS=\"--experimental-vm-modules --max-old-space-size=8192\" jest --config ./test/jest-e2e.js --forceExit",
+    "test:e2e:fast": "cross-env ADMIN_PASSWORD=password USE_PGLITE=true tsx src/test-utils/generate-snapshot.ts && cross-env ADMIN_PASSWORD=password USE_PGLITE=true NODE_OPTIONS=\"--experimental-vm-modules --max-old-space-size=8192\" jest --maxWorkers=4 --config ./test/jest-e2e.js --forceExit",
     "seed": "tsx src/seeds/run.ts --mode=prod",
     "seed:dry": "tsx src/seeds/run.ts --mode=prod --dry-run",
     "seed:demo": "tsx src/seeds/run.ts --mode=demo",
@@ -125,6 +125,7 @@
     ],
     "rootDir": "src",
     "testTimeout": 30000,
+    "workerIdleMemoryLimit": "1024MB",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": [

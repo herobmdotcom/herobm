@@ -17,10 +17,10 @@ import path from 'path';
 const authFile = path.join(__dirname, '..', '.playwright', '.auth', 'user.json');
 
 setup('authenticate', async ({ page }) => {
+  await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.abort());
+
   // Navigate to any page — AuthGate will show the login form
-  // We use a high timeout (120s) because Next.js dev server cold-compilation can be very slow
-  await page.goto('/', { timeout: 120000 });
-  await page.waitForLoadState('networkidle');
+  await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 30000 });
 
   // Fill in the login form
   const username = process.env.E2E_USERNAME || 'admin';
@@ -50,4 +50,6 @@ setup('authenticate', async ({ page }) => {
 
   // Persist the authenticated browser state for all subsequent tests
   await page.context().storageState({ path: authFile });
+  await page.close();
+  await page.context().close();
 });

@@ -27,6 +27,12 @@ export interface JournalLine {
   partyType?: string | null;
   partyId?: string | null;
   partyName?: string | null;
+  projectId?: string | null;
+  projectNumber?: string | null;
+  projectName?: string | null;
+  projectTaskId?: string | null;
+  taskCode?: string | null;
+  taskName?: string | null;
   debit: string;
   credit: string;
   memo: string | null;
@@ -86,7 +92,7 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
       onClose={onClose}
       title={entry ? entry.entryNumber : t('title')}
       subtitle={entry ? `${formatLocalDate(entry.entryDate)} · ${sourceLabel(entry.sourceType)}` : undefined}
-      width="max-w-3xl"
+      width="max-w-5xl"
     >
       {entry && (
         <div className="space-y-6">
@@ -134,6 +140,7 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
                   <tr>
                     <th className="px-5 py-3">{t('columns.glAccount')}</th>
                     <th className="px-5 py-3">{t('columns.party')}</th>
+                    <th className="px-5 py-3">{t('columns.project')}</th>
                     <th className="px-5 py-3 text-right">{t('columns.debit')}</th>
                     <th className="px-5 py-3 text-right">{t('columns.credit')}</th>
                     <th className="px-5 py-3">{t('columns.memo')}</th>
@@ -161,6 +168,26 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
                           </span>
                         ) : tCommon('na')}
                       </td>
+                      <td className="px-5 py-3 text-xs">
+                        {l.projectId ? (
+                          <div>
+                            <Link
+                              href={routes.projects.detail(l.projectId)}
+                              className="text-[var(--accent)] hover:underline font-medium"
+                              onClick={onClose}
+                            >
+                              {l.projectNumber || t('columns.project')}{l.projectName ? ` - ${l.projectName}` : ''}
+                            </Link>
+                            {(l.taskCode || l.taskName) && (
+                              <div className="text-[var(--text-muted)] text-[11px] mt-0.5">
+                                {l.taskCode && l.taskName ? `${l.taskCode} - ${l.taskName}` : l.taskCode || l.taskName}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-[var(--text-muted)]">{tCommon('na')}</span>
+                        )}
+                      </td>
                       <td className="px-5 py-3 text-right font-mono font-medium text-[var(--text-primary)]">
                         {fmt(l.debit)}
                       </td>
@@ -175,7 +202,7 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
                   {/* Totals Row */}
                   {lines.length > 0 && (
                     <tr className="bg-[var(--bg-secondary)] border-t-2 border-[var(--border)]">
-                      <td colSpan={2} className="px-5 py-3 text-right font-bold text-[var(--text-primary)] text-xs uppercase tracking-wider">
+                      <td colSpan={3} className="px-5 py-3 text-right font-bold text-[var(--text-primary)] text-xs uppercase tracking-wider">
                         {t('total')}
                       </td>
                       <td className="px-5 py-3 text-right font-mono font-bold text-[var(--text-primary)]">

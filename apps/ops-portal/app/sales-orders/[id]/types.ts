@@ -78,6 +78,7 @@ export interface OrderDetail {
     events: OrderEvent[];
     parentId?: string | null;
     customFields?: Record<string, unknown>;
+    metadata?: Record<string, unknown> | null;
     backorders?: {
         productId?: string;
         productNumber?: string;

@@ -1,7 +1,7 @@
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
 import * as readline from 'readline';
-import { sql, eq } from 'drizzle-orm';
+import { sql, eq, and } from 'drizzle-orm';
 import {
   uomDictionary,
   productGroups,
@@ -27,6 +27,8 @@ import {
   customers,
   customerDeliveryAddresses,
   suppliers,
+  supplierGroups,
+  supplierExpiries,
   workOrders,
   workOrderComponents,
   workOrderPicks,
@@ -68,24 +70,50 @@ import {
   inventoryEntries,
   inventoryLedger,
   binContents,
+  stocktakes,
+  stocktakeLines,
+  stocktakeCounts,
   glAccounts,
   glSettings,
   glJournalEntries,
   glJournalLines,
+  glFiscalPeriods,
+  glReconciliations,
+  glMatchGroups,
+  bankStatementLines,
+  reconciliationRules,
+  reconciliationEvents,
+  csvMappingProfiles,
   costCenters,
   activities,
   exchangeRates,
   taxCategories,
+  taxPositions,
+  taxPositionMappings,
   tradingTerms,
   crmActivities,
   crmActivityContacts,
   users,
+  projects,
+  projectTasks,
+  projectResources,
+  projectBudgetLines,
+  projectLedgerEntries,
   masterDataEvents,
   procurementEvents,
   salesEvents,
   inventoryEvents,
   warehouseEvents,
   financialEvents,
+  systemEvents,
+  userEvents,
+  emailEvents,
+  integrationEvents,
+  groupEvents,
+  apiKeys,
+  webhooks,
+  emailOutbox,
+  integrations,
   appSettings,
 } from '@herobm/db-schema';
 import {
@@ -113,6 +141,9 @@ import {
   PURCHASE_RETURN_SHIPMENT_STATE,
   PURCHASE_DEBIT_NOTE_STATE,
   BACKORDER_STATE,
+  STOCKTAKE_STATE,
+  StocktakeState,
+  RECONCILIATION_STATE,
   PAYMENT_STATE,
   PAYMENT_TYPE,
   SUPPLIER_STATE,
@@ -122,6 +153,12 @@ import {
   CONTACT_STATE,
   OPPORTUNITY_STATE,
   PROJECT_STATE,
+  PROJECT_TASK_STATE,
+  PROJECT_BILLING_TYPE,
+  RESOURCE_TYPE,
+  PROJECT_LINE_TYPE,
+  PROJECT_LEDGER_ENTRY_TYPE,
+  PROJECT_SOURCE_TYPE,
   GENESIS_HASH,
   computeCanonicalPayloadHash,
   computeEntryHash,
@@ -167,7 +204,11 @@ export async function wipeDatabase(db: SeedDB) {
   await db.execute(sql`
     TRUNCATE TABLE 
       herobm_core.payment_allocations, herobm_core.payment_lines, herobm_core.payment_entries,
-      herobm_core.gl_journal_lines, herobm_core.gl_journal_entries, herobm_core.gl_reconciliations, herobm_core.gl_match_groups,
+      herobm_core.bank_statement_lines, herobm_core.gl_match_groups, herobm_core.gl_reconciliations,
+      herobm_core.reconciliation_rules, herobm_core.reconciliation_events, herobm_core.csv_mapping_profiles,
+      herobm_core.gl_journal_lines, herobm_core.gl_journal_entries, herobm_core.gl_fiscal_periods,
+      herobm_core.project_ledger_entries, herobm_core.project_budget_lines, herobm_core.project_tasks, herobm_core.project_resources, herobm_core.projects,
+      herobm_core.stocktake_counts, herobm_core.stocktake_lines, herobm_core.stocktakes,
       herobm_core.inventory_ledger, herobm_core.inventory_entries, herobm_core.bin_contents, herobm_core.product_default_bins,
       herobm_core.transfer_order_receipt_lines, herobm_core.transfer_order_receipts,
       herobm_core.transfer_order_shipment_lines, herobm_core.transfer_order_shipments,
@@ -195,6 +236,7 @@ export async function wipeDatabase(db: SeedDB) {
       herobm_core.procurement_events, herobm_core.sales_events, herobm_core.warehouse_events, herobm_core.master_data_events,
       herobm_core.financial_events, herobm_core.inventory_events, herobm_core.system_events, herobm_core.user_events,
       herobm_core.business_report_events, herobm_core.email_events, herobm_core.integration_events, herobm_core.group_events,
+      herobm_core.api_keys, herobm_core.webhooks, herobm_core.email_outbox, herobm_core.integrations,
       herobm_core.tenant_settings, herobm_core.app_settings, herobm_core.users, herobm_core.casbin_rule
     CASCADE;
   `);
@@ -213,6 +255,11 @@ export interface MasterLocation {
   quarantineBinId: string;
   mainZoneId: string;
   pickZoneId: string;
+  handlingZoneId: string;
+  receivingBinId: string;
+  shippingBinId: string;
+  customerReturnsBinId: string;
+  systemQuarantineBinId: string;
 }
 
 export interface MasterProduct {
@@ -246,12 +293,23 @@ export interface MasterOrganizationCustomer {
   contactId: string;
 }
 
+export interface MasterResource {
+  id: string;
+  number: string;
+  name: string;
+  resourceType: string;
+  baseUom: string;
+  directUnitCost: number;
+  unitPrice: number;
+}
+
 export interface MasterData {
   locs: MasterLocation[];
   sups: MasterOrganizationSupplier[];
   custs: MasterOrganizationCustomer[];
   prods: MasterProduct[];
   kitProds: MasterProduct[];
+  resources: MasterResource[];
   taxCategoryId: string;
   baseCurrency: string;
   bankAccountId: string;
@@ -290,12 +348,67 @@ export async function seedMasterData(
     glSettingRows[0]?.baseCurrency ||
     (region === 'au_standard' ? 'AUD' : 'USD'); // baseCurrency fallback
 
-  const taxCatRows = await db.select().from(taxCategories).limit(1);
+  const taxCatRows = await db.select().from(taxCategories);
   const taxCatId = taxCatRows[0]?.taxCategoryId;
   if (!taxCatId) {
     throw new Error(
       'Tax categories must be seeded before running master data.',
     );
+  }
+
+  // Seed Tax Positions & Mappings
+  const posDomesticId = uuid();
+  const posExportId = uuid();
+  const posExemptId = uuid();
+
+  await db
+    .insert(taxPositions)
+    .values([
+      {
+        taxPositionId: posDomesticId,
+        code: 'DOMESTIC',
+        title: 'Domestic Standard Tax Rules',
+      },
+      {
+        taxPositionId: posExportId,
+        code: 'EXPORT',
+        title: 'Export Zero-Rated Tax Rules',
+      },
+      {
+        taxPositionId: posExemptId,
+        code: 'EXEMPT_ENTITY',
+        title: 'Tax-Exempt Entity / Non-Profit Rules',
+      },
+    ])
+    .onConflictDoNothing();
+
+  const zeroTaxCat =
+    taxCatRows.find((c) => c.type === 'zero_rated') || taxCatRows[0];
+  const exemptTaxCat =
+    taxCatRows.find((c) => c.type === 'exempt') || taxCatRows[0];
+
+  if (taxCatId !== zeroTaxCat.taxCategoryId) {
+    await db
+      .insert(taxPositionMappings)
+      .values({
+        mappingId: uuid(),
+        taxPositionId: posExportId,
+        sourceTaxCategoryId: taxCatId,
+        destinationTaxCategoryId: zeroTaxCat.taxCategoryId,
+      })
+      .onConflictDoNothing();
+  }
+
+  if (taxCatId !== exemptTaxCat.taxCategoryId) {
+    await db
+      .insert(taxPositionMappings)
+      .values({
+        mappingId: uuid(),
+        taxPositionId: posExemptId,
+        sourceTaxCategoryId: taxCatId,
+        destinationTaxCategoryId: exemptTaxCat.taxCategoryId,
+      })
+      .onConflictDoNothing();
   }
 
   const defaultTermRows = await db
@@ -417,6 +530,40 @@ export async function seedMasterData(
       })
       .onConflictDoNothing();
 
+    // Resolve or create HANDLING zone
+    let [handlingZone] = await db
+      .select({ zoneId: zones.zoneId })
+      .from(zones)
+      .where(and(eq(zones.locationId, loc.id), eq(zones.code, 'HANDLING')))
+      .limit(1);
+
+    if (!handlingZone) {
+      const [insertedZone] = await db
+        .insert(zones)
+        .values({
+          zoneId: uuid(),
+          locationId: loc.id,
+          code: 'HANDLING',
+          name: 'Handling Zone',
+          source: 'system',
+          createdBy: 'system',
+        })
+        .onConflictDoNothing()
+        .returning({ zoneId: zones.zoneId });
+
+      if (insertedZone) {
+        handlingZone = insertedZone;
+      } else {
+        const [reFetched] = await db
+          .select({ zoneId: zones.zoneId })
+          .from(zones)
+          .where(and(eq(zones.locationId, loc.id), eq(zones.code, 'HANDLING')))
+          .limit(1);
+        handlingZone = reFetched;
+      }
+    }
+    const actualHandlingZoneId = handlingZone.zoneId;
+
     const mainZoneId = uuid();
     const pickZoneId = uuid();
     const bulkZoneId = uuid();
@@ -477,6 +624,48 @@ export async function seedMasterData(
         },
       ])
       .onConflictDoNothing();
+
+    const systemBinDefs = [
+      { binNumber: 'RECEIVING', binType: BIN_TYPE.STAGING },
+      { binNumber: 'SHIPPING', binType: BIN_TYPE.STAGING },
+      { binNumber: 'CUSTOMER_RETURNS', binType: BIN_TYPE.STAGING },
+      { binNumber: 'SUPPLIER_RETURNS', binType: BIN_TYPE.STAGING },
+      { binNumber: 'INTRA_TRANSIT', binType: BIN_TYPE.IN_TRANSIT },
+      { binNumber: 'QUARANTINE', binType: BIN_TYPE.QUARANTINE },
+    ];
+
+    for (const def of systemBinDefs) {
+      await db
+        .insert(bins)
+        .values({
+          binId: uuid(),
+          zoneId: actualHandlingZoneId,
+          binNumber: def.binNumber,
+          binType: def.binType,
+          source: 'system',
+          isUnavailable: true,
+          createdBy: 'system',
+        })
+        .onConflictDoNothing();
+    }
+
+    const resolvedSystemBins = await db
+      .select({ binId: bins.binId, binNumber: bins.binNumber })
+      .from(bins)
+      .where(eq(bins.zoneId, actualHandlingZoneId));
+
+    const actualReceivingBinId = resolvedSystemBins.find(
+      (b) => b.binNumber === 'RECEIVING',
+    )!.binId;
+    const actualShippingBinId = resolvedSystemBins.find(
+      (b) => b.binNumber === 'SHIPPING',
+    )!.binId;
+    const actualCustomerReturnsBinId = resolvedSystemBins.find(
+      (b) => b.binNumber === 'CUSTOMER_RETURNS',
+    )!.binId;
+    const actualSystemQuarantineBinId = resolvedSystemBins.find(
+      (b) => b.binNumber === 'QUARANTINE',
+    )!.binId;
 
     const storageBinId = uuid();
     const pickBinId = uuid();
@@ -551,6 +740,11 @@ export async function seedMasterData(
       quarantineBinId,
       mainZoneId,
       pickZoneId,
+      handlingZoneId: actualHandlingZoneId,
+      receivingBinId: actualReceivingBinId,
+      shippingBinId: actualShippingBinId,
+      customerReturnsBinId: actualCustomerReturnsBinId,
+      systemQuarantineBinId: actualSystemQuarantineBinId,
     });
   }
 
@@ -597,10 +791,24 @@ export async function seedMasterData(
   await db
     .insert(uomDictionary)
     .values([
-      { uomCode: 'BOX', description: 'Box of 10 Units' },
-      { uomCode: 'SET', description: 'Complete Tool Set' },
-      { uomCode: 'KIT', description: 'Manufactured Kit' },
-      { uomCode: 'PALLET', description: 'Master Shipping Pallet' },
+      { uomCode: 'EA', description: 'Each', category: 'goods' },
+      { uomCode: 'BOX', description: 'Box of 10 Units', category: 'goods' },
+      { uomCode: 'KG', description: 'Kilograms', category: 'goods' },
+      { uomCode: 'SET', description: 'Complete Tool Set', category: 'goods' },
+      { uomCode: 'KIT', description: 'Manufactured Kit', category: 'goods' },
+      {
+        uomCode: 'PALLET',
+        description: 'Master Shipping Pallet',
+        category: 'goods',
+      },
+      { uomCode: 'HR', description: 'Hourly Rate', category: 'service' },
+      { uomCode: 'HOUR', description: 'Labor Hours', category: 'service' },
+      { uomCode: 'DAY', description: 'Labor Days', category: 'service' },
+      {
+        uomCode: 'JOB',
+        description: 'Fixed Job / Deliverable',
+        category: 'service',
+      },
     ])
     .onConflictDoNothing();
 
@@ -855,7 +1063,59 @@ export async function seedMasterData(
     kitProds.push(kp);
   }
 
-  // 6. CRM Actors & Suppliers
+  // 6. CRM Actors, Supplier Groups & Suppliers
+  const supDomesticGroupId = uuid();
+  const supGlobalGroupId = uuid();
+  const supRawMaterialsGroupId = uuid();
+
+  await db
+    .insert(supplierGroups)
+    .values([
+      {
+        supplierGroupId: supDomesticGroupId,
+        groupCode: 'SUP-DOMESTIC',
+        name: 'Domestic Industrial Tool Vendors',
+        defaultApAccountId: apAccountId,
+        defaultExpenseAccountId: cogsAccountId,
+        defaultCostCenterId: costCenterId,
+        defaultActivityId: activityId,
+        tradingTermsId: termId,
+        earlyPaymentDiscount: '2.00',
+        earlyPaymentDiscountDays: 10,
+        creditLimit: '250000.00',
+        isPurchasingBlocked: false,
+        isPaymentBlocked: false,
+      },
+      {
+        supplierGroupId: supGlobalGroupId,
+        groupCode: 'SUP-GLOBAL',
+        name: 'International Precision Manufacturers',
+        defaultApAccountId: apAccountId,
+        defaultExpenseAccountId: cogsAccountId,
+        defaultCostCenterId: costCenterId,
+        defaultActivityId: activityId,
+        tradingTermsId: termId,
+        earlyPaymentDiscount: '0.00',
+        creditLimit: '500000.00',
+        isPurchasingBlocked: false,
+        isPaymentBlocked: false,
+      },
+      {
+        supplierGroupId: supRawMaterialsGroupId,
+        groupCode: 'SUP-RAW-MATERIALS',
+        name: 'Raw Materials & Hardware Suppliers',
+        defaultApAccountId: apAccountId,
+        defaultExpenseAccountId: cogsAccountId,
+        defaultCostCenterId: costCenterId,
+        defaultActivityId: activityId,
+        tradingTermsId: termId,
+        creditLimit: '100000.00',
+        isPurchasingBlocked: false,
+        isPaymentBlocked: false,
+      },
+    ])
+    .onConflictDoNothing();
+
   const supConfigs = [
     {
       number: 'SUP-001',
@@ -868,6 +1128,7 @@ export async function seedMasterData(
       contactLast: 'Miller',
       email: 'orders@milwaukeetool-demo.com',
       currency: baseCurrency,
+      groupId: supDomesticGroupId,
     },
     {
       number: 'SUP-002',
@@ -880,6 +1141,7 @@ export async function seedMasterData(
       contactLast: 'Jenkins',
       email: 'sales@dewalt-demo.com',
       currency: baseCurrency,
+      groupId: supDomesticGroupId,
     },
     {
       number: 'SUP-003',
@@ -892,6 +1154,7 @@ export async function seedMasterData(
       contactLast: 'Takahashi',
       email: 'commercial@makita-demo.com',
       currency: baseCurrency,
+      groupId: supDomesticGroupId,
     },
     {
       number: 'SUP-004',
@@ -904,6 +1167,7 @@ export async function seedMasterData(
       contactLast: 'Weber',
       email: 'supply@boschtools-demo.com',
       currency: baseCurrency,
+      groupId: supDomesticGroupId,
     },
     {
       number: 'SUP-005',
@@ -916,6 +1180,7 @@ export async function seedMasterData(
       contactLast: 'Tanaka',
       email: 'international@makita-japan-demo.com',
       currency: 'JPY',
+      groupId: supGlobalGroupId,
     },
   ];
 
@@ -948,6 +1213,7 @@ export async function seedMasterData(
       .values({
         vendorId,
         organizationId,
+        supplierGroupId: s.groupId,
         vendorNumber: s.number,
         currencyCode: s.currency,
         tradingTermsId: termId,
@@ -1013,6 +1279,57 @@ export async function seedMasterData(
       currencyCode: s.currency,
       contactId,
     });
+  }
+
+  // Seed Supplier Compliance Expiries
+  const nowTs = new Date();
+  const dateOffsetStr = (days: number) =>
+    new Date(nowTs.getTime() + days * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split('T')[0];
+
+  if (sups.length >= 5) {
+    await db
+      .insert(supplierExpiries)
+      .values([
+        {
+          expiryId: uuid(),
+          vendorId: sups[0].vendorId,
+          expiryType: 'other',
+          expiryDate: dateOffsetStr(180),
+          notes:
+            'ISO-9001:2015 Quality Management System Certification (Milwaukee Tool Corp)',
+          createdBy: 'compliance_officer',
+        },
+        {
+          expiryId: uuid(),
+          vendorId: sups[1].vendorId,
+          expiryType: 'insurance',
+          expiryDate: dateOffsetStr(45),
+          notes:
+            'Commercial General Liability Policy ($10M aggregate, DeWalt Industrial)',
+          createdBy: 'compliance_officer',
+        },
+        {
+          expiryId: uuid(),
+          vendorId: sups[2].vendorId,
+          expiryType: 'other',
+          expiryDate: dateOffsetStr(365),
+          notes:
+            'UL/CSA Industrial Cordless Product Safety Compliance Certificate (Makita USA)',
+          createdBy: 'compliance_officer',
+        },
+        {
+          expiryId: uuid(),
+          vendorId: sups[4].vendorId,
+          expiryType: 'tax_certificate',
+          expiryDate: dateOffsetStr(90),
+          notes:
+            'IRS Form W-8BEN-E Certificate of Foreign Status (Makita Japan)',
+          createdBy: 'finance_ap',
+        },
+      ])
+      .onConflictDoNothing();
   }
 
   // 7. Customer Groups & Discount Matrix
@@ -2034,6 +2351,368 @@ export async function seedMasterData(
     ])
     .onConflictDoNothing();
 
+  // 11. Project Resources (Labor Profiles, Contractors & Equipment)
+  const resourceConfigs = [
+    {
+      id: uuid(),
+      number: 'RES-0001',
+      name: 'Marcus Vance - Senior Project Manager / Architect',
+      resourceType: RESOURCE_TYPE.PERSON,
+      userId: adminUserId,
+      vendorId: null,
+      serviceProductId: null,
+      baseUom: 'HOUR',
+      directUnitCost: 95.0,
+      unitPrice: 195.0,
+      isActive: true,
+    },
+    {
+      id: uuid(),
+      number: 'RES-0002',
+      name: 'Sarah Jenkins - Lead Electrical Systems Engineer',
+      resourceType: RESOURCE_TYPE.PERSON,
+      userId: assigneeUserId,
+      vendorId: null,
+      serviceProductId: null,
+      baseUom: 'HOUR',
+      directUnitCost: 85.0,
+      unitPrice: 165.0,
+      isActive: true,
+    },
+    {
+      id: uuid(),
+      number: 'RES-0003',
+      name: 'David Miller - Field Installation & Commissioning Specialist',
+      resourceType: RESOURCE_TYPE.PERSON,
+      userId: null,
+      vendorId: null,
+      serviceProductId: null,
+      baseUom: 'HOUR',
+      directUnitCost: 65.0,
+      unitPrice: 130.0,
+      isActive: true,
+    },
+    {
+      id: uuid(),
+      number: 'RES-0004',
+      name: 'Apex Mechanical & Rigging Contractors',
+      resourceType: RESOURCE_TYPE.CONTRACTOR,
+      userId: null,
+      vendorId: sups[1]?.vendorId || null,
+      serviceProductId: null,
+      baseUom: 'HOUR',
+      directUnitCost: 110.0,
+      unitPrice: 175.0,
+      isActive: true,
+    },
+    {
+      id: uuid(),
+      number: 'RES-0005',
+      name: 'Precision Calibration & Thermal Imaging Subcontractor',
+      resourceType: RESOURCE_TYPE.CONTRACTOR,
+      userId: null,
+      vendorId: sups[2]?.vendorId || null,
+      serviceProductId: null,
+      baseUom: 'DAY',
+      directUnitCost: 900.0,
+      unitPrice: 1500.0,
+      isActive: true,
+    },
+    {
+      id: uuid(),
+      number: 'RES-0006',
+      name: '25-Ton Mobile All-Terrain Crane Rig',
+      resourceType: RESOURCE_TYPE.EQUIPMENT,
+      userId: null,
+      vendorId: null,
+      serviceProductId: null,
+      baseUom: 'DAY',
+      directUnitCost: 450.0,
+      unitPrice: 850.0,
+      isActive: true,
+    },
+    {
+      id: uuid(),
+      number: 'RES-0007',
+      name: 'High-Capacity Pneumatic Fastening Rig & Compressor Station',
+      resourceType: RESOURCE_TYPE.EQUIPMENT,
+      userId: null,
+      vendorId: null,
+      serviceProductId: null,
+      baseUom: 'DAY',
+      directUnitCost: 180.0,
+      unitPrice: 350.0,
+      isActive: true,
+    },
+  ];
+
+  const resources: MasterResource[] = [];
+
+  for (const res of resourceConfigs) {
+    await db
+      .insert(projectResources)
+      .values({
+        resourceId: res.id,
+        resourceNumber: res.number,
+        name: res.name,
+        resourceType: res.resourceType,
+        userId: res.userId,
+        vendorId: res.vendorId,
+        serviceProductId: res.serviceProductId,
+        baseUom: res.baseUom,
+        directUnitCost: res.directUnitCost.toFixed(2),
+        unitPrice: res.unitPrice.toFixed(2),
+        isActive: res.isActive,
+      })
+      .onConflictDoNothing();
+
+    resources.push({
+      id: res.id,
+      number: res.number,
+      name: res.name,
+      resourceType: res.resourceType,
+      baseUom: res.baseUom,
+      directUnitCost: res.directUnitCost,
+      unitPrice: res.unitPrice,
+    });
+  }
+
+  // 12. CSV Mapping Profiles for Bank Statements
+  await db
+    .insert(csvMappingProfiles)
+    .values([
+      {
+        profileId: uuid(),
+        name: 'Chase Commercial Checking CSV',
+        dateColumn: 'Posting Date',
+        amountColumn: 'Amount',
+        descriptionColumn: 'Description',
+        typeColumn: 'Type',
+        payeeColumn: 'Payee',
+        referenceColumn: 'Check Number',
+        headerRows: 1,
+      },
+      {
+        profileId: uuid(),
+        name: 'Wells Fargo Business Statement CSV',
+        dateColumn: 'Date',
+        debitColumn: 'Debit',
+        creditColumn: 'Credit',
+        descriptionColumn: 'Memo',
+        payeeColumn: 'Payee',
+        headerRows: 1,
+      },
+      {
+        profileId: uuid(),
+        name: 'NAB / Commonwealth Bank Statement CSV',
+        dateColumn: 'Date',
+        amountColumn: 'Amount',
+        descriptionColumn: 'Narrative',
+        referenceColumn: 'Reference',
+        headerRows: 1,
+      },
+    ])
+    .onConflictDoNothing();
+
+  // 13. Bank Reconciliation Rules Engine
+  const bankFeeAccount = findAccount('6') || findAccount('5') || cogsAccountId;
+  await db
+    .insert(reconciliationRules)
+    .values([
+      {
+        ruleId: uuid(),
+        conditionType: 'contains',
+        conditionValue: 'STRIPE PAYOUT',
+        targetGlAccountId: bankAccountId,
+        costCenterId,
+        activityId,
+        memo: 'Auto-reconcile daily Stripe merchant processor settlement deposits',
+        priority: 10,
+      },
+      {
+        ruleId: uuid(),
+        conditionType: 'contains',
+        conditionValue: 'MONTHLY SERVICE FEE',
+        targetGlAccountId: bankFeeAccount,
+        costCenterId,
+        activityId,
+        memo: 'Commercial account monthly ledger maintenance fee',
+        priority: 20,
+      },
+      {
+        ruleId: uuid(),
+        conditionType: 'contains',
+        conditionValue: 'ELECTRIC UTILITY',
+        targetGlAccountId: cogsAccountId,
+        costCenterId,
+        activityId,
+        memo: 'Direct debit warehouse electric utility power consumption',
+        priority: 30,
+      },
+    ])
+    .onConflictDoNothing();
+
+  // 14. Developer API Keys & Webhook Subscriptions
+  const keyHash1 = crypto
+    .createHash('sha256')
+    .update('hb_live_scanner_wh_wc_001')
+    .digest('hex');
+  const keyHash2 = crypto
+    .createHash('sha256')
+    .update('hb_live_erp_sync_api_key_002')
+    .digest('hex');
+
+  await db
+    .insert(apiKeys)
+    .values([
+      {
+        apiKeyId: uuid(),
+        name: 'West Coast WMS Scanner Terminal Key',
+        keyHash: keyHash1,
+        prefix: 'hb_live_scan_',
+        role: 'warehouse',
+        isActive: true,
+        createdBy: 'admin',
+      },
+      {
+        apiKeyId: uuid(),
+        name: 'Enterprise ERP & EDI Integration Key',
+        keyHash: keyHash2,
+        prefix: 'hb_live_sync_',
+        role: 'admin',
+        isActive: true,
+        createdBy: 'admin',
+      },
+    ])
+    .onConflictDoNothing();
+
+  await db
+    .insert(webhooks)
+    .values([
+      {
+        webhookId: uuid(),
+        targetUrl: 'https://api.3pl-partner-logistics.demo/webhooks/shipments',
+        eventTypes: [
+          'sales_order.shipped',
+          'transfer_order.shipped',
+          'inventory.adjusted',
+        ],
+        // eslint-disable-next-line no-restricted-syntax -- Demo seed secret key fixture
+        secretKey: 'whsec_demo_secret_3pl_logistics_key_99',
+        isActive: true,
+      },
+      {
+        webhookId: uuid(),
+        targetUrl: 'https://crm-sync.salesforce-demo.com/webhooks/crm-events',
+        eventTypes: [
+          'customer.created',
+          'sales_invoice.posted',
+          'payment.received',
+        ],
+        // eslint-disable-next-line no-restricted-syntax -- Demo seed secret key fixture
+        secretKey: 'whsec_demo_secret_crm_sync_gateway_88',
+        isActive: true,
+      },
+    ])
+    .onConflictDoNothing();
+
+  // 15. External Integrations
+  await db
+    .insert(integrations)
+    .values([
+      {
+        integrationId: uuid(),
+        provider: 'shopify',
+        config: {
+          storeDomain: 'herobm-tools-demo.myshopify.com',
+          autoSyncOrders: true,
+          defaultLocationId: locs[0].id,
+        },
+        isActive: true,
+      },
+      {
+        integrationId: uuid(),
+        provider: 'stripe',
+        config: {
+          accountId: 'acct_demo_herobm_merchant_001',
+          capturePayments: true,
+          statementDescriptor: 'HEROBM TOOLS',
+        },
+        isActive: true,
+      },
+      {
+        integrationId: uuid(),
+        provider: 'xero',
+        config: {
+          tenantId: 'xero-tenant-uuid-demo-777',
+          syncInvoices: false,
+          syncContacts: true,
+        },
+        isActive: false,
+      },
+    ])
+    .onConflictDoNothing();
+
+  // 16. Email Outbox Logs
+  await db
+    .insert(emailOutbox)
+    .values([
+      {
+        id: uuid(),
+        entityType: 'sales_invoice',
+        entityId: uuid(),
+        toAddress: 'accounts.payable@apexconstruction-demo.com',
+        replyTo: 'billing@herobm.com',
+        subject: 'Tax Invoice INV-5001 from HeroBM Corporation',
+        htmlBody:
+          '<p>Dear Customer, please find attached your Tax Invoice INV-5001 with Net 30 terms.</p>',
+        attachments: [
+          { filename: 'INV-5001.pdf', contentType: 'application/pdf' },
+        ],
+        status: 'sent',
+        retries: 0,
+        createdAt: new Date(nowTs.getTime() - 20 * 24 * 60 * 60 * 1000),
+        processedAt: new Date(
+          nowTs.getTime() - 20 * 24 * 60 * 60 * 1000 + 5000,
+        ),
+      },
+      {
+        id: uuid(),
+        entityType: 'payment_entry',
+        entityId: uuid(),
+        toAddress: 'orders@milwaukeetool-demo.com',
+        replyTo: 'remittance@herobm.com',
+        subject: 'Remittance Advice PMT-1001 for Purchase Invoices',
+        htmlBody:
+          '<p>Remittance advice for direct deposit payment batch PMT-1001.</p>',
+        attachments: [
+          {
+            filename: 'Remittance-PMT-1001.pdf',
+            contentType: 'application/pdf',
+          },
+        ],
+        status: 'pending',
+        retries: 0,
+        createdAt: new Date(nowTs.getTime() - 2 * 60 * 60 * 1000),
+      },
+      {
+        id: uuid(),
+        entityType: 'sales_order',
+        entityId: uuid(),
+        toAddress: 'procurement@invalid-domain-demo-test.org',
+        replyTo: 'orders@herobm.com',
+        subject: 'Dispatch Notification for SO-5005',
+        htmlBody:
+          '<p>Your order SO-5005 has been dispatched via Freight Express.</p>',
+        status: 'failed',
+        retries: 3,
+        lastError: '550 5.1.1 Host lookup failed: Domain does not exist',
+        nextRetryAt: new Date(nowTs.getTime() + 6 * 60 * 60 * 1000),
+        createdAt: new Date(nowTs.getTime() - 24 * 60 * 60 * 1000),
+      },
+    ])
+    .onConflictDoNothing();
+
   // Record Master Data Audit Event
   await db
     .insert(masterDataEvents)
@@ -2048,6 +2727,7 @@ export async function seedMasterData(
         supplierCount: sups.length,
         customerCount: custs.length,
         productCount: prods.length + kitProds.length,
+        resourceCount: resources.length,
         projectCount: 10,
         activityCount: 16,
       },
@@ -2062,6 +2742,7 @@ export async function seedMasterData(
     custs,
     prods,
     kitProds,
+    resources,
     taxCategoryId: taxCatId,
     baseCurrency,
     bankAccountId,
@@ -2191,11 +2872,19 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
       })
       .onConflictDoNothing();
 
+    const createdLines: Array<{
+      journalLineId: string;
+      glAccountId: string;
+      debit: string;
+      credit: string;
+    }> = [];
+
     for (const l of lineValues) {
+      const journalLineId = uuid();
       await db
         .insert(glJournalLines)
         .values({
-          journalLineId: uuid(),
+          journalLineId,
           journalEntryId,
           glAccountId: l.glAccountId,
           partyType: l.partyType,
@@ -2210,12 +2899,19 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
           isReconciled: l.isReconciled,
         })
         .onConflictDoNothing();
+
+      createdLines.push({
+        journalLineId,
+        glAccountId: l.glAccountId,
+        debit: l.debit,
+        credit: l.credit,
+      });
     }
 
     prevEntryHash = entryHash;
     glSeqNumber++;
 
-    return journalEntryId;
+    return { journalEntryId, lines: createdLines };
   }
 
   // =========================================================================
@@ -2263,13 +2959,16 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
     let putawayStatus: (typeof PUTAWAY_STATUS)[keyof typeof PUTAWAY_STATUS] =
       PUTAWAY_STATUS.COMPLETED;
     let targetBinId = location.storageBinId;
+    let targetZoneId = location.mainZoneId;
 
     if (i >= 15 && i < 22) {
       putawayStatus = PUTAWAY_STATUS.PENDING_PUTAWAY;
-      targetBinId = location.stagingBinId;
+      targetBinId = location.receivingBinId;
+      targetZoneId = location.handlingZoneId;
     } else if (i >= 22) {
       putawayStatus = PUTAWAY_STATUS.QUARANTINED;
-      targetBinId = location.quarantineBinId;
+      targetBinId = location.systemQuarantineBinId;
+      targetZoneId = location.handlingZoneId;
     }
 
     const isInvoiced =
@@ -2421,7 +3120,7 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
           productId: line.prod.id,
           binId: targetBinId,
           locationId: location.id,
-          zoneId: location.mainZoneId,
+          zoneId: targetZoneId,
           quantity: line.qty.toString(),
         })
         .onConflictDoNothing();
@@ -2530,6 +3229,267 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
       });
     }
   }
+
+  // 1b. Active Open, Draft, and Partially Received Purchase Orders
+  // Confirmed PO 1 (Ordered from Milwaukee Tool, expecting in 7 days at West Coast DC)
+  const openPo1Id = uuid();
+  const openPo1Number = `PO-${poCounter++}`;
+  const openPo1Lines = [
+    { prod: data.prods[0], qty: 100, price: data.prods[0].standardCost },
+    { prod: data.prods[1], qty: 80, price: data.prods[1].standardCost },
+  ];
+  const openPo1Total = openPo1Lines.reduce(
+    (s, l) => s + l.qty * l.price * 1.1,
+    0,
+  );
+
+  await db
+    .insert(purchaseOrders)
+    .values({
+      purchaseOrderId: openPo1Id,
+      orderNumber: openPo1Number,
+      name: 'Stock Replenishment: Cordless Drills & Saws',
+      vendorId: data.sups[0].vendorId,
+      deliveryLocationId: data.locs[0].id,
+      stateCode: PURCHASE_ORDER_STATE.ORDERED,
+      currencyCode: data.baseCurrency,
+      exchangeRate: '1',
+      baseTotalAmount: openPo1Total.toFixed(2),
+      expectedDate: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
+      createdOn: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
+      createdBy: 'procurement_buyer',
+    })
+    .onConflictDoNothing();
+
+  for (let idx = 0; idx < openPo1Lines.length; idx++) {
+    const l = openPo1Lines[idx];
+    const lAmount = l.qty * l.price;
+    await db
+      .insert(purchaseOrderLineItems)
+      .values({
+        purchaseOrderLineId: uuid(),
+        purchaseOrderId: openPo1Id,
+        lineNumber: idx + 1,
+        lineType: 'Product',
+        productId: l.prod.id,
+        productDescription: l.prod.name,
+        quantity: l.qty.toString(),
+        pricePerUnit: l.price.toFixed(2),
+        discountPercentage: '0',
+        amount: lAmount.toFixed(2),
+        taxCategoryId: data.taxCategoryId,
+        tax: (lAmount * 0.1).toFixed(2),
+        totalAmount: (lAmount * 1.1).toFixed(2),
+        unitOfMeasure: 'EA',
+        quantityReceived: '0',
+      })
+      .onConflictDoNothing();
+  }
+
+  // Confirmed PO 2 (Ordered from DeWalt, expecting in 12 days at Central DC)
+  const openPo2Id = uuid();
+  const openPo2Number = `PO-${poCounter++}`;
+  const openPo2Lines = [
+    { prod: data.prods[2], qty: 120, price: data.prods[2].standardCost },
+    { prod: data.prods[4], qty: 200, price: data.prods[4].standardCost },
+  ];
+  const openPo2Total = openPo2Lines.reduce(
+    (s, l) => s + l.qty * l.price * 1.1,
+    0,
+  );
+
+  await db
+    .insert(purchaseOrders)
+    .values({
+      purchaseOrderId: openPo2Id,
+      orderNumber: openPo2Number,
+      name: 'Bulk Accessories & Grinder Replenishment',
+      vendorId: data.sups[1].vendorId,
+      deliveryLocationId: data.locs[1].id,
+      stateCode: PURCHASE_ORDER_STATE.ORDERED,
+      currencyCode: data.baseCurrency,
+      exchangeRate: '1',
+      baseTotalAmount: openPo2Total.toFixed(2),
+      expectedDate: new Date(now.getTime() + 12 * 24 * 60 * 60 * 1000),
+      createdOn: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
+      createdBy: 'procurement_buyer',
+    })
+    .onConflictDoNothing();
+
+  for (let idx = 0; idx < openPo2Lines.length; idx++) {
+    const l = openPo2Lines[idx];
+    const lAmount = l.qty * l.price;
+    await db
+      .insert(purchaseOrderLineItems)
+      .values({
+        purchaseOrderLineId: uuid(),
+        purchaseOrderId: openPo2Id,
+        lineNumber: idx + 1,
+        lineType: 'Product',
+        productId: l.prod.id,
+        productDescription: l.prod.name,
+        quantity: l.qty.toString(),
+        pricePerUnit: l.price.toFixed(2),
+        discountPercentage: '0',
+        amount: lAmount.toFixed(2),
+        taxCategoryId: data.taxCategoryId,
+        tax: (lAmount * 0.1).toFixed(2),
+        totalAmount: (lAmount * 1.1).toFixed(2),
+        unitOfMeasure: 'EA',
+        quantityReceived: '0',
+      })
+      .onConflictDoNothing();
+  }
+
+  // Draft PO (Bosch Power Tools at East Coast DC)
+  const draftPoId = uuid();
+  const draftPoNumber = `PO-${poCounter++}`;
+  const draftPoLines = [
+    { prod: data.prods[3], qty: 60, price: data.prods[3].standardCost },
+    { prod: data.prods[5], qty: 50, price: data.prods[5].standardCost },
+  ];
+  const draftPoTotal = draftPoLines.reduce(
+    (s, l) => s + l.qty * l.price * 1.1,
+    0,
+  );
+
+  await db
+    .insert(purchaseOrders)
+    .values({
+      purchaseOrderId: draftPoId,
+      orderNumber: draftPoNumber,
+      name: 'Draft Q4 Pre-Season Tool Order',
+      vendorId: data.sups[3].vendorId,
+      deliveryLocationId: data.locs[2].id,
+      stateCode: PURCHASE_ORDER_STATE.DRAFT,
+      currencyCode: data.baseCurrency,
+      exchangeRate: '1',
+      baseTotalAmount: draftPoTotal.toFixed(2),
+      createdOn: new Date(),
+      createdBy: 'procurement_buyer',
+    })
+    .onConflictDoNothing();
+
+  for (let idx = 0; idx < draftPoLines.length; idx++) {
+    const l = draftPoLines[idx];
+    const lAmount = l.qty * l.price;
+    await db
+      .insert(purchaseOrderLineItems)
+      .values({
+        purchaseOrderLineId: uuid(),
+        purchaseOrderId: draftPoId,
+        lineNumber: idx + 1,
+        lineType: 'Product',
+        productId: l.prod.id,
+        productDescription: l.prod.name,
+        quantity: l.qty.toString(),
+        pricePerUnit: l.price.toFixed(2),
+        discountPercentage: '0',
+        amount: lAmount.toFixed(2),
+        taxCategoryId: data.taxCategoryId,
+        tax: (lAmount * 0.1).toFixed(2),
+        totalAmount: (lAmount * 1.1).toFixed(2),
+        unitOfMeasure: 'EA',
+        quantityReceived: '0',
+      })
+      .onConflictDoNothing();
+  }
+
+  // Partially Received PO (Makita USA at West Coast DC)
+  const partPoId = uuid();
+  const partPoNumber = `PO-${poCounter++}`;
+  const partPoLine1Id = uuid();
+  const partPoLine2Id = uuid();
+  const partPoTotal =
+    (50 * data.prods[0].standardCost + 50 * data.prods[1].standardCost) * 1.1;
+
+  await db
+    .insert(purchaseOrders)
+    .values({
+      purchaseOrderId: partPoId,
+      orderNumber: partPoNumber,
+      name: 'High-Demand Battery & Impact Wrench Restock',
+      vendorId: data.sups[2].vendorId,
+      deliveryLocationId: data.locs[0].id,
+      stateCode: PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED,
+      currencyCode: data.baseCurrency,
+      exchangeRate: '1',
+      baseTotalAmount: partPoTotal.toFixed(2),
+      createdOn: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
+      createdBy: 'procurement_buyer',
+    })
+    .onConflictDoNothing();
+
+  await db
+    .insert(purchaseOrderLineItems)
+    .values([
+      {
+        purchaseOrderLineId: partPoLine1Id,
+        purchaseOrderId: partPoId,
+        lineNumber: 1,
+        lineType: 'Product',
+        productId: data.prods[0].id,
+        productDescription: data.prods[0].name,
+        quantity: '50.00',
+        pricePerUnit: data.prods[0].standardCost.toFixed(2),
+        discountPercentage: '0',
+        amount: (50 * data.prods[0].standardCost).toFixed(2),
+        taxCategoryId: data.taxCategoryId,
+        tax: (50 * data.prods[0].standardCost * 0.1).toFixed(2),
+        totalAmount: (50 * data.prods[0].standardCost * 1.1).toFixed(2),
+        unitOfMeasure: 'EA',
+        quantityReceived: '50.00',
+      },
+      {
+        purchaseOrderLineId: partPoLine2Id,
+        purchaseOrderId: partPoId,
+        lineNumber: 2,
+        lineType: 'Product',
+        productId: data.prods[1].id,
+        productDescription: data.prods[1].name,
+        quantity: '50.00',
+        pricePerUnit: data.prods[1].standardCost.toFixed(2),
+        discountPercentage: '0',
+        amount: (50 * data.prods[1].standardCost).toFixed(2),
+        taxCategoryId: data.taxCategoryId,
+        tax: (50 * data.prods[1].standardCost * 0.1).toFixed(2),
+        totalAmount: (50 * data.prods[1].standardCost * 1.1).toFixed(2),
+        unitOfMeasure: 'EA',
+        quantityReceived: '0.00',
+      },
+    ])
+    .onConflictDoNothing();
+
+  const partGrnId = uuid();
+  const partGrnNumber = `RCV-${rcvCounter++}`;
+  await db
+    .insert(goodsReceived)
+    .values({
+      goodsReceivedId: partGrnId,
+      receiptNumber: partGrnNumber,
+      vendorId: data.sups[2].vendorId,
+      locationId: data.locs[0].id,
+      packingSlipNumber: `PS-PART-${partPoNumber}`,
+      stateCode: GOODS_RECEIVED_STATE.RECEIVED,
+      createdBy: 'warehouse_clerk',
+      createdOn: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
+    })
+    .onConflictDoNothing();
+
+  await db
+    .insert(goodsReceivedLines)
+    .values({
+      goodsReceivedLineId: uuid(),
+      goodsReceivedId: partGrnId,
+      productId: data.prods[0].id,
+      quantityReceived: '50.00',
+      unitCost: data.prods[0].standardCost.toFixed(2),
+      matchStatus: MATCH_STATUS.MATCHED,
+      putawayStatus: PUTAWAY_STATUS.PENDING_PUTAWAY,
+      purchaseOrderLineId: partPoLine1Id,
+      purchaseOrderId: partPoId,
+    })
+    .onConflictDoNothing();
 
   // =========================================================================
   // 2. SUPPLIER RETURNS & PURCHASE DEBIT NOTES (3 Returns)
@@ -2803,6 +3763,7 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
         stateCode: toState,
         notes: `Stock balancing transfer between ${srcLoc.code} and ${destLoc.code}`,
         shippingNotes: 'Standard priority road freight',
+        isProjectReturn: false,
         createdBy: 'logistics_planner',
       })
       .onConflictDoNothing();
@@ -2872,6 +3833,12 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
         const toRcvId = uuid();
         const toPutawayStatus =
           i === 5 ? PUTAWAY_STATUS.QUARANTINED : PUTAWAY_STATUS.PENDING_PUTAWAY;
+        const targetBinId =
+          toPutawayStatus === PUTAWAY_STATUS.QUARANTINED
+            ? destLoc.systemQuarantineBinId
+            : destLoc.receivingBinId;
+        const targetZoneId = destLoc.handlingZoneId;
+
         await db
           .insert(transferOrderReceipts)
           .values({
@@ -2890,14 +3857,60 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
             receiptId: toRcvId,
             transferOrderLineId: toLineId,
             productId: prod.id,
-            binId:
-              toPutawayStatus === PUTAWAY_STATUS.QUARANTINED
-                ? destLoc.quarantineBinId
-                : destLoc.stagingBinId,
+            binId: targetBinId,
             quantity: qty.toString(),
             putawayStatus: toPutawayStatus,
           })
           .onConflictDoNothing();
+
+        // Inbound Transfer Stock Movement / Ledger
+        const toEntryId = uuid();
+        await db
+          .insert(inventoryEntries)
+          .values({
+            entryId: toEntryId,
+            entryNumber: `STK-TO-${toRcvCounter}`,
+            entryDate: new Date(),
+            memo: `Transfer receipt for TO-${toId.substring(0, 8)} (${toPutawayStatus})`,
+            sourceType: 'TRANSFER_IN',
+            sourceId: toRcvId,
+            isReversed: false,
+            createdBy: 'dock_receiver',
+          })
+          .onConflictDoNothing();
+
+        await db
+          .insert(inventoryLedger)
+          .values({
+            ledgerId: uuid(),
+            entryId: toEntryId,
+            productId: prod.id,
+            binId: targetBinId,
+            locationId: destLoc.id,
+            zoneId: targetZoneId,
+            quantity: qty.toString(),
+          })
+          .onConflictDoNothing();
+
+        const toKey = getStockKey(targetBinId, prod.id);
+        stockLevels[toKey] = (stockLevels[toKey] || 0) + qty;
+
+        await db
+          .insert(binContents)
+          .values({
+            binContentId: uuid(),
+            binId: targetBinId,
+            productId: prod.id,
+            actualQuantity: stockLevels[toKey].toString(),
+            modifiedOn: new Date(),
+          })
+          .onConflictDoUpdate({
+            target: [binContents.binId, binContents.productId],
+            set: {
+              actualQuantity: stockLevels[toKey].toString(),
+              modifiedOn: new Date(),
+            },
+          });
       }
     }
   }
@@ -3328,8 +4341,13 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
             invoiceLineId: invLineId,
             invoiceId: invId,
             salesOrderLineId: line.lineId,
+            productId: line.prod.id,
+            description: line.prod.name,
             quantityInvoiced: line.qty.toString(),
             pricePerUnit: line.price.toFixed(2),
+            discountPercentage: '0',
+            taxAmount: line.taxAmount.toFixed(2),
+            taxCategoryId: data.taxCategoryId,
             amount: line.lineAmount.toFixed(2),
           })
           .onConflictDoNothing();
@@ -3567,6 +4585,63 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
       })
       .onConflictDoNothing();
 
+    // Inbound Return Stock Movement / Ledger
+    const targetLoc =
+      data.locs.find((l) => l.id === so.locationId) || data.locs[0];
+    const targetBinId =
+      putawayStatus === PUTAWAY_STATUS.QUARANTINED
+        ? targetLoc.systemQuarantineBinId
+        : targetLoc.customerReturnsBinId;
+    const targetZoneId = targetLoc.handlingZoneId;
+
+    const retEntryId = uuid();
+    await db
+      .insert(inventoryEntries)
+      .values({
+        entryId: retEntryId,
+        entryNumber: `STK-RET-${soRetCounter}`,
+        entryDate: new Date(),
+        memo: `Customer return ${retNumber} (${putawayStatus})`,
+        sourceType: 'SO_RETURN',
+        sourceId: retId,
+        isReversed: false,
+        createdBy: 'customer_service',
+      })
+      .onConflictDoNothing();
+
+    await db
+      .insert(inventoryLedger)
+      .values({
+        ledgerId: uuid(),
+        entryId: retEntryId,
+        productId: targetLine.prod.id,
+        binId: targetBinId,
+        locationId: targetLoc.id,
+        zoneId: targetZoneId,
+        quantity: returnQty.toString(),
+      })
+      .onConflictDoNothing();
+
+    const retKey = getStockKey(targetBinId, targetLine.prod.id);
+    stockLevels[retKey] = (stockLevels[retKey] || 0) + returnQty;
+
+    await db
+      .insert(binContents)
+      .values({
+        binContentId: uuid(),
+        binId: targetBinId,
+        productId: targetLine.prod.id,
+        actualQuantity: stockLevels[retKey].toString(),
+        modifiedOn: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: [binContents.binId, binContents.productId],
+        set: {
+          actualQuantity: stockLevels[retKey].toString(),
+          modifiedOn: new Date(),
+        },
+      });
+
     // Sales Credit Note
     const crNoteId = uuid();
     const crAmount = returnQty * targetLine.price;
@@ -3629,12 +4704,37 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
   // =========================================================================
   // 8. TREASURY, CASH FLOW & MULTI-ALLOCATION PAYMENTS (AR/AP)
   // =========================================================================
-  // Customer Receipts against AR Invoices (pay historical AR invoices so demo customers are in clean credit standing)
+  const customerReceiptBankJournalLines: Array<{
+    lineId: string;
+    amount: number;
+    dateStr: string;
+    customerName: string;
+  }> = [];
+
+  const supplierPaymentBankJournalLines: Array<{
+    lineId: string;
+    amount: number;
+    dateStr: string;
+    supplierName: string;
+  }> = [];
+
+  // Customer Receipts against AR Invoices:
+  // - Invoices 0-21: Paid in full (100%)
+  // - Invoices 22-25: Partially paid (50% remaining in AR aging)
+  // - Invoices 26-34: Unpaid (populates AR aging buckets: Current, 30d, 60d+ overdue)
   for (let i = 0; i < createdSalesInvoices.length; i++) {
     const inv = createdSalesInvoices[i];
+    if (i >= 26) {
+      // Leave unpaid to populate AR Aging buckets
+      continue;
+    }
+
+    const isPartial = i >= 22 && i < 26;
     const pmtId = uuid();
     const pmtNumber = `RCPT-${pmtCounter++}`;
-    const pmtAmount = inv.totalAmount;
+    const pmtAmount = isPartial ? inv.totalAmount * 0.5 : inv.totalAmount;
+    const remainingOutstanding = isPartial ? inv.totalAmount - pmtAmount : 0;
+    const dateStr = inv.date.toISOString().split('T')[0];
 
     await db
       .insert(paymentEntries)
@@ -3681,19 +4781,21 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
       })
       .onConflictDoNothing();
 
-    // Mark invoice as PAID
+    // Update sales invoice status and outstanding balance
     await db
       .update(salesInvoices)
       .set({
-        stateCode: SALES_INVOICE_STATE.PAID,
-        outstandingAmount: '0.00',
-        baseOutstandingAmount: '0.00',
+        stateCode: isPartial
+          ? SALES_INVOICE_STATE.INVOICED
+          : SALES_INVOICE_STATE.PAID,
+        outstandingAmount: remainingOutstanding.toFixed(2),
+        baseOutstandingAmount: remainingOutstanding.toFixed(2),
       })
       .where(eq(salesInvoices.invoiceId, inv.invoiceId));
 
     // Post GL Journal Entry for Customer Receipt (Debit Bank, Credit AR)
     const pmtJeNumber = `JE-PMT-${pmtNumber}`;
-    await postJournalEntry({
+    const jeResult = await postJournalEntry({
       entryNumber: pmtJeNumber,
       entryDate: inv.date,
       sourceType: 'payment_entry',
@@ -3717,14 +4819,31 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
         },
       ],
     });
+
+    const bankDebitLine = jeResult.lines.find(
+      (l) => l.glAccountId === data.bankAccountId,
+    );
+    if (bankDebitLine) {
+      customerReceiptBankJournalLines.push({
+        lineId: bankDebitLine.journalLineId,
+        amount: pmtAmount,
+        dateStr,
+        customerName: inv.customerName,
+      });
+    }
   }
 
-  // Supplier Disbursements against AP Invoices
-  for (let i = 0; i < Math.min(6, createdPurchaseInvoices.length); i++) {
+  // Supplier Disbursements against AP Invoices (pay 8 bills in full, 2 bills partially)
+  for (let i = 0; i < Math.min(10, createdPurchaseInvoices.length); i++) {
     const inv = createdPurchaseInvoices[i];
+    const isPartial = i >= 8;
     const pmtId = uuid();
     const pmtNumber = `PMT-${pmtCounter++}`;
-    const pmtAmount = inv.totalAmount;
+    const pmtAmount = isPartial ? inv.totalAmount * 0.5 : inv.totalAmount;
+    const remainingOutstanding = isPartial ? inv.totalAmount - pmtAmount : 0;
+    const dateStr = inv.date.toISOString().split('T')[0];
+    const supplierName =
+      data.sups.find((s) => s.vendorId === inv.vendorId)?.name || 'Supplier';
 
     await db
       .insert(paymentEntries)
@@ -3771,16 +4890,798 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
       })
       .onConflictDoNothing();
 
-    // Mark AP invoice as PAID
+    // Mark AP invoice
     await db
       .update(purchaseInvoices)
       .set({
-        stateCode: PURCHASE_INVOICE_STATE.PAID,
-        outstandingAmount: '0.00',
-        baseOutstandingAmount: '0.00',
+        stateCode: isPartial
+          ? PURCHASE_INVOICE_STATE.INVOICED
+          : PURCHASE_INVOICE_STATE.PAID,
+        outstandingAmount: remainingOutstanding.toFixed(2),
+        baseOutstandingAmount: remainingOutstanding.toFixed(2),
       })
       .where(eq(purchaseInvoices.invoiceId, inv.invoiceId));
+
+    // Post GL Journal Entry for Supplier Disbursement (Debit AP, Credit Bank)
+    const pmtJeNumber = `JE-PMT-${pmtNumber}`;
+    const jeResult = await postJournalEntry({
+      entryNumber: pmtJeNumber,
+      entryDate: inv.date,
+      sourceType: 'payment_entry',
+      sourceId: pmtId,
+      memo: `Supplier Payment ${pmtNumber} to ${supplierName}`,
+      createdBy: 'finance_ap',
+      lines: [
+        {
+          glAccountId: data.apAccountId,
+          debit: pmtAmount,
+          credit: 0,
+          partyType: 'supplier',
+          partyId: inv.vendorId,
+          memo: `Clear AP for Bill ${inv.invoiceId}`,
+        },
+        {
+          glAccountId: data.bankAccountId,
+          debit: 0,
+          credit: pmtAmount,
+          memo: `Electronic funds transfer disbursement from operating account`,
+        },
+      ],
+    });
+
+    const bankCreditLine = jeResult.lines.find(
+      (l) => l.glAccountId === data.bankAccountId,
+    );
+    if (bankCreditLine) {
+      supplierPaymentBankJournalLines.push({
+        lineId: bankCreditLine.journalLineId,
+        amount: pmtAmount,
+        dateStr,
+        supplierName,
+      });
+    }
   }
+
+  // =========================================================================
+  // 8b. OVER-THE-COUNTER (OTC) COUNTER SALES
+  // =========================================================================
+  const glSettingsRecord = (await db.select().from(glSettings).limit(1))[0];
+  const otcCashAccountId =
+    glSettingsRecord?.defaultOtcCashAccountId || data.bankAccountId;
+  const otcCardAccountId =
+    glSettingsRecord?.defaultOtcCardAccountId || data.bankAccountId;
+
+  // OTC Sale 1: Walk-In Cash Customer ($299.00)
+  const otc1SoId = uuid();
+  const otc1SoNumber = `SO-OTC-${soCounter++}`;
+  const otc1Date = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+  const otc1Product = data.prods[0]; // Hammer drill $299.00
+  const otc1Amount = 299.0;
+
+  await db
+    .insert(salesOrders)
+    .values({
+      salesOrderId: otc1SoId,
+      orderNumber: otc1SoNumber,
+      name: 'Over-the-Counter Walk-in Cash Sale',
+      customerId: data.custs[0].customerId,
+      fulfillmentLocationId: data.locs[0].id,
+      stateCode: SALES_ORDER_STATE.SHIPPED,
+      currencyCode: data.baseCurrency,
+      exchangeRate: '1',
+      baseTotalAmount: otc1Amount.toFixed(2),
+      source: 'app',
+      discrepanciesAcknowledged: false,
+      createdBy: 'cashier',
+      createdOn: otc1Date,
+    })
+    .onConflictDoNothing();
+
+  const otc1LineId = uuid();
+  await db
+    .insert(salesOrderLineItems)
+    .values({
+      salesOrderLineId: otc1LineId,
+      salesOrderId: otc1SoId,
+      lineNumber: 1,
+      lineType: 'Product',
+      productId: otc1Product.id,
+      productDescription: otc1Product.name,
+      quantity: '1.00',
+      pricePerUnit: otc1Amount.toFixed(2),
+      discountPercentage: '0.00',
+      amount: otc1Amount.toFixed(2),
+      taxCategoryId: data.taxCategoryId,
+      tax: '0.00',
+      totalAmount: otc1Amount.toFixed(2),
+      unitOfMeasure: 'EA',
+      quantityPicked: '1.00',
+      fulfillmentLocationId: data.locs[0].id,
+    })
+    .onConflictDoNothing();
+
+  // Deduct stock for OTC sale
+  const otc1StockKey = getStockKey(data.locs[0].storageBinId, otc1Product.id);
+  stockLevels[otc1StockKey] = (stockLevels[otc1StockKey] || 10) - 1;
+  await db
+    .insert(binContents)
+    .values({
+      binContentId: uuid(),
+      binId: data.locs[0].storageBinId,
+      productId: otc1Product.id,
+      actualQuantity: stockLevels[otc1StockKey].toString(),
+      modifiedOn: otc1Date,
+    })
+    .onConflictDoUpdate({
+      target: [binContents.binId, binContents.productId],
+      set: {
+        actualQuantity: stockLevels[otc1StockKey].toString(),
+        modifiedOn: otc1Date,
+      },
+    });
+
+  const otc1InvId = uuid();
+  const otc1InvNumber = `INV-OTC-${arInvCounter++}`;
+  await db
+    .insert(salesInvoices)
+    .values({
+      invoiceId: otc1InvId,
+      invoiceNumber: otc1InvNumber,
+      salesOrderId: otc1SoId,
+      customerId: data.custs[0].customerId,
+      customerNameDisplay: 'Walk-in Cash Customer',
+      totalAmount: otc1Amount.toFixed(2),
+      outstandingAmount: '0.00',
+      baseTotalAmount: otc1Amount.toFixed(2),
+      baseOutstandingAmount: '0.00',
+      currencyCode: data.baseCurrency,
+      exchangeRate: '1',
+      stateCode: SALES_INVOICE_STATE.PAID,
+      invoiceDate: otc1Date,
+      dueDate: otc1Date,
+      createdBy: 'cashier',
+    })
+    .onConflictDoNothing();
+
+  const otc1PmtId = uuid();
+  const otc1PmtNumber = `RCPT-OTC-${pmtCounter++}`;
+  await db
+    .insert(paymentEntries)
+    .values({
+      paymentId: otc1PmtId,
+      paymentNumber: otc1PmtNumber,
+      paymentType: PAYMENT_TYPE.DIRECT_RECEIPT,
+      paymentDate: otc1Date,
+      modeOfPayment: 'Cash',
+      totalAmount: otc1Amount.toFixed(2),
+      unallocatedAmount: '0.00',
+      glAccountBank: otcCashAccountId,
+      stateCode: PAYMENT_STATE.SUBMITTED,
+      baseTotalAmount: otc1Amount.toFixed(2),
+      baseUnallocatedAmount: '0.00',
+      currencyCode: data.baseCurrency,
+      exchangeRate: '1',
+      createdBy: 'cashier',
+    })
+    .onConflictDoNothing();
+
+  await postJournalEntry({
+    entryNumber: `JE-OTC-${otc1SoNumber}`,
+    entryDate: otc1Date,
+    sourceType: 'sales_invoice',
+    sourceId: otc1InvId,
+    memo: `Counter Sale OTC Cash Receipt ${otc1SoNumber}`,
+    createdBy: 'cashier',
+    lines: [
+      {
+        glAccountId: otcCashAccountId,
+        debit: otc1Amount,
+        credit: 0,
+        memo: 'Cash drawer receipt for counter sale',
+      },
+      {
+        glAccountId: data.salesAccountId,
+        debit: 0,
+        credit: otc1Amount,
+        costCenterId: data.costCenterId,
+        activityId: data.activityId,
+        memo: 'Counter sales operating revenue',
+      },
+    ],
+  });
+
+  // OTC Sale 2: Walk-In Card Customer ($274.00)
+  const otc2SoId = uuid();
+  const otc2SoNumber = `SO-OTC-${soCounter++}`;
+  const otc2Date = new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000);
+  const otc2Product1 = data.prods[1]; // Circular saw $145.00
+  const otc2Product2 = data.prods[6]; // Battery pack $129.00
+  const otc2Amount = 274.0;
+
+  await db
+    .insert(salesOrders)
+    .values({
+      salesOrderId: otc2SoId,
+      orderNumber: otc2SoNumber,
+      name: 'Over-the-Counter Walk-in EFTPOS Sale',
+      customerId: data.custs[1].customerId,
+      fulfillmentLocationId: data.locs[0].id,
+      stateCode: SALES_ORDER_STATE.SHIPPED,
+      currencyCode: data.baseCurrency,
+      exchangeRate: '1',
+      baseTotalAmount: otc2Amount.toFixed(2),
+      source: 'app',
+      discrepanciesAcknowledged: false,
+      createdBy: 'cashier',
+      createdOn: otc2Date,
+    })
+    .onConflictDoNothing();
+
+  const otc2Line1Id = uuid();
+  const otc2Line2Id = uuid();
+  await db
+    .insert(salesOrderLineItems)
+    .values([
+      {
+        salesOrderLineId: otc2Line1Id,
+        salesOrderId: otc2SoId,
+        lineNumber: 1,
+        lineType: 'Product',
+        productId: otc2Product1.id,
+        productDescription: otc2Product1.name,
+        quantity: '1.00',
+        pricePerUnit: '145.00',
+        discountPercentage: '0.00',
+        amount: '145.00',
+        taxCategoryId: data.taxCategoryId,
+        tax: '0.00',
+        totalAmount: '145.00',
+        unitOfMeasure: 'EA',
+        quantityPicked: '1.00',
+        fulfillmentLocationId: data.locs[0].id,
+      },
+      {
+        salesOrderLineId: otc2Line2Id,
+        salesOrderId: otc2SoId,
+        lineNumber: 2,
+        lineType: 'Product',
+        productId: otc2Product2.id,
+        productDescription: otc2Product2.name,
+        quantity: '1.00',
+        pricePerUnit: '129.00',
+        discountPercentage: '0.00',
+        amount: '129.00',
+        taxCategoryId: data.taxCategoryId,
+        tax: '0.00',
+        totalAmount: '129.00',
+        unitOfMeasure: 'EA',
+        quantityPicked: '1.00',
+        fulfillmentLocationId: data.locs[0].id,
+      },
+    ])
+    .onConflictDoNothing();
+
+  const otc2InvId = uuid();
+  const otc2InvNumber = `INV-OTC-${arInvCounter++}`;
+  await db
+    .insert(salesInvoices)
+    .values({
+      invoiceId: otc2InvId,
+      invoiceNumber: otc2InvNumber,
+      salesOrderId: otc2SoId,
+      customerId: data.custs[1].customerId,
+      customerNameDisplay: 'Walk-in Card Customer',
+      totalAmount: otc2Amount.toFixed(2),
+      outstandingAmount: '0.00',
+      baseTotalAmount: otc2Amount.toFixed(2),
+      baseOutstandingAmount: '0.00',
+      currencyCode: data.baseCurrency,
+      exchangeRate: '1',
+      stateCode: SALES_INVOICE_STATE.PAID,
+      invoiceDate: otc2Date,
+      dueDate: otc2Date,
+      createdBy: 'cashier',
+    })
+    .onConflictDoNothing();
+
+  const otc2PmtId = uuid();
+  const otc2PmtNumber = `RCPT-OTC-${pmtCounter++}`;
+  await db
+    .insert(paymentEntries)
+    .values({
+      paymentId: otc2PmtId,
+      paymentNumber: otc2PmtNumber,
+      paymentType: PAYMENT_TYPE.DIRECT_RECEIPT,
+      paymentDate: otc2Date,
+      modeOfPayment: 'Credit Card',
+      totalAmount: otc2Amount.toFixed(2),
+      unallocatedAmount: '0.00',
+      glAccountBank: otcCardAccountId,
+      stateCode: PAYMENT_STATE.SUBMITTED,
+      baseTotalAmount: otc2Amount.toFixed(2),
+      baseUnallocatedAmount: '0.00',
+      currencyCode: data.baseCurrency,
+      exchangeRate: '1',
+      createdBy: 'cashier',
+    })
+    .onConflictDoNothing();
+
+  await postJournalEntry({
+    entryNumber: `JE-OTC-${otc2SoNumber}`,
+    entryDate: otc2Date,
+    sourceType: 'sales_invoice',
+    sourceId: otc2InvId,
+    memo: `Counter Sale OTC Card Receipt ${otc2SoNumber}`,
+    createdBy: 'cashier',
+    lines: [
+      {
+        glAccountId: otcCardAccountId,
+        debit: otc2Amount,
+        credit: 0,
+        memo: 'Credit card terminal clearing account',
+      },
+      {
+        glAccountId: data.salesAccountId,
+        debit: 0,
+        credit: otc2Amount,
+        costCenterId: data.costCenterId,
+        activityId: data.activityId,
+        memo: 'Counter sales operating revenue',
+      },
+    ],
+  });
+
+  // =========================================================================
+  // 8c. PHYSICAL INVENTORY STOCKTAKES & ADJUSTMENTS
+  // =========================================================================
+  // Stocktake 1: Completed Q3 Physical Count at West Coast Hub
+  const stk1Id = uuid();
+  const stk1Date = new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000);
+  const stk1Loc = data.locs[0];
+
+  const stk1AdjustmentEntryId = uuid();
+  await db
+    .insert(inventoryEntries)
+    .values({
+      entryId: stk1AdjustmentEntryId,
+      entryNumber: 'ADJ-STK-2026-001',
+      entryDate: stk1Date,
+      memo: 'Stocktake STK-2026-001 physical count shrinkage adjustment (-2 units)',
+      sourceType: 'STOCKTAKE',
+      sourceId: stk1Id,
+      isReversed: false,
+      createdBy: 'inventory_manager',
+    })
+    .onConflictDoNothing();
+
+  await db
+    .insert(stocktakes)
+    .values({
+      stocktakeId: stk1Id,
+      stocktakeNumber: 'STK-2026-001',
+      name: 'West Coast Hub Q3 Comprehensive Stocktake',
+      locationId: stk1Loc.id,
+      stateCode: STOCKTAKE_STATE.SUBMITTED,
+      scopeType: 'full',
+      isBlindCount: false,
+      notes:
+        'Completed annual physical count. Variance identified on cordless hammer drills and adjusted.',
+      inventoryEntryId: stk1AdjustmentEntryId,
+      createdBy: 'inventory_manager',
+      openedBy: 'warehouse_supervisor',
+      openedAt: new Date(stk1Date.getTime() - 2 * 24 * 60 * 60 * 1000),
+      reviewedBy: 'finance_controller',
+      reviewedAt: new Date(stk1Date.getTime() - 1 * 24 * 60 * 60 * 1000),
+      submittedBy: 'inventory_manager',
+      submittedOn: stk1Date,
+    })
+    .onConflictDoNothing();
+
+  const stk1Lines = [
+    { prod: data.prods[0], expected: 150, counted: 148 },
+    { prod: data.prods[1], expected: 80, counted: 80 },
+    { prod: data.prods[2], expected: 120, counted: 120 },
+    { prod: data.prods[3], expected: 60, counted: 60 },
+  ];
+
+  for (const sl of stk1Lines) {
+    const stkLineId = uuid();
+    await db
+      .insert(stocktakeLines)
+      .values({
+        stocktakeLineId: stkLineId,
+        stocktakeId: stk1Id,
+        productId: sl.prod.id,
+        binId: stk1Loc.storageBinId,
+        expectedQuantity: sl.expected.toString(),
+        countedQuantity: sl.counted.toString(),
+        isUnlisted: false,
+        lastCountedAt: stk1Date,
+        lastCountedBy: 'scanner_operator_1',
+      })
+      .onConflictDoNothing();
+
+    await db
+      .insert(stocktakeCounts)
+      .values({
+        stocktakeCountId: uuid(),
+        stocktakeId: stk1Id,
+        stocktakeLineId: stkLineId,
+        productId: sl.prod.id,
+        binId: stk1Loc.storageBinId,
+        quantity: sl.counted.toString(),
+        countMode: 'set',
+        countedBy: 'scanner_operator_1',
+        countedAt: stk1Date,
+        notes:
+          sl.expected !== sl.counted ? 'Verified via double-scan' : 'Match',
+      })
+      .onConflictDoNothing();
+  }
+
+  // Record inventory ledger adjustment (-2 on product 0)
+  await db
+    .insert(inventoryLedger)
+    .values({
+      ledgerId: uuid(),
+      entryId: stk1AdjustmentEntryId,
+      productId: data.prods[0].id,
+      binId: stk1Loc.storageBinId,
+      locationId: stk1Loc.id,
+      zoneId: stk1Loc.mainZoneId,
+      quantity: '-2.00',
+    })
+    .onConflictDoNothing();
+
+  // Deduct stock from stockLevels & binContents
+  const stk1Key = getStockKey(stk1Loc.storageBinId, data.prods[0].id);
+  stockLevels[stk1Key] = (stockLevels[stk1Key] || 150) - 2;
+  await db
+    .insert(binContents)
+    .values({
+      binContentId: uuid(),
+      binId: stk1Loc.storageBinId,
+      productId: data.prods[0].id,
+      actualQuantity: stockLevels[stk1Key].toString(),
+      modifiedOn: stk1Date,
+    })
+    .onConflictDoUpdate({
+      target: [binContents.binId, binContents.productId],
+      set: {
+        actualQuantity: stockLevels[stk1Key].toString(),
+        modifiedOn: stk1Date,
+      },
+    });
+
+  // GL Journal for Shrinkage Variance Adjustment
+  const shrinkageAccountId =
+    glSettingsRecord?.defaultShrinkageAccountId || data.cogsAccountId;
+  const shrinkageAmount = 2 * data.prods[0].standardCost; // 2 * $145 = $290.00
+
+  await postJournalEntry({
+    entryNumber: 'JE-ADJ-STK-2026-001',
+    entryDate: stk1Date,
+    sourceType: 'adjustment',
+    sourceId: stk1AdjustmentEntryId,
+    memo: 'Physical Stocktake STK-2026-001 Shrinkage Variance',
+    createdBy: 'inventory_manager',
+    lines: [
+      {
+        glAccountId: shrinkageAccountId,
+        debit: shrinkageAmount,
+        credit: 0,
+        costCenterId: data.costCenterId,
+        activityId: data.activityId,
+        memo: 'Inventory physical shrinkage loss',
+      },
+      {
+        glAccountId: data.inventoryAccountId,
+        debit: 0,
+        credit: shrinkageAmount,
+        memo: 'Direct inventory valuation reduction from stocktake',
+      },
+    ],
+  });
+
+  // Stocktake 2: In-Progress Active Pick Zone Cycle Count at Central Retail DC
+  const stk2Id = uuid();
+  const stk2Loc = data.locs[1];
+  await db
+    .insert(stocktakes)
+    .values({
+      stocktakeId: stk2Id,
+      stocktakeNumber: 'STK-2026-002',
+      name: 'Central Retail DC Active Pick Zone Cycle Count',
+      locationId: stk2Loc.id,
+      stateCode: STOCKTAKE_STATE.OPEN,
+      scopeType: 'zone',
+      zoneFilter: 'PICK',
+      isBlindCount: true,
+      notes: 'Bi-weekly cycle count in active pick bins for fast-moving tools.',
+      createdBy: 'warehouse_lead',
+      openedBy: 'warehouse_lead',
+      openedAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
+    })
+    .onConflictDoNothing();
+
+  for (let pIdx = 0; pIdx < 3; pIdx++) {
+    const prod = data.prods[pIdx];
+    const stkLineId = uuid();
+    await db
+      .insert(stocktakeLines)
+      .values({
+        stocktakeLineId: stkLineId,
+        stocktakeId: stk2Id,
+        productId: prod.id,
+        binId: stk2Loc.pickBinId,
+        expectedQuantity: '45.00',
+        countedQuantity: '45.00',
+        isUnlisted: false,
+        lastCountedAt: new Date(now.getTime() - 4 * 60 * 60 * 1000),
+        lastCountedBy: 'warehouse_clerk',
+      })
+      .onConflictDoNothing();
+
+    await db
+      .insert(stocktakeCounts)
+      .values({
+        stocktakeCountId: uuid(),
+        stocktakeId: stk2Id,
+        stocktakeLineId: stkLineId,
+        productId: prod.id,
+        binId: stk2Loc.pickBinId,
+        quantity: '45.00',
+        countMode: 'set',
+        countedBy: 'warehouse_clerk',
+        countedAt: new Date(now.getTime() - 4 * 60 * 60 * 1000),
+      })
+      .onConflictDoNothing();
+  }
+
+  // Stocktake 3: Draft Scheduled Bulk Pallet Audit at East Coast DC
+  const stk3Id = uuid();
+  const stk3Loc = data.locs[2];
+  await db
+    .insert(stocktakes)
+    .values({
+      stocktakeId: stk3Id,
+      stocktakeNumber: 'STK-2026-003',
+      name: 'East Coast Distribution Center Bulk Racking Audit',
+      locationId: stk3Loc.id,
+      stateCode: STOCKTAKE_STATE.DRAFT,
+      scopeType: 'bin_pattern',
+      binPattern: 'EC-DC-BLK-%',
+      isBlindCount: false,
+      notes: 'Scheduled end-of-month bulk pallet verification audit.',
+      createdBy: 'logistics_manager',
+    })
+    .onConflictDoNothing();
+
+  for (let pIdx = 0; pIdx < 4; pIdx++) {
+    const prod = data.prods[pIdx];
+    await db
+      .insert(stocktakeLines)
+      .values({
+        stocktakeLineId: uuid(),
+        stocktakeId: stk3Id,
+        productId: prod.id,
+        binId: stk3Loc.bulkBinId,
+        expectedQuantity: '200.00',
+        isUnlisted: false,
+      })
+      .onConflictDoNothing();
+  }
+
+  // =========================================================================
+  // 8d. BANK STATEMENT LINES, MATCH GROUPS & BANK RECONCILIATIONS
+  // =========================================================================
+  // 1. Match Customer Receipts
+  for (
+    let idx = 0;
+    idx < Math.min(8, customerReceiptBankJournalLines.length);
+    idx++
+  ) {
+    const rcpt = customerReceiptBankJournalLines[idx];
+    const matchGroupId = uuid();
+
+    await db
+      .insert(glMatchGroups)
+      .values({
+        matchGroupId,
+        matchType: 'auto',
+        createdBy: 'system',
+      })
+      .onConflictDoNothing();
+
+    await db
+      .insert(bankStatementLines)
+      .values({
+        lineId: uuid(),
+        glAccountId: data.bankAccountId,
+        date: rcpt.dateStr,
+        description: `ACH DEPOSIT - ${rcpt.customerName} TRADE SETTLEMENT`,
+        amount: rcpt.amount.toFixed(2),
+        reference: `ACH-DEP-${1000 + idx}`,
+        type: 'CREDIT',
+        payee: rcpt.customerName,
+        isReconciled: true,
+        matchedJournalLineId: rcpt.lineId,
+        matchGroupId,
+      })
+      .onConflictDoNothing();
+  }
+
+  // 2. Match Supplier Disbursements
+  for (
+    let idx = 0;
+    idx < Math.min(4, supplierPaymentBankJournalLines.length);
+    idx++
+  ) {
+    const pmt = supplierPaymentBankJournalLines[idx];
+    const matchGroupId = uuid();
+
+    await db
+      .insert(glMatchGroups)
+      .values({
+        matchGroupId,
+        matchType: 'auto',
+        createdBy: 'system',
+      })
+      .onConflictDoNothing();
+
+    await db
+      .insert(bankStatementLines)
+      .values({
+        lineId: uuid(),
+        glAccountId: data.bankAccountId,
+        date: pmt.dateStr,
+        description: `EFT OUT - ${pmt.supplierName} INVOICE SETTLEMENT`,
+        amount: (-pmt.amount).toFixed(2),
+        reference: `EFT-OUT-${1000 + idx}`,
+        type: 'DEBIT',
+        payee: pmt.supplierName,
+        isReconciled: true,
+        matchedJournalLineId: pmt.lineId,
+        matchGroupId,
+      })
+      .onConflictDoNothing();
+  }
+
+  // 3. Rule-Matched Monthly Bank Fee
+  const bankFeeExpenseAccountId =
+    glSettingsRecord?.defaultExpenseAccountId || data.cogsAccountId;
+  const bankFeeJeNumber = `JE-FEE-${jnlCounter++}`;
+  const bankFeeJeResult = await postJournalEntry({
+    entryNumber: bankFeeJeNumber,
+    entryDate: new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000),
+    sourceType: 'adjustment',
+    memo: 'Monthly Commercial Bank Account Service Fee',
+    createdBy: 'system',
+    lines: [
+      {
+        glAccountId: bankFeeExpenseAccountId,
+        debit: 35.0,
+        credit: 0,
+        costCenterId: data.costCenterId,
+        activityId: data.activityId,
+        memo: 'Monthly ledger administration service charge',
+      },
+      {
+        glAccountId: data.bankAccountId,
+        debit: 0,
+        credit: 35.0,
+        memo: 'Direct bank fee debit from operating account',
+      },
+    ],
+  });
+
+  const feeCreditLine = bankFeeJeResult.lines.find(
+    (l) => l.glAccountId === data.bankAccountId,
+  );
+  if (feeCreditLine) {
+    const feeMatchGroupId = uuid();
+    await db
+      .insert(glMatchGroups)
+      .values({
+        matchGroupId: feeMatchGroupId,
+        matchType: 'rule',
+        createdBy: 'system',
+      })
+      .onConflictDoNothing();
+
+    await db
+      .insert(bankStatementLines)
+      .values({
+        lineId: uuid(),
+        glAccountId: data.bankAccountId,
+        date: new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split('T')[0],
+        description: 'MONTHLY SERVICE FEE - CHASE COMMERCIAL CHECKING',
+        amount: '-35.00',
+        reference: 'FEE-001',
+        type: 'DEBIT',
+        payee: 'Chase Commercial Banking',
+        isReconciled: true,
+        matchedJournalLineId: feeCreditLine.journalLineId,
+        matchGroupId: feeMatchGroupId,
+      })
+      .onConflictDoNothing();
+  }
+
+  // 4. Unmatched Bank Statement Lines (Queue in Bank Reconciliation UI)
+  await db
+    .insert(bankStatementLines)
+    .values([
+      {
+        lineId: uuid(),
+        glAccountId: data.bankAccountId,
+        date: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split('T')[0],
+        description: 'ACH CREDIT - PACIFIC LOGISTICS UNMATCHED REMITTANCE',
+        amount: '1250.00',
+        reference: 'ACH-UNREF-001',
+        type: 'CREDIT',
+        payee: 'Pacific Logistics Group',
+        isReconciled: false,
+      },
+      {
+        lineId: uuid(),
+        glAccountId: data.bankAccountId,
+        date: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split('T')[0],
+        description: 'POS DEBIT - FASTENAL BRANCH 44 MISC HARDWARE',
+        amount: '-89.50',
+        reference: 'POS-TX-9981',
+        type: 'DEBIT',
+        payee: 'Fastenal Industrial Hardware',
+        isReconciled: false,
+      },
+      {
+        lineId: uuid(),
+        glAccountId: data.bankAccountId,
+        date: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split('T')[0],
+        description: 'DIRECT CREDIT - VENDOR VOLUME REBATE Q3',
+        amount: '450.00',
+        reference: 'REBATE-Q3-01',
+        type: 'CREDIT',
+        payee: 'Apex Tool Group Global',
+        isReconciled: false,
+      },
+    ])
+    .onConflictDoNothing();
+
+  // 5. Posted and Draft Bank Reconciliations
+  await db
+    .insert(glReconciliations)
+    .values([
+      {
+        reconciliationId: uuid(),
+        glAccountId: data.bankAccountId,
+        statementDate: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split('T')[0],
+        statementBalance: '128450.00',
+        status: RECONCILIATION_STATE.POSTED,
+        createdBy: 'chief_accountant',
+        createdOn: new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000),
+        postedOn: new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000 + 3600000),
+      },
+      {
+        reconciliationId: uuid(),
+        glAccountId: data.bankAccountId,
+        statementDate: now.toISOString().split('T')[0],
+        statementBalance: '154320.00',
+        status: RECONCILIATION_STATE.DRAFT,
+        createdBy: 'chief_accountant',
+        createdOn: now,
+      },
+    ])
+    .onConflictDoNothing();
 
   // =========================================================================
   // 9. GENERAL LEDGER JOURNALS & DIMENSION POSTINGS
@@ -3861,7 +5762,1770 @@ export async function generateTransactions(db: SeedDB, data: MasterData) {
     })
     .onConflictDoNothing();
 
-  // 10. Ledger Integrity Audit Verification
+  // 10. OPERATIONAL SERVICE PROJECTS & WBS ACTUALS (7 Projects)
+  console.log(
+    'Generating Operational Service Projects, WBS hierarchies, budgets, and ledger actuals...',
+  );
+  const pmUser =
+    (
+      await db.select().from(users).where(eq(users.username, 'admin')).limit(1)
+    )[0] ||
+    (
+      await db.select().from(users).where(eq(users.username, 'demo')).limit(1)
+    )[0];
+  const pmUserId = pmUser?.userId || null;
+
+  // 1. Projects Headers
+  const prj1 = uuid(); // PRJ-2026-0001 (In Progress, T&M, PNW Clean Energy Complex)
+  const prj2 = uuid(); // PRJ-2026-0002 (In Progress, Fixed Price, Chicago Transit Authority)
+  const prj3 = uuid(); // PRJ-2026-0003 (Planning, Milestone, Downtown Commercial Highrise Tower B)
+  const prj4 = uuid(); // PRJ-2026-0004 (Completed, Cost Plus, Phoenix Sky Harbor Concourse)
+  const prj5 = uuid(); // PRJ-2026-0005 (On Hold, T&M, Midwest Automated DC)
+  const prj6 = uuid(); // PRJ-2026-0006 (Draft, Fixed Price, Texas Gulf Coast Refinery)
+  const prj7 = uuid(); // PRJ-2026-0007 (Closed, Milestone, Metro Rail Expansion 2026)
+
+  await db
+    .insert(projects)
+    .values([
+      {
+        projectId: prj1,
+        projectNumber: 'PRJ-2026-0001',
+        name: 'Pacific Northwest Clean Energy Complex - Electrical & Tooling Integration',
+        description:
+          'Turnkey auxiliary power building fitout, DC cable management, high-density switchgear installation, and industrial cordless tooling deployment.',
+        customerId: data.custs[4].customerId,
+        opportunityId: data.opps.opp1,
+        stateCode: PROJECT_STATE.ACTIVE,
+        stage: 'In Progress',
+        billingType: PROJECT_BILLING_TYPE.TIME_AND_MATERIALS,
+        projectManagerId: pmUserId,
+        currencyCode: data.baseCurrency,
+        startDate: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000),
+        targetEndDate: new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000),
+        notes:
+          'Priority customer account. Phase 1 civil works complete. Phase 2 electrical integration currently underway.',
+        createdBy: 'system',
+      },
+      {
+        projectId: prj2,
+        projectNumber: 'PRJ-2026-0002',
+        name: 'Chicago Transit Authority Station Modernization - Demolition & Tooling',
+        description:
+          'Specialized heavy demolition hammer kits and concrete fastening systems for rapid CTA rail platform modernization.',
+        customerId: data.custs[0].customerId,
+        opportunityId: data.opps.opp3,
+        stateCode: PROJECT_STATE.ACTIVE,
+        stage: 'In Progress',
+        billingType: PROJECT_BILLING_TYPE.FIXED_PRICE,
+        projectManagerId: pmUserId,
+        currencyCode: data.baseCurrency,
+        startDate: new Date(now.getTime() - 45 * 24 * 60 * 60 * 1000),
+        targetEndDate: new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000),
+        notes:
+          'Night shift operations (01:00 - 05:00) during track power down window.',
+        createdBy: 'system',
+      },
+      {
+        projectId: prj3,
+        projectNumber: 'PRJ-2026-0003',
+        name: 'Downtown Commercial Highrise Tower B - Structural Anchorage',
+        description:
+          'High-tensile structural anchorage and specialized tooling package for 42-story commercial tower.',
+        customerId: data.custs[2].customerId,
+        opportunityId: data.opps.opp5,
+        stateCode: PROJECT_STATE.ACTIVE,
+        stage: 'Planning',
+        billingType: PROJECT_BILLING_TYPE.MILESTONE,
+        projectManagerId: pmUserId,
+        currencyCode: data.baseCurrency,
+        startDate: new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000),
+        targetEndDate: new Date(now.getTime() + 180 * 24 * 60 * 60 * 1000),
+        notes:
+          'Planning and engineering estimate phase. Awaiting city permit signoff before mobilization.',
+        createdBy: 'system',
+      },
+      {
+        projectId: prj4,
+        projectNumber: 'PRJ-2026-0004',
+        name: 'Phoenix Sky Harbor Concourse Expansion - Tooling & Power Fitout',
+        description:
+          'Turnkey commercial airline concourse terminal expansion and precision equipment installation.',
+        customerId: data.custs[2].customerId,
+        opportunityId: data.opps.opp9,
+        stateCode: PROJECT_STATE.CLOSED,
+        stage: 'Completed',
+        billingType: PROJECT_BILLING_TYPE.COST_PLUS,
+        projectManagerId: pmUserId,
+        currencyCode: data.baseCurrency,
+        startDate: new Date(now.getTime() - 120 * 24 * 60 * 60 * 1000),
+        targetEndDate: new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000),
+        actualEndDate: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000),
+        notes:
+          'Successfully completed on schedule with zero safety incidents. Final FAA inspection passed.',
+        createdBy: 'system',
+      },
+      {
+        projectId: prj5,
+        projectNumber: 'PRJ-2026-0005',
+        name: 'Midwest Automated Distribution Center - Conveyor Fastening',
+        description:
+          'High-speed automated logistics sorting mezzanine fit-out and robotic conveyor anchorage.',
+        customerId: data.custs[0].customerId,
+        opportunityId: data.opps.opp4,
+        stateCode: PROJECT_STATE.ACTIVE,
+        stage: 'On Hold',
+        billingType: PROJECT_BILLING_TYPE.TIME_AND_MATERIALS,
+        projectManagerId: pmUserId,
+        currencyCode: data.baseCurrency,
+        startDate: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
+        targetEndDate: new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000),
+        notes:
+          'Work temporarily paused pending revised seismic bracing specifications from structural engineer.',
+        createdBy: 'system',
+      },
+      {
+        projectId: prj6,
+        projectNumber: 'PRJ-2026-0006',
+        name: 'Texas Gulf Coast Refinery Turnaround - Tooling Maintenance Package',
+        description:
+          'Explosion-proof pneumatic tool fleet deployment and maintenance support for annual refinery turnaround.',
+        customerId: data.custs[3].customerId,
+        opportunityId: data.opps.opp6,
+        stateCode: PROJECT_STATE.DRAFT,
+        stage: 'Planning',
+        billingType: PROJECT_BILLING_TYPE.FIXED_PRICE,
+        projectManagerId: pmUserId,
+        currencyCode: data.baseCurrency,
+        startDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+        targetEndDate: new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000),
+        notes: 'Draft proposal prepared for upcoming turnaround tender.',
+        createdBy: 'system',
+      },
+      {
+        projectId: prj7,
+        projectNumber: 'PRJ-2026-0007',
+        name: 'Metro Rail Expansion 2026 - Track Fastening Pilot',
+        description:
+          'High-speed rail switch track vibration dampening and heavy anchor testing pilot project.',
+        customerId: data.custs[2].customerId,
+        opportunityId: data.opps.opp7,
+        stateCode: PROJECT_STATE.CLOSED,
+        stage: 'Completed',
+        billingType: PROJECT_BILLING_TYPE.MILESTONE,
+        projectManagerId: pmUserId,
+        currencyCode: data.baseCurrency,
+        startDate: new Date(now.getTime() - 200 * 24 * 60 * 60 * 1000),
+        targetEndDate: new Date(now.getTime() - 70 * 24 * 60 * 60 * 1000),
+        actualEndDate: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000),
+        notes:
+          'Project closed and archived. Final billing and retention released.',
+        createdBy: 'system',
+      },
+    ])
+    .onConflictDoNothing();
+
+  // 2. Hierarchical WBS Project Tasks
+  // PRJ 1 Tasks (Hierarchical parent/child WBS)
+  const t1_0 = uuid(); // 1.0 Site Preparation (Parent)
+  const t1_1 = uuid(); // 1.1 Survey (Subtask)
+  const t1_2 = uuid(); // 1.2 Staging (Subtask)
+  const t2_0 = uuid(); // 2.0 Electrical Installation (Parent)
+  const t2_1 = uuid(); // 2.1 Conduit (Subtask)
+  const t2_2 = uuid(); // 2.2 Switchgear (Subtask)
+  const t2_3 = uuid(); // 2.3 Inverter Interconnection (Subtask)
+  const t3_0 = uuid(); // 3.0 Testing & Commissioning (Parent)
+  const t3_1 = uuid(); // 3.1 Load Testing (Milestone)
+  const t3_2 = uuid(); // 3.2 Handover (Milestone)
+
+  // PRJ 2 Tasks
+  const t2_p1 = uuid();
+  const t2_p2 = uuid();
+  const t2_p3 = uuid();
+
+  // PRJ 3 Tasks
+  const t3_p1 = uuid();
+  const t3_p2 = uuid();
+  const t3_p3 = uuid();
+  const t3_p4 = uuid();
+
+  // PRJ 4 Tasks
+  const t4_p1 = uuid();
+  const t4_p2 = uuid();
+  const t4_p3 = uuid();
+
+  // PRJ 5 Tasks
+  const t5_p1 = uuid();
+  const t5_p2 = uuid();
+  const t5_p3 = uuid();
+
+  // PRJ 6 Tasks
+  const t6_p1 = uuid();
+  const t6_p2 = uuid();
+
+  // PRJ 7 Tasks
+  const t7_p1 = uuid();
+  const t7_p2 = uuid();
+  const t7_p3 = uuid();
+
+  // Insert Parent Tasks First
+  await db
+    .insert(projectTasks)
+    .values([
+      // PRJ 1 Parent Tasks
+      {
+        projectTaskId: t1_0,
+        projectId: prj1,
+        taskCode: '1.0',
+        name: 'Site Preparation & Safety Assessment',
+        description:
+          'Comprehensive civil geotechnical audit, environmental review, and safety protocols.',
+        parentTaskId: null,
+        stateCode: PROJECT_TASK_STATE.COMPLETED,
+        isMilestone: false,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() - 40 * 24 * 60 * 60 * 1000),
+        actualStartDate: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000),
+        actualEndDate: new Date(now.getTime() - 42 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        projectTaskId: t2_0,
+        projectId: prj1,
+        taskCode: '2.0',
+        name: 'Auxiliary Building Electrical Installation',
+        description:
+          'High-voltage conduit runs, distribution panels, and solar inverter integration.',
+        parentTaskId: null,
+        stateCode: PROJECT_TASK_STATE.IN_PROGRESS,
+        isMilestone: false,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() - 40 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() + 45 * 24 * 60 * 60 * 1000),
+        actualStartDate: new Date(now.getTime() - 38 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        projectTaskId: t3_0,
+        projectId: prj1,
+        taskCode: '3.0',
+        name: 'Testing, Commissioning & Handover',
+        description:
+          'Quality assurance, thermal imaging audits, grid synchronization, and final commissioning.',
+        parentTaskId: null,
+        stateCode: PROJECT_TASK_STATE.NOT_STARTED,
+        isMilestone: false,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() + 45 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+
+      // PRJ 2 Tasks
+      {
+        projectTaskId: t2_p1,
+        projectId: prj2,
+        taskCode: '1.0',
+        name: 'Demolition Tooling Deployment',
+        description:
+          'Supply heavy rotary demolition hammers and dust suppression systems.',
+        parentTaskId: null,
+        stateCode: PROJECT_TASK_STATE.COMPLETED,
+        isMilestone: true,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() - 45 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() - 25 * 24 * 60 * 60 * 1000),
+        actualStartDate: new Date(now.getTime() - 45 * 24 * 60 * 60 * 1000),
+        actualEndDate: new Date(now.getTime() - 26 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        projectTaskId: t2_p2,
+        projectId: prj2,
+        taskCode: '2.0',
+        name: 'Platform Fastener Retrofit & Anchoring',
+        description:
+          'Precision concrete core drilling and chemical anchor bolt installation.',
+        parentTaskId: null,
+        stateCode: PROJECT_TASK_STATE.IN_PROGRESS,
+        isMilestone: false,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() - 25 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+        actualStartDate: new Date(now.getTime() - 24 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        projectTaskId: t2_p3,
+        projectId: prj2,
+        taskCode: '3.0',
+        name: 'Structural Load Certification',
+        description: 'Tensile proof testing and CTA engineering signoff.',
+        parentTaskId: null,
+        stateCode: PROJECT_TASK_STATE.NOT_STARTED,
+        isMilestone: true,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+
+      // PRJ 3 Tasks
+      {
+        projectTaskId: t3_p1,
+        projectId: prj3,
+        taskCode: '1.0',
+        name: 'Structural Fastener Engineering Specification',
+        description:
+          'Detailed fastener schedule, wind-load calculations, and PE stamp.',
+        parentTaskId: null,
+        stateCode: PROJECT_TASK_STATE.NOT_STARTED,
+        isMilestone: true,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() + 45 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        projectTaskId: t3_p2,
+        projectId: prj3,
+        taskCode: '2.0',
+        name: 'Core Level 1-20 Heavy Anchor Deployment',
+        description:
+          'Heavy duty concrete anchor installation across lower 20 floors.',
+        parentTaskId: null,
+        stateCode: PROJECT_TASK_STATE.NOT_STARTED,
+        isMilestone: false,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() + 45 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() + 110 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        projectTaskId: t3_p3,
+        projectId: prj3,
+        taskCode: '3.0',
+        name: 'Core Level 21-42 High-Elevation Installation',
+        description:
+          'Upper tower perimeter glass facade and curtain wall anchoring.',
+        parentTaskId: null,
+        stateCode: PROJECT_TASK_STATE.NOT_STARTED,
+        isMilestone: false,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() + 110 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() + 160 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        projectTaskId: t3_p4,
+        projectId: prj3,
+        taskCode: '4.0',
+        name: 'Tensile Proof Load Testing & City Certification',
+        description:
+          'Third-party ultrasonic inspection and municipal building certification.',
+        parentTaskId: null,
+        stateCode: PROJECT_TASK_STATE.NOT_STARTED,
+        isMilestone: true,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() + 160 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() + 180 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+
+      // PRJ 4 Tasks
+      {
+        projectTaskId: t4_p1,
+        projectId: prj4,
+        taskCode: '1.0',
+        name: 'Concourse Electrical Conduit Deployment',
+        description:
+          'Ceiling raceway and underfloor electrical feeder installation.',
+        parentTaskId: null,
+        stateCode: PROJECT_TASK_STATE.COMPLETED,
+        isMilestone: false,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() - 120 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() - 70 * 24 * 60 * 60 * 1000),
+        actualStartDate: new Date(now.getTime() - 120 * 24 * 60 * 60 * 1000),
+        actualEndDate: new Date(now.getTime() - 68 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        projectTaskId: t4_p2,
+        projectId: prj4,
+        taskCode: '2.0',
+        name: 'Passenger Gate Power & Data Fastening',
+        description:
+          'Gate boarding area power stanchions and terminal display mounting.',
+        parentTaskId: null,
+        stateCode: PROJECT_TASK_STATE.COMPLETED,
+        isMilestone: false,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() - 70 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() - 25 * 24 * 60 * 60 * 1000),
+        actualStartDate: new Date(now.getTime() - 68 * 24 * 60 * 60 * 1000),
+        actualEndDate: new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        projectTaskId: t4_p3,
+        projectId: prj4,
+        taskCode: '3.0',
+        name: 'FAA Compliance Inspection & Final Handover',
+        description:
+          'Airport authority signoff, punch list completion, and warranty handover.',
+        parentTaskId: null,
+        stateCode: PROJECT_TASK_STATE.COMPLETED,
+        isMilestone: true,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() - 25 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000),
+        actualStartDate: new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000),
+        actualEndDate: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+
+      // PRJ 5 Tasks
+      {
+        projectTaskId: t5_p1,
+        projectId: prj5,
+        taskCode: '1.0',
+        name: 'Mezzanine Steelwork Inspection',
+        description:
+          'Structural alignment and anchor bolt specification review.',
+        parentTaskId: null,
+        stateCode: PROJECT_TASK_STATE.COMPLETED,
+        isMilestone: true,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000),
+        actualStartDate: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
+        actualEndDate: new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        projectTaskId: t5_p2,
+        projectId: prj5,
+        taskCode: '2.0',
+        name: 'Primary Conveyor Track Anchoring',
+        description: 'Robotic track installation and precision floor leveling.',
+        parentTaskId: null,
+        stateCode: PROJECT_TASK_STATE.IN_PROGRESS,
+        isMilestone: false,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() + 45 * 24 * 60 * 60 * 1000),
+        actualStartDate: new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        projectTaskId: t5_p3,
+        projectId: prj5,
+        taskCode: '3.0',
+        name: 'Safety Guardrail & Emergency Stop Rigging',
+        description: 'Perimeter fencing and e-stop sensor wiring.',
+        parentTaskId: null,
+        stateCode: PROJECT_TASK_STATE.NOT_STARTED,
+        isMilestone: false,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() + 45 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+
+      // PRJ 6 Tasks
+      {
+        projectTaskId: t6_p1,
+        projectId: prj6,
+        taskCode: '1.0',
+        name: 'Hazardous Environment Tooling Calibration',
+        description: 'Class 1 Div 1 pneumatic equipment safety checks.',
+        parentTaskId: null,
+        stateCode: PROJECT_TASK_STATE.NOT_STARTED,
+        isMilestone: true,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() + 45 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        projectTaskId: t6_p2,
+        projectId: prj6,
+        taskCode: '2.0',
+        name: 'On-site Field Maintenance Depot Setup',
+        description: 'Temporary maintenance container and compressor hookups.',
+        parentTaskId: null,
+        stateCode: PROJECT_TASK_STATE.NOT_STARTED,
+        isMilestone: false,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() + 45 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+
+      // PRJ 7 Tasks
+      {
+        projectTaskId: t7_p1,
+        projectId: prj7,
+        taskCode: '1.0',
+        name: 'Pilot Section Track Preparation',
+        description: 'Sub-ballast grading and test switch placement.',
+        parentTaskId: null,
+        stateCode: PROJECT_TASK_STATE.COMPLETED,
+        isMilestone: false,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() - 200 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() - 150 * 24 * 60 * 60 * 1000),
+        actualStartDate: new Date(now.getTime() - 200 * 24 * 60 * 60 * 1000),
+        actualEndDate: new Date(now.getTime() - 148 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        projectTaskId: t7_p2,
+        projectId: prj7,
+        taskCode: '2.0',
+        name: 'Vibration Dampening Fastener Installation',
+        description:
+          'Resilient rail tie plate fastening and torque verification.',
+        parentTaskId: null,
+        stateCode: PROJECT_TASK_STATE.COMPLETED,
+        isMilestone: false,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() - 150 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000),
+        actualStartDate: new Date(now.getTime() - 148 * 24 * 60 * 60 * 1000),
+        actualEndDate: new Date(now.getTime() - 85 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        projectTaskId: t7_p3,
+        projectId: prj7,
+        taskCode: '3.0',
+        name: 'Dynamic Rail Stress Testing',
+        description: 'Loaded train test passes with telemetry strain gauges.',
+        parentTaskId: null,
+        stateCode: PROJECT_TASK_STATE.COMPLETED,
+        isMilestone: true,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() - 70 * 24 * 60 * 60 * 1000),
+        actualStartDate: new Date(now.getTime() - 85 * 24 * 60 * 60 * 1000),
+        actualEndDate: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+    ])
+    .onConflictDoNothing();
+
+  // Insert Hierarchical Subtasks for PRJ 1
+  await db
+    .insert(projectTasks)
+    .values([
+      {
+        projectTaskId: t1_1,
+        projectId: prj1,
+        taskCode: '1.1',
+        name: 'Site Survey, Hazard Audit & Geotech Signoff',
+        description:
+          'Detailed geological survey and environmental hazard compliance.',
+        parentTaskId: t1_0,
+        stateCode: PROJECT_TASK_STATE.COMPLETED,
+        isMilestone: true,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() - 50 * 24 * 60 * 60 * 1000),
+        actualStartDate: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000),
+        actualEndDate: new Date(now.getTime() - 51 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        projectTaskId: t1_2,
+        projectId: prj1,
+        taskCode: '1.2',
+        name: 'Staging Area & Temporary Power Infrastructure',
+        description:
+          'Laydown yard perimeter fence, job box placement, and temp generator hookup.',
+        parentTaskId: t1_0,
+        stateCode: PROJECT_TASK_STATE.COMPLETED,
+        isMilestone: false,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() - 50 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() - 40 * 24 * 60 * 60 * 1000),
+        actualStartDate: new Date(now.getTime() - 51 * 24 * 60 * 60 * 1000),
+        actualEndDate: new Date(now.getTime() - 42 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        projectTaskId: t2_1,
+        projectId: prj1,
+        taskCode: '2.1',
+        name: 'High-Density Conduit & Cable Tray Routing',
+        description:
+          'Heavy duty galvanized conduit runs from solar array inverters to main substation.',
+        parentTaskId: t2_0,
+        stateCode: PROJECT_TASK_STATE.COMPLETED,
+        isMilestone: false,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() - 40 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000),
+        actualStartDate: new Date(now.getTime() - 38 * 24 * 60 * 60 * 1000),
+        actualEndDate: new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        projectTaskId: t2_2,
+        projectId: prj1,
+        taskCode: '2.2',
+        name: 'Sub-Panel & Switchgear Mounting',
+        description:
+          'Anchor and terminate 480V 3-phase auxiliary switchboards and disconnects.',
+        parentTaskId: t2_0,
+        stateCode: PROJECT_TASK_STATE.IN_PROGRESS,
+        isMilestone: false,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() + 20 * 24 * 60 * 60 * 1000),
+        actualStartDate: new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        projectTaskId: t2_3,
+        projectId: prj1,
+        taskCode: '2.3',
+        name: 'Inverter Bank Interconnection & Wiring',
+        description:
+          'Final DC harness terminations and inverter busbar connections.',
+        parentTaskId: t2_0,
+        stateCode: PROJECT_TASK_STATE.NOT_STARTED,
+        isMilestone: false,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() + 20 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() + 45 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        projectTaskId: t3_1,
+        projectId: prj1,
+        taskCode: '3.1',
+        name: 'Load Testing & Thermal Imaging Audit',
+        description:
+          'Full-power continuous load bank test and IR inspection of all bus joints.',
+        parentTaskId: t3_0,
+        stateCode: PROJECT_TASK_STATE.NOT_STARTED,
+        isMilestone: true,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() + 45 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() + 65 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        projectTaskId: t3_2,
+        projectId: prj1,
+        taskCode: '3.2',
+        name: 'Final Client Acceptance & Handover Signoff',
+        description:
+          'Owner verification of as-built drawings, warranties, and training handover.',
+        parentTaskId: t3_0,
+        stateCode: PROJECT_TASK_STATE.NOT_STARTED,
+        isMilestone: true,
+        isBillable: true,
+        plannedStartDate: new Date(now.getTime() + 65 * 24 * 60 * 60 * 1000),
+        plannedEndDate: new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+    ])
+    .onConflictDoNothing();
+
+  // 3. Project Budget Lines (Labor Resources, Materials & Expenses)
+  const resPM = data.resources[0].id;
+  const resEng = data.resources[1].id;
+  const resSpec = data.resources[2].id;
+  const resRigging = data.resources[3].id;
+  const resCalib = data.resources[4].id;
+  const resCrane = data.resources[5].id;
+  const resFastener = data.resources[6].id;
+
+  await db
+    .insert(projectBudgetLines)
+    .values([
+      // PRJ 1 Budget Lines
+      {
+        budgetLineId: uuid(),
+        projectId: prj1,
+        projectTaskId: t1_1,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        resourceId: resPM,
+        productId: null,
+        description: 'Project Manager - Project Mobilization & Planning',
+        plannedQuantity: '40.00',
+        unitCost: '95.00',
+        totalCost: '3800.00',
+        unitPrice: '195.00',
+        totalPrice: '7800.00',
+      },
+      {
+        budgetLineId: uuid(),
+        projectId: prj1,
+        projectTaskId: t2_1,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        resourceId: resEng,
+        productId: null,
+        description:
+          'Electrical Systems Engineer - High-Density Conduit Architecture',
+        plannedQuantity: '120.00',
+        unitCost: '85.00',
+        totalCost: '10200.00',
+        unitPrice: '165.00',
+        totalPrice: '19800.00',
+      },
+      {
+        budgetLineId: uuid(),
+        projectId: prj1,
+        projectTaskId: t2_2,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        resourceId: resSpec,
+        productId: null,
+        description:
+          'Field Installation Specialist - Switchgear Mounting & Termination',
+        plannedQuantity: '160.00',
+        unitCost: '65.00',
+        totalCost: '10400.00',
+        unitPrice: '130.00',
+        totalPrice: '20800.00',
+      },
+      {
+        budgetLineId: uuid(),
+        projectId: prj1,
+        projectTaskId: t2_1,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        resourceId: resRigging,
+        productId: null,
+        description: 'Apex Rigging Contractors - Cable Tray Overhead Rigging',
+        plannedQuantity: '40.00',
+        unitCost: '110.00',
+        totalCost: '4400.00',
+        unitPrice: '175.00',
+        totalPrice: '7000.00',
+      },
+      {
+        budgetLineId: uuid(),
+        projectId: prj1,
+        projectTaskId: t2_1,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        resourceId: resCrane,
+        productId: null,
+        description: '25-Ton Mobile Crane - Substation Switchgear Hoisting',
+        plannedQuantity: '6.00',
+        unitCost: '450.00',
+        totalCost: '2700.00',
+        unitPrice: '850.00',
+        totalPrice: '5100.00',
+      },
+      {
+        budgetLineId: uuid(),
+        projectId: prj1,
+        projectTaskId: t2_1,
+        lineType: PROJECT_LINE_TYPE.ITEM,
+        resourceId: null,
+        productId: data.prods[0].id,
+        description: '18V Brushless 1/2" Cordless Hammer Drill / Driver Kit',
+        plannedQuantity: '10.00',
+        unitCost: '145.00',
+        totalCost: '1450.00',
+        unitPrice: '299.00',
+        totalPrice: '2990.00',
+      },
+      {
+        budgetLineId: uuid(),
+        projectId: prj1,
+        projectTaskId: t2_2,
+        lineType: PROJECT_LINE_TYPE.ITEM,
+        resourceId: null,
+        productId: data.prods[3].id,
+        description: '18V 5.0Ah Li-Ion High Output Battery Pack',
+        plannedQuantity: '20.00',
+        unitCost: '65.00',
+        totalCost: '1300.00',
+        unitPrice: '129.00',
+        totalPrice: '2580.00',
+      },
+      {
+        budgetLineId: uuid(),
+        projectId: prj1,
+        projectTaskId: t2_1,
+        lineType: PROJECT_LINE_TYPE.ITEM,
+        resourceId: null,
+        productId: data.prods[4].id,
+        description: 'Titanium Coated Drill Bit Set 21-Piece',
+        plannedQuantity: '12.00',
+        unitCost: '16.00',
+        totalCost: '192.00',
+        unitPrice: '35.00',
+        totalPrice: '420.00',
+      },
+      {
+        budgetLineId: uuid(),
+        projectId: prj1,
+        projectTaskId: t1_1,
+        lineType: PROJECT_LINE_TYPE.EXPENSE,
+        resourceId: null,
+        productId: null,
+        description: 'Site Mobilization, Safety Audits & Geotech Travel',
+        plannedQuantity: '1.00',
+        unitCost: '1800.00',
+        totalCost: '1800.00',
+        unitPrice: '1800.00',
+        totalPrice: '1800.00',
+      },
+
+      // PRJ 2 Budget Lines
+      {
+        budgetLineId: uuid(),
+        projectId: prj2,
+        projectTaskId: t2_p2,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        resourceId: resEng,
+        productId: null,
+        description: 'Systems Engineer - Concrete Anchor Engineering',
+        plannedQuantity: '80.00',
+        unitCost: '85.00',
+        totalCost: '6800.00',
+        unitPrice: '165.00',
+        totalPrice: '13200.00',
+      },
+      {
+        budgetLineId: uuid(),
+        projectId: prj2,
+        projectTaskId: t2_p2,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        resourceId: resSpec,
+        productId: null,
+        description: 'Installation Specialist - Fastener Retrofit Team',
+        plannedQuantity: '100.00',
+        unitCost: '65.00',
+        totalCost: '6500.00',
+        unitPrice: '130.00',
+        totalPrice: '13000.00',
+      },
+      {
+        budgetLineId: uuid(),
+        projectId: prj2,
+        projectTaskId: t2_p2,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        resourceId: resFastener,
+        productId: null,
+        description: 'Pneumatic Fastening Rig - Concrete Anchor Setting',
+        plannedQuantity: '15.00',
+        unitCost: '180.00',
+        totalCost: '2700.00',
+        unitPrice: '350.00',
+        totalPrice: '5250.00',
+      },
+      {
+        budgetLineId: uuid(),
+        projectId: prj2,
+        projectTaskId: t2_p1,
+        lineType: PROJECT_LINE_TYPE.ITEM,
+        resourceId: null,
+        productId: data.prods[1].id,
+        description: '18V 1/4" Hex Hydraulic Impact Driver Pro Kit',
+        plannedQuantity: '8.00',
+        unitCost: '110.00',
+        totalCost: '880.00',
+        unitPrice: '229.00',
+        totalPrice: '1832.00',
+      },
+      {
+        budgetLineId: uuid(),
+        projectId: prj2,
+        projectTaskId: t2_p2,
+        lineType: PROJECT_LINE_TYPE.ITEM,
+        resourceId: null,
+        productId: data.prods[3].id,
+        description: '18V 5.0Ah Li-Ion High Output Battery Pack',
+        plannedQuantity: '16.00',
+        unitCost: '65.00',
+        totalCost: '1040.00',
+        unitPrice: '129.00',
+        totalPrice: '2064.00',
+      },
+
+      // PRJ 3 Budget Lines
+      {
+        budgetLineId: uuid(),
+        projectId: prj3,
+        projectTaskId: t3_p1,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        resourceId: resPM,
+        productId: null,
+        description: 'Senior Project Manager - Structural Fastener Schedule',
+        plannedQuantity: '60.00',
+        unitCost: '95.00',
+        totalCost: '5700.00',
+        unitPrice: '195.00',
+        totalPrice: '11700.00',
+      },
+      {
+        budgetLineId: uuid(),
+        projectId: prj3,
+        projectTaskId: t3_p2,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        resourceId: resEng,
+        productId: null,
+        description: 'Lead Engineer - Core Anchoring Supervision',
+        plannedQuantity: '180.00',
+        unitCost: '85.00',
+        totalCost: '15300.00',
+        unitPrice: '165.00',
+        totalPrice: '29700.00',
+      },
+      {
+        budgetLineId: uuid(),
+        projectId: prj3,
+        projectTaskId: t3_p4,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        resourceId: resCalib,
+        productId: null,
+        description: 'Thermal & Ultrasonic Calibration Testing Subcontractor',
+        plannedQuantity: '8.00',
+        unitCost: '900.00',
+        totalCost: '7200.00',
+        unitPrice: '1500.00',
+        totalPrice: '12000.00',
+      },
+      {
+        budgetLineId: uuid(),
+        projectId: prj3,
+        projectTaskId: t3_p2,
+        lineType: PROJECT_LINE_TYPE.ITEM,
+        resourceId: null,
+        productId: data.prods[0].id,
+        description: '18V Hammer Drill Kits for Core Concrete Drilling',
+        plannedQuantity: '15.00',
+        unitCost: '145.00',
+        totalCost: '2175.00',
+        unitPrice: '299.00',
+        totalPrice: '4485.00',
+      },
+      {
+        budgetLineId: uuid(),
+        projectId: prj3,
+        projectTaskId: t3_p2,
+        lineType: PROJECT_LINE_TYPE.ITEM,
+        resourceId: null,
+        productId: data.prods[2].id,
+        description: 'SDS-Max 1-9/16" Heavy Duty Rotary Demolition Hammer',
+        plannedQuantity: '8.00',
+        unitCost: '220.00',
+        totalCost: '1760.00',
+        unitPrice: '449.00',
+        totalPrice: '3592.00',
+      },
+      {
+        budgetLineId: uuid(),
+        projectId: prj3,
+        projectTaskId: t3_p1,
+        lineType: PROJECT_LINE_TYPE.EXPENSE,
+        resourceId: null,
+        productId: null,
+        description:
+          'Certified Structural Engineering PE Stamp & Municipal Filing',
+        plannedQuantity: '1.00',
+        unitCost: '3500.00',
+        totalCost: '3500.00',
+        unitPrice: '3500.00',
+        totalPrice: '3500.00',
+      },
+
+      // PRJ 4 Budget Lines
+      {
+        budgetLineId: uuid(),
+        projectId: prj4,
+        projectTaskId: t4_p1,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        resourceId: resEng,
+        productId: null,
+        description: 'Systems Engineer - Concourse Electrical Infrastructure',
+        plannedQuantity: '100.00',
+        unitCost: '85.00',
+        totalCost: '8500.00',
+        unitPrice: '165.00',
+        totalPrice: '16500.00',
+      },
+      {
+        budgetLineId: uuid(),
+        projectId: prj4,
+        projectTaskId: t4_p2,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        resourceId: resSpec,
+        productId: null,
+        description: 'Installation Specialist - Gate Power Deployment',
+        plannedQuantity: '140.00',
+        unitCost: '65.00',
+        totalCost: '9100.00',
+        unitPrice: '130.00',
+        totalPrice: '18200.00',
+      },
+      {
+        budgetLineId: uuid(),
+        projectId: prj4,
+        projectTaskId: t4_p1,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        resourceId: resCrane,
+        productId: null,
+        description: 'Mobile Crane - Roof Raceway HVAC Staging',
+        plannedQuantity: '5.00',
+        unitCost: '450.00',
+        totalCost: '2250.00',
+        unitPrice: '850.00',
+        totalPrice: '4250.00',
+      },
+      {
+        budgetLineId: uuid(),
+        projectId: prj4,
+        projectTaskId: t4_p2,
+        lineType: PROJECT_LINE_TYPE.ITEM,
+        resourceId: null,
+        productId: data.prods[0].id,
+        description: '18V Cordless Hammer Drills for Gate Stanchions',
+        plannedQuantity: '10.00',
+        unitCost: '145.00',
+        totalCost: '1450.00',
+        unitPrice: '299.00',
+        totalPrice: '2990.00',
+      },
+      {
+        budgetLineId: uuid(),
+        projectId: prj4,
+        projectTaskId: t4_p2,
+        lineType: PROJECT_LINE_TYPE.ITEM,
+        resourceId: null,
+        productId: data.prods[3].id,
+        description: '18V 5.0Ah Li-Ion High Output Battery Pack',
+        plannedQuantity: '25.00',
+        unitCost: '65.00',
+        totalCost: '1625.00',
+        unitPrice: '129.00',
+        totalPrice: '3225.00',
+      },
+
+      // PRJ 5 Budget Lines
+      {
+        budgetLineId: uuid(),
+        projectId: prj5,
+        projectTaskId: t5_p2,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        resourceId: resEng,
+        productId: null,
+        description: 'Conveyor Systems Lead Engineer',
+        plannedQuantity: '60.00',
+        unitCost: '85.00',
+        totalCost: '5100.00',
+        unitPrice: '165.00',
+        totalPrice: '9900.00',
+      },
+      {
+        budgetLineId: uuid(),
+        projectId: prj5,
+        projectTaskId: t5_p2,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        resourceId: resSpec,
+        productId: null,
+        description: 'Mechanical Rigger & Fastener Specialist',
+        plannedQuantity: '80.00',
+        unitCost: '65.00',
+        totalCost: '5200.00',
+        unitPrice: '130.00',
+        totalPrice: '10400.00',
+      },
+
+      // PRJ 6 Budget Lines
+      {
+        budgetLineId: uuid(),
+        projectId: prj6,
+        projectTaskId: t6_p1,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        resourceId: resSpec,
+        productId: null,
+        description: 'Refinery Tooling Maintenance Specialist',
+        plannedQuantity: '50.00',
+        unitCost: '65.00',
+        totalCost: '3250.00',
+        unitPrice: '130.00',
+        totalPrice: '6500.00',
+      },
+      {
+        budgetLineId: uuid(),
+        projectId: prj6,
+        projectTaskId: t6_p2,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        resourceId: resFastener,
+        productId: null,
+        description: 'Pneumatic Fastener Rig & Compressor Station',
+        plannedQuantity: '10.00',
+        unitCost: '180.00',
+        totalCost: '1800.00',
+        unitPrice: '350.00',
+        totalPrice: '3500.00',
+      },
+
+      // PRJ 7 Budget Lines
+      {
+        budgetLineId: uuid(),
+        projectId: prj7,
+        projectTaskId: t7_p1,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        resourceId: resPM,
+        productId: null,
+        description: 'Senior Rail Project Manager',
+        plannedQuantity: '40.00',
+        unitCost: '95.00',
+        totalCost: '3800.00',
+        unitPrice: '195.00',
+        totalPrice: '7800.00',
+      },
+      {
+        budgetLineId: uuid(),
+        projectId: prj7,
+        projectTaskId: t7_p2,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        resourceId: resEng,
+        productId: null,
+        description: 'Track Dynamic Stress Lead Engineer',
+        plannedQuantity: '100.00',
+        unitCost: '85.00',
+        totalCost: '8500.00',
+        unitPrice: '165.00',
+        totalPrice: '16500.00',
+      },
+      {
+        budgetLineId: uuid(),
+        projectId: prj7,
+        projectTaskId: t7_p3,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        resourceId: resCalib,
+        productId: null,
+        description: 'Dynamic Telemetry & Strain Gauge Calibration Team',
+        plannedQuantity: '5.00',
+        unitCost: '900.00',
+        totalCost: '4500.00',
+        unitPrice: '1500.00',
+        totalPrice: '7500.00',
+      },
+    ])
+    .onConflictDoNothing();
+
+  // 4. Project Actual Ledger Entries (Usages & Billed Actuals)
+  await db
+    .insert(projectLedgerEntries)
+    .values([
+      // PRJ 1 Actuals
+      {
+        ledgerId: uuid(),
+        projectId: prj1,
+        projectTaskId: t1_1,
+        entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        sourceType: PROJECT_SOURCE_TYPE.TIMESHEET,
+        sourceId: null,
+        resourceId: resPM,
+        productId: null,
+        description:
+          'Logged 32.0 hrs - Initial Site Mobilization & Geotech Review',
+        quantity: '32.00',
+        unitCostBase: '95.00',
+        totalCostBase: '3040.00',
+        unitPriceBase: '195.00',
+        totalPriceBase: '6240.00',
+        isBillable: true,
+        isBilled: true,
+        postingDate: new Date(now.getTime() - 55 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        ledgerId: uuid(),
+        projectId: prj1,
+        projectTaskId: t1_1,
+        entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+        lineType: PROJECT_LINE_TYPE.EXPENSE,
+        sourceType: PROJECT_SOURCE_TYPE.MANUAL_JOURNAL,
+        sourceId: null,
+        resourceId: null,
+        productId: null,
+        description: 'Site Mobilization, Safety Audits & Geotech Travel',
+        quantity: '1.00',
+        unitCostBase: '1800.00',
+        totalCostBase: '1800.00',
+        unitPriceBase: '1800.00',
+        totalPriceBase: '1800.00',
+        isBillable: true,
+        isBilled: true,
+        postingDate: new Date(now.getTime() - 52 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        ledgerId: uuid(),
+        projectId: prj1,
+        projectTaskId: t2_1,
+        entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        sourceType: PROJECT_SOURCE_TYPE.TIMESHEET,
+        sourceId: null,
+        resourceId: resEng,
+        productId: null,
+        description:
+          'Logged 64.0 hrs - High-Density Conduit Array Installation',
+        quantity: '64.00',
+        unitCostBase: '85.00',
+        totalCostBase: '5440.00',
+        unitPriceBase: '165.00',
+        totalPriceBase: '10560.00',
+        isBillable: true,
+        isBilled: true,
+        postingDate: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        ledgerId: uuid(),
+        projectId: prj1,
+        projectTaskId: t2_1,
+        entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        sourceType: PROJECT_SOURCE_TYPE.TIMESHEET,
+        sourceId: null,
+        resourceId: resSpec,
+        productId: null,
+        description: 'Logged 80.0 hrs - Conduit Laydown & Tray Pulling',
+        quantity: '80.00',
+        unitCostBase: '65.00',
+        totalCostBase: '5200.00',
+        unitPriceBase: '130.00',
+        totalPriceBase: '10400.00',
+        isBillable: true,
+        isBilled: true,
+        postingDate: new Date(now.getTime() - 25 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        ledgerId: uuid(),
+        projectId: prj1,
+        projectTaskId: t2_1,
+        entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        sourceType: PROJECT_SOURCE_TYPE.PURCHASE_INVOICE,
+        sourceId: null,
+        resourceId: resRigging,
+        productId: null,
+        description:
+          'Subcontractor Invoice - 24.0 hrs Heavy Cable Tray Rigging',
+        quantity: '24.00',
+        unitCostBase: '110.00',
+        totalCostBase: '2640.00',
+        unitPriceBase: '175.00',
+        totalPriceBase: '4200.00',
+        isBillable: true,
+        isBilled: true,
+        postingDate: new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        ledgerId: uuid(),
+        projectId: prj1,
+        projectTaskId: t2_1,
+        entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        sourceType: PROJECT_SOURCE_TYPE.MANUAL_JOURNAL,
+        sourceId: null,
+        resourceId: resCrane,
+        productId: null,
+        description:
+          'Mobile Crane Operation - 3 Days Primary Switchgear Hoisting',
+        quantity: '3.00',
+        unitCostBase: '450.00',
+        totalCostBase: '1350.00',
+        unitPriceBase: '850.00',
+        totalPriceBase: '2550.00',
+        isBillable: true,
+        isBilled: true,
+        postingDate: new Date(now.getTime() - 18 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        ledgerId: uuid(),
+        projectId: prj1,
+        projectTaskId: t2_1,
+        entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+        lineType: PROJECT_LINE_TYPE.ITEM,
+        sourceType: PROJECT_SOURCE_TYPE.INVENTORY_ISSUE,
+        sourceId: null,
+        resourceId: null,
+        productId: data.prods[0].id,
+        description:
+          'Material Issue: 6x 18V Hammer Drill Kits deployed to field crew',
+        quantity: '6.00',
+        unitCostBase: '145.00',
+        totalCostBase: '870.00',
+        unitPriceBase: '299.00',
+        totalPriceBase: '1794.00',
+        isBillable: true,
+        isBilled: true,
+        postingDate: new Date(now.getTime() - 35 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        ledgerId: uuid(),
+        projectId: prj1,
+        projectTaskId: t2_1,
+        entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+        lineType: PROJECT_LINE_TYPE.ITEM,
+        sourceType: PROJECT_SOURCE_TYPE.INVENTORY_ISSUE,
+        sourceId: null,
+        resourceId: null,
+        productId: data.prods[4].id,
+        description:
+          'Material Issue: 8x Titanium Drill Bit Sets issued from WC-DC Hub',
+        quantity: '8.00',
+        unitCostBase: '16.00',
+        totalCostBase: '128.00',
+        unitPriceBase: '35.00',
+        totalPriceBase: '280.00',
+        isBillable: true,
+        isBilled: true,
+        postingDate: new Date(now.getTime() - 32 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        ledgerId: uuid(),
+        projectId: prj1,
+        projectTaskId: t2_2,
+        entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        sourceType: PROJECT_SOURCE_TYPE.TIMESHEET,
+        sourceId: null,
+        resourceId: resSpec,
+        productId: null,
+        description:
+          'Logged 36.0 hrs - Distribution Panel Mounting & Disconnect Terminations',
+        quantity: '36.00',
+        unitCostBase: '65.00',
+        totalCostBase: '2340.00',
+        unitPriceBase: '130.00',
+        totalPriceBase: '4680.00',
+        isBillable: true,
+        isBilled: false,
+        postingDate: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        ledgerId: uuid(),
+        projectId: prj1,
+        projectTaskId: t2_2,
+        entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+        lineType: PROJECT_LINE_TYPE.ITEM,
+        sourceType: PROJECT_SOURCE_TYPE.INVENTORY_ISSUE,
+        sourceId: null,
+        resourceId: null,
+        productId: data.prods[3].id,
+        description:
+          'Material Issue: 12x 18V 5.0Ah Li-Ion Battery Packs issued to site',
+        quantity: '12.00',
+        unitCostBase: '65.00',
+        totalCostBase: '780.00',
+        unitPriceBase: '129.00',
+        totalPriceBase: '1548.00',
+        isBillable: true,
+        isBilled: false,
+        postingDate: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+
+      // PRJ 2 Actuals
+      {
+        ledgerId: uuid(),
+        projectId: prj2,
+        projectTaskId: t2_p1,
+        entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+        lineType: PROJECT_LINE_TYPE.ITEM,
+        sourceType: PROJECT_SOURCE_TYPE.INVENTORY_ISSUE,
+        sourceId: null,
+        resourceId: null,
+        productId: data.prods[1].id,
+        description:
+          'Material Issue: 8x Hydraulic Impact Drivers deployed to demolition shift',
+        quantity: '8.00',
+        unitCostBase: '110.00',
+        totalCostBase: '880.00',
+        unitPriceBase: '229.00',
+        totalPriceBase: '1832.00',
+        isBillable: true,
+        isBilled: true,
+        postingDate: new Date(now.getTime() - 40 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        ledgerId: uuid(),
+        projectId: prj2,
+        projectTaskId: t2_p2,
+        entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        sourceType: PROJECT_SOURCE_TYPE.TIMESHEET,
+        sourceId: null,
+        resourceId: resEng,
+        productId: null,
+        description:
+          'Logged 40.0 hrs - Concrete Chemical Anchor Field Verification',
+        quantity: '40.00',
+        unitCostBase: '85.00',
+        totalCostBase: '3400.00',
+        unitPriceBase: '165.00',
+        totalPriceBase: '6600.00',
+        isBillable: true,
+        isBilled: false,
+        postingDate: new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        ledgerId: uuid(),
+        projectId: prj2,
+        projectTaskId: t2_p2,
+        entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        sourceType: PROJECT_SOURCE_TYPE.TIMESHEET,
+        sourceId: null,
+        resourceId: resSpec,
+        productId: null,
+        description: 'Logged 50.0 hrs - Fastener Drilling & Core Anchoring',
+        quantity: '50.00',
+        unitCostBase: '65.00',
+        totalCostBase: '3250.00',
+        unitPriceBase: '130.00',
+        totalPriceBase: '6500.00',
+        isBillable: true,
+        isBilled: false,
+        postingDate: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        ledgerId: uuid(),
+        projectId: prj2,
+        projectTaskId: t2_p2,
+        entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        sourceType: PROJECT_SOURCE_TYPE.MANUAL_JOURNAL,
+        sourceId: null,
+        resourceId: resFastener,
+        productId: null,
+        description: 'Pneumatic Fastening Rig - 8 Days Active Field Setting',
+        quantity: '8.00',
+        unitCostBase: '180.00',
+        totalCostBase: '1440.00',
+        unitPriceBase: '350.00',
+        totalPriceBase: '2800.00',
+        isBillable: true,
+        isBilled: false,
+        postingDate: new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        ledgerId: uuid(),
+        projectId: prj2,
+        projectTaskId: t2_p2,
+        entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+        lineType: PROJECT_LINE_TYPE.ITEM,
+        sourceType: PROJECT_SOURCE_TYPE.INVENTORY_ISSUE,
+        sourceId: null,
+        resourceId: null,
+        productId: data.prods[3].id,
+        description:
+          'Material Issue: 8x 18V Battery Packs issued to field team',
+        quantity: '8.00',
+        unitCostBase: '65.00',
+        totalCostBase: '520.00',
+        unitPriceBase: '129.00',
+        totalPriceBase: '1032.00',
+        isBillable: true,
+        isBilled: false,
+        postingDate: new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+
+      // PRJ 4 Actuals (Completed & Fully Billed)
+      {
+        ledgerId: uuid(),
+        projectId: prj4,
+        projectTaskId: t4_p1,
+        entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        sourceType: PROJECT_SOURCE_TYPE.TIMESHEET,
+        sourceId: null,
+        resourceId: resEng,
+        productId: null,
+        description:
+          'Logged 95.0 hrs - Concourse Raceway Installation & Supervision',
+        quantity: '95.00',
+        unitCostBase: '85.00',
+        totalCostBase: '8075.00',
+        unitPriceBase: '165.00',
+        totalPriceBase: '15675.00',
+        isBillable: true,
+        isBilled: true,
+        postingDate: new Date(now.getTime() - 80 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        ledgerId: uuid(),
+        projectId: prj4,
+        projectTaskId: t4_p2,
+        entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        sourceType: PROJECT_SOURCE_TYPE.TIMESHEET,
+        sourceId: null,
+        resourceId: resSpec,
+        productId: null,
+        description:
+          'Logged 135.0 hrs - Gate Power Stanchions & Data Fastening',
+        quantity: '135.00',
+        unitCostBase: '65.00',
+        totalCostBase: '8775.00',
+        unitPriceBase: '130.00',
+        totalPriceBase: '17550.00',
+        isBillable: true,
+        isBilled: true,
+        postingDate: new Date(now.getTime() - 40 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        ledgerId: uuid(),
+        projectId: prj4,
+        projectTaskId: t4_p1,
+        entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        sourceType: PROJECT_SOURCE_TYPE.MANUAL_JOURNAL,
+        sourceId: null,
+        resourceId: resCrane,
+        productId: null,
+        description: 'Mobile Crane - 5 Days HVAC & Roof Cable Staging',
+        quantity: '5.00',
+        unitCostBase: '450.00',
+        totalCostBase: '2250.00',
+        unitPriceBase: '850.00',
+        totalPriceBase: '4250.00',
+        isBillable: true,
+        isBilled: true,
+        postingDate: new Date(now.getTime() - 75 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        ledgerId: uuid(),
+        projectId: prj4,
+        projectTaskId: t4_p2,
+        entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+        lineType: PROJECT_LINE_TYPE.ITEM,
+        sourceType: PROJECT_SOURCE_TYPE.INVENTORY_ISSUE,
+        sourceId: null,
+        resourceId: null,
+        productId: data.prods[0].id,
+        description:
+          'Material Issue: 10x 18V Cordless Hammer Drills for Gate Mounting',
+        quantity: '10.00',
+        unitCostBase: '145.00',
+        totalCostBase: '1450.00',
+        unitPriceBase: '299.00',
+        totalPriceBase: '2990.00',
+        isBillable: true,
+        isBilled: true,
+        postingDate: new Date(now.getTime() - 65 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        ledgerId: uuid(),
+        projectId: prj4,
+        projectTaskId: t4_p2,
+        entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+        lineType: PROJECT_LINE_TYPE.ITEM,
+        sourceType: PROJECT_SOURCE_TYPE.INVENTORY_ISSUE,
+        sourceId: null,
+        resourceId: null,
+        productId: data.prods[3].id,
+        description: 'Material Issue: 25x 18V 5.0Ah Li-Ion Battery Packs',
+        quantity: '25.00',
+        unitCostBase: '65.00',
+        totalCostBase: '1625.00',
+        unitPriceBase: '129.00',
+        totalPriceBase: '3225.00',
+        isBillable: true,
+        isBilled: true,
+        postingDate: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+
+      // PRJ 5 Actuals (On Hold)
+      {
+        ledgerId: uuid(),
+        projectId: prj5,
+        projectTaskId: t5_p1,
+        entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        sourceType: PROJECT_SOURCE_TYPE.TIMESHEET,
+        sourceId: null,
+        resourceId: resEng,
+        productId: null,
+        description:
+          'Logged 20.0 hrs - Mezzanine Structural Review & Alignment Inspection',
+        quantity: '20.00',
+        unitCostBase: '85.00',
+        totalCostBase: '1700.00',
+        unitPriceBase: '165.00',
+        totalPriceBase: '3300.00',
+        isBillable: true,
+        isBilled: true,
+        postingDate: new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        ledgerId: uuid(),
+        projectId: prj5,
+        projectTaskId: t5_p2,
+        entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        sourceType: PROJECT_SOURCE_TYPE.TIMESHEET,
+        sourceId: null,
+        resourceId: resSpec,
+        productId: null,
+        description:
+          'Logged 15.0 hrs - Primary Conveyor Track Initial Anchoring',
+        quantity: '15.00',
+        unitCostBase: '65.00',
+        totalCostBase: '975.00',
+        unitPriceBase: '130.00',
+        totalPriceBase: '1950.00',
+        isBillable: true,
+        isBilled: false,
+        postingDate: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+
+      // PRJ 7 Actuals (Closed & Fully Billed)
+      {
+        ledgerId: uuid(),
+        projectId: prj7,
+        projectTaskId: t7_p1,
+        entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        sourceType: PROJECT_SOURCE_TYPE.TIMESHEET,
+        sourceId: null,
+        resourceId: resPM,
+        productId: null,
+        description:
+          'Logged 40.0 hrs - Rail Switch Track Pilot Project Management',
+        quantity: '40.00',
+        unitCostBase: '95.00',
+        totalCostBase: '3800.00',
+        unitPriceBase: '195.00',
+        totalPriceBase: '7800.00',
+        isBillable: true,
+        isBilled: true,
+        postingDate: new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        ledgerId: uuid(),
+        projectId: prj7,
+        projectTaskId: t7_p2,
+        entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        sourceType: PROJECT_SOURCE_TYPE.TIMESHEET,
+        sourceId: null,
+        resourceId: resEng,
+        productId: null,
+        description:
+          'Logged 98.0 hrs - Fastener Dynamic Stress Engineering & Inspection',
+        quantity: '98.00',
+        unitCostBase: '85.00',
+        totalCostBase: '8330.00',
+        unitPriceBase: '165.00',
+        totalPriceBase: '16170.00',
+        isBillable: true,
+        isBilled: true,
+        postingDate: new Date(now.getTime() - 120 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+      {
+        ledgerId: uuid(),
+        projectId: prj7,
+        projectTaskId: t7_p3,
+        entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+        lineType: PROJECT_LINE_TYPE.RESOURCE,
+        sourceType: PROJECT_SOURCE_TYPE.PURCHASE_INVOICE,
+        sourceId: null,
+        resourceId: resCalib,
+        productId: null,
+        description: 'Subcontractor - 5 Days Dynamic Rail Telemetry Testing',
+        quantity: '5.00',
+        unitCostBase: '900.00',
+        totalCostBase: '4500.00',
+        unitPriceBase: '1500.00',
+        totalPriceBase: '7500.00',
+        isBillable: true,
+        isBilled: true,
+        postingDate: new Date(now.getTime() - 75 * 24 * 60 * 60 * 1000),
+        createdBy: 'system',
+      },
+    ])
+    .onConflictDoNothing();
+
+  console.log('Operational Service Projects successfully seeded.');
+
+  // 11. Seed Accounting Fiscal Periods Governance (FY2025, FY2026, FY2027)
+  const periodsToInsert: Array<{
+    periodId: string;
+    periodName: string;
+    fiscalYear: number;
+    periodNumber: number;
+    startDate: string;
+    endDate: string;
+    status: 'open' | 'soft_locked' | 'hard_closed';
+    closedBy: string | null;
+    closedAt: Date | null;
+    notes: string;
+  }> = [];
+
+  const addYearPeriods = (year: number, closedUpToMonth: number) => {
+    for (let m = 1; m <= 12; m++) {
+      const monthStr = m.toString().padStart(2, '0');
+      const startDay = `${year}-${monthStr}-01`;
+      const lastDayNum = new Date(year, m, 0).getDate();
+      const endDay = `${year}-${monthStr}-${lastDayNum}`;
+      const periodName = `FY${year}-P${monthStr}`;
+
+      const isClosed = m <= closedUpToMonth;
+      periodsToInsert.push({
+        periodId: uuid(),
+        periodName,
+        fiscalYear: year,
+        periodNumber: m,
+        startDate: startDay,
+        endDate: endDay,
+        status: isClosed ? 'hard_closed' : 'open',
+        closedBy: isClosed ? 'demo' : null,
+        closedAt: isClosed
+          ? new Date(`${year}-${monthStr}-${lastDayNum}T23:59:59Z`)
+          : null,
+        notes: isClosed
+          ? `Audited & closed period for FY${year} Month ${m}`
+          : `Open period for operational postings`,
+      });
+    }
+  };
+
+  addYearPeriods(2025, 12);
+  addYearPeriods(2026, 8);
+  addYearPeriods(2027, 0);
+
+  for (const period of periodsToInsert) {
+    await db.insert(glFiscalPeriods).values(period).onConflictDoNothing();
+  }
+
+  // 12. Ledger Integrity Audit Verification
   console.log('Verifying General Ledger integrity audit...');
   const auditReport = await executeLedgerIntegrityAudit(
     db as unknown as DrizzleDB,
@@ -3921,6 +7585,7 @@ async function seedDemoAppSettings(db: SeedDB) {
     await db.insert(appSettings).values({
       inventoryValuationMethod: 'weighted_average',
       inventoryAccountingMode: 'perpetual',
+      allowNegativeInventory: false,
       creditLimitBehavior: 'soft',
       setupCompletedAt: now,
       systemIdentifier: sid,

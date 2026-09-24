@@ -9,7 +9,7 @@ import {
   seedAccounts,
   runCoreSeeds,
 } from '../../src/seeds/prod/core';
-import { seedTestLocations } from './test-seed';
+import { seedTestLocations, seedTestUsers } from './test-seed';
 
 export async function createMemoryDb(opts?: { skipSeeds?: boolean }) {
   const client = new PGlite();
@@ -61,7 +61,19 @@ export async function createMemoryDb(opts?: { skipSeeds?: boolean }) {
     ALTER TABLE "herobm_core"."work_orders" ADD COLUMN IF NOT EXISTS "output_bin_id" uuid;
     ALTER TABLE "herobm_core"."work_orders" ADD COLUMN IF NOT EXISTS "putaway_status" text;
     ALTER TABLE "herobm_core"."purchase_order_return_lines" ADD COLUMN IF NOT EXISTS "source_bin_id" uuid;
-    ALTER TABLE "herobm_core"."organizations" ALTER COLUMN "state_code" SET DEFAULT 'active';`);
+    ALTER TABLE "herobm_core"."gl_accounts" ADD COLUMN IF NOT EXISTS "report_category" text;
+    ALTER TABLE "herobm_core"."gl_journal_lines" ADD COLUMN IF NOT EXISTS "project_id" uuid;
+    ALTER TABLE "herobm_core"."gl_journal_lines" ADD COLUMN IF NOT EXISTS "project_task_id" uuid;
+    ALTER TABLE "herobm_core"."organizations" ALTER COLUMN "state_code" SET DEFAULT 'active';
+    ALTER TABLE "herobm_core"."projects" ADD COLUMN IF NOT EXISTS "discount_percentage" numeric;
+    ALTER TABLE "herobm_core"."sales_invoices" ADD COLUMN IF NOT EXISTS "project_id" uuid;
+    ALTER TABLE "herobm_core"."sales_invoices" ALTER COLUMN "sales_order_id" DROP NOT NULL;
+    ALTER TABLE "herobm_core"."sales_invoice_lines" ADD COLUMN IF NOT EXISTS "project_ledger_entry_id" uuid;
+    ALTER TABLE "herobm_core"."sales_invoice_lines" ADD COLUMN IF NOT EXISTS "product_id" uuid;
+    ALTER TABLE "herobm_core"."sales_invoice_lines" ADD COLUMN IF NOT EXISTS "gl_account_id" uuid;
+    ALTER TABLE "herobm_core"."sales_invoice_lines" ADD COLUMN IF NOT EXISTS "description" text;
+    ALTER TABLE "herobm_core"."sales_invoice_lines" ALTER COLUMN "sales_order_line_id" DROP NOT NULL;
+    ALTER TABLE "herobm_core"."project_ledger_entries" ADD COLUMN IF NOT EXISTS "is_billable" boolean DEFAULT true NOT NULL;`);
 
   const db = drizzle(client, { schema });
 
@@ -72,6 +84,7 @@ export async function createMemoryDb(opts?: { skipSeeds?: boolean }) {
     await seedCoaAccounts(db, false);
     await seedCoaSettings(db, false);
     await seedTestLocations(db, false);
+    await seedTestUsers(db, false);
     await seedAccounts(db, false);
   }
 

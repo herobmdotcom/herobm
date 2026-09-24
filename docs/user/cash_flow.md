@@ -32,8 +32,9 @@ fields:
     title: "Reconciliation Drift"
     summary: "Difference between calculated net activity cash movements and GL bank account changes. Must equal 0.00."
 related:
-  - "general_ledger"
-  - "fiscal_periods"
+  - "general-ledger"
+  - "balance-sheet"
+  - "fiscal-periods"
   - "balances"
   - "reconciliations"
 ---
@@ -130,8 +131,8 @@ HeroBM is engineered to work universally across regional and international accou
    * A green banner confirms that calculated operational flows exactly match ledger bank account movements.
 4. Review the KPI cards and four detailed schedules for Operating, Investing, Financing, and the Cash Reconciliation Schedule.
 
-### 2. Exporting Statement PDFs
-1. On the Cash Flow page, click **Statement PDF**.
+### 2. Exporting Cash Flow PDFs
+1. On the Cash Flow page, click **Cash Flow PDF**.
 2. The report service formats the statement using the official Typst report engine (`cash-flow-statement.typ`), embedding:
    * Company name, tax registration number, and address.
    * Full breakdown of all four financial schedules in the base currency.

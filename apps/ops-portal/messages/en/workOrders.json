@@ -1,0 +1,63 @@
+{
+  "backToOrders": "← Back to Work Orders",
+  "buttons": {
+    "cancel": "Cancel",
+    "createWorkOrder": "Create Work Order",
+    "customLine": "Add Custom Line",
+    "saving": "Saving..."
+  },
+  "columns": {
+    "additionalCost": "Additional Cost",
+    "assemblyCostPerUnit": "Assembly Cost/Unit",
+    "completedQty": "Completed Qty",
+    "expectedQty": "Expected Qty",
+    "lineNumber": "#",
+    "location": "Location",
+    "orderNumber": "Order Number",
+    "product": "Product",
+    "status": "Status",
+    "targetQty": "Target Qty",
+    "totalCost": "Total Cost",
+    "unitCost": "Unit Cost",
+    "wipBin": "WIP Bin"
+  },
+  "createTitle": "Create Work Order",
+  "customFields": "Custom Fields",
+  "detailsHeading": "Work Order Details",
+  "errors": {
+    "binsRequired": "WIP Bin and Output Bin must be set.",
+    "failedToCreate": "Failed to create work order",
+    "noComponents": "Please select a valid product or add component lines",
+    "pleaseSelectLocation": "Please select a location",
+    "pleaseSelectProduct": "Please select a product to produce",
+    "targetQtyPositive": "Target quantity must be greater than 0"
+  },
+  "labels": {
+    "additionalCost": "Additional Cost",
+    "assemblyCostPerUnit": "Unit Assembly Cost",
+    "location": "Location",
+    "orderNumber": "Order Number",
+    "outputBin": "Output Bin",
+    "product": "Product to Produce",
+    "targetQuantity": "Target Quantity",
+    "totalCost": "Total Cost",
+    "wipBin": "WIP Bin",
+    "zone": "Storage Zone"
+  },
+  "lineItems": "Components",
+  "noLineItems": "No component line items added.",
+  "placeholders": {
+    "additionalCost": "0.00",
+    "allZones": "All Zones",
+    "assemblyCostPerUnit": "0.00",
+    "customDescription": "Custom component description",
+    "orderNumber": "e.g. WO-20260811-001 (auto-generated if empty)",
+    "searchComponent": "Add component...",
+    "searchOrders": "Search Work Orders...",
+    "searchProduct": "Search product to produce...",
+    "selectOutputBin": "Select Output Bin",
+    "selectWipBin": "Select WIP Bin",
+    "unassigned": "Unassigned"
+  },
+  "title": "Work Orders"
+}

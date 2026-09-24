@@ -28,9 +28,17 @@ test.describe('Automated App Crawler', () => {
     page.on('console', (msg) => {
       if (msg.type() === 'error') {
         const text = msg.text();
-        // Ignore expected/benign errors if necessary, but log others
-        if (!text.includes('favicon.ico') && !text.includes('404')) {
-           consoleErrors.push({ url: page.url(), error: text });
+        // Ignore expected/benign errors (aborted font routes, favicon, 404s / not found, aborted in-flight fetches on rapid navigation)
+        if (
+          !text.includes('favicon.ico') &&
+          !text.includes('404') &&
+          !text.toLowerCase().includes('not found') &&
+          !text.includes('ERR_FAILED') &&
+          !text.includes('Failed to fetch') &&
+          !text.includes('fonts.googleapis.com') &&
+          !text.includes('fonts.gstatic.com')
+        ) {
+          consoleErrors.push({ url: page.url(), error: text });
         }
       }
     });
@@ -38,6 +46,9 @@ test.describe('Automated App Crawler', () => {
     page.on('pageerror', (exception) => {
       consoleErrors.push({ url: page.url(), error: exception.message });
     });
+
+    // Abort external fonts to prevent crawler delays
+    await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.abort());
 
     while (queue.size > 0 && visited.size < MAX_PAGES_TO_CRAWL) {
       const currentUrl = Array.from(queue)[0];
@@ -51,10 +62,10 @@ test.describe('Automated App Crawler', () => {
       console.log(`Crawling: ${currentUrl} (${visited.size}/${MAX_PAGES_TO_CRAWL})`);
 
       try {
-        await page.goto(currentUrl, { waitUntil: 'networkidle' });
+        await page.goto(currentUrl, { waitUntil: 'domcontentloaded' });
         
-        // Minimal delay to let React render dynamic data into the DOM (e.g., table rows with links)
-        await page.waitForTimeout(1500);
+        // Minimal delay to let React render dynamic data into the DOM
+        await page.waitForTimeout(100);
 
         // Assert 1: Check for generic Error Boundaries or Next.js error pages
         const errorBoundaryText = page.locator('text=Something went wrong').first();

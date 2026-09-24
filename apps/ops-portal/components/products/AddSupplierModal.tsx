@@ -1,100 +1,85 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import { getErrorMessage } from '@herobm/shared';
-import { reportError } from '@/lib/api';
+import SlideOver from '@/components/shared/SlideOver';
+import SupplierSelect, { Supplier } from '@/components/shared/SupplierSelect';
 import { Button } from '@/components/shared/Button';
 
-interface AddSupplierModalProps {
+export interface SupplierLinkInitialData {
+  vendorId: string;
+  vendorName?: string;
+  vendorNumber?: string;
+  supplierPartNumber?: string | null;
+  costPrice?: string | number | null;
+  discountPercent?: string | number | null;
+  minPurchaseQty?: string | number | null;
+  purchaseUnit?: string | null;
+  isPreferred?: boolean;
+}
+
+export interface AddSupplierModalProps {
   productId: string;
   productName: string;
   productNumber: string;
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  initialData?: SupplierLinkInitialData | null;
 }
 
 export default function AddSupplierModal({ 
-  productId, productName, productNumber, isOpen, onClose, onSuccess 
+  productId, productName, productNumber, isOpen, onClose, onSuccess, initialData 
 }: AddSupplierModalProps) {
-  const [suppliers, setSuppliers] = useState<api.SupplierResponseDto[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [search, setSearch] = useState('');
-  const [lastSearchQuery, setLastSearchQuery] = useState('');
-  const t = useTranslations('products.supplierModal');
-  
-  // Selection State
   const [vendorId, setVendorId] = useState('');
-  const [selectedVendorName, setSelectedVendorName] = useState('');
-
-  // Form State
   const [supplierPartNumber, setSupplierPartNumber] = useState('');
   const [costPrice, setCostPrice] = useState('0.00');
+  const [discountPercent, setDiscountPercent] = useState('0');
+  const [minPurchaseQty, setMinPurchaseQty] = useState('');
+  const [purchaseUnit, setPurchaseUnit] = useState('');
+  const [isPreferred, setIsPreferred] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const t = useTranslations('products.supplierModal');
+  const tCommon = useTranslations('common');
 
-  const wrapperRef = useRef<HTMLDivElement>(null);
+  const isEditing = Boolean(initialData);
 
   useEffect(() => {
     if (isOpen) {
-      setVendorId('');
-      setSelectedVendorName('');
-      setSearch('');
-      setLastSearchQuery('');
-      setSuppliers([]);
-      setSupplierPartNumber('');
-      setCostPrice('0.00');
+      if (initialData) {
+        setVendorId(initialData.vendorId || '');
+        setSupplierPartNumber(initialData.supplierPartNumber || '');
+        setCostPrice(
+          initialData.costPrice != null && initialData.costPrice !== ''
+            ? String(initialData.costPrice)
+            : '0.00'
+        );
+        setDiscountPercent(
+          initialData.discountPercent != null && initialData.discountPercent !== ''
+            ? String(initialData.discountPercent)
+            : '0'
+        );
+        setMinPurchaseQty(
+          initialData.minPurchaseQty != null && initialData.minPurchaseQty !== ''
+            ? String(initialData.minPurchaseQty)
+            : ''
+        );
+        setPurchaseUnit(initialData.purchaseUnit || '');
+        setIsPreferred(Boolean(initialData.isPreferred));
+      } else {
+        setVendorId('');
+        setSupplierPartNumber('');
+        setCostPrice('0.00');
+        setDiscountPercent('0');
+        setMinPurchaseQty('');
+        setPurchaseUnit('');
+        setIsPreferred(false);
+      }
     }
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    if (search.length < 2 || search === selectedVendorName) {
-      setSuppliers([]);
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      fetchSuppliers(search);
-    }, 400);
-
-    return () => clearTimeout(timer);
-  }, [search, isOpen, selectedVendorName]);
-
-  const fetchSuppliers = async (q: string) => {
-    setLoading(true);
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-      const res = await api.suppliersControllerFindAll({ q, limit: 15 } as any);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-      setSuppliers((res.data as any)?.data || res.data || []);
-      setLastSearchQuery(q);
-    } catch (err: unknown) {
-      reportError(err, 'AddSupplierModal.fetchSuppliers');
-      setSuppliers([]);
-      toast.error('Failed to search suppliers: ' + getErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSearchChange = (val: string) => {
-    setSearch(val);
-    if (vendorId && val !== selectedVendorName) {
-      setVendorId('');
-      setSelectedVendorName('');
-    }
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-  const selectSupplier = (s: any) => {
-    setVendorId(s.vendorId);
-    setSearch(s.name);
-    setSelectedVendorName(s.name);
-    setSuppliers([]); // close the dropdown
-  };
+  }, [isOpen, initialData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,10 +92,14 @@ export default function AddSupplierModal({
     try {
       await api.productsControllerAddSupplier(productId, {
         vendorId,
-        supplierPartNumber: supplierPartNumber || undefined,
+        supplierPartNumber: supplierPartNumber.trim() || undefined,
         costPrice: parseFloat(costPrice) || 0,
+        discountPercent: discountPercent && parseFloat(discountPercent) > 0 ? parseFloat(discountPercent) : undefined,
+        minPurchaseQty: minPurchaseQty && parseFloat(minPurchaseQty) > 0 ? parseFloat(minPurchaseQty) : undefined,
+        purchaseUnit: purchaseUnit.trim() || undefined,
+        isPreferred: isPreferred || undefined,
       });
-      toast.success(t('messages.success'));
+      toast.success(isEditing ? t('messages.updateSuccess') : t('messages.success'));
       onSuccess();
       onClose();
     } catch (err: unknown) {
@@ -120,133 +109,181 @@ export default function AddSupplierModal({
     }
   };
 
-  // Close dropdown on click outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-        setSuppliers([]);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [wrapperRef]);
-
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 pt-10">
-      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl max-w-[540px] w-full flex flex-col overflow-visible max-h-[90vh] shadow-2xl">
-        
-        {/* Header */}
-        <div className="px-6 py-5 border-b border-[var(--border)] flex items-center justify-between bg-[var(--bg-card)] shrink-0 rounded-t-xl">
-          <h3 className="font-bold text-xl text-[var(--text-primary)] font-['Manrope',sans-serif]">
-            {t('title')}
-          </h3>
-          <Button 
+    <SlideOver
+      isOpen={isOpen}
+      onClose={onClose}
+      title={isEditing ? t('editTitle') : t('title')}
+      subtitle={`${productNumber} · ${productName}`}
+      width="max-w-md"
+      footer={
+        <div className="flex items-center justify-end gap-3 w-full">
+          <Button
+            type="button"
             variant="ghost"
-            size="icon"
-            className="rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]" 
             onClick={onClose}
+            disabled={submitting}
           >
-            <span className="material-symbols-outlined text-[20px]">close</span>
+            {t('buttons.cancel') || tCommon('cancel')}
+          </Button>
+          <Button
+            type="submit"
+            form="link-supplier-form"
+            variant="primary"
+            className="bg-[#006b5c] hover:bg-[#005246] border-none text-white"
+            loading={submitting}
+            disabled={!vendorId || submitting}
+          >
+            {isEditing ? t('buttons.saveChanges') : t('buttons.linkProduct')}
           </Button>
         </div>
+      }
+    >
+      <form
+        id="link-supplier-form"
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-5 h-full"
+      >
+        <div>
+          <label
+            htmlFor="supplier-select"
+            className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]"
+          >
+            {t('inputs.searchSupplier')} <span className="text-red-500">*</span>
+          </label>
+          <SupplierSelect
+            value={vendorId || null}
+            initialSearchTerm={
+              initialData?.vendorName
+                ? (initialData.vendorNumber ? `${initialData.vendorNumber} — ${initialData.vendorName}` : initialData.vendorName)
+                : undefined
+            }
+            onChange={(supplier: Supplier | null) => setVendorId(supplier?.vendorId || '')}
+            placeholder={t('inputs.searchPlaceholder')}
+            disabled={submitting || isEditing}
+            required
+          />
+        </div>
 
-        {/* Product Context Banner */}
-        <div className="bg-[var(--bg-secondary)] border-b border-[var(--border)] px-6 py-3 flex items-center gap-3">
-          <div className="w-10 h-10 rounded bg-[var(--bg-card)] border border-[var(--border)] flex items-center justify-center shrink-0">
-            <span className="material-symbols-outlined text-[var(--text-muted)] text-[20px]">inventory_2</span>
+        <div>
+          <label
+            htmlFor="supplier-part-number"
+            className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]"
+          >
+            {t('inputs.supplierPartNo')}
+          </label>
+          <input
+            id="supplier-part-number"
+            type="text"
+            className="input w-full"
+            placeholder="Ex. 104-XX"
+            value={supplierPartNumber}
+            onChange={(e) => setSupplierPartNumber(e.target.value)}
+            disabled={submitting}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label
+              htmlFor="cost-price"
+              className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]"
+            >
+              {t('inputs.costPrice')}
+            </label>
+            <input
+              id="cost-price"
+              type="number"
+              step="0.01"
+              min="0"
+              className="input w-full"
+              value={costPrice}
+              onChange={(e) => setCostPrice(e.target.value)}
+              disabled={submitting}
+            />
           </div>
-          <div className="min-w-0">
-             <div className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest">{productNumber}</div>
-             <div className="text-[15px] font-semibold text-[var(--text-primary)] truncate">{productName}</div>
+
+          <div>
+            <label
+              htmlFor="discount-percent"
+              className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]"
+            >
+              {t('inputs.discountPercent')}
+            </label>
+            <input
+              id="discount-percent"
+              type="number"
+              step="0.1"
+              min="0"
+              max="100"
+              className="input w-full"
+              value={discountPercent}
+              onChange={(e) => setDiscountPercent(e.target.value)}
+              disabled={submitting}
+            />
           </div>
         </div>
-        
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto bg-[var(--bg-card)] flex-1 rounded-b-xl">
-          
-          <div className="relative" ref={wrapperRef}>
-            <label className="block text-[13px] font-bold tracking-wide uppercase text-[var(--text-muted)] mb-2">{t('inputs.searchSupplier')}</label>
-            <div className="relative">
-               <span autoFocus className="material-symbols-outlined absolute left-3.5 top-[11px] text-[var(--text-muted)] text-[20px] pointer-events-none z-10">search</span>
-               <input 
-                 type="text" 
-                 className={`input w-full h-11 text-[15px] pl-[42px] transition-colors ${vendorId ? 'border-[var(--accent)]/50 font-semibold text-[var(--accent)] bg-[var(--accent)]/10' : ''}`}
-                 placeholder={t('inputs.searchPlaceholder')}
-                 value={search}
-                 onChange={(e) => handleSearchChange(e.target.value)}
-                 autoComplete="off"
-               />
-               {loading && (
-                 <div className="absolute right-3 top-[13px]">
-                   <span className="loading loading-spinner loading-xs text-[var(--text-muted)]"></span>
-                 </div>
-               )}
-            </div>
 
-            {/* Floating Dropdown Results */}
-            {suppliers.length > 0 && (
-              <div className="absolute z-50 left-0 right-0 mt-2 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg overflow-hidden max-h-60 overflow-y-auto w-[calc(100%+20px)] -ml-[10px] p-1 shadow-xl">
-                <ul className="py-1">
-                  {(Array.isArray(suppliers) ? suppliers : []).map(s => (
-                    <li key={s.supplierId}>
-                      <Button
-                        variant="ghost"
-                        className="w-full text-left px-4 py-2.5 hover:bg-[var(--bg-card-hover)] flex flex-col items-start h-auto focus:bg-[var(--bg-card-hover)] focus:outline-none transition-colors rounded-md"
-                        onClick={() => selectSupplier(s)}
-                      >
-                        <span className="font-semibold text-[var(--text-primary)]">{s.name}</span>
-                        {s.vendorNumber && <span className="text-xs text-[var(--text-muted)] font-medium">{s.vendorNumber}</span>}
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            
-            {!loading && search.length >= 2 && suppliers.length === 0 && !vendorId && lastSearchQuery === search && (
-              <div className="mt-2 text-sm text-[var(--text-muted)] flex items-center gap-1.5 px-1"><span className="material-symbols-outlined text-[16px]">info</span> {t('inputs.noSuppliersFound', { search })}</div>
-            )}
-            
-            {vendorId && (
-              <div className="mt-2 text-sm text-[var(--accent)] font-semibold flex items-center gap-1.5 px-1"><span className="material-symbols-outlined text-[18px]">check_circle</span> {t('inputs.supplierSelected')}</div>
-            )}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label
+              htmlFor="min-purchase-qty"
+              className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]"
+            >
+              {t('inputs.minPurchaseQty')}
+            </label>
+            <input
+              id="min-purchase-qty"
+              type="number"
+              step="any"
+              min="0"
+              placeholder="e.g. 10"
+              className="input w-full"
+              value={minPurchaseQty}
+              onChange={(e) => setMinPurchaseQty(e.target.value)}
+              disabled={submitting}
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-5 pt-2">
-            <div>
-              <label className="block text-[13px] font-bold tracking-wide uppercase text-[var(--text-muted)] mb-2">{t('inputs.supplierPartNo')}</label>
-              <input
-                className="input w-full h-11 text-[15px]"
-                placeholder="Ex. 104-XX"
-                value={supplierPartNumber}
-                onChange={(e) => setSupplierPartNumber(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-[13px] font-bold tracking-wide uppercase text-[var(--text-muted)] mb-2">{t('inputs.costPrice')}</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                className="input w-full h-11 text-[15px] font-medium"
-                value={costPrice}
-                onChange={(e) => setCostPrice(e.target.value)}
-              />
-            </div>
+          <div>
+            <label
+              htmlFor="purchase-unit"
+              className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]"
+            >
+              {t('inputs.purchaseUnit')}
+            </label>
+            <input
+              id="purchase-unit"
+              type="text"
+              placeholder="e.g. EA, BOX, PACK"
+              className="input w-full"
+              value={purchaseUnit}
+              onChange={(e) => setPurchaseUnit(e.target.value)}
+              disabled={submitting}
+            />
           </div>
+        </div>
 
-          <div className="mt-8 pt-6 flex justify-end gap-3 border-t border-[var(--border)]">
-             <Button variant="ghost" className="hover:bg-[var(--bg-card-hover)] text-[var(--text-secondary)] h-11 min-h-[44px] px-6 font-semibold" onClick={onClose} disabled={submitting}>
-               {t('buttons.cancel')}
-              </Button>
-              <Button type="submit" variant="primary" className="bg-[#006b5c] hover:bg-[#005246] border-none text-white h-11 min-h-[44px] px-8 font-semibold text-[15px]" disabled={!vendorId} loading={submitting}>
-                {t('buttons.linkProduct')}
-              </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="flex items-center gap-2 pt-1">
+          <input
+            id="is-preferred-supplier"
+            type="checkbox"
+            className="checkbox checkbox-primary"
+            checked={isPreferred}
+            onChange={(e) => setIsPreferred(e.target.checked)}
+            disabled={submitting}
+          />
+          <label
+            htmlFor="is-preferred-supplier"
+            className="text-sm font-medium cursor-pointer text-[var(--text-primary)]"
+          >
+            {t('inputs.isPreferred')}
+          </label>
+        </div>
+      </form>
+    </SlideOver>
   );
 }
+
+export { AddSupplierModal as AddSupplierSlideOver };
+

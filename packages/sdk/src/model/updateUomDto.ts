@@ -5,7 +5,9 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
+import type { UpdateUomDtoCategory } from './updateUomDtoCategory';
 
 export interface UpdateUomDto {
   description?: string;
+  category?: UpdateUomDtoCategory;
 }

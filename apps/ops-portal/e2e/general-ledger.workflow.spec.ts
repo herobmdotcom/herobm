@@ -4,11 +4,15 @@ import { waitForGrid } from './helpers/grid';
 import { uniqueId } from './helpers/generators';
 
 test.describe('Workflow: General Ledger & Financial Posting', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.abort());
+  });
+
   test('validates double-entry balancing invariants and posts manual journal entry', async ({ page }) => {
     const journalMemo = `E2E Journal ${uniqueId('GL')}`;
 
     // 1. Navigate to New Journal Entry page
-    await page.goto('/general-ledger/journal-entries/new', { waitUntil: 'networkidle' });
+    await page.goto('/general-ledger/journal-entries/new', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
 
     // 2. Fill Memo
@@ -69,7 +73,7 @@ test.describe('Workflow: General Ledger & Financial Posting', () => {
     }
 
     // 7. Verify Trial Balance view renders
-    await page.goto('/general-ledger/trial-balance', { waitUntil: 'networkidle' });
+    await page.goto('/general-ledger/trial-balance', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
   });
 });

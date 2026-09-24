@@ -5,6 +5,7 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
+import type { ContactResponseDtoMetadata } from './contactResponseDtoMetadata';
 import type { ContactResponseDtoOrganizationContactLinksItem } from './contactResponseDtoOrganizationContactLinksItem';
 import type { ContactResponseDtoActorContactLinksItem } from './contactResponseDtoActorContactLinksItem';
 import type { ContactResponseDtoEventsItem } from './contactResponseDtoEventsItem';
@@ -24,6 +25,8 @@ export interface ContactResponseDto {
   mobile?: string | null;
   /** @nullable */
   jobTitle?: string | null;
+  /** @nullable */
+  metadata?: ContactResponseDtoMetadata;
   primaryFor?: string[];
   organizationContactLinks?: ContactResponseDtoOrganizationContactLinksItem[];
   actorContactLinks?: ContactResponseDtoActorContactLinksItem[];

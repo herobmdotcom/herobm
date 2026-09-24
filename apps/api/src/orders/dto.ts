@@ -14,6 +14,7 @@ import {
   Min,
   Max,
   ValidateIf,
+  IsObject,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -170,9 +171,10 @@ export class UpdateOrderLineDto {
 // ── Order Header DTOs ──
 
 export class CreateOrderDto {
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsUUID()
-  @IsNotEmpty()
-  salesOrderId!: string;
+  salesOrderId?: string;
 
   @IsOptional()
   @IsString()
@@ -244,6 +246,11 @@ export class CreateOrderDto {
   @Type(() => OrderCustomFieldsDto)
   customFields?: OrderCustomFieldsDto;
 
+  @ApiPropertyOptional({ type: 'object', additionalProperties: true })
+  @IsOptional()
+  @IsObject()
+  metadata?: Record<string, unknown> | null;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsUUID()
@@ -311,6 +318,11 @@ export class UpdateOrderDto {
   @ValidateNested()
   @Type(() => OrderCustomFieldsDto)
   customFields?: OrderCustomFieldsDto;
+
+  @ApiPropertyOptional({ type: 'object', additionalProperties: true })
+  @IsOptional()
+  @IsObject()
+  metadata?: Record<string, unknown> | null;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -503,6 +515,7 @@ export class OrderResponseDto {
   currencyCode!: string;
   notes?: string | null;
   customFields?: Record<string, unknown> | null;
+  metadata?: Record<string, unknown> | null;
   discrepanciesAcknowledged!: boolean;
   taxProvider?: string | null;
   sourceId?: string | null;
@@ -693,6 +706,46 @@ export class ShipmentResponseDto {
   deliveryPostalCode?: string;
   deliveryCountry?: string;
   shippingNotes?: string;
+
+  @ApiPropertyOptional()
+  stagingBinId?: string;
+
+  @ApiPropertyOptional()
+  stagingBinNumber?: string;
+
+  @ApiPropertyOptional()
+  sourceBinId?: string;
+
+  @ApiPropertyOptional()
+  sourceBinNumber?: string;
+
+  @ApiPropertyOptional()
+  destinationBinId?: string;
+
+  @ApiPropertyOptional()
+  destinationBinNumber?: string;
+
+  @ApiPropertyOptional()
+  projectId?: string;
+
+  @ApiPropertyOptional()
+  projectNumber?: string;
+
+  @ApiPropertyOptional()
+  projectName?: string;
+
+  @ApiPropertyOptional()
+  isProjectReturn?: boolean;
+
+  @ApiPropertyOptional()
+  sourceLocationId?: string;
+
+  @ApiPropertyOptional()
+  destinationLocationId?: string;
+
+  @ApiPropertyOptional()
+  isSameSite?: boolean;
+
   @ApiProperty({
     type: () => ShipmentLineResponseDto,
     isArray: true,
@@ -1077,4 +1130,53 @@ export class DirectFulfillmentResponseDto {
 
   @ApiPropertyOptional()
   message?: string;
+}
+
+export class UpdateSalesSettingsDto {
+  @ApiPropertyOptional({
+    description:
+      'JSON Schema definition for user-defined metadata on Sales Orders',
+    type: 'object',
+    additionalProperties: true,
+  })
+  @IsOptional()
+  @IsObject()
+  salesOrderMetadataSchema?: Record<string, unknown> | null;
+
+  @ApiPropertyOptional({
+    description:
+      'JSON Schema definition for user-defined metadata on Sales Invoices',
+    type: 'object',
+    additionalProperties: true,
+  })
+  @IsOptional()
+  @IsObject()
+  salesInvoiceMetadataSchema?: Record<string, unknown> | null;
+
+  @ApiPropertyOptional({
+    description:
+      'JSON Schema definition for user-defined metadata on Credit Notes',
+    type: 'object',
+    additionalProperties: true,
+  })
+  @IsOptional()
+  @IsObject()
+  creditNoteMetadataSchema?: Record<string, unknown> | null;
+}
+
+export class SalesSettingsResponseDto {
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  salesSettingsId!: string;
+
+  @ApiPropertyOptional({ type: 'object', additionalProperties: true })
+  salesOrderMetadataSchema?: Record<string, unknown> | null;
+
+  @ApiPropertyOptional({ type: 'object', additionalProperties: true })
+  salesInvoiceMetadataSchema?: Record<string, unknown> | null;
+
+  @ApiPropertyOptional({ type: 'object', additionalProperties: true })
+  creditNoteMetadataSchema?: Record<string, unknown> | null;
+
+  @ApiProperty({ example: '2026-03-31T08:00:00Z' })
+  modifiedOn!: string;
 }

@@ -7,6 +7,7 @@ import Link from 'next/link';
 import type { OrderDetail } from './types';
 import { SALES_ORDER_STATE, DATA_SOURCE_CONTEXT } from '@herobm/shared';
 import { Button } from '@/components/shared/Button';
+import OpportunitySelect from '@/components/shared/OpportunitySelect';
 import { useSettings } from '@/components/SettingsProvider';
 
 interface OrderDetailsCardProps {
@@ -260,18 +261,29 @@ export default function OrderDetailsCard({
                     <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                         Opportunity
                     </label>
-                    <p className="text-sm truncate font-medium pt-1.5">
-                        {order.opportunityId ? (
-                            <Link
-                                href={`/crm/opportunities/${order.opportunityId}`}
-                                className="text-[var(--accent)] no-underline hover:underline"
-                            >
-                                {order.opportunityName || order.projectName || order.opportunityId}
-                            </Link>
-                        ) : (
-                            <span className="text-[var(--text-muted)] italic">— None —</span>
-                        )}
-                    </p>
+                    {isOrderDetailsEditable ? (
+                        <OpportunitySelect
+                            value={order.opportunityId || null}
+                            initialSearchTerm={order.opportunityName || order.projectName || ''}
+                            onChange={(opp) => {
+                                saveHeader({ opportunityId: opp?.opportunityId || undefined });
+                            }}
+                            placeholder="— None —"
+                        />
+                    ) : (
+                        <p className="text-sm truncate font-medium pt-1.5">
+                            {order.opportunityId ? (
+                                <Link
+                                    href={`/crm/opportunities/${order.opportunityId}`}
+                                    className="text-[var(--accent)] no-underline hover:underline"
+                                >
+                                    {order.opportunityName || order.projectName || order.opportunityId}
+                                </Link>
+                            ) : (
+                                <span className="text-[var(--text-muted)] italic">— None —</span>
+                            )}
+                        </p>
+                    )}
                 </div>
 
                 <div className="min-w-0">

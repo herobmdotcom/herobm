@@ -57,7 +57,31 @@ export function QuantityCell({
     onHandVal !== undefined &&
     qtyVal > onHandVal;
 
-  const hasWarning = hasGap || isBackordered || hasShortageDirect;
+  const moqVal =
+    line.minPurchaseQty !== undefined && line.minPurchaseQty !== null && line.minPurchaseQty !== ''
+      ? parseFloat(String(line.minPurchaseQty))
+      : undefined;
+  const unitMultiple =
+    line.purchaseUnit !== undefined &&
+    line.purchaseUnit !== null &&
+    line.purchaseUnit !== '' &&
+    !isNaN(Number(line.purchaseUnit))
+      ? parseFloat(String(line.purchaseUnit))
+      : undefined;
+
+  const hasMoq = Boolean(moqVal !== undefined && !isNaN(moqVal) && moqVal > 1);
+  const isBelowMoq = Boolean(
+    hasMoq && (qtyVal <= 0 || qtyVal < (moqVal || 0)),
+  );
+  const isNotMultiple = Boolean(
+    unitMultiple !== undefined &&
+    unitMultiple > 1 &&
+    (qtyVal <= 0 || (qtyVal % unitMultiple !== 0)),
+  );
+  const isSupplierQtyWarning = isBelowMoq || isNotMultiple;
+
+  const hasInventoryWarning = hasGap || isBackordered || hasShortageDirect;
+  const hasWarning = hasInventoryWarning || isSupplierQtyWarning;
   const isRose = hasGap || hasShortageDirect;
 
   const warningTitle = hasGap
@@ -70,13 +94,11 @@ export function QuantityCell({
 
   const warningIconStr = isRose ? 'warning' : 'schedule';
 
-  const warningIcon = hasWarning ? (
+  const warningIcon = hasInventoryWarning ? (
     <span
-      className={`material-symbols-outlined text-[13px] font-normal opacity-75 ${
-        isEditable
-          ? 'absolute -left-3.5 top-1/2 -translate-y-1/2 z-[1]'
-          : 'relative align-middle mr-1'
-      } ${isRose ? 'text-rose-500' : 'text-amber-500'}`}
+      className={`material-symbols-outlined text-[14px] font-normal shrink-0 mr-1 select-none cursor-help ${
+        isRose ? 'text-rose-500' : 'text-amber-500'
+      }`}
       title={warningTitle}
     >
       {warningIconStr}
@@ -87,48 +109,118 @@ export function QuantityCell({
 
   if (isEditable) {
     return (
-      <div className="relative">
-        {warningIcon}
-        {isPersisted ? (
-          <input
-            className={`input w-full text-right !text-xs tabular-nums h-7 !px-1.5 py-1 ${
-              hasWarning ? (isRose ? 'border-rose-300' : 'border-amber-300') : ''
-            }`}
-            type="number"
-            min="0"
-            step="any"
-            defaultValue={parseFloat(String(line.quantity || '0'))}
-            key={`qty-${lineIdentifier}-${line.quantity}`}
-            onBlur={(e) => {
-              if (e.target.value !== String(line.quantity)) {
-                onUpdateLine?.(lineIdentifier, 'quantity', e.target.value);
-              }
-            }}
-          />
-        ) : (
-          <input
-            className={`input w-full text-right !text-xs tabular-nums h-7 !px-1.5 py-1 ${
-              hasWarning ? (isRose ? 'border-rose-300' : 'border-amber-300') : ''
-            }`}
-            type="number"
-            min="0"
-            step="any"
-            value={line.quantity ?? ''}
-            onChange={(e) => onUpdateLine?.(lineIdentifier, 'quantity', e.target.value)}
-          />
-        )}
+      <div className="flex flex-col items-end justify-center w-full">
+        <div className="relative flex items-center justify-end w-full">
+          {warningIcon}
+          {isPersisted ? (
+            <input
+              className={`input w-full text-right !text-xs tabular-nums h-7 !px-1.5 py-1 ${
+                hasWarning
+                  ? isRose
+                    ? 'border-rose-400 bg-rose-50/20 text-rose-700 dark:text-rose-400'
+                    : 'border-amber-400 bg-amber-50/20 text-amber-700 dark:text-amber-400'
+                  : ''
+              }`}
+              type="number"
+              min="0"
+              step="any"
+              defaultValue={parseFloat(String(line.quantity || '0'))}
+              key={`qty-${lineIdentifier}-${line.quantity}`}
+              onBlur={(e) => {
+                if (e.target.value !== String(line.quantity)) {
+                  onUpdateLine?.(lineIdentifier, 'quantity', e.target.value);
+                }
+              }}
+            />
+          ) : (
+            <input
+              className={`input w-full text-right !text-xs tabular-nums h-7 !px-1.5 py-1 ${
+                hasWarning
+                  ? isRose
+                    ? 'border-rose-400 bg-rose-50/20 text-rose-700 dark:text-rose-400'
+                    : 'border-amber-400 bg-amber-50/20 text-amber-700 dark:text-amber-400'
+                  : ''
+              }`}
+              type="number"
+              min="0"
+              step="any"
+              value={line.quantity ?? ''}
+              onChange={(e) => onUpdateLine?.(lineIdentifier, 'quantity', e.target.value)}
+            />
+          )}
+        </div>
+        {hasMoq || line.purchaseUnit ? (
+          <div className="flex items-center gap-1 text-[10px] font-mono leading-tight mt-0.5 whitespace-nowrap">
+            {hasMoq && (
+              <span
+                className={
+                  isBelowMoq
+                    ? 'text-amber-600 dark:text-amber-400 font-bold'
+                    : 'text-[var(--text-muted)]'
+                }
+              >
+                MOQ: {moqVal}
+              </span>
+            )}
+            {hasMoq && line.purchaseUnit && (
+              <span className="text-[var(--text-muted)]">•</span>
+            )}
+            {line.purchaseUnit && (
+              <span
+                className={
+                  isNotMultiple
+                    ? 'text-amber-600 dark:text-amber-400 font-bold'
+                    : 'text-[var(--text-muted)]'
+                }
+              >
+                Unit: {line.purchaseUnit}
+              </span>
+            )}
+          </div>
+        ) : null}
       </div>
     );
   }
 
   return (
-    <span
-      className={`tabular-nums text-xs ${
-        hasGap || hasShortageDirect ? 'text-rose-600 font-medium' : ''
-      }`}
-    >
-      {warningIcon}
-      {parseFloat(String(line.quantity || '0'))}
-    </span>
+    <div className="flex flex-col items-end justify-center">
+      <span
+        className={`tabular-nums text-xs inline-flex items-center justify-end ${
+          hasGap || hasShortageDirect ? 'text-rose-600 font-medium' : isSupplierQtyWarning ? 'text-amber-600 font-medium' : ''
+        }`}
+      >
+        {warningIcon}
+        {parseFloat(String(line.quantity || '0'))}
+      </span>
+      {hasMoq || line.purchaseUnit ? (
+        <div className="flex items-center gap-1 text-[10px] font-mono leading-tight mt-0.5 whitespace-nowrap">
+          {hasMoq && (
+            <span
+              className={
+                isBelowMoq
+                  ? 'text-amber-600 dark:text-amber-400 font-bold'
+                  : 'text-[var(--text-muted)]'
+              }
+            >
+              MOQ: {moqVal}
+            </span>
+          )}
+          {hasMoq && line.purchaseUnit && (
+            <span className="text-[var(--text-muted)]">•</span>
+          )}
+          {line.purchaseUnit && (
+            <span
+              className={
+                isNotMultiple
+                  ? 'text-amber-600 dark:text-amber-400 font-bold'
+                  : 'text-[var(--text-muted)]'
+              }
+            >
+              Unit: {line.purchaseUnit}
+            </span>
+          )}
+        </div>
+      ) : null}
+    </div>
   );
 }

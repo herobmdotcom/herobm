@@ -4,8 +4,12 @@ import { expectNoErrorBoundaries } from './helpers/forms';
 import { uniqueId } from './helpers/generators';
 
 test.describe('Sidebar Section: Sales', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.abort());
+  });
+
   test('Customers: list view renders ag-Grid and allows navigation to detail', async ({ page }) => {
-    await page.goto('/customers', { waitUntil: 'networkidle' });
+    await page.goto('/customers', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
     await waitForGrid(page);
 
@@ -15,7 +19,7 @@ test.describe('Sidebar Section: Sales', () => {
   });
 
   test('Sales Orders: list view loads and search filter works', async ({ page }) => {
-    await page.goto('/sales-orders', { waitUntil: 'networkidle' });
+    await page.goto('/sales-orders', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
     await waitForGrid(page);
 
@@ -25,7 +29,7 @@ test.describe('Sidebar Section: Sales', () => {
   });
 
   test('Sales Orders: create form loads with line items and customer selection', async ({ page }) => {
-    await page.goto('/sales-orders/new', { waitUntil: 'networkidle' });
+    await page.goto('/sales-orders/new', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
 
     // Verify core order form elements
@@ -35,35 +39,35 @@ test.describe('Sidebar Section: Sales', () => {
   });
 
   test('Sales Quotes: list view renders with quote conversion controls', async ({ page }) => {
-    await page.goto('/sales-quotes', { waitUntil: 'networkidle' });
+    await page.goto('/sales-quotes', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
     await waitForGrid(page);
   });
 
   test('Counter Sales: rapid checkout POS view renders', async ({ page }) => {
-    await page.goto('/sales-orders/counter', { waitUntil: 'networkidle' });
+    await page.goto('/sales-orders/counter', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
   });
 
   test('Shipments & Invoices: list views render and load successfully', async ({ page }) => {
-    await page.goto('/shipments', { waitUntil: 'networkidle' });
+    await page.goto('/shipments', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
     await waitForGrid(page);
 
-    await page.goto('/sales-invoices', { waitUntil: 'networkidle' });
+    await page.goto('/sales-invoices', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
     await waitForGrid(page);
   });
 
   test('Sales Returns & Credit Notes: views render without errors', async ({ page }) => {
-    await page.goto('/sales-returns', { waitUntil: 'networkidle' });
+    await page.goto('/sales-returns', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
     await waitForGrid(page);
 
-    await page.goto('/sales-credit-notes', { waitUntil: 'networkidle' });
+    await page.goto('/sales-credit-notes', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
 
-    await page.goto('/sales-credit-notes/operations', { waitUntil: 'networkidle' });
+    await page.goto('/sales-credit-notes/operations', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
   });
 });

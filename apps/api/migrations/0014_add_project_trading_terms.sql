@@ -1,0 +1,3 @@
+ALTER TABLE "herobm_core"."projects" ADD COLUMN IF NOT EXISTS "trading_terms_id" uuid;--> statement-breakpoint
+ALTER TABLE "herobm_core"."projects" ADD CONSTRAINT "projects_trading_terms_id_trading_terms_trading_terms_id_fk" FOREIGN KEY ("trading_terms_id") REFERENCES "herobm_core"."trading_terms"("trading_terms_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_projects_trading_terms_id" ON "herobm_core"."projects" USING btree ("trading_terms_id");

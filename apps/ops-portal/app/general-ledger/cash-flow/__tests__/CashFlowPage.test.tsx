@@ -12,11 +12,30 @@ jest.mock('@/hooks/useDocumentTitle', () => ({
 
 const translations: Record<string, string> = {
   title: 'Statement of Cash Flows',
+  category: 'Activity / Category',
+  amount: 'Amount',
   fiscalPeriod: 'Fiscal Period',
   customRange: 'Custom Date Range',
   to: 'to',
-  exportPdf: 'Statement PDF',
+  exportPdf: 'Cash Flow PDF',
   exporting: 'Exporting...',
+  export: 'Export...',
+  exportCsv: 'Export CSV',
+  exportExcel: 'Export Excel',
+  'reporting.export': 'Export...',
+  'reporting.exportCsv': 'Export CSV',
+  'reporting.exportExcel': 'Export Excel',
+  'reporting.fiscalPeriod': 'Fiscal Period',
+  'reporting.customRange': 'Custom Range',
+  'reporting.closedPeriod': 'Closed Period (Immutable)',
+  'reporting.softLocked': 'Soft Locked',
+  'reporting.fromDate': 'From',
+  'reporting.toDate': 'To',
+  'grid.export': 'Export',
+  'grid.exportCsv': 'Export CSV',
+  'grid.exportExcel': 'Export Excel',
+  'grid.noRowsToShow': 'No rows found',
+  'grid.loadingEllipsis': 'Loading...',
   reconciled: 'General Ledger Cash Parity Verified',
   unreconciled: 'Cash Reconciliation Drift Detected',
   reconciledDesc: 'Calculated net flow matches actual GL bank account movement.',
@@ -153,6 +172,7 @@ describe('CashFlowPage', () => {
       data: new Blob(['fake-pdf'], { type: 'application/pdf' }),
     });
     window.URL.createObjectURL = jest.fn().mockReturnValue('blob:http://localhost/fake-pdf');
+    window.URL.revokeObjectURL = jest.fn();
     window.open = jest.fn();
   });
 
@@ -190,15 +210,15 @@ describe('CashFlowPage', () => {
     });
   });
 
-  it('triggers PDF export when Statement PDF button is clicked', async () => {
+  it('triggers PDF export when Cash Flow PDF button is clicked', async () => {
     const user = userEvent.setup();
     render(<CashFlowPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Statement PDF')).toBeInTheDocument();
+      expect(screen.getByText('Cash Flow PDF')).toBeInTheDocument();
     });
 
-    const exportBtn = screen.getByText('Statement PDF');
+    const exportBtn = screen.getByText('Cash Flow PDF');
     await user.click(exportBtn);
 
     await waitFor(() => {
@@ -212,5 +232,33 @@ describe('CashFlowPage', () => {
       );
       expect(window.open).toHaveBeenCalledWith('blob:http://localhost/fake-pdf', '_blank');
     });
+  });
+
+  it('triggers CSV export when Export CSV is selected from Export menu', async () => {
+    const user = userEvent.setup();
+    const mockClick = jest.fn();
+    const originalCreateElement = document.createElement.bind(document);
+    jest.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
+      const el = originalCreateElement(tagName);
+      if (tagName === 'a') {
+        el.click = mockClick;
+      }
+      return el;
+    });
+
+    render(<CashFlowPage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Export/i })).toBeInTheDocument();
+    });
+
+    const exportMenuBtn = screen.getByRole('button', { name: /Export/i });
+    await user.click(exportMenuBtn);
+
+    const exportCsvBtn = screen.getByRole('menuitem', { name: /export\s*csv|exportcsv/i });
+    await user.click(exportCsvBtn);
+
+    expect(mockClick).toHaveBeenCalled();
+    jest.restoreAllMocks();
   });
 });

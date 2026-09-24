@@ -105,6 +105,9 @@ export class WorkOrderResponseDto {
   @ApiPropertyOptional()
   modifiedOn?: Date | string | null;
 
+  @ApiPropertyOptional({ type: 'object', additionalProperties: true })
+  metadata?: Record<string, unknown> | null;
+
   @ApiPropertyOptional({ type: [WorkOrderComponentResponseDto] })
   components?: WorkOrderComponentResponseDto[];
 }

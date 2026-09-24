@@ -17,10 +17,12 @@ import {
   desc,
   asc,
   lte,
+  aliasedTable,
 } from 'drizzle-orm';
 import { AppConfigService } from '../settings/app-config.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { resolveLedgerRelatedEntities } from './ledger-source-resolver';
 import {
   inventoryLevels,
   products,
@@ -49,7 +51,10 @@ import {
   transferOrderReceiptLines,
   organizations,
   productComponents,
+  productGroups,
+  productSuppliers,
   workOrders,
+  projects,
 } from '@herobm/db-schema';
 import { randomUUID } from 'crypto';
 import { emitEvent } from '../common/emit-event';
@@ -233,6 +238,8 @@ export class InventoryQueryService {
         binNumber: bins.binNumber,
         binType: bins.binType,
         isUnavailable: bins.isUnavailable,
+        isBonded: bins.isBonded,
+        isConsignment: bins.isConsignment,
         onHand: binContents.actualQuantity,
       })
       .from(binContents)
@@ -555,6 +562,10 @@ export class InventoryQueryService {
         productId: binContents.productId,
         productNumber: sql<string>`COALESCE(${products.productNumber}, '')`,
         productName: sql<string>`COALESCE(${products.name}, '')`,
+        barcode: products.barcode,
+        alternateProductNumber: products.alternateProductNumber,
+        imagePath: products.imagePath,
+        description: products.alternateInvoiceDescription,
         actualQuantity: sql<string>`COALESCE(${binContents.actualQuantity}, '0')`,
         baseUom: sql<string>`COALESCE(${products.baseUom}, 'EA')`,
         baseQuantity: sql<number>`COALESCE(${binContents.actualQuantity}, '0')::float`,
@@ -686,7 +697,12 @@ export class InventoryQueryService {
     return { data: rowsWithUoms, page, limit, nextCursor, prevCursor };
   }
 
-  async getPutawayContext(productId: string, locationId: string) {
+  async getPutawayContext(
+    productId: string,
+    locationId: string,
+    projectId?: string,
+    isProjectReturn?: boolean,
+  ) {
     // 1. Get all available bins in the location
     const locationBins = await this.db
       .select({
@@ -704,26 +720,67 @@ export class InventoryQueryService {
         ),
       );
 
-    // 2. Find primary bin
-    const [defaultBin] = await this.db
-      .select({
-        binId: productDefaultBins.binId,
-        binNumber: bins.binNumber,
-      })
-      .from(productDefaultBins)
-      .innerJoin(bins, eq(productDefaultBins.binId, bins.binId))
-      .where(
-        and(
-          eq(productDefaultBins.productId, productId),
-          eq(productDefaultBins.locationId, locationId),
-          eq(productDefaultBins.isPrimaryPerLocation, true),
-        ),
-      )
-      .limit(1);
+    let primaryBinId: string | null = null;
+    let primaryBinNumber: string | null = null;
 
-    const primaryBinId = defaultBin?.binId;
+    // 2. If this is a project staging putaway, prioritize project staging bin
+    if (projectId && !isProjectReturn) {
+      const [project] = await this.db
+        .select({
+          stagingBinId: projects.stagingBinId,
+        })
+        .from(projects)
+        .where(eq(projects.projectId, projectId))
+        .limit(1);
 
-    // 3. Fetch current quantity in primary bin (if exists)
+      if (project?.stagingBinId) {
+        const [projBin] = await this.db
+          .select({
+            binId: bins.binId,
+            binNumber: bins.binNumber,
+          })
+          .from(bins)
+          .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+          .where(
+            and(
+              eq(bins.binId, project.stagingBinId),
+              eq(zones.locationId, locationId),
+            ),
+          )
+          .limit(1);
+
+        if (projBin) {
+          primaryBinId = projBin.binId;
+          primaryBinNumber = projBin.binNumber;
+        }
+      }
+    }
+
+    // 3. Find primary bin from productDefaultBins if not resolved via project
+    if (!primaryBinId) {
+      const [defaultBin] = await this.db
+        .select({
+          binId: productDefaultBins.binId,
+          binNumber: bins.binNumber,
+        })
+        .from(productDefaultBins)
+        .innerJoin(bins, eq(productDefaultBins.binId, bins.binId))
+        .where(
+          and(
+            eq(productDefaultBins.productId, productId),
+            eq(productDefaultBins.locationId, locationId),
+            eq(productDefaultBins.isPrimaryPerLocation, true),
+          ),
+        )
+        .limit(1);
+
+      if (defaultBin) {
+        primaryBinId = defaultBin.binId;
+        primaryBinNumber = defaultBin.binNumber;
+      }
+    }
+
+    // 4. Fetch current quantity in primary bin (if exists)
     let currentQuantity = 0;
     if (primaryBinId) {
       const [content] = await this.db
@@ -744,7 +801,7 @@ export class InventoryQueryService {
 
     return {
       primaryBinId: primaryBinId || null,
-      primaryBinNumber: defaultBin?.binNumber || null,
+      primaryBinNumber: primaryBinNumber || null,
       currentQuantity,
       availableBins: locationBins,
     };
@@ -957,116 +1014,12 @@ export class InventoryQueryService {
       throw new NotFoundException(`Entry ${entryId} not found`);
     }
 
-    let relatedDocument: { number: string; link?: string } | null = null;
-    let relatedParty: { name: string; number: string; link?: string } | null =
-      null;
-
-    if (entry.sourceId) {
-      if (entry.sourceType === 'SO_PICK') {
-        const [o] = await this.db
-          .select({
-            salesOrderId: salesOrders.salesOrderId,
-            orderNumber: salesOrders.orderNumber,
-            customerId: customers.customerId,
-            customerName: organizations.name,
-            customerNumber: customers.customerNumber,
-          })
-          .from(salesOrders)
-          .leftJoin(customers, eq(salesOrders.customerId, customers.customerId))
-          .leftJoin(
-            organizations,
-            eq(customers.organizationId, organizations.organizationId),
-          )
-          .where(eq(salesOrders.salesOrderId, entry.sourceId))
-          .limit(1);
-
-        if (o) {
-          relatedDocument = {
-            number: o.orderNumber,
-            link: `/sales-orders/${o.salesOrderId}#picking-section`,
-          };
-          relatedParty = o.customerName
-            ? {
-                name: o.customerName,
-                number: o.customerNumber || '',
-                link: `/customers/${o.customerId}`,
-              }
-            : null;
-        }
-      } else if (entry.sourceType === 'SO_SHIPMENT') {
-        const [s] = await this.db
-          .select({
-            shipmentNumber: salesOrderShipments.shipmentNumber,
-            salesOrderId: salesOrders.salesOrderId,
-            orderNumber: salesOrders.orderNumber,
-            customerId: customers.customerId,
-            customerName: organizations.name,
-            customerNumber: customers.customerNumber,
-          })
-          .from(salesOrderShipments)
-          .innerJoin(
-            salesOrders,
-            eq(salesOrders.salesOrderId, salesOrderShipments.salesOrderId),
-          )
-          .leftJoin(customers, eq(salesOrders.customerId, customers.customerId))
-          .leftJoin(
-            organizations,
-            eq(customers.organizationId, organizations.organizationId),
-          )
-          .where(eq(salesOrderShipments.shipmentId, entry.sourceId))
-          .limit(1);
-
-        if (s) {
-          relatedDocument = {
-            number: s.orderNumber,
-            link: `/sales-orders/${s.salesOrderId}#shipments-section`,
-          };
-          relatedParty = s.customerName
-            ? {
-                name: s.customerName,
-                number: s.customerNumber || '',
-                link: `/customers/${s.customerId}`,
-              }
-            : null;
-        }
-      } else if (entry.sourceType === 'SO_RETURN') {
-        const [ret] = await this.db
-          .select({
-            returnNumber: salesOrderReturns.returnNumber,
-            salesOrderId: salesOrders.salesOrderId,
-            orderNumber: salesOrders.orderNumber,
-            customerId: customers.customerId,
-            customerName: organizations.name,
-            customerNumber: customers.customerNumber,
-          })
-          .from(salesOrderReturns)
-          .innerJoin(
-            salesOrders,
-            eq(salesOrders.salesOrderId, salesOrderReturns.salesOrderId),
-          )
-          .leftJoin(customers, eq(salesOrders.customerId, customers.customerId))
-          .leftJoin(
-            organizations,
-            eq(customers.organizationId, organizations.organizationId),
-          )
-          .where(eq(salesOrderReturns.returnId, entry.sourceId))
-          .limit(1);
-
-        if (ret) {
-          relatedDocument = {
-            number: ret.orderNumber,
-            link: `/sales-orders/${ret.salesOrderId}#returns-section`,
-          };
-          relatedParty = ret.customerName
-            ? {
-                name: ret.customerName,
-                number: ret.customerNumber || '',
-                link: `/customers/${ret.customerId}`,
-              }
-            : null;
-        }
-      }
-    }
+    const { relatedDocument, relatedParty } =
+      await resolveLedgerRelatedEntities(
+        this.db,
+        entry.sourceType,
+        entry.sourceId,
+      );
 
     // 2. Fetch ledger lines
     const linesQuery = sql`
@@ -1127,6 +1080,12 @@ export class InventoryQueryService {
         createdOn: goodsReceived.createdOn,
         sourceBinCode: sql`CASE WHEN ${goodsReceivedLines.putawayStatus} = 'quarantined' THEN 'QUARANTINE' ELSE 'RECEIVING' END`,
         returnReason: sql<string | null>`NULL`,
+        projectId: sql<string | null>`NULL`,
+        projectNumber: sql<string | null>`NULL`,
+        projectName: sql<string | null>`NULL`,
+        projectStagingBinId: sql<string | null>`NULL`,
+        projectStagingBinNumber: sql<string | null>`NULL`,
+        isProjectReturn: sql<boolean | null>`NULL`,
       })
       .from(goodsReceivedLines)
       .innerJoin(
@@ -1163,6 +1122,12 @@ export class InventoryQueryService {
         returnReason: sql<
           string | null
         >`COALESCE(NULLIF(TRIM(${salesOrderReturnLines.reason}), ''), ${salesOrderReturns.notes})`,
+        projectId: sql<string | null>`NULL`,
+        projectNumber: sql<string | null>`NULL`,
+        projectName: sql<string | null>`NULL`,
+        projectStagingBinId: sql<string | null>`NULL`,
+        projectStagingBinNumber: sql<string | null>`NULL`,
+        isProjectReturn: sql<boolean | null>`NULL`,
       })
       .from(salesOrderReturnLines)
       .innerJoin(
@@ -1197,6 +1162,7 @@ export class InventoryQueryService {
       toConditions.push(eq(transferOrders.destinationLocationId, locationId));
     }
 
+    const stagingBins = aliasedTable(bins, 'staging_bins');
     const toQb = this.db
       .select({
         id: transferOrderReceiptLines.receiptLineId,
@@ -1211,6 +1177,12 @@ export class InventoryQueryService {
         createdOn: transferOrderReceipts.createdOn,
         sourceBinCode: sql`CASE WHEN ${transferOrderReceiptLines.putawayStatus} = 'quarantined' THEN 'QUARANTINE' ELSE 'RECEIVING' END`,
         returnReason: sql<string | null>`NULL`,
+        projectId: transferOrders.projectId,
+        projectNumber: projects.projectNumber,
+        projectName: projects.name,
+        projectStagingBinId: projects.stagingBinId,
+        projectStagingBinNumber: stagingBins.binNumber,
+        isProjectReturn: transferOrders.isProjectReturn,
       })
       .from(transferOrderReceiptLines)
       .innerJoin(
@@ -1231,6 +1203,8 @@ export class InventoryQueryService {
         products,
         eq(transferOrderReceiptLines.productId, products.productId),
       )
+      .leftJoin(projects, eq(transferOrders.projectId, projects.projectId))
+      .leftJoin(stagingBins, eq(projects.stagingBinId, stagingBins.binId))
       .where(and(...toConditions));
 
     // 4. Work Orders
@@ -1259,6 +1233,12 @@ export class InventoryQueryService {
         createdOn: workOrders.modifiedOn,
         sourceBinCode: sql`COALESCE(${bins.binNumber}, CASE WHEN ${workOrders.putawayStatus} = 'quarantined' THEN 'QUARANTINE' ELSE 'WIP' END)`,
         returnReason: sql<string | null>`NULL`,
+        projectId: sql<string | null>`NULL`,
+        projectNumber: sql<string | null>`NULL`,
+        projectName: sql<string | null>`NULL`,
+        projectStagingBinId: sql<string | null>`NULL`,
+        projectStagingBinNumber: sql<string | null>`NULL`,
+        isProjectReturn: sql<boolean | null>`NULL`,
       })
       .from(workOrders)
       .innerJoin(products, eq(workOrders.productId, products.productId))

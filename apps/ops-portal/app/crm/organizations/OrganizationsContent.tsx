@@ -85,6 +85,7 @@ export default function OrganizationsContent() {
     <DataGrid
       endpoint={endpoint}
       columns={columns}
+      customFieldEntityType="organizations"
       gridKey="crm-organizations"
       searchPlaceholder="Search organizations..."
       exportFileName="organizations"

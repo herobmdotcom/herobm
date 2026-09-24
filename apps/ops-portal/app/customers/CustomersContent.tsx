@@ -93,6 +93,7 @@ export default function CustomersContent() {
     <DataGrid
       endpoint="/api/customers"
       columns={columns}
+      customFieldEntityType="customers"
       gridKey="ops-customers"
       searchPlaceholder={tAccounts('placeholders.searchAccounts')}
       exportFileName="customers"

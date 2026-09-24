@@ -43,22 +43,6 @@ export default function ReturnCreditNoteSlideOver({
         }
     }, [isOpen, returnRecord]);
 
-    const totalAmount = React.useMemo(() => {
-        if (!returnRecord?.lines) return 0;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-        return returnRecord.lines.reduce((acc: number, line: any) => {
-            const qty = parseFloat(line.quantityReturned) || 0;
-            const price = parseFloat(line.pricePerUnit) || 0;
-            const discount = parseFloat(line.discountPercentage) || 0;
-            const tax = parseFloat(line.taxRate) || 0;
-            const fee = parseFloat(line.returnFee) || 0;
-            
-            const discountedPrice = price * (1 - discount / 100);
-            const lineTotal = qty * discountedPrice;
-            const lineTax = lineTotal * (tax / 100);
-            return acc + Math.max(0, lineTotal + lineTax - fee);
-        }, 0);
-    }, [returnRecord]);
 
     const creditSummary = React.useMemo(() => {
         const targetRecord = fullReturn || returnRecord;

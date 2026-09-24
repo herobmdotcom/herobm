@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.1
  */
 import type { OrderResponseDtoCustomFields } from './orderResponseDtoCustomFields';
+import type { OrderResponseDtoMetadata } from './orderResponseDtoMetadata';
 
 export interface OrderResponseDto {
   salesOrderId: string;
@@ -22,6 +23,8 @@ export interface OrderResponseDto {
   notes?: string | null;
   /** @nullable */
   customFields?: OrderResponseDtoCustomFields;
+  /** @nullable */
+  metadata?: OrderResponseDtoMetadata;
   discrepanciesAcknowledged: boolean;
   /** @nullable */
   taxProvider?: string | null;

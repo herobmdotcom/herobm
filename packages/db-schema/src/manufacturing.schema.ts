@@ -3,6 +3,7 @@ import {
   numeric,
   timestamp,
   uuid,
+  jsonb,
   index,
   check,
 } from 'drizzle-orm/pg-core';
@@ -42,6 +43,7 @@ export const workOrders = herobmCore.table(
     assemblyCostPerUnit: numeric('assembly_cost_per_unit'),
     additionalCost: numeric('additional_cost'),
     totalCost: numeric('total_cost'),
+    metadata: jsonb('metadata').$type<Record<string, unknown>>(),
     createdBy: text('created_by'),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
     modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
@@ -114,3 +116,13 @@ export const workOrderPicks = herobmCore.table(
     ),
   }),
 );
+
+// ---------------------------------------------------------------------------
+// manufacturing_settings (Singleton table for manufacturing metadata schema configurations)
+// ---------------------------------------------------------------------------
+export const manufacturingSettings = herobmCore.table('manufacturing_settings', {
+  manufacturingSettingsId: uuid('manufacturing_settings_id').primaryKey().defaultRandom(),
+  workOrderMetadataSchema: jsonb('work_order_metadata_schema').$type<Record<string, unknown>>(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+

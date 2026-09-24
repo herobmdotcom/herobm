@@ -24,16 +24,6 @@ describe('GL Fiscal Periods & Period Governance', () => {
   let service: GlService;
 
   beforeEach(async () => {
-    await pg.db.delete(outbox);
-    await pg.db.delete(financialEvents);
-    await pg.db.delete(glFiscalPeriods);
-    await pg.db.delete(glJournalLines);
-    await pg.db.delete(glJournalEntries);
-    await pg.db.delete(glSettings);
-    await pg.db.delete(glAccounts);
-    await pg.db.delete(costCenters);
-    await pg.db.delete(activities);
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GlService,

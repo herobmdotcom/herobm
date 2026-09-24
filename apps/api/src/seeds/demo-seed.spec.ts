@@ -69,12 +69,34 @@ import {
   inventoryEntries,
   inventoryLedger,
   binContents,
+  projects,
+  projectTasks,
+  projectResources,
+  projectBudgetLines,
+  projectLedgerEntries,
   masterDataEvents,
   procurementEvents,
   salesEvents,
   inventoryEvents,
   warehouseEvents,
   financialEvents,
+  taxPositions,
+  taxPositionMappings,
+  supplierGroups,
+  supplierExpiries,
+  csvMappingProfiles,
+  reconciliationRules,
+  apiKeys,
+  webhooks,
+  integrations,
+  emailOutbox,
+  stocktakes,
+  stocktakeLines,
+  stocktakeCounts,
+  glMatchGroups,
+  bankStatementLines,
+  glReconciliations,
+  glFiscalPeriods,
 } from '@herobm/db-schema';
 import {
   PRODUCT_STATE,
@@ -91,6 +113,12 @@ import {
   PUTAWAY_STATUS,
   SALES_ORDER_STATE,
   SALES_ORDER_PICK_STATE,
+  PROJECT_STATE,
+  PROJECT_TASK_STATE,
+  PROJECT_BILLING_TYPE,
+  RESOURCE_TYPE,
+  PROJECT_LINE_TYPE,
+  PROJECT_LEDGER_ENTRY_TYPE,
 } from '@herobm/shared';
 import type { SeedDB } from './run';
 import { executeLedgerIntegrityAudit } from '../gl/gl-integrity-audit.utils';
@@ -295,13 +323,13 @@ describe('Demo Seed Verification Suite', () => {
 
     // 9. Assert Procurement & Inbound Putaway Queue Distribution
     const seededPOs = await ctx.db.select().from(purchaseOrders);
-    expect(seededPOs.length).toBe(25);
+    expect(seededPOs.length).toBe(29);
 
     const seededPOLines = await ctx.db.select().from(purchaseOrderLineItems);
     expect(seededPOLines.length).toBeGreaterThanOrEqual(50);
 
     const seededGRs = await ctx.db.select().from(goodsReceived);
-    expect(seededGRs.length).toBe(25);
+    expect(seededGRs.length).toBe(26);
 
     const seededGRLines = await ctx.db.select().from(goodsReceivedLines);
     expect(seededGRLines.length).toBeGreaterThan(0);
@@ -353,9 +381,9 @@ describe('Demo Seed Verification Suite', () => {
       .from(purchaseDebitNoteShipments);
     expect(seededDebitShipments.length).toBe(3);
 
-    // 10. Assert Sales Orders Across Operational Queues (Picking, Shipping, Shipped, Quotes)
+    // 10. Assert Sales Orders Across Operational Queues (Picking, Shipping, Shipped, Quotes, OTC)
     const seededSOs = await ctx.db.select().from(salesOrders);
-    expect(seededSOs.length).toBe(73);
+    expect(seededSOs.length).toBe(75);
 
     // Picking Queue Orders (Confirmed)
     const confirmedSOs = seededSOs.filter(
@@ -373,7 +401,7 @@ describe('Demo Seed Verification Suite', () => {
     const shippedSOs = seededSOs.filter(
       (so) => so.stateCode === SALES_ORDER_STATE.SHIPPED,
     );
-    expect(shippedSOs.length).toBe(35);
+    expect(shippedSOs.length).toBe(37); // 35 normal + 2 OTC
 
     // Live Sales Quotes
     const quotedSOs = seededSOs.filter(
@@ -403,7 +431,7 @@ describe('Demo Seed Verification Suite', () => {
     }
 
     const seededARInvoices = await ctx.db.select().from(salesInvoices);
-    expect(seededARInvoices.length).toBe(35);
+    expect(seededARInvoices.length).toBe(37);
 
     // 11. Assert Sales Returns & Credit Notes
     const seededSoReturns = await ctx.db.select().from(salesOrderReturns);
@@ -468,6 +496,83 @@ describe('Demo Seed Verification Suite', () => {
       expect(Number(bc.actualQuantity)).toBeGreaterThanOrEqual(0);
     }
 
+    // 15b. Assert Putaway Queue Lines have active stock in system bins (ADV-200)
+    const grHeaderMap = new Map(
+      seededGRs.map((gr) => [gr.goodsReceivedId, gr]),
+    );
+    const zoneMap = new Map(seededZones.map((z) => [z.zoneId, z]));
+    const binsByLocationAndNumber = new Map(
+      seededBins.map((b) => [
+        `${zoneMap.get(b.zoneId)?.locationId}:${b.binNumber}`,
+        b,
+      ]),
+    );
+    const binContentsMap = new Map(
+      currentBinContents.map((bc) => [
+        `${bc.binId}:${bc.productId}`,
+        Number(bc.actualQuantity),
+      ]),
+    );
+
+    for (const grLine of pendingPutawayGrLines) {
+      const header = grHeaderMap.get(grLine.goodsReceivedId)!;
+      const recvBin = binsByLocationAndNumber.get(
+        `${header.locationId}:RECEIVING`,
+      )!;
+      expect(recvBin).toBeDefined();
+      const stock =
+        binContentsMap.get(`${recvBin.binId}:${grLine.productId}`) ?? 0;
+      expect(stock).toBeGreaterThanOrEqual(Number(grLine.quantityReceived));
+    }
+
+    for (const grLine of quarantinedGrLines) {
+      const header = grHeaderMap.get(grLine.goodsReceivedId)!;
+      const quaranBin = binsByLocationAndNumber.get(
+        `${header.locationId}:QUARANTINE`,
+      )!;
+      expect(quaranBin).toBeDefined();
+      const stock =
+        binContentsMap.get(`${quaranBin.binId}:${grLine.productId}`) ?? 0;
+      expect(stock).toBeGreaterThanOrEqual(Number(grLine.quantityReceived));
+    }
+
+    for (const toLine of seededTOReceiptLines) {
+      const stock =
+        binContentsMap.get(`${toLine.binId}:${toLine.productId}`) ?? 0;
+      expect(stock).toBeGreaterThanOrEqual(Number(toLine.quantity));
+    }
+
+    const soReturnHeaderMap = new Map(
+      seededSoReturns.map((r) => [r.returnId, r]),
+    );
+    const soLineMap = new Map(
+      seededSOLines.map((sol) => [sol.salesOrderLineId, sol]),
+    );
+
+    for (const retLine of pendingPutawayReturnLines) {
+      const header = soReturnHeaderMap.get(retLine.returnId)!;
+      const retBin = binsByLocationAndNumber.get(
+        `${header.locationId}:CUSTOMER_RETURNS`,
+      )!;
+      expect(retBin).toBeDefined();
+      const soLine = soLineMap.get(retLine.salesOrderLineId)!;
+      const stock =
+        binContentsMap.get(`${retBin.binId}:${soLine.productId}`) ?? 0;
+      expect(stock).toBeGreaterThanOrEqual(Number(retLine.quantityReceived));
+    }
+
+    for (const retLine of quarantinedReturnLines) {
+      const header = soReturnHeaderMap.get(retLine.returnId)!;
+      const quaranBin = binsByLocationAndNumber.get(
+        `${header.locationId}:QUARANTINE`,
+      )!;
+      expect(quaranBin).toBeDefined();
+      const soLine = soLineMap.get(retLine.salesOrderLineId)!;
+      const stock =
+        binContentsMap.get(`${quaranBin.binId}:${soLine.productId}`) ?? 0;
+      expect(stock).toBeGreaterThanOrEqual(Number(retLine.quantityReceived));
+    }
+
     // 16. Assert All 6 Domain Event Streams
     const mdEvents = await ctx.db.select().from(masterDataEvents);
     expect(mdEvents.length).toBeGreaterThan(0);
@@ -491,7 +596,182 @@ describe('Demo Seed Verification Suite', () => {
     const auditReport = await executeLedgerIntegrityAudit(ctx.db as any);
     expect(auditReport.anomaliesCount).toBe(0);
     expect(auditReport.anomalies).toEqual([]);
-    expect(auditReport.verifiedInvoicesCount).toBe(35);
+    expect(auditReport.verifiedInvoicesCount).toBe(37);
     expect(auditReport.verifiedJournalsCount).toBeGreaterThanOrEqual(75);
+
+    // 18. Assert Operational Projects, WBS Hierarchies, Resources, Budgets & Ledger Actuals
+    const seededResources = await ctx.db.select().from(projectResources);
+    expect(seededResources.length).toBe(7);
+    const personResources = seededResources.filter(
+      (r) => r.resourceType === RESOURCE_TYPE.PERSON,
+    );
+    expect(personResources.length).toBe(3);
+    const contractorResources = seededResources.filter(
+      (r) => r.resourceType === RESOURCE_TYPE.CONTRACTOR,
+    );
+    expect(contractorResources.length).toBe(2);
+    const equipmentResources = seededResources.filter(
+      (r) => r.resourceType === RESOURCE_TYPE.EQUIPMENT,
+    );
+    expect(equipmentResources.length).toBe(2);
+    for (const res of seededResources) {
+      expect(Number(res.directUnitCost)).toBeGreaterThan(0);
+      expect(Number(res.unitPrice)).toBeGreaterThan(0);
+      expect(['HOUR', 'DAY', 'EA']).toContain(res.baseUom);
+    }
+
+    const seededProjects = await ctx.db.select().from(projects);
+    expect(seededProjects.length).toBe(7);
+
+    const activeProjects = seededProjects.filter(
+      (p) => p.stateCode === PROJECT_STATE.ACTIVE,
+    );
+    expect(activeProjects.length).toBe(4);
+
+    const draftProjects = seededProjects.filter(
+      (p) => p.stateCode === PROJECT_STATE.DRAFT,
+    );
+    expect(draftProjects.length).toBe(1);
+
+    const closedProjects = seededProjects.filter(
+      (p) => p.stateCode === PROJECT_STATE.CLOSED,
+    );
+    expect(closedProjects.length).toBe(2);
+
+    for (const prj of seededProjects) {
+      expect(prj.customerId).toBeDefined();
+      expect(prj.billingType).toBeDefined();
+      expect(prj.stage).toBeDefined();
+    }
+
+    // Assert WBS Tasks and Hierarchical Parent/Child Links
+    const seededTasks = await ctx.db.select().from(projectTasks);
+    expect(seededTasks.length).toBeGreaterThanOrEqual(20);
+
+    const parentTasks = seededTasks.filter((t) => t.parentTaskId === null);
+    expect(parentTasks.length).toBeGreaterThanOrEqual(15);
+
+    const subTasks = seededTasks.filter((t) => t.parentTaskId !== null);
+    expect(subTasks.length).toBeGreaterThanOrEqual(7);
+
+    const milestones = seededTasks.filter((t) => t.isMilestone);
+    expect(milestones.length).toBeGreaterThanOrEqual(7);
+
+    // Assert Project Budget Lines (Labor, Item, Expense)
+    const seededBudgetLines = await ctx.db.select().from(projectBudgetLines);
+    expect(seededBudgetLines.length).toBeGreaterThanOrEqual(20);
+
+    const laborBudgets = seededBudgetLines.filter(
+      (b) => b.lineType === PROJECT_LINE_TYPE.RESOURCE,
+    );
+    expect(laborBudgets.length).toBeGreaterThanOrEqual(10);
+
+    const itemBudgets = seededBudgetLines.filter(
+      (b) => b.lineType === PROJECT_LINE_TYPE.ITEM,
+    );
+    expect(itemBudgets.length).toBeGreaterThanOrEqual(5);
+
+    const expenseBudgets = seededBudgetLines.filter(
+      (b) => b.lineType === PROJECT_LINE_TYPE.EXPENSE,
+    );
+    expect(expenseBudgets.length).toBeGreaterThanOrEqual(2);
+
+    for (const bl of seededBudgetLines) {
+      expect(Number(bl.plannedQuantity)).toBeGreaterThan(0);
+      expect(Number(bl.unitCost)).toBeGreaterThan(0);
+      expect(Number(bl.unitPrice)).toBeGreaterThan(0);
+      expect(Number(bl.totalCost)).toBeGreaterThan(0);
+      expect(Number(bl.totalPrice)).toBeGreaterThan(0);
+    }
+
+    // Assert Project Ledger Entries (Actual Usages & Billed Revenue)
+    const seededLedgerEntries = await ctx.db
+      .select()
+      .from(projectLedgerEntries);
+    expect(seededLedgerEntries.length).toBeGreaterThanOrEqual(20);
+
+    const billedEntries = seededLedgerEntries.filter((l) => l.isBilled);
+    expect(billedEntries.length).toBeGreaterThanOrEqual(10);
+
+    const unbilledEntries = seededLedgerEntries.filter((l) => !l.isBilled);
+    expect(unbilledEntries.length).toBeGreaterThanOrEqual(5);
+
+    const timesheetEntries = seededLedgerEntries.filter(
+      (l) => l.sourceType === 'timesheet',
+    );
+    expect(timesheetEntries.length).toBeGreaterThanOrEqual(8);
+
+    const materialIssues = seededLedgerEntries.filter(
+      (l) => l.sourceType === 'inventory_issue',
+    );
+    expect(materialIssues.length).toBeGreaterThanOrEqual(5);
+
+    for (const le of seededLedgerEntries) {
+      expect(Number(le.quantity)).toBeGreaterThan(0);
+      expect(Number(le.totalCostBase)).toBeGreaterThan(0);
+      expect(Number(le.totalPriceBase)).toBeGreaterThan(0);
+    }
+
+    // 19. Assert Tax Positions and Mappings
+    const seededTaxPositions = await ctx.db.select().from(taxPositions);
+    expect(seededTaxPositions.length).toBeGreaterThanOrEqual(3);
+
+    const seededTaxMappings = await ctx.db.select().from(taxPositionMappings);
+    expect(seededTaxMappings.length).toBeGreaterThanOrEqual(2);
+
+    // 20. Assert Supplier Groups & Expiries
+    const seededSupplierGroups = await ctx.db.select().from(supplierGroups);
+    expect(seededSupplierGroups.length).toBeGreaterThanOrEqual(3);
+
+    const seededSupplierExpiries = await ctx.db.select().from(supplierExpiries);
+    expect(seededSupplierExpiries.length).toBeGreaterThanOrEqual(4);
+
+    // 21. Assert CSV Mapping Profiles & Reconciliation Rules Engine
+    const seededCsvProfiles = await ctx.db.select().from(csvMappingProfiles);
+    expect(seededCsvProfiles.length).toBeGreaterThanOrEqual(3);
+
+    const seededReconRules = await ctx.db.select().from(reconciliationRules);
+    expect(seededReconRules.length).toBeGreaterThanOrEqual(3);
+
+    // 22. Assert Developer API Keys, Webhooks, Integrations & Outbox
+    const seededApiKeys = await ctx.db.select().from(apiKeys);
+    expect(seededApiKeys.length).toBeGreaterThanOrEqual(2);
+
+    const seededWebhooks = await ctx.db.select().from(webhooks);
+    expect(seededWebhooks.length).toBeGreaterThanOrEqual(2);
+
+    const seededIntegrations = await ctx.db.select().from(integrations);
+    expect(seededIntegrations.length).toBeGreaterThanOrEqual(3);
+
+    const seededOutbox = await ctx.db.select().from(emailOutbox);
+    expect(seededOutbox.length).toBeGreaterThanOrEqual(3);
+
+    // 23. Assert Multi-Warehouse Physical Stocktakes
+    const seededStocktakes = await ctx.db.select().from(stocktakes);
+    expect(seededStocktakes.length).toBe(3);
+
+    const seededStocktakeLines = await ctx.db.select().from(stocktakeLines);
+    expect(seededStocktakeLines.length).toBeGreaterThanOrEqual(11);
+
+    const seededStocktakeCounts = await ctx.db.select().from(stocktakeCounts);
+    expect(seededStocktakeCounts.length).toBeGreaterThanOrEqual(7);
+
+    // 24. Assert Bank Statement Lines, Match Groups & Reconciliations
+    const seededBankLines = await ctx.db.select().from(bankStatementLines);
+    expect(seededBankLines.length).toBeGreaterThanOrEqual(15);
+
+    const seededMatchGroups = await ctx.db.select().from(glMatchGroups);
+    expect(seededMatchGroups.length).toBeGreaterThanOrEqual(12);
+
+    const seededReconciliations = await ctx.db.select().from(glReconciliations);
+    expect(seededReconciliations.length).toBeGreaterThanOrEqual(2);
+
+    // 25. Assert Accounting Fiscal Periods Governance
+    const seededPeriods = await ctx.db.select().from(glFiscalPeriods);
+    expect(seededPeriods.length).toBe(36);
+    const hardClosedPeriods = seededPeriods.filter(
+      (p) => p.status === 'hard_closed',
+    );
+    expect(hardClosedPeriods.length).toBe(20); // FY2025 (12) + FY2026 (8)
   });
 });

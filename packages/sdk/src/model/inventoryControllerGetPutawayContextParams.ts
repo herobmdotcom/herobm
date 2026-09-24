@@ -9,4 +9,6 @@
 export type InventoryControllerGetPutawayContextParams = {
 productId: string;
 locationId: string;
+projectId?: string;
+isProjectReturn?: boolean;
 };

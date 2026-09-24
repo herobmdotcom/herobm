@@ -57,7 +57,7 @@ describe('GoodsReceivedWriteService', () => {
     // Seed static data
     await pg.db
       .insert(uomDictionary)
-      .values({ uomCode: 'EA', description: 'Each' });
+      .values({ uomCode: 'EA', description: 'Each', category: 'goods' });
     await pg.db.insert(taxCategories).values({
       taxCategoryId: TAX_CAT_ID,
       code: 'GST',
@@ -444,9 +444,11 @@ describe('GoodsReceivedWriteService', () => {
       await seedBasics();
 
       // 1. Setup custom UoM
-      await pg.db
-        .insert(uomDictionary)
-        .values({ uomCode: 'BOX', description: 'Box of 10' });
+      await pg.db.insert(uomDictionary).values({
+        uomCode: 'BOX',
+        description: 'Box of 10',
+        category: 'goods',
+      });
 
       // 2. Setup PO with BOX
       const [po] = await pg.db

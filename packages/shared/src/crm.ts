@@ -87,16 +87,18 @@ export const DEFAULT_OPPORTUNITY_CONTACT_ROLES: Array<{
 export const DEFAULT_OPPORTUNITY_ORGANIZATION_ROLES: Array<{
   value: string;
   order: number;
+  isSystem?: boolean;
 }> = [
-  { value: 'General Contractor', order: 1 },
-  { value: 'Primary Builder', order: 2 },
-  { value: 'Procurement Partner', order: 3 },
-  { value: 'Supplier Consortium Partner', order: 4 },
-  { value: 'Prime Contractor', order: 5 },
-  { value: 'EPC Contractor', order: 6 },
-  { value: 'Preferred Tool Supplier', order: 7 },
-  { value: 'Maintenance Contractor', order: 8 },
-  { value: 'Bidder', order: 9 },
+  { value: 'Customer', order: 1, isSystem: true },
+  { value: 'General Contractor', order: 2 },
+  { value: 'Primary Builder', order: 3 },
+  { value: 'Procurement Partner', order: 4 },
+  { value: 'Supplier Consortium Partner', order: 5 },
+  { value: 'Prime Contractor', order: 6 },
+  { value: 'EPC Contractor', order: 7 },
+  { value: 'Preferred Tool Supplier', order: 8 },
+  { value: 'Maintenance Contractor', order: 9 },
+  { value: 'Bidder', order: 10 },
 ];
 
 export const DEFAULT_ORGANIZATION_TAGS: Array<{

@@ -19,8 +19,10 @@ import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import { DataTable, DataTableColumn } from '@/components/shared/DataTable';
 import EmailDocumentDialog from '@/components/shared/EmailDocumentDialog';
 import { Button } from '@/components/shared/Button';
+import { DynamicForm } from '@/components/DynamicForm';
 
 import * as api from '@herobm/sdk';
+import { reportError } from '@/lib/api';
 import { getErrorMessage, SALES_INVOICE_STATE, calculateEarlyPaymentDiscount } from '@herobm/shared';
 
 export default function InvoiceDetailContent({ id }: { id: string }) {
@@ -30,6 +32,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
   const { permissions } = useAuth();
   const canManageGL = permissions.some(p => p.resource === 'gl' && p.action === 'write');
   const { invoice, loading, error } = useSalesInvoice(id as string);
+  const [salesInvoiceMetadataSchema, setSalesInvoiceMetadataSchema] = React.useState<Record<string, unknown> | null>(null);
   const [cancelling, setCancelling] = React.useState(false);
   const [markingPaid, setMarkingPaid] = React.useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = React.useState(false);
@@ -50,6 +53,16 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
     prefix: '',
     docName: ''
   });
+
+  React.useEffect(() => {
+    api.ordersControllerGetSettings()
+      .then((res) => {
+        if (res.data?.salesInvoiceMetadataSchema) {
+          setSalesInvoiceMetadataSchema(res.data.salesInvoiceMetadataSchema as Record<string, unknown>);
+        }
+      })
+      .catch((err) => reportError(err, 'InvoiceDetailContent:getSettings'));
+  }, []);
 
   useDocumentTitle(
     invoice
@@ -105,6 +118,12 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
 
   const isOverdue = invoice.dueDate && new Date(invoice.dueDate) < new Date() && Number(invoice.outstandingAmount) > 0 && invoice.stateCode !== SALES_INVOICE_STATE.CANCELLED;
 
+  const hasCustomFields = !!(
+    salesInvoiceMetadataSchema?.properties &&
+    typeof salesInvoiceMetadataSchema.properties === 'object' &&
+    Object.keys(salesInvoiceMetadataSchema.properties).length > 0
+  );
+
   const lineColumns: DataTableColumn<SalesInvoiceDetails['lines'][0]>[] = [
     {
       id: 'index',
@@ -115,12 +134,15 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
     {
       id: 'product',
       header: t('columns.product'),
-      width: 150,
-      render: (line) => (
-        <Link href={`/products/${line.productId}`} className="font-semibold hover:underline text-[var(--accent)]">
-          {line.productNumber}
-        </Link>
-      )
+      width: 140,
+      render: (line) =>
+        line.productId ? (
+          <Link href={`/products/${line.productId}`} className="font-semibold hover:underline text-[var(--accent)]">
+            {line.productNumber || line.productId}
+          </Link>
+        ) : (
+          <span className="font-semibold text-[var(--text-secondary)]">{line.productNumber || '—'}</span>
+        ),
     },
     {
       id: 'description',
@@ -130,16 +152,37 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
     {
       id: 'qty',
       header: t('columns.qty'),
-      width: 90,
+      width: 80,
       align: 'right',
       render: (line) => <span className="tabular-nums">{parseFloat(line.quantityInvoiced)}</span>,
     },
     {
       id: 'price',
       header: t('columns.price'),
-      width: 110,
+      width: 100,
       align: 'right',
       render: (line) => <span className="tabular-nums">{formatAmount(parseFloat(line.pricePerUnit), invoice.currencyCode)}</span>,
+    },
+    {
+      id: 'discount',
+      header: t('columns.discount'),
+      width: 85,
+      align: 'right',
+      render: (line) => {
+        const disc = parseFloat(String(line.discountPercentage || 0));
+        return <span className="tabular-nums">{disc > 0 ? `${disc}%` : '0%'}</span>;
+      },
+    },
+    {
+      id: 'tax',
+      header: t('columns.tax'),
+      width: 90,
+      align: 'right',
+      render: (line) => (
+        <span className="tabular-nums">
+          {formatAmount(parseFloat(String(line.taxAmount || 0)), invoice.currencyCode)}
+        </span>
+      ),
     },
     {
       id: 'amount',
@@ -190,7 +233,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
   const linesFooter = (
     <>
       <tr className="border-t-2 border-[var(--border)]">
-        <td colSpan={5} className="text-right font-semibold text-[var(--text-muted)]">
+        <td colSpan={7} className="text-right font-semibold text-[var(--text-muted)]">
           {tCommon('subtotal')}
         </td>
         <td className="text-right font-semibold tabular-nums">
@@ -198,7 +241,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
         </td>
       </tr>
       <tr>
-        <td colSpan={5} className="text-right font-semibold text-[var(--text-muted)]">
+        <td colSpan={7} className="text-right font-semibold text-[var(--text-muted)]">
           {tCommon('tax')}
         </td>
         <td className="text-right font-semibold tabular-nums">
@@ -206,7 +249,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
         </td>
       </tr>
       <tr className="bg-blue-500/[0.02]">
-        <td colSpan={5} className="text-right font-bold text-[13px] text-[var(--text-primary)]">
+        <td colSpan={7} className="text-right font-bold text-[13px] text-[var(--text-primary)]">
           {tCommon('total')}
         </td>
         <td className="text-right font-extrabold text-[14px] text-[var(--accent)] tabular-nums">
@@ -221,7 +264,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
       header={
         <EntityHeader
           title={invoice.invoiceNumber}
-          subtitle={`Customer: ${invoice.customerName}`}
+          subtitle={`Customer: ${invoice.customerName}${invoice.projectNumber ? ` • Project: ${invoice.projectNumber}` : ''}`}
           actions={
             <div className="flex flex-wrap items-center gap-2">
               {invoice.stateCode !== SALES_INVOICE_STATE.CANCELLED && (
@@ -331,23 +374,52 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
                 )}
               </div>
             </div>
-            <div>
-              <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">
-                {t('orderNo')}
-              </label>
-              <div className="text-sm">
-                {invoice.salesOrderId ? (
-                  <Link
-                    href={`/sales-orders/${invoice.salesOrderId}`}
-                    className="text-[var(--accent)] hover:underline font-medium"
-                  >
-                    {invoice.orderNumber}
-                  </Link>
-                ) : (
-                  invoice.orderNumber || '—'
-                )}
+            {invoice.salesOrderId || invoice.orderNumber ? (
+              <div>
+                <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">
+                  {t('orderNo')}
+                </label>
+                <div className="text-sm">
+                  {invoice.salesOrderId ? (
+                    <Link
+                      href={`/sales-orders/${invoice.salesOrderId}`}
+                      className="text-[var(--accent)] hover:underline font-medium"
+                    >
+                      {invoice.orderNumber || invoice.salesOrderNumber}
+                    </Link>
+                  ) : (
+                    invoice.orderNumber || invoice.salesOrderNumber || '—'
+                  )}
+                </div>
               </div>
-            </div>
+            ) : null}
+            {invoice.projectId || invoice.projectNumber ? (
+              <div>
+                <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">
+                  {t('projectNo')}
+                </label>
+                <div className="text-sm">
+                  {invoice.projectId ? (
+                    <Link
+                      href={`/projects/${invoice.projectId}`}
+                      className="text-[var(--accent)] hover:underline font-medium"
+                    >
+                      {invoice.projectNumber ? invoice.projectNumber : t('viewProject')}
+                    </Link>
+                  ) : (
+                    invoice.projectNumber || '—'
+                  )}
+                </div>
+              </div>
+            ) : null}
+            {!invoice.salesOrderId && !invoice.orderNumber && !invoice.projectId && !invoice.projectNumber && (
+              <div>
+                <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">
+                  {t('orderNo')}
+                </label>
+                <div className="text-sm">—</div>
+              </div>
+            )}
             <div>
               <label className="block text-xs font-medium mb-1 text-[var(--text-muted)]">
                 {t('customerPO')}
@@ -473,9 +545,13 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
             mobileCard={(line, idx) => (
               <MobileLineItemCard
                 title={
-                  <Link href={`/products/${line.productId}`} className="hover:underline">
-                    {line.productNumber}
-                  </Link>
+                  line.productId ? (
+                    <Link href={`/products/${line.productId}`} className="hover:underline font-semibold text-[var(--accent)]">
+                      {line.productNumber || line.productId}
+                    </Link>
+                  ) : (
+                    <span className="font-semibold text-[var(--text-secondary)]">{line.productNumber || line.description || '—'}</span>
+                  )
                 }
                 subtitle={line.description || '—'}
                 topRightBadge={`#${idx + 1}`}
@@ -487,6 +563,14 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
                   {
                     label: t('columns.price'),
                     value: formatAmount(parseFloat(line.pricePerUnit), invoice.currencyCode)
+                  },
+                  {
+                    label: t('columns.discount'),
+                    value: `${parseFloat(String(line.discountPercentage || 0)) || 0}%`
+                  },
+                  {
+                    label: t('columns.tax'),
+                    value: formatAmount(parseFloat(String(line.taxAmount || 0)), invoice.currencyCode)
                   },
                   {
                     label: t('columns.amount'),
@@ -570,6 +654,21 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
             )}
           />
         </div>
+
+        {/* Custom Fields Card */}
+        {hasCustomFields && (
+          <div id="custom-fields-section" className="card">
+            <h3 className="section-heading mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined shrink-0">tune</span>
+              <span>{t('customFields')}</span>
+            </h3>
+            <DynamicForm
+              schema={salesInvoiceMetadataSchema!}
+              data={(invoice.metadata || {}) as Record<string, unknown>}
+              readOnly={true}
+            />
+          </div>
+        )}
 
         <div id="activity-section" className="card">
           <ActivityTimeline 

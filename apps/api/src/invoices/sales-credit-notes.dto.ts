@@ -63,4 +63,7 @@ export class SalesCreditNoteResponseDto {
 
   @ApiProperty()
   stateCode!: string;
+
+  @ApiProperty({ required: false, type: Object })
+  metadata?: Record<string, unknown>;
 }

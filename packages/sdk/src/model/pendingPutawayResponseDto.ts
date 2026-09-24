@@ -19,4 +19,16 @@ export interface PendingPutawayResponseDto {
   createdOn?: string;
   sourceBinCode: string;
   returnReason?: string;
+  /** @nullable */
+  projectId?: string | null;
+  /** @nullable */
+  projectNumber?: string | null;
+  /** @nullable */
+  projectName?: string | null;
+  /** @nullable */
+  projectStagingBinId?: string | null;
+  /** @nullable */
+  projectStagingBinNumber?: string | null;
+  /** @nullable */
+  isProjectReturn?: boolean | null;
 }

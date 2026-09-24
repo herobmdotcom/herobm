@@ -55,6 +55,7 @@ export function useOrder(id: string) {
     const [saving, setSaving] = useState(false);
 
     const [locations, setLocations] = useState<api.InventoryLocationResponseDto[]>([]);
+    const [salesOrderMetadataSchema, setSalesOrderMetadataSchema] = useState<Record<string, unknown> | null>(null);
 
     useEffect(() => {
         api.inventoryControllerFindAllLocations()
@@ -212,6 +213,13 @@ export function useOrder(id: string) {
         api.taxCategoriesControllerFindAll()
             .then(res => setTaxCategories(res.data.map(t => ({ ...t, taxCategoryId: (t as unknown as { id?: string }).id || t.taxCategoryId })) as unknown as TaxCategory[] || []))
             .catch(err => reportError(err, 'OrderDetailPage'));
+        api.ordersControllerGetSettings()
+            .then(res => {
+                if (res.data?.salesOrderMetadataSchema) {
+                    setSalesOrderMetadataSchema(res.data.salesOrderMetadataSchema as Record<string, unknown>);
+                }
+            })
+            .catch(err => reportError(err, 'useOrder:getSettings'));
     }, [id]);
 
     // Load returns and invoices when order state involves invoicing
@@ -574,6 +582,7 @@ export function useOrder(id: string) {
         editDeliveryState, setEditDeliveryState,
         editDeliveryPostalCode, setEditDeliveryPostalCode,
         editDeliveryCountry, setEditDeliveryCountry,
-        discrepanciesAcknowledged, setDiscrepanciesAcknowledged
+        discrepanciesAcknowledged, setDiscrepanciesAcknowledged,
+        salesOrderMetadataSchema
     };
 }

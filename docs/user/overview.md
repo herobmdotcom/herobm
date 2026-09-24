@@ -10,7 +10,7 @@ tags: ["overview", "navigation", "shortcuts", "help", "basics"]
 fields:
   sidebar_nav:
     title: "Sidebar Navigation"
-    summary: "Main menu organized by business function: Sales, Inventory, Purchasing, Manufacturing, CRM, Finance, Reporting, Admin, and Technical."
+    summary: "Main menu organized by business function: Sales, Inventory, Purchasing, Manufacturing, Projects, CRM, Finance, Reporting, Admin, and Technical."
   help_drawer:
     title: "Contextual Help"
     summary: "Slide-over drawer providing immediate workflow instructions and field definitions for the screen you are viewing."
@@ -24,6 +24,7 @@ related:
   - "sales-orders"
   - "inventory"
   - "purchase-orders"
+  - "projects"
   - "general-ledger"
 ---
 
@@ -41,10 +42,11 @@ flowchart LR
     A --> C[Inventory & Warehouse]
     A --> D[Purchasing & Suppliers]
     A --> E[Manufacturing & BOM]
-    A --> F[CRM & Contacts]
-    A --> G[Finance & General Ledger]
-    A --> H[Reports & Admin]
-    A --> I[Technical]
+    A --> F[Projects & Job Costing]
+    A --> G[CRM & Contacts]
+    A --> H[Finance & General Ledger]
+    A --> I[Reports & Admin]
+    A --> J[Technical]
 ```
 
 ### Main Interface Areas

@@ -108,6 +108,7 @@ export default function WorkOrdersContent() {
     <DataGrid<WorkOrderRow>
       endpoint={isReady ? `/api/manufacturing/work-orders?days=${days}` : undefined}
       columns={columns}
+      customFieldEntityType="workOrders"
       gridKey="work-orders"
       searchPlaceholder={tWork('placeholders.searchOrders')}
       exportFileName="work-orders"

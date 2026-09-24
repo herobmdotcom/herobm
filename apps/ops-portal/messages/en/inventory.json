@@ -1,0 +1,137 @@
+{
+  "columns": {
+    "actor": "Actor",
+    "alternateProductNumber": "Alternate Product Number",
+    "available": "Available",
+    "committed": "Committed",
+    "defaultBin": "Default Bin",
+    "document": "Document",
+    "locationNo": "Location No",
+    "maxQty": "Max Qty",
+    "minQty": "Min Qty",
+    "netChange": "Net Change",
+    "onHand": "On Hand",
+    "onOrder": "On Order",
+    "productNumber": "Product #",
+    "qtyChange": "Qty Change",
+    "reference": "Ref / Document",
+    "sourceType": "Type",
+    "stockIn": "Stock In",
+    "stockOut": "Stock Out",
+    "type": "Type",
+    "value": "Value"
+  },
+  "filters": {
+    "last24Hours": "Last 24 Hours",
+    "last30Days": "Last 30 Days",
+    "last7Days": "Last 7 Days",
+    "last90Days": "Last 90 Days"
+  },
+  "ledger": {
+    "columns": {
+      "locationBin": "Location / Bin",
+      "product": "Product",
+      "qtyChange": "Qty Change"
+    },
+    "loadFailed": "Failed to load ledger entries",
+    "noLines": "No ledger entries found.",
+    "operationMemo": "Operation Memo",
+    "relatedParty": "Related Party",
+    "sourceDocument": "Source Document",
+    "sourceType": "Source Type",
+    "system": "System",
+    "title": "Inventory Ledger",
+    "transferRoute": "Transfer Route"
+  },
+  "locations": {
+    "addBin": "Add Bin",
+    "addBinTo": "Add Bin to {name}",
+    "addLocation": "Add Location",
+    "addZone": "Add Zone",
+    "addZoneTo": "Add Zone to {name}",
+    "binTypes": {
+      "bulk": "Bulk",
+      "in_transit": "In Transit",
+      "pick": "Picking",
+      "project": "Project",
+      "quarantine": "Quarantine",
+      "receiving": "Receiving",
+      "staging": "Staging",
+      "storage": "Storage",
+      "wip": "Work in Progress"
+    },
+    "bins": "Bins",
+    "binsCount": "{count, plural, =1 {# bin} other {# bins}}",
+    "editBin": "Edit Bin",
+    "editLocation": "Edit Location",
+    "editZone": "Edit Zone",
+    "fields": {
+      "addressLine1": "Address Line 1",
+      "addressLine2": "Address Line 2",
+      "binNumber": "Bin Number",
+      "binType": "Bin Type",
+      "bonded": "Bonded Bin",
+      "city": "City",
+      "consignment": "Consignment Stock",
+      "country": "Country",
+      "flags": "Flags",
+      "postalCode": "Postal Code",
+      "source": "Source",
+      "stateOrProvince": "State / Province",
+      "unavailable": "Unavailable (Locked)",
+      "zoneCode": "Zone Code",
+      "zoneName": "Zone Name"
+    },
+    "noBinsInZone": "No bins in this zone.",
+    "pagination": {
+      "next": "Next",
+      "prev": "Prev",
+      "showing": "Showing {start}–{end} of {total}"
+    },
+    "placeholders": {
+      "binNumber": "e.g. A-01-01",
+      "binType": "Select bin type...",
+      "locationCode": "e.g. SYD01",
+      "locationName": "e.g. Sydney Warehouse",
+      "searchBins": "Search bins in zone...",
+      "zoneCode": "e.g. BULK",
+      "zoneName": "e.g. Bulk Storage"
+    },
+    "zones": "Zones",
+    "zonesCount": "{count, plural, =1 {# zone} other {# zones}}"
+  },
+  "placeholders": {
+    "searchLedger": "Search transactions...",
+    "searchMovements": "Search by product, reference, or type..."
+  },
+  "putaway": {
+    "action": "Putaway Action",
+    "confirmPutaway": "Confirm Putaway",
+    "currentStock": "Current stock: {count}",
+    "destinationBin": "Destination Bin",
+    "loadingBinContext": "Loading bin context...",
+    "noItemsPending": "No items pending putaway in this location.",
+    "pendingPutaway": "Pending Putaway",
+    "primaryLabel": "(Primary)",
+    "processing": "Processing...",
+    "projectReturn": "Project Return:",
+    "projectStaging": "Project Staging:",
+    "receipt": "RECEIPT",
+    "ref": "Ref: {ref}",
+    "return": "RETURN",
+    "returnReason": "Return Reason:",
+    "searchBins": "Search bins...",
+    "selectItemToPutaway": "Select an item from the list to putaway.",
+    "stagingBin": "Staging Bin:",
+    "title": "Putaway",
+    "warningNotPrimary": "Warning: You are not placing this in the primary bin ({bin})."
+  },
+  "tabs": {
+    "binContents": "Bin Contents",
+    "ledger": "Ledger",
+    "locations": "Locations",
+    "movements": "Movements",
+    "products": "Products"
+  },
+  "title": "Inventory"
+}

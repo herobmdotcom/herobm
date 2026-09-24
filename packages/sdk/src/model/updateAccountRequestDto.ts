@@ -9,6 +9,7 @@ import type { UpdateAccountRequestDtoMetadata } from './updateAccountRequestDtoM
 
 export interface UpdateAccountRequestDto {
   name?: string;
+  reportCategory?: string;
   isActive?: boolean;
   isBankAccount?: boolean;
   metadata?: UpdateAccountRequestDtoMetadata;

@@ -11,6 +11,7 @@ fromDate?: string;
 toDate?: string;
 sourceType?: string;
 sourceId?: string;
+projectId?: string;
 q?: string;
 limit?: string;
 page?: string;

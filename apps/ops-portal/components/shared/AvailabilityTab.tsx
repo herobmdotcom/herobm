@@ -317,11 +317,13 @@ export function AvailabilityTab<T extends AvailabilityLineItem = AvailabilityLin
         const locAvail =
           locInv?.quantityAvailable != null
             ? parseFloat(String(locInv.quantityAvailable || '0'))
-            : calculateAvailableQuantity(
-                locInv?.quantityOnHand,
-                locInv?.quantityCommitted,
-                locInv?.quantityReserved,
-              );
+            : locInv
+            ? calculateAvailableQuantity(
+                locInv.quantityOnHand,
+                locInv.quantityCommitted,
+                locInv.quantityReserved,
+              )
+            : targetLocationId ? 0 : undefined;
 
         const salesStatus = resolveSalesLineAvailabilityStatus({
           isShipped,
@@ -329,7 +331,7 @@ export function AvailabilityTab<T extends AvailabilityLineItem = AvailabilityLin
           orderedQuantity: orderedQty,
           pickedQuantity: parseFloat(String(line.quantityPicked || '0')),
           isBackordered: Boolean(line.productId && activeBackorders.has(line.productId)),
-          hasGap: Boolean(gap),
+          hasGap: gap !== undefined ? Boolean(gap) : undefined,
           gapOrderedQuantity: gap?.orderedQuantity,
           totalAvailableQuantity: totalAvail,
           localAvailableQuantity: locAvail,
@@ -499,11 +501,13 @@ export function AvailabilityTab<T extends AvailabilityLineItem = AvailabilityLin
         const locAvail =
           locInv?.quantityAvailable != null
             ? parseFloat(String(locInv.quantityAvailable || '0'))
-            : calculateAvailableQuantity(
-                locInv?.quantityOnHand,
-                locInv?.quantityCommitted,
-                locInv?.quantityReserved,
-              );
+            : locInv
+            ? calculateAvailableQuantity(
+                locInv.quantityOnHand,
+                locInv.quantityCommitted,
+                locInv.quantityReserved,
+              )
+            : targetLocationId ? 0 : undefined;
 
         const salesStatus = resolveSalesLineAvailabilityStatus({
           isShipped,
@@ -511,7 +515,7 @@ export function AvailabilityTab<T extends AvailabilityLineItem = AvailabilityLin
           orderedQuantity: orderedQty,
           pickedQuantity: parseFloat(String(line.quantityPicked || '0')),
           isBackordered: Boolean(line.productId && activeBackorders.has(line.productId)),
-          hasGap: Boolean(gap),
+          hasGap: gap !== undefined ? Boolean(gap) : undefined,
           gapOrderedQuantity: gap?.orderedQuantity,
           totalAvailableQuantity: totalAvail,
           localAvailableQuantity: locAvail,

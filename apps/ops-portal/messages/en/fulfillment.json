@@ -1,0 +1,25 @@
+{
+  "columns": {
+    "description": "Description",
+    "lineNumber": "#",
+    "onHand": "On Hand",
+    "ordered": "Ordered",
+    "picked": "Picked",
+    "product": "Product",
+    "readyToShip": "Ready to Ship",
+    "shipped": "Shipped",
+    "status": "Status"
+  },
+  "noData": "Fulfillment data unavailable.",
+  "noPhysicalLines": "No physical lines on this order.",
+  "picked": "Picked",
+  "shipped": "Shipped",
+  "statuses": {
+    "awaitingShipment": "Picked, awaiting shipment",
+    "notPicked": "Not yet picked",
+    "partiallyPicked": "Partially picked",
+    "readyToShip": "Ready to ship",
+    "shipped": "Fully shipped"
+  },
+  "title": "Fulfillment"
+}

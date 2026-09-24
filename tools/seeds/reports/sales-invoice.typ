@@ -25,7 +25,12 @@
   columns: (1fr, 1fr),
   gutter: 10pt,
   [
-    #text(9pt, fill: theme.mutedColor)[Order No:] #h(4pt) #text(11pt, weight: "bold", fill: theme.primaryColor)[#data.header.orderNumber] \
+    #if "orderNumber" in data.header and data.header.orderNumber != none and data.header.orderNumber != "" [
+      #text(9pt, fill: theme.mutedColor)[Order No:] #h(4pt) #text(11pt, weight: "bold", fill: theme.primaryColor)[#data.header.orderNumber] \
+    ]
+    #if "projectNumber" in data.header and data.header.projectNumber != none and data.header.projectNumber != "" [
+      #text(9pt, fill: theme.mutedColor)[Project No:] #h(4pt) #text(11pt, weight: "bold", fill: theme.primaryColor)[#data.header.projectNumber] \
+    ]
     #if "invoiceMeta" in data and data.invoiceMeta != none and "invoiceNumber" in data.invoiceMeta [
       #v(0.1cm)
       #text(9pt, fill: theme.mutedColor)[Invoice No:] #h(4pt) #text(11pt, weight: "bold", fill: theme.primaryColor)[#data.invoiceMeta.invoiceNumber]
@@ -59,6 +64,11 @@
       row-gutter: 8pt,
       column-gutter: 12pt,
       text(9pt, weight: "bold", fill: theme.mutedColor)[Date:], data.header.orderDate,
+      ..if "projectNumber" in data.header and data.header.projectNumber != none and data.header.projectNumber != "" {
+        (text(9pt, weight: "bold", fill: theme.mutedColor)[Project No:], data.header.projectNumber)
+      } else {
+        ()
+      },
       text(9pt, weight: "bold", fill: theme.mutedColor)[Customer PO:], if "customerOrderNumber" in data.header and data.header.customerOrderNumber != "" and data.header.customerOrderNumber != none [#data.header.customerOrderNumber] else [—],
       text(9pt, weight: "bold", fill: theme.mutedColor)[Currency:], data.header.currencyCode,
       ..if "invoiceMeta" in data and data.invoiceMeta != none and "dueDate" in data.invoiceMeta and data.invoiceMeta.dueDate != none and data.invoiceMeta.dueDate != "" {

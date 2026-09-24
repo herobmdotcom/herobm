@@ -19,6 +19,7 @@ import { FrontendEnrichmentDecorator } from '@/components/shared/FrontendEnrichm
 import { getErrorMessage, COUNTRIES, getCurrencyForCountry } from '@herobm/shared';
 import InheritedNumberInput from '@/components/shared/InheritedNumberInput';
 import { useGroup, useInheritance } from '@/hooks/useInheritance';
+import { useTaxPositions, useSupplierGroups, useTradingTerms } from '@/hooks/useReferenceData';
 import { Button } from '@/components/shared/Button';
 
 export default function NewSupplierPage() {
@@ -60,15 +61,9 @@ export default function NewSupplierPage() {
     isPaymentBlocked: null as boolean | null,
   });
 
-  const [taxPositions, setTaxPositions] = useState<api.TaxPositionResponseDto[]>([]);
-  const [supplierGroups, setSupplierGroups] = useState<api.SupplierGroupResponseDto[]>([]);
-  const [tradingTerms, setTradingTerms] = useState<api.TradingTermResponseDto[]>([]);
-
-  useEffect(() => {
-    api.taxPositionsControllerFindAll().then((res: unknown) => setTaxPositions((res as { data: unknown[] }).data as unknown as api.TaxPositionResponseDto[])).catch((err) => toast.error('Failed to load tax positions: ' + getErrorMessage(err)));
-    api.supplierGroupsControllerFindAll().then((res: unknown) => setSupplierGroups((res as { data: unknown[] }).data as unknown as api.SupplierGroupResponseDto[])).catch((err) => toast.error('Failed to load supplier groups: ' + getErrorMessage(err)));
-    api.tradingTermsControllerFindAll().then((res: unknown) => setTradingTerms((res as { data: unknown[] }).data as unknown as api.TradingTermResponseDto[])).catch((err) => toast.error('Failed to load trading terms: ' + getErrorMessage(err)));
-  }, []);
+  const { taxPositions } = useTaxPositions();
+  const { supplierGroups } = useSupplierGroups();
+  const { tradingTerms } = useTradingTerms();
   const selectedGroup = useGroup(supplierGroups, dto.supplierGroupId);
 
   const earlyPaymentDiscountInheritance = useInheritance([

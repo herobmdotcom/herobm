@@ -31,6 +31,12 @@ const EXCLUDED_IDS = new Set([
   'contactId',
   'linkId',
   'projectId',
+  'projectTaskId',
+  'taskId',
+  'resourceId',
+  'assignmentId',
+  'budgetLineId',
+  'ledgerId',
   'opportunityId',
   'assignedToUserId',
   'noteId',
@@ -92,6 +98,11 @@ const EXCLUDED_IDS = new Set([
   'periodId',
   'copiedFromProductId',
   'recordSourceId',
+  'stocktakeId',
+  'stocktakeLineId',
+  'stocktakeCountId',
+  'countId',
+  'inventoryEntryId',
 ]);
 
 describe('Event Payload Enrichment Audit', () => {

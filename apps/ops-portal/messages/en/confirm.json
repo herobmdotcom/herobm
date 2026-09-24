@@ -1,0 +1,10 @@
+{
+  "archiveOrder": "Are you sure you want to archive this order?",
+  "completeTask": "Mark task as completed? This will set the completion date and finalize task delivery.",
+  "enterSupplierBill": "Enter invoice? This will publish AP ledger entries.",
+  "generateInvoice": "Generate financial invoice for selected quantities? This will publish AR ledger entries.",
+  "processReturn": "Process this return? This will generate a Credit Note and publish AR ledger entries.",
+  "removeLine": "Remove this line item?",
+  "removeReturnLine": "Remove this return line?",
+  "removeShipmentLine": "Remove this shipment line?"
+}

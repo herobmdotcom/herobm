@@ -905,9 +905,11 @@ describe('ShipmentService', () => {
   describe('UoM Boundary Translation (Reversal)', () => {
     it('should correctly restore the non-base UoM during shipment cancellation', async () => {
       // 1. Setup custom UoM
-      await pg.db
-        .insert(uomDictionary)
-        .values({ uomCode: 'PACKS', description: 'Pack of 5' });
+      await pg.db.insert(uomDictionary).values({
+        uomCode: 'PACKS',
+        description: 'Pack of 5',
+        category: 'goods',
+      });
 
       // 2. Setup Sales Order Line with PACKS
       const [so] = await pg.db

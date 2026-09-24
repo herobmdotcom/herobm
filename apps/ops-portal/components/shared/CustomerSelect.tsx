@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useState, useEffect } from 'react';
 import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
 import { SYSTEM_WALK_IN_CUSTOMER_ID } from '@herobm/shared';
@@ -30,6 +31,8 @@ export interface CustomerSelectProps {
   allowWalkIn?: boolean;
   /** Optional customerId to bind when Walk-In is selected (defaults to 'walk-in') */
   walkInCustomerId?: string;
+  viewUrl?: string;
+  viewUrlTitle?: string;
 }
 
 export default function CustomerSelect({
@@ -43,17 +46,57 @@ export default function CustomerSelect({
   excludeId,
   allowWalkIn = false,
   walkInCustomerId,
+  viewUrl = value && value !== SYSTEM_WALK_IN_CUSTOMER_ID && value !== (walkInCustomerId || 'walk-in')
+    ? `/customers/${value}`
+    : undefined,
+  viewUrlTitle,
 }: CustomerSelectProps) {
   const t = useTranslations('common');
+  const [fetchedDisplay, setFetchedDisplay] = useState<string>('');
+
+  useEffect(() => {
+    let active = true;
+    if (value && !initialSearchTerm) {
+      if (allowWalkIn && value === (walkInCustomerId || SYSTEM_WALK_IN_CUSTOMER_ID)) {
+        setFetchedDisplay('Walk-In Customer');
+        return;
+      }
+      const promise = api.customersControllerFindOne?.(value);
+      if (promise?.then) {
+        promise
+          .then((res) => {
+            if (!active) return;
+            const cust = res?.data;
+            if (cust) {
+              setFetchedDisplay(
+                cust.name ? `${cust.customerNumber} — ${cust.name}` : cust.customerNumber || ''
+              );
+            }
+          })
+          .catch(() => {
+            // ignore error
+          });
+      }
+    } else {
+      setFetchedDisplay('');
+    }
+    return () => {
+      active = false;
+    };
+  }, [value, initialSearchTerm, allowWalkIn, walkInCustomerId]);
+
+  const displayValue = initialSearchTerm || fetchedDisplay;
 
   return (
     <AsyncSelect<Customer>
       value={value}
-      displayValue={initialSearchTerm}
+      displayValue={displayValue}
       placeholder={placeholder || t('selectEllipsis')}
       disabled={disabled}
       required={required}
       className={className}
+      viewUrl={viewUrl}
+      viewUrlTitle={viewUrlTitle}
       onSearch={async (term) => {
         const lower = term.toLowerCase().trim();
         const results: Customer[] = [];

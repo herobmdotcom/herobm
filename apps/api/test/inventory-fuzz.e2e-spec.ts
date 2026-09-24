@@ -191,14 +191,18 @@ describe('API E2E — Inventory Ledger Fuzz & Robustness Suite', () => {
       ON CONFLICT DO NOTHING
     `;
 
-    // Ensure standard UoMs exist in dictionary
+    // Ensure standard Goods and Service UoMs exist in dictionary
     await sqlClient`
-      INSERT INTO herobm_core.uom_dictionary (uom_code, description)
+      INSERT INTO herobm_core.uom_dictionary (uom_code, description, category)
       VALUES 
-        ('EA', 'Each'),
-        ('BOX', 'Box of 10'),
-        ('CASE', 'Case of 50'),
-        ('PK', 'Pack of 5')
+        ('EA', 'Each', 'goods'),
+        ('BOX', 'Box of 10', 'goods'),
+        ('CASE', 'Case of 50', 'goods'),
+        ('PK', 'Pack of 5', 'goods'),
+        ('HR', 'Hourly Rate', 'service'),
+        ('HOUR', 'Labor Hours', 'service'),
+        ('DAY', 'Labor Days', 'service'),
+        ('JOB', 'Fixed Job', 'service')
       ON CONFLICT (uom_code) DO NOTHING
     `;
 
@@ -1337,6 +1341,136 @@ describe('API E2E — Inventory Ledger Fuzz & Robustness Suite', () => {
           reason: 'Attempt zero qty move',
         });
       expect(res.status).toBe(400);
+    });
+  });
+
+  describe('Property 11: UoM Category Enforcement & Product Type Matching', () => {
+    it('allows creating a service product with valid service UoMs (HR, HOUR, DAY, JOB)', async () => {
+      const serviceUoms = ['HR', 'HOUR', 'DAY', 'JOB'];
+      for (const uom of serviceUoms) {
+        const rand = Math.random().toString(36).substring(2, 7).toUpperCase();
+        const res = await request(app.getHttpServer())
+          .post('/api/products')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({
+            productNumber: `P11-SVC-${rand}`,
+            name: `Service Product ${uom}`,
+            productType: 'service',
+            baseUom: uom,
+          });
+        expect(res.status).toBe(201);
+        expect(res.body.productType).toBe('service');
+        expect(res.body.baseUom).toBe(uom);
+      }
+    });
+
+    it('rejects creating a service product with goods UoMs (EA, BOX, CASE, PK) with 400 Bad Request', async () => {
+      const goodsUoms = ['EA', 'BOX', 'CASE', 'PK'];
+      for (const uom of goodsUoms) {
+        const rand = Math.random().toString(36).substring(2, 7).toUpperCase();
+        const res = await request(app.getHttpServer())
+          .post('/api/products')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({
+            productNumber: `P11-SVC-FAIL-${rand}`,
+            name: `Service Product Invalid ${uom}`,
+            productType: 'service',
+            baseUom: uom,
+          });
+        expect(res.status).toBe(400);
+        expect(res.body.message).toContain(
+          'is a Goods unit and cannot be assigned to a Service product',
+        );
+      }
+    });
+
+    it('allows creating a goods product with valid goods UoMs (EA, BOX, CASE, PK)', async () => {
+      const goodsUoms = ['EA', 'BOX', 'CASE', 'PK'];
+      for (const uom of goodsUoms) {
+        const rand = Math.random().toString(36).substring(2, 7).toUpperCase();
+        const res = await request(app.getHttpServer())
+          .post('/api/products')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({
+            productNumber: `P11-GOODS-${rand}`,
+            name: `Goods Product ${uom}`,
+            productType: 'inventory',
+            baseUom: uom,
+          });
+        expect(res.status).toBe(201);
+        expect(res.body.productType).toBe('inventory');
+        expect(res.body.baseUom).toBe(uom);
+      }
+    });
+
+    it('rejects creating a goods product with service UoMs (HR, HOUR, DAY, JOB) with 400 Bad Request', async () => {
+      const serviceUoms = ['HR', 'HOUR', 'DAY', 'JOB'];
+      for (const uom of serviceUoms) {
+        const rand = Math.random().toString(36).substring(2, 7).toUpperCase();
+        const res = await request(app.getHttpServer())
+          .post('/api/products')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({
+            productNumber: `P11-GOODS-FAIL-${rand}`,
+            name: `Goods Product Invalid ${uom}`,
+            productType: 'inventory',
+            baseUom: uom,
+          });
+        expect(res.status).toBe(400);
+        expect(res.body.message).toContain(
+          'is a Service unit and cannot be assigned to a Goods product',
+        );
+      }
+    });
+
+    it('rejects updating an inventory product to a service UoM with 400 Bad Request', async () => {
+      const rand = Math.random().toString(36).substring(2, 7).toUpperCase();
+      const createRes = await request(app.getHttpServer())
+        .post('/api/products')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          productNumber: `P11-UP-GOODS-${rand}`,
+          name: `Goods Product for Update`,
+          productType: 'inventory',
+          baseUom: 'EA',
+        })
+        .expect(201);
+
+      const updateRes = await request(app.getHttpServer())
+        .patch(`/api/products/${createRes.body.productId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          baseUom: 'HR',
+        });
+      expect(updateRes.status).toBe(400);
+      expect(updateRes.body.message).toContain(
+        'is a Service unit and cannot be assigned to a Goods product',
+      );
+    });
+
+    it('rejects updating a service product to a goods UoM with 400 Bad Request', async () => {
+      const rand = Math.random().toString(36).substring(2, 7).toUpperCase();
+      const createRes = await request(app.getHttpServer())
+        .post('/api/products')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          productNumber: `P11-UP-SVC-${rand}`,
+          name: `Service Product for Update`,
+          productType: 'service',
+          baseUom: 'HR',
+        })
+        .expect(201);
+
+      const updateRes = await request(app.getHttpServer())
+        .patch(`/api/products/${createRes.body.productId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          baseUom: 'EA',
+        });
+      expect(updateRes.status).toBe(400);
+      expect(updateRes.body.message).toContain(
+        'is a Goods unit and cannot be assigned to a Service product',
+      );
     });
   });
 });

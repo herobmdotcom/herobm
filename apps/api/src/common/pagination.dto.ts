@@ -70,6 +70,11 @@ export class PaginationQuery {
   @IsString()
   productId?: string;
 
+  /** Optional filter by product type (e.g. inventory, non-stock, service, freight) */
+  @IsOptional()
+  @IsString()
+  productType?: string;
+
   /** Optional filter by opportunity ID */
   @IsOptional()
   @IsString()

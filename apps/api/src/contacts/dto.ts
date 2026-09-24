@@ -9,6 +9,7 @@ import {
   IsArray,
   Matches,
   IsEnum,
+  IsObject,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ContactEntityType } from '@herobm/shared';
@@ -91,6 +92,10 @@ export class CreateContactDto {
   @IsArray()
   @IsString({ each: true })
   projectRoles?: string[];
+
+  @IsOptional()
+  @IsObject()
+  metadata?: Record<string, unknown>;
 }
 
 export class UpdateContactDto {
@@ -161,6 +166,10 @@ export class UpdateContactDto {
   @IsOptional()
   @IsString()
   projectRole?: string;
+
+  @IsOptional()
+  @IsObject()
+  metadata?: Record<string, unknown>;
 }
 
 export enum OrganizationRole {
@@ -182,6 +191,7 @@ export class ContactResponseDto {
   phone?: string | null;
   mobile?: string | null;
   jobTitle?: string | null;
+  metadata?: Record<string, unknown> | null;
   primaryFor?: string[];
   organizationContactLinks?: unknown[];
   actorContactLinks?: unknown[];

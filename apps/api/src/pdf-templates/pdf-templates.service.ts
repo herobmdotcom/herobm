@@ -20,7 +20,7 @@ import {
 import { eq, like, or, inArray } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as path from 'path';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { randomUUID } from 'crypto';
 import { BadRequestException } from '@nestjs/common';
@@ -33,7 +33,7 @@ import { EntityType, EventType } from '../common/event-types';
 
 import { StorageService } from '../common/storage/storage.service';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 @Injectable()
 export class PdfTemplatesService {
@@ -473,9 +473,13 @@ export class PdfTemplatesService {
 
       const typstBinary =
         this.env?.typstBinaryPath || process.env.TYPST_BINARY_PATH || 'typst';
-      await execAsync(
-        `"${typstBinary}" compile "${typstFile}" "${pdfFile}" --input data="${jobId}.json"`,
-      );
+      await execFileAsync(typstBinary, [
+        'compile',
+        typstFile,
+        pdfFile,
+        '--input',
+        `data=${jobId}.json`,
+      ]);
 
       return fs.readFileSync(pdfFile);
     } catch (error) {

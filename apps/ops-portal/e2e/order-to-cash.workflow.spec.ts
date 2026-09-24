@@ -4,12 +4,16 @@ import { waitForGrid } from './helpers/grid';
 import { uniqueId } from './helpers/generators';
 
 test.describe('Workflow: Order-to-Cash', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.abort());
+  });
+
   test('executes end-to-end sales order creation, redirect, and picking workflow', async ({ page }) => {
     const orderRef = uniqueId('SO');
     const lineDescription = `E2E Custom Line ${orderRef}`;
 
     // 1. Navigate to New Sales Order page
-    await page.goto('/sales-orders/new', { waitUntil: 'networkidle' });
+    await page.goto('/sales-orders/new', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
 
     // 2. Select Customer via CustomerSelect
@@ -80,7 +84,7 @@ test.describe('Workflow: Order-to-Cash', () => {
     await expect(orderTitle).toBeVisible();
 
     // 8. Follow through to Picking workflow view
-    await page.goto('/inventory/picking', { waitUntil: 'networkidle' });
+    await page.goto('/inventory/picking', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
     const pickingHeading = page.getByRole('heading', { name: /picking/i }).first();
     await expect(pickingHeading).toBeVisible();

@@ -20,6 +20,7 @@ import { useSettings } from '@/components/SettingsProvider';
 import InheritedSelect from '@/components/shared/InheritedSelect';
 import InheritedNumberInput from '@/components/shared/InheritedNumberInput';
 import { useGroup, useInheritance } from '@/hooks/useInheritance';
+import { useTaxPositions, useCustomerGroups, useTradingTerms } from '@/hooks/useReferenceData';
 import { Button } from '@/components/shared/Button';
 
 export default function NewAccountPage() {
@@ -56,15 +57,9 @@ export default function NewAccountPage() {
     earlyPaymentDiscount: '',
     earlyPaymentDiscountDays: '',
   });
-  const [taxPositions, setTaxPositions] = useState<api.TaxPositionResponseDto[]>([]);
-  const [customerGroups, setCustomerGroups] = useState<api.CustomerGroupResponseDto[]>([]);
-  const [tradingTerms, setTradingTerms] = useState<api.TradingTermResponseDto[]>([]);
-
-  useEffect(() => {
-    api.taxPositionsControllerFindAll().then((res: unknown) => setTaxPositions((res as { data: unknown[] }).data as unknown as api.TaxPositionResponseDto[])).catch((err) => toast.error('Failed to load tax positions: ' + getErrorMessage(err)));
-    api.customerGroupsControllerFindAll().then((res: unknown) => setCustomerGroups((res as { data: unknown[] }).data as unknown as api.CustomerGroupResponseDto[])).catch((err) => toast.error('Failed to load customer groups: ' + getErrorMessage(err)));
-    api.tradingTermsControllerFindAll().then((res: unknown) => setTradingTerms((res as { data: unknown[] }).data as unknown as api.TradingTermResponseDto[])).catch((err) => toast.error('Failed to load trading terms: ' + getErrorMessage(err)));
-  }, []);
+  const { taxPositions } = useTaxPositions();
+  const { customerGroups } = useCustomerGroups();
+  const { tradingTerms } = useTradingTerms();
 
   const selectedGroup = useGroup(customerGroups, dto.customerGroupId);
 

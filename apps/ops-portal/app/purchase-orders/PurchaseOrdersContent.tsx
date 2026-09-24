@@ -85,6 +85,7 @@ export default function PurchaseOrdersContent() {
     <DataGrid<UnifiedPurchaseOrderRow>
       endpoint={isReady ? `/api/purchase-orders?days=${days}` : undefined}
       columns={columns}
+      customFieldEntityType="purchaseOrders"
       gridKey="purchase-orders"
       searchPlaceholder={tPurchase('placeholders.searchOrders')}
       exportFileName="purchase-orders"

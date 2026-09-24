@@ -45,6 +45,7 @@ vendorId?: string;
 days?: Object;
 purchaseOrderId?: string;
 productId?: string;
+productType?: string;
 projectId?: string;
 sort?: string;
 sortDirection?: Object;

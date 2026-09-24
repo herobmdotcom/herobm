@@ -1,4 +1,9 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import {
   eq,
   ilike,
@@ -29,13 +34,23 @@ import {
   organizations,
   purchaseOrderLineItems,
   purchaseOrders,
+  productSettings,
+  projectResources,
+  users,
 } from '@herobm/db-schema';
 import {
   PaginationQuery,
   parsePagination,
   withCursorPagination,
 } from '../common/pagination';
-import { PRODUCT_STATE } from '@herobm/shared';
+import {
+  PRODUCT_STATE,
+  RESOURCE_TYPE,
+  ProductType,
+  calculateAvailableQuantity,
+} from '@herobm/shared';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
 import { ProductCostSummaryResponseDto } from './dto';
 
 @Injectable()
@@ -43,8 +58,15 @@ export class ProductsService {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 
   async findAll(query?: PaginationQuery) {
-    const { page, limit, cursor, direction, searchTerm, includeArchived } =
-      parsePagination(query);
+    const {
+      page,
+      limit,
+      cursor,
+      direction,
+      searchTerm,
+      includeArchived,
+      productType,
+    } = parsePagination(query);
 
     const rawSearchTerm = searchTerm ? searchTerm.replace(/^%+|%+$/g, '') : '';
     const scoreSql = searchTerm
@@ -98,6 +120,22 @@ export class ProductsService {
       conditions.push(
         sql`${coreProducts.stateCode} != ${PRODUCT_STATE.ARCHIVED}`,
       );
+    }
+
+    if (productType) {
+      if (productType.includes(',')) {
+        const types = productType
+          .split(',')
+          .map((s) => s.trim().toLowerCase() as ProductType);
+        conditions.push(inArray(coreProducts.productType, types));
+      } else {
+        conditions.push(
+          eq(
+            coreProducts.productType,
+            productType.toLowerCase() as ProductType,
+          ),
+        );
+      }
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -183,7 +221,10 @@ export class ProductsService {
           const availableMap = new Map<string, number>();
           for (const lvl of compLevels) {
             if (lvl.productId) {
-              const avail = Math.max(0, lvl.totalOnHand - lvl.totalCommitted);
+              const avail = Math.max(
+                0,
+                calculateAvailableQuantity(lvl.totalOnHand, lvl.totalCommitted),
+              );
               availableMap.set(lvl.productId, avail);
             }
           }
@@ -322,6 +363,8 @@ export class ProductsService {
         .where(eq(productImages.productId, id))
         .orderBy(asc(productImages.sortOrder), desc(productImages.createdOn));
 
+      const serviceMembers = await this.getServiceMembers(id, db);
+
       return {
         ...rows[0].product,
         productGroupName: rows[0].productGroupName,
@@ -330,6 +373,7 @@ export class ProductsService {
         productUoms: uoms,
         defaultBins,
         images,
+        serviceMembers,
       };
     }
 
@@ -483,5 +527,217 @@ export class ProductsService {
       lastPurchaseVendorName: latestPo?.vendorName ?? null,
       lastPurchaseOrderId: latestPo?.purchaseOrderId ?? null,
     };
+  }
+
+  async getSettings(tx?: DrizzleDB) {
+    const db = tx || this.db;
+    const [settings] = await db.select().from(productSettings).limit(1);
+    return settings || { productMetadataSchema: null };
+  }
+
+  async updateSettings(
+    data: { productMetadataSchema?: Record<string, unknown> | null },
+    tx?: DrizzleDB,
+  ) {
+    const db = tx || this.db;
+    const [existing] = await db.select().from(productSettings).limit(1);
+
+    if (!existing) {
+      const [created] = await db
+        .insert(productSettings)
+        .values({
+          productMetadataSchema: data.productMetadataSchema ?? null,
+        })
+        .returning();
+
+      await emitEvent(db, {
+        entityType: EntityType.PRODUCT_SETTINGS,
+        entityId: created.settingsId,
+        entityDisplayName: 'Product Settings',
+        eventType: EventType.UPDATED,
+        payload: { changes: data },
+        actor: 'system',
+      });
+
+      return created;
+    }
+
+    const [updated] = await db
+      .update(productSettings)
+      .set({
+        productMetadataSchema:
+          data.productMetadataSchema !== undefined
+            ? data.productMetadataSchema
+            : existing.productMetadataSchema,
+        modifiedOn: new Date(),
+      })
+      .where(eq(productSettings.settingsId, existing.settingsId))
+      .returning();
+
+    await emitEvent(db, {
+      entityType: EntityType.PRODUCT_SETTINGS,
+      entityId: existing.settingsId,
+      entityDisplayName: 'Product Settings',
+      eventType: EventType.UPDATED,
+      payload: { changes: data },
+      actor: 'system',
+    });
+
+    return updated;
+  }
+
+  async getServiceMembers(productId: string, tx?: DrizzleDB) {
+    const db = tx || this.db;
+    return db
+      .select({
+        memberId: projectResources.resourceId,
+        productId: projectResources.serviceProductId,
+        resourceId: projectResources.resourceId,
+        resourceNumber: projectResources.resourceNumber,
+        name: projectResources.name,
+        resourceType: projectResources.resourceType,
+        directUnitCost: projectResources.directUnitCost,
+        unitPrice: projectResources.unitPrice,
+        baseUom: projectResources.baseUom,
+        userId: projectResources.userId,
+        createdOn: projectResources.createdOn,
+        username: users.username,
+        displayName: users.displayName,
+        email: users.email,
+      })
+      .from(projectResources)
+      .leftJoin(users, eq(projectResources.userId, users.userId))
+      .where(
+        and(
+          eq(projectResources.serviceProductId, productId),
+          eq(projectResources.resourceType, RESOURCE_TYPE.PERSON),
+        ),
+      )
+      .orderBy(
+        asc(projectResources.name),
+        asc(projectResources.resourceNumber),
+      );
+  }
+
+  async addServiceMember(
+    productId: string,
+    resourceId: string,
+    actor: string,
+    tx?: DrizzleDB,
+  ) {
+    const db = tx || this.db;
+    const [prod] = await db
+      .select()
+      .from(coreProducts)
+      .where(eq(coreProducts.productId, productId))
+      .limit(1);
+
+    if (!prod) {
+      throw new NotFoundException(`Product '${productId}' not found`);
+    }
+
+    if (prod.productType !== 'service') {
+      throw new BadRequestException(
+        `Product '${productId}' is not a service product`,
+      );
+    }
+
+    const [res] = await db
+      .select()
+      .from(projectResources)
+      .where(eq(projectResources.resourceId, resourceId))
+      .limit(1);
+
+    if (!res) {
+      throw new NotFoundException(`Resource '${resourceId}' not found`);
+    }
+
+    if (res.resourceType !== RESOURCE_TYPE.PERSON) {
+      throw new BadRequestException(
+        `Only person resources can be assigned to a service product`,
+      );
+    }
+
+    await db
+      .update(projectResources)
+      .set({
+        serviceProductId: productId,
+        modifiedOn: new Date(),
+      })
+      .where(eq(projectResources.resourceId, resourceId));
+
+    await emitEvent(db, {
+      entityType: EntityType.PRODUCT,
+      entityId: productId,
+      eventType: EventType.UPDATED,
+      entityDisplayName: prod.name,
+      payload: {
+        action: 'service_member_added',
+        productId,
+        productName: prod.name,
+        resourceId,
+        resourceNumber: res.resourceNumber,
+        resourceName: res.name,
+      },
+      actor,
+    });
+
+    const all = await this.getServiceMembers(productId, db);
+    return all.find((m) => m.resourceId === resourceId);
+  }
+
+  async removeServiceMember(
+    productId: string,
+    resourceId: string,
+    actor: string,
+    tx?: DrizzleDB,
+  ) {
+    const db = tx || this.db;
+    const [prod] = await db
+      .select()
+      .from(coreProducts)
+      .where(eq(coreProducts.productId, productId))
+      .limit(1);
+
+    if (!prod) {
+      throw new NotFoundException(`Product '${productId}' not found`);
+    }
+
+    const [res] = await db
+      .select()
+      .from(projectResources)
+      .where(eq(projectResources.resourceId, resourceId))
+      .limit(1);
+
+    await db
+      .update(projectResources)
+      .set({
+        serviceProductId: null,
+        modifiedOn: new Date(),
+      })
+      .where(
+        and(
+          eq(projectResources.resourceId, resourceId),
+          eq(projectResources.serviceProductId, productId),
+        ),
+      );
+
+    await emitEvent(db, {
+      entityType: EntityType.PRODUCT,
+      entityId: productId,
+      eventType: EventType.UPDATED,
+      entityDisplayName: prod.name,
+      payload: {
+        action: 'service_member_removed',
+        productId,
+        productName: prod.name,
+        resourceId,
+        resourceNumber: res?.resourceNumber,
+        resourceName: res?.name,
+      },
+      actor,
+    });
+
+    return { deleted: true, productId, resourceId };
   }
 }

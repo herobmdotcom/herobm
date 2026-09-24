@@ -2,10 +2,11 @@ import React from 'react';
 import { useTranslations } from 'next-intl';
 
 export interface FormFieldProps {
-  type: 'string' | 'number' | 'integer' | 'boolean' | 'enum';
+  type: 'string' | 'number' | 'integer' | 'boolean' | 'enum' | 'date' | 'textarea';
   title: string;
   value: unknown;
   onChange: (val: unknown) => void;
+  onBlur?: (val: unknown) => void;
   required?: boolean;
   readOnly?: boolean;
   options?: string[]; // For enum
@@ -17,6 +18,7 @@ export const FormField: React.FC<FormFieldProps> = ({
   title,
   value,
   onChange,
+  onBlur,
   required,
   readOnly,
   options,
@@ -25,34 +27,77 @@ export const FormField: React.FC<FormFieldProps> = ({
   const t = useTranslations('common');
   if (type === 'boolean') {
     return (
-      <div className="flex items-center gap-4">
-        <label className="text-sm font-medium text-muted w-48 shrink-0">
+      <div>
+        <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
           {title} {required && <span className="text-[var(--danger)]">*</span>}
         </label>
-        <label className="switch" title={title}>
-          <input
-            type="checkbox"
-            checked={Boolean(value)}
-            onChange={(e) => onChange(e.target.checked)}
-            disabled={readOnly}
-          />
-          <span className="switch-slider"></span>
+        <div className="pt-0.5">
+          <label className="switch" title={title}>
+            <input
+              type="checkbox"
+              checked={Boolean(value)}
+              onChange={(e) => {
+                onChange(e.target.checked);
+                onBlur?.(e.target.checked);
+              }}
+              disabled={readOnly}
+            />
+            <span className="switch-slider"></span>
+          </label>
+        </div>
+      </div>
+    );
+  }
+
+  if (type === 'date') {
+    return (
+      <div>
+        <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+          {title} {required && <span className="text-[var(--danger)]">*</span>}
         </label>
+        <input
+          type="date"
+          className="input w-full"
+          value={(value as string) ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={(e) => onBlur?.(e.target.value)}
+          disabled={readOnly}
+        />
+      </div>
+    );
+  }
+
+  if (type === 'textarea') {
+    return (
+      <div>
+        <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+          {title} {required && <span className="text-[var(--danger)]">*</span>}
+        </label>
+        <textarea
+          className="input w-full min-h-[80px] p-2"
+          rows={3}
+          value={(value as string) ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={(e) => onBlur?.(e.target.value)}
+          disabled={readOnly}
+          placeholder={description || ''}
+        />
       </div>
     );
   }
 
   if (type === 'number' || type === 'integer') {
     return (
-      <div className="flex items-center gap-4">
-        <label className="text-sm font-medium text-muted w-48 shrink-0">
+      <div>
+        <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
           {title} {required && <span className="text-[var(--danger)]">*</span>}
         </label>
         <input
           type="number"
-          className="input flex-1"
+          className="input w-full"
           value={(value as string | number) ?? ''}
           onChange={(e) => onChange(e.target.value === '' ? '' : Number(e.target.value))}
+          onBlur={(e) => onBlur?.(e.target.value === '' ? '' : Number(e.target.value))}
           disabled={readOnly}
           placeholder={description || ''}
         />
@@ -62,14 +107,17 @@ export const FormField: React.FC<FormFieldProps> = ({
 
   if (type === 'enum' || (options && options.length > 0)) {
     return (
-      <div className="flex items-center gap-4">
-        <label className="text-sm font-medium text-muted w-48 shrink-0">
+      <div>
+        <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
           {title} {required && <span className="text-[var(--danger)]">*</span>}
         </label>
         <select
-          className="input flex-1"
+          className="input w-full"
           value={(value as string | number) ?? ''}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => {
+            onChange(e.target.value);
+            onBlur?.(e.target.value);
+          }}
           disabled={readOnly}
         >
           <option value="">{t('selectOption')}</option>
@@ -85,15 +133,16 @@ export const FormField: React.FC<FormFieldProps> = ({
 
   // Default to string
   return (
-    <div className="flex items-center gap-4">
-      <label className="text-sm font-medium text-muted w-48 shrink-0">
+    <div>
+      <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
         {title} {required && <span className="text-[var(--danger)]">*</span>}
       </label>
       <input
         type="text"
-        className="input flex-1"
+        className="input w-full"
         value={(value as string | number) ?? ''}
         onChange={(e) => onChange(e.target.value)}
+        onBlur={(e) => onBlur?.(e.target.value)}
         disabled={readOnly}
         placeholder={description || ''}
       />

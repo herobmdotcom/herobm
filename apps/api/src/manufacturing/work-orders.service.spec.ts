@@ -11,6 +11,7 @@ import { AppConfigService } from '../settings/app-config.service';
 import { GlService } from '../gl/gl.service';
 import { BackordersService } from '../orders/backorders.service';
 import { ReturnsWriteService } from '../orders/returns-write.service';
+import { ProjectsInventoryService } from '../projects/projects-inventory.service';
 import {
   products,
   locations,
@@ -64,6 +65,7 @@ describe('WorkOrdersService', () => {
       .values({
         uomCode: 'EA',
         description: 'Each',
+        category: 'goods',
       })
       .onConflictDoNothing();
 
@@ -243,6 +245,13 @@ describe('WorkOrdersService', () => {
             updateReturnLinePutawayStatus: jest
               .fn()
               .mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: ProjectsInventoryService,
+          useValue: {
+            recordProjectReturnCredit: jest.fn().mockResolvedValue(undefined),
+            recordProjectStagingCharge: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],

@@ -11,11 +11,12 @@ export type OrganizationContactRole =
 export const DEFAULT_ORGANIZATION_CONTACT_ROLES: Array<{
   value: string;
   order: number;
+  isSystem?: boolean;
 }> = [
-  { value: 'Sales', order: 1 },
-  { value: 'Purchasing', order: 2 },
-  { value: 'Billing', order: 3 },
-  { value: 'Delivery', order: 4 },
+  { value: 'Sales', order: 1, isSystem: true },
+  { value: 'Purchasing', order: 2, isSystem: true },
+  { value: 'Billing', order: 3, isSystem: true },
+  { value: 'Delivery', order: 4, isSystem: true },
 ];
 
 export enum ContactEntityType {

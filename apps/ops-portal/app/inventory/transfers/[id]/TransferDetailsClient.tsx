@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import EntityHeader from '@/components/shared/EntityHeader';
@@ -135,6 +136,41 @@ export default function TransferDetailsClient({ id }: { id: string }) {
                 {order.destinationLocationName || order.destinationLocationId}
               </p>
             </div>
+            {order.projectId && (
+              <div>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                  {tTransfers('columns.project')}
+                </label>
+                <p className="text-sm font-medium pt-1.5">
+                  <Link
+                    href={`/projects/${order.projectId}`}
+                    className="text-[var(--accent)] hover:underline"
+                  >
+                    {order.projectNumber ? `${order.projectNumber} - ${order.projectName || ''}` : (order.projectName || order.projectId)}
+                  </Link>
+                </p>
+              </div>
+            )}
+            {order.sourceBinNumber && (
+              <div>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                  {tTransfers('columns.sourceBin')}
+                </label>
+                <p className="text-sm font-medium pt-1.5">
+                  {order.sourceBinNumber}
+                </p>
+              </div>
+            )}
+            {order.destinationBinNumber && (
+              <div>
+                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                  {tTransfers('columns.destinationBin')}
+                </label>
+                <p className="text-sm font-medium pt-1.5">
+                  {order.destinationBinNumber}
+                </p>
+              </div>
+            )}
             <div>
               <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {tTransfers('columns.createdOn')}

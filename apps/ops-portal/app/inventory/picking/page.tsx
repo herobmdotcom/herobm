@@ -392,11 +392,6 @@ export default function PickingPage() {
                                                     <span className={`material-symbols-outlined indicator-icon shrink-0 [font-variation-settings:'FILL'_1] ${order.pickabilityStatus === 'ready' ? 'text-emerald-500' : order.pickabilityStatus === 'partial' ? 'text-amber-500' : 'text-rose-500'}`}>fiber_manual_record</span>
                                                 )}
                                                 <div className="font-bold text-[var(--text-primary)] text-sm">{order.orderNumber}</div>
-                                                {order.type === 'transfer_order' && (
-                                                    <span className="text-[10px] uppercase px-1.5 py-0.5 rounded font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20">
-                                                        TRANSFER
-                                                    </span>
-                                                )}
                                             </div>
                                             <StateBadge state={order.stateCode as ValidState} />
                                         </div>

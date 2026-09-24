@@ -19,6 +19,10 @@ export interface PgliteTestContext {
 // Order matters — children before parents to respect FK constraints.
 // --------------------------------------------------------------------------
 const TRANSACTIONAL_TABLES = [
+  'herobm_core.stocktake_counts',
+  'herobm_core.stocktake_lines',
+  'herobm_core.stocktakes',
+  'herobm_core.inventory_entries',
   'herobm_core.gl_journal_lines',
   'herobm_core.gl_journal_entries',
   'herobm_core.sales_invoice_lines',
@@ -61,18 +65,44 @@ const TRANSACTIONAL_TABLES = [
   'herobm_core.payment_entries',
 ];
 
+const NOSEED_TABLES = [
+  ...TRANSACTIONAL_TABLES,
+  'herobm_core.product_uoms',
+  'herobm_core.product_components',
+  'herobm_core.product_default_bins',
+  'herobm_core.bin_contents',
+  'herobm_core.bins',
+  'herobm_core.zones',
+  'herobm_core.locations',
+  'herobm_core.project_resource_assignments',
+  'herobm_core.project_tasks',
+  'herobm_core.projects',
+  'herobm_core.tax_categories',
+  'herobm_core.uom_dictionary',
+  'herobm_core.transfer_order_receipt_lines',
+  'herobm_core.transfer_order_receipts',
+  'herobm_core.transfer_order_shipment_lines',
+  'herobm_core.transfer_order_shipments',
+  'herobm_core.transfer_order_picks',
+  'herobm_core.transfer_order_lines',
+  'herobm_core.transfer_orders',
+  'herobm_core.exchange_rates',
+  'herobm_core.gl_fiscal_periods',
+  'herobm_core.cost_centers',
+  'herobm_core.activities',
+  'herobm_core.gl_accounts',
+  'herobm_core.gl_settings',
+  'herobm_core.app_settings',
+  'herobm_core.users',
+  'herobm_core.organizations',
+];
+
 /**
  * Reusable utility for PGLite testing in NestJS services.
  *
  * Performance strategy: boot PGlite **once** per suite (in beforeAll)
- * from the pre-built snapshot. Between tests, truncate only the
- * transactional tables while keeping seed/reference data intact.
- *
- * This avoids the ~500ms cost of loading a snapshot for each of the
- * 488 test cases — cutting overall suite time roughly in half.
- *
- * For suites with `skipSeeds: true`, the old per-test snapshot reload
- * is used since those suites insert their own reference data.
+ * from the pre-built snapshot. Between tests, truncate tables to restore
+ * clean state while eliminating WebAssembly memory re-allocation leaks.
  */
 export function setupPgliteSuite(opts?: {
   skipSeeds?: boolean;
@@ -97,18 +127,25 @@ export function setupPgliteSuite(opts?: {
     },
   };
 
-  // Suites that skip seeds need fresh DBs per-test since they insert
-  // their own reference data (uom_dictionary, tax_categories, etc.)
+  // Suites that skip seeds: boot once with noseed snapshot, truncate all tables between tests
   if (opts?.skipSeeds) {
-    let suiteSnapshot: Blob;
-
     beforeAll(async () => {
-      const memory = await createMemoryDb(opts);
-      suiteSnapshot = await memory.client.dumpDataDir();
-      await memory.client.close();
-    });
-
-    beforeEach(async () => {
+      const candidatePath = path.resolve(
+        __dirname,
+        '../../.pglite-snapshot-noseed.bin',
+      );
+      const snapshotPath = fs.existsSync(candidatePath)
+        ? candidatePath
+        : path.join(process.cwd(), '.pglite-snapshot-noseed.bin');
+      let suiteSnapshot: File | Blob;
+      if (fs.existsSync(snapshotPath)) {
+        const buffer = fs.readFileSync(snapshotPath);
+        suiteSnapshot = new File([buffer], 'snapshot-noseed.tar');
+      } else {
+        const memory = await createMemoryDb(opts);
+        suiteSnapshot = await memory.client.dumpDataDir();
+        await memory.client.close();
+      }
       const client = new PGlite({ loadDataDir: suiteSnapshot });
       await client.waitReady;
       const db = drizzle(client, { schema });
@@ -117,6 +154,28 @@ export function setupPgliteSuite(opts?: {
     });
 
     afterEach(async () => {
+      try {
+        try {
+          await context._client!.exec('ROLLBACK');
+        } catch {
+          // Ignore if no transaction is active
+        }
+
+        await context._client!.exec(
+          `TRUNCATE ${NOSEED_TABLES.join(', ')} CASCADE`,
+        );
+      } catch (e: unknown) {
+        for (const table of NOSEED_TABLES) {
+          try {
+            await context._client!.exec(`TRUNCATE ${table} CASCADE`);
+          } catch {
+            // Table may not exist — skip
+          }
+        }
+      }
+    });
+
+    afterAll(async () => {
       if (context._client) {
         await context._client.close();
       }
@@ -142,6 +201,8 @@ export function setupPgliteSuite(opts?: {
     const snapshot = new File([buffer], 'snapshot.tar');
     const client = new PGlite({ loadDataDir: snapshot });
     await client.waitReady;
+    await client.exec(`ALTER TABLE "herobm_core"."gl_journal_lines" ADD COLUMN IF NOT EXISTS "project_id" uuid;
+      ALTER TABLE "herobm_core"."gl_journal_lines" ADD COLUMN IF NOT EXISTS "project_task_id" uuid;`);
     const db = drizzle(client, { schema });
     context._db = db as unknown as DrizzleDB;
     context._client = client;

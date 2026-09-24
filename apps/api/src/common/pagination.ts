@@ -66,6 +66,7 @@ export function parsePagination(query?: PaginationQuery) {
   const days = query?.days;
   const purchaseOrderId = query?.purchaseOrderId;
   const productId = query?.productId;
+  const productType = query?.productType?.trim();
   const opportunityId = query?.opportunityId || query?.projectId;
   const projectId = opportunityId;
   const states = query?.state
@@ -87,6 +88,7 @@ export function parsePagination(query?: PaginationQuery) {
     days,
     purchaseOrderId,
     productId,
+    productType,
     opportunityId,
     projectId,
     states,

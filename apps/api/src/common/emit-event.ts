@@ -62,6 +62,10 @@ const EVENT_TABLE_MAP: Record<string, unknown> = {
   [EntityType.GENERAL_LEDGER]: financialEvents,
   [EntityType.SYSTEM]: systemEvents, // or financialEvents if GL_POSTED, see domain mapping
   [EntityType.INVENTORY_LEDGER]: inventoryEvents,
+  [EntityType.PROJECT]: masterDataEvents,
+  [EntityType.PROJECT_TASK]: masterDataEvents,
+  [EntityType.PROJECT_RESOURCE]: masterDataEvents,
+  [EntityType.PROJECT_LEDGER]: financialEvents,
   [EntityType.EMAIL]: emailEvents,
   [EntityType.BUSINESS_REPORT]: businessReportEvents,
   [EntityType.INTEGRATION]: integrationEvents,
@@ -72,6 +76,12 @@ const EVENT_TABLE_MAP: Record<string, unknown> = {
   [EntityType.WEBHOOK]: systemEvents,
   [EntityType.APP_SETTINGS]: systemEvents,
   [EntityType.GL_SETTINGS]: systemEvents,
+  [EntityType.CRM_SETTINGS]: systemEvents,
+  [EntityType.PRODUCT_SETTINGS]: systemEvents,
+  [EntityType.PROJECT_SETTINGS]: systemEvents,
+  [EntityType.SALES_SETTINGS]: systemEvents,
+  [EntityType.PURCHASING_SETTINGS]: systemEvents,
+  [EntityType.MANUFACTURING_SETTINGS]: systemEvents,
   [EntityType.MACRO]: systemEvents,
 
   [EntityType.RECONCILIATION_RULE]: reconciliationEvents,
@@ -96,6 +106,8 @@ const EVENT_TABLE_MAP: Record<string, unknown> = {
   [EntityType.LOCATION]: warehouseEvents,
   [EntityType.ZONE]: warehouseEvents,
   [EntityType.BIN]: warehouseEvents,
+  [EntityType.STOCKTAKE]: warehouseEvents,
+  [EntityType.STOCKTAKE_COUNT]: warehouseEvents,
 };
 
 // ---------------------------------------------------------------------------

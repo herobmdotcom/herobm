@@ -195,6 +195,7 @@ export class WorkOrdersWriteService {
             ? dto.additionalCost.toString()
             : null,
           totalCost: '0',
+          metadata: dto.metadata ?? null,
           createdBy: username || null,
         })
         .returning();
@@ -350,6 +351,7 @@ export class WorkOrdersWriteService {
         updateData.additionalCost = dto.additionalCost
           ? dto.additionalCost.toString()
           : null;
+      if (dto.metadata !== undefined) updateData.metadata = dto.metadata;
 
       await innerTx
         .update(workOrders)

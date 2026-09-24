@@ -1,8 +1,9 @@
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 // Flatten an object to dot notation keys
-function flattenObject(ob) {
+function flattenObject(ob, prefix = '') {
   var toReturn = {};
   for (var i in ob) {
     if (!ob.hasOwnProperty(i)) continue;
@@ -34,7 +35,7 @@ function walkSync(dir, filelist = []) {
       }
     } catch (err) {
       if (err.code === 'OOM' || err.code === 'EISDIR') {
-        pass;
+        // ignore
       }
     }
   });
@@ -42,15 +43,38 @@ function walkSync(dir, filelist = []) {
 }
 
 const rootDir = path.resolve(__dirname, '..');
+const enDir = path.join(rootDir, 'messages', 'en');
 const enJsonPath = path.join(rootDir, 'messages', 'en.json');
 
-if (!fs.existsSync(enJsonPath)) {
-  console.error(`ERROR: ${enJsonPath} not found.`);
+let fullEn = {};
+
+if (fs.existsSync(enDir)) {
+  const jsonFiles = fs.readdirSync(enDir).filter(f => f.endsWith('.json'));
+  jsonFiles.forEach(f => {
+    const ns = path.basename(f, '.json');
+    const content = JSON.parse(fs.readFileSync(path.join(enDir, f), 'utf8'));
+    fullEn[ns] = content;
+  });
+} else if (fs.existsSync(enJsonPath)) {
+  fullEn = JSON.parse(fs.readFileSync(enJsonPath, 'utf8'));
+} else {
+  console.error(`ERROR: Neither ${enDir} nor ${enJsonPath} found.`);
   process.exit(1);
 }
 
-const enJson = JSON.parse(fs.readFileSync(enJsonPath, 'utf8'));
-const flatKeys = flattenObject(enJson);
+function sortObjectKeys(obj) {
+  if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) return obj;
+  const sorted = {};
+  Object.keys(obj).sort().forEach(key => {
+    sorted[key] = sortObjectKeys(obj[key]);
+  });
+  return sorted;
+}
+
+// Keep messages/en.json synced and sorted for compatibility
+fs.writeFileSync(enJsonPath, JSON.stringify(sortObjectKeys(fullEn), null, 2) + '\n');
+
+const flatKeys = flattenObject(fullEn);
 const allTranslationKeys = new Set(Object.keys(flatKeys));
 
 const searchDirs = [
@@ -68,12 +92,6 @@ searchDirs.forEach(dir => {
 
 let errorsFound = false;
 
-// Regex to find useTranslations calls. 
-// Matches: const t = useTranslations('namespace');
-// Captures group 1: variable name (e.g. t, tCommon)
-// Captures group 2: namespace (e.g. admin.settings)
-const useTranslationsRegex = /(?:const|let|var)\s+(?:\{([^}]+)\}|\s*([a-zA-Z0-9_]+)\s*)\s*=\s*useTranslations\(\s*['"](.*?)['"]\s*\)/g;
-
 files.forEach(file => {
   const content = fs.readFileSync(file, 'utf8');
   
@@ -81,7 +99,6 @@ files.forEach(file => {
   const namespaces = {};
   
   let match;
-  // Use a fresh regex to avoid lastIndex issues
   const localRegex = /(?:const|let|var)\s+([a-zA-Z0-9_]+)\s*=\s*useTranslations\(\s*['"](.*?)['"]\s*\)/g;
   while ((match = localRegex.exec(content)) !== null) {
     const varName = match[1];
@@ -89,26 +106,36 @@ files.forEach(file => {
     namespaces[varName] = namespace;
   }
   
-  // Also check if there's a global useTranslations() without namespace
   const globalRegex = /(?:const|let|var)\s+([a-zA-Z0-9_]+)\s*=\s*useTranslations\(\s*\)/g;
   while ((match = globalRegex.exec(content)) !== null) {
     namespaces[match[1]] = ''; // Empty namespace
+  }
+
+  // Dynamic tDynamic calls
+  const tDynamicRegex = /tDynamic\s*\(\s*([a-zA-Z0-9_]+)\s*,\s*['"`](.*?)['"`]/g;
+  while ((match = tDynamicRegex.exec(content)) !== null) {
+    const varName = match[1];
+    const key = match[2];
+    if (key.includes('${')) continue; // Skip interpolated dynamic expressions
+    const ns = namespaces[varName] !== undefined ? namespaces[varName] : '';
+    const fullKey = ns ? `${ns}.${key}` : key;
+    if (!allTranslationKeys.has(fullKey)) {
+      console.error(`\x1b[31m[ERROR]\x1b[0m ${path.relative(rootDir, file)}`);
+      console.error(`        Missing translation key (tDynamic): "\x1b[33m${fullKey}\x1b[0m"`);
+      errorsFound = true;
+    }
   }
 
   if (Object.keys(namespaces).length === 0) return;
 
   const lines = content.split('\n');
   lines.forEach((line, lineIndex) => {
-    // For each translation variable, find calls to it like t('key') or t("key")
     for (const [varName, namespace] of Object.entries(namespaces)) {
-      // Regex to match variable('some.key') or variable("some.key") with word boundaries
       const callRegex = new RegExp(`\\b${varName}\\s*\\(\\s*['"]([^'"]+)['"]`, 'g');
       
       let callMatch;
       while ((callMatch = callRegex.exec(line)) !== null) {
         const key = callMatch[1];
-        
-        // Construct the full key
         const fullKey = namespace ? `${namespace}.${key}` : key;
         
         if (!allTranslationKeys.has(fullKey)) {
@@ -121,18 +148,24 @@ files.forEach(file => {
   });
 });
 
-// Run ESLint on en.json to enforce duplicate key and alphabetical sorting checks
+// Run ESLint on en.json and domain files to enforce duplicate key and alphabetical sorting checks
 try {
-  console.log('\nRunning ESLint on en.json to check for duplicates and sorting...');
-  require('child_process').execSync('npx eslint messages/en.json --max-warnings=0', { stdio: 'inherit', cwd: rootDir });
+  console.log('\nRunning ESLint on translation files to check for duplicates and sorting...');
+  if (fs.existsSync(enDir)) {
+    execSync('npx eslint "messages/en/*.json" --fix', { stdio: 'inherit', cwd: rootDir });
+    execSync('npx eslint "messages/en/*.json" --max-warnings=0', { stdio: 'inherit', cwd: rootDir });
+  }
+  execSync('npx eslint messages/en.json --fix', { stdio: 'inherit', cwd: rootDir });
+  execSync('npx eslint messages/en.json --max-warnings=0', { stdio: 'inherit', cwd: rootDir });
 } catch (e) {
-  console.error('\x1b[31m[ERROR] en.json failed ESLint checks (duplicate keys or unsorted keys).\x1b[0m');
+  console.error('\x1b[31m[ERROR] Translation files failed ESLint checks (duplicate keys or unsorted keys).\x1b[0m');
   errorsFound = true;
 }
 
 if (errorsFound) {
-  console.error('\n\x1b[31m❌ i18n Linting Failed: Found missing translation keys. Please add them to messages/en.json\x1b[0m');
+  console.error('\n\x1b[31m❌ i18n Linting Failed: Found missing translation keys. Please add them to messages/en/\x1b[0m');
   process.exit(1);
 } else {
-  console.log('\x1b[32m✅ i18n Linting Passed: All translation keys are valid.\x1b[0m');
+  console.log(`\x1b[32m✅ i18n Linting Passed: All ${allTranslationKeys.size} translation keys across ${Object.keys(fullEn).length} domain files are valid.\x1b[0m`);
 }
+

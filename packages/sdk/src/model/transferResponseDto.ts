@@ -16,6 +16,17 @@ export interface TransferResponseDto {
   sourceLocationName?: string;
   destinationLocationId: string;
   destinationLocationName?: string;
+  projectId?: string;
+  projectTaskId?: string;
+  isProjectReturn?: boolean;
+  projectNumber?: string;
+  projectName?: string;
+  stagingBinId?: string;
+  stagingBinNumber?: string;
+  sourceBinId?: string;
+  sourceBinNumber?: string;
+  destinationBinId?: string;
+  destinationBinNumber?: string;
   notes?: string;
   shippingNotes?: string;
   createdBy?: string;

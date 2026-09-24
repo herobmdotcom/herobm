@@ -39,6 +39,7 @@ jest.mock('@herobm/sdk', () => ({
     pdfTemplatesControllerRunHook: (...args: any[]) => mockPdfTemplatesControllerRunHook(...args),
     contactsControllerListContacts: jest.fn().mockResolvedValue({ data: [] }),
     macroControllerGetMacrosByContext: jest.fn().mockResolvedValue({ data: [] }),
+    ordersControllerGetSettings: jest.fn().mockResolvedValue({ data: {} }),
 }));
 
 jest.mock('@/hooks/useDocumentTitle', () => ({
@@ -80,9 +81,12 @@ describe('InvoiceDetailContent', () => {
                         lineId: 'line-1',
                         productId: 'prod-1',
                         productNumber: 'PROD-1',
+                        description: 'Custom widget',
                         quantityInvoiced: '1',
                         pricePerUnit: '90',
-                        amount: '90'
+                        discountPercentage: '10',
+                        taxAmount: '9.00',
+                        amount: '81.00'
                     }
                 ],
                 allocations: [],
@@ -93,11 +97,12 @@ describe('InvoiceDetailContent', () => {
         });
     });
 
-    it('renders invoice details', () => {
+    it('renders invoice details including product number, discount, and tax columns', () => {
         render(<InvoiceDetailContent id="inv-1" />);
         expect(screen.getByText('INV-001')).toBeInTheDocument();
         expect(screen.getByText('ACME Corp')).toBeInTheDocument();
         expect(screen.getAllByText('PROD-1').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('10%').length).toBeGreaterThan(0);
     });
 
     it('allows cancelling invoice', async () => {

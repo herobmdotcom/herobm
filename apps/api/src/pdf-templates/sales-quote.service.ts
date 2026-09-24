@@ -11,7 +11,8 @@ import { RunHookOptionsDto } from './dto';
 
 export interface SalesQuoteData {
   header: {
-    orderNumber: string;
+    orderNumber?: string;
+    projectNumber?: string;
     customerName: string;
     customerOrderNumber: string;
     orderDate: string;

@@ -23,7 +23,6 @@ interface User {
   isActive: boolean;
   twoFactorEnabled?: boolean;
   createdAt: string;
-  events?: TimelineEvent[];
 }
 
 
@@ -114,22 +113,10 @@ export default function UsersPage() {
   };
 
   const allEvents = useMemo(() => {
-    if (events.length > 0) {
-      return [...events].sort(
-        (a, b) => new Date(b.createdOn).getTime() - new Date(a.createdOn).getTime(),
-      );
-    }
-    const evts: TimelineEvent[] = [];
-    for (const u of users) {
-      if (u.events) {
-        evts.push(...u.events);
-      }
-    }
-    evts.sort(
+    return [...events].sort(
       (a, b) => new Date(b.createdOn).getTime() - new Date(a.createdOn).getTime(),
     );
-    return evts;
-  }, [events, users]);
+  }, [events]);
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
 
@@ -447,7 +434,7 @@ export default function UsersPage() {
         </div>
         
         <div id="activity-section" className="card">
-          <ActivityTimeline events={allEvents} defaultOpen={true} />
+          <ActivityTimeline events={allEvents} />
         </div>
       </div>
     </div>

@@ -166,6 +166,10 @@ export class GoodsReceivedCoreService {
       .select({ count: sql<number>`count(*)` })
       .from(goodsReceived)
       .leftJoin(suppliers, eq(goodsReceived.vendorId, suppliers.vendorId))
+      .leftJoin(
+        organizations,
+        eq(suppliers.organizationId, organizations.organizationId),
+      )
       .$dynamic();
 
     if (conditions.length > 0) {
@@ -412,6 +416,10 @@ export class GoodsReceivedCoreService {
       )
       .leftJoin(products, eq(goodsReceivedLines.productId, products.productId))
       .leftJoin(suppliers, eq(goodsReceived.vendorId, suppliers.vendorId))
+      .leftJoin(
+        organizations,
+        eq(suppliers.organizationId, organizations.organizationId),
+      )
       .$dynamic();
 
     if (conditions.length > 0) {
@@ -584,6 +592,10 @@ export class GoodsReceivedCoreService {
       )
       .leftJoin(products, eq(goodsReceivedLines.productId, products.productId))
       .leftJoin(suppliers, eq(goodsReceived.vendorId, suppliers.vendorId))
+      .leftJoin(
+        organizations,
+        eq(suppliers.organizationId, organizations.organizationId),
+      )
       .$dynamic();
 
     if (conditions.length > 0) {

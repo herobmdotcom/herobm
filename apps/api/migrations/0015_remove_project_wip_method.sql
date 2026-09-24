@@ -1,0 +1,1 @@
+ALTER TABLE "herobm_core"."projects" DROP COLUMN "wip_method";

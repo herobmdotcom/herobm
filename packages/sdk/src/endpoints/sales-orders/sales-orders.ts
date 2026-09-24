@@ -19,11 +19,86 @@ import type {
   OrdersControllerFindAllParams,
   OrdersControllerFindOneParams,
   OverrideCreditHoldDto,
+  SalesSettingsResponseDto,
   UpdateOrderDto,
-  UpdateOrderLineDto
+  UpdateOrderLineDto,
+  UpdateSalesSettingsDto
 } from '../../model';
 
 import { customFetch } from '../../mutator';
+
+/**
+ * Retrieve sales domain settings and metadata schemas.
+ * @summary Get Sales Settings
+ */
+export type ordersControllerGetSettingsResponse200 = {
+  data: SalesSettingsResponseDto
+  status: 200
+}
+    
+export type ordersControllerGetSettingsResponseSuccess = (ordersControllerGetSettingsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type ordersControllerGetSettingsResponse = (ordersControllerGetSettingsResponseSuccess)
+
+export const getOrdersControllerGetSettingsUrl = () => {
+
+
+  
+
+  return `/sales-orders/settings`
+}
+
+export const ordersControllerGetSettings = async ( options?: RequestInit): Promise<ordersControllerGetSettingsResponse> => {
+  
+  return customFetch<ordersControllerGetSettingsResponse>(getOrdersControllerGetSettingsUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * Update sales domain settings and metadata schemas.
+ * @summary Update Sales Settings
+ */
+export type ordersControllerUpdateSettingsResponse200 = {
+  data: SalesSettingsResponseDto
+  status: 200
+}
+    
+export type ordersControllerUpdateSettingsResponseSuccess = (ordersControllerUpdateSettingsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type ordersControllerUpdateSettingsResponse = (ordersControllerUpdateSettingsResponseSuccess)
+
+export const getOrdersControllerUpdateSettingsUrl = () => {
+
+
+  
+
+  return `/sales-orders/settings`
+}
+
+export const ordersControllerUpdateSettings = async (updateSalesSettingsDto: UpdateSalesSettingsDto, options?: RequestInit): Promise<ordersControllerUpdateSettingsResponse> => {
+  
+  return customFetch<ordersControllerUpdateSettingsResponse>(getOrdersControllerUpdateSettingsUrl(),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateSalesSettingsDto,)
+  }
+);}
+
 
 /**
  * Retrieve a paginated list of sales orders globally.

@@ -4,12 +4,14 @@ import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import { getErrorMessage, PRODUCT_STATE } from '@herobm/shared';
 import { useAutoSaveEntity } from '@/hooks/useAutoSaveEntity';
+import { reportError } from '@/lib/api';
 
 export function useProduct(id: string) {
   const t = useTranslations();
   const [taxCategories, setTaxCategories] = useState<api.TaxCategoryResponseDto[]>([]);
   const [productGroups, setProductGroups] = useState<api.ProductGroupResponseDto[]>([]);
-  const [uomDictionary, setUomDictionary] = useState<{ uomCode: string; description: string }[]>([]);
+  const [uomDictionary, setUomDictionary] = useState<api.UomResponseDto[]>([]);
+  const [productMetadataSchema, setProductMetadataSchema] = useState<Record<string, unknown> | null>(null);
   
   const fetchFn = async (id: string) => {
     return api.productsControllerFindOne(id);
@@ -44,6 +46,15 @@ export function useProduct(id: string) {
     api.uomDictionaryControllerFindAll()
       .then((res) => setUomDictionary(res.data))
       .catch((err) => toast.error('Failed to load UOM dictionary: ' + getErrorMessage(err)));
+    api.productsControllerGetSettings()
+      .then((res) => {
+        if (res.data?.productMetadataSchema) {
+          setProductMetadataSchema(res.data.productMetadataSchema as Record<string, unknown>);
+        }
+      })
+      .catch((err) => {
+        reportError(err, 'useProduct:getSettings');
+      });
   }, []);
 
   const archiveProduct = async () => {
@@ -91,6 +102,7 @@ export function useProduct(id: string) {
     taxCategories,
     productGroups,
     uomDictionary,
+    productMetadataSchema,
     archiveProduct,
     unarchiveProduct,
   };

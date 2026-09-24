@@ -53,7 +53,7 @@ describe('PurchaseReturnsService', () => {
     // Seed static data
     await pg.db
       .insert(uomDictionary)
-      .values({ uomCode: 'EA', description: 'Each' })
+      .values({ uomCode: 'EA', description: 'Each', category: 'goods' })
       .onConflictDoNothing();
     await pg.db
       .insert(taxCategories)

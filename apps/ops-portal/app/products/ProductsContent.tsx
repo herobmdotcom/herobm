@@ -10,7 +10,6 @@ import { formatLocalDate } from '@/lib/date';
 import type { ColDef, ValueFormatterParams, ICellRendererParams } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 
-
 export default function ProductsContent() {
   const router = useRouter();
   const tCommon = useTranslations('common');
@@ -41,13 +40,29 @@ export default function ProductsContent() {
     { field: 'alternateProductNumber', headerName: tProducts('columns.alternateProductNumber'), width: 140 },
     { 
       field: 'productType', 
-      headerName: 'Type', 
-      width: 120
+      headerName: tCommon('columns.type'), 
+      width: 150,
+      valueFormatter: (params: ValueFormatterParams) => {
+        if (!params.value) return '';
+        const pt = String(params.value);
+        if (pt === 'inventory') return tProducts('types.inventory');
+        if (pt === 'non-stock') return tProducts('types.nonStock');
+        if (pt === 'service') return tProducts('types.service');
+        if (pt === 'freight') return tProducts('types.freight');
+        return pt;
+      }
     },
     { 
       field: 'structureType', 
-      headerName: 'Structure', 
-      width: 120
+      headerName: tProducts('structureType'), 
+      width: 120,
+      valueFormatter: (params: ValueFormatterParams) => {
+        if (!params.value) return '';
+        const st = String(params.value);
+        if (st === 'standard') return tProducts('structures.standard');
+        if (st === 'kit') return tProducts('structures.kit');
+        return st;
+      }
     },
     { field: 'quantityOnHand', headerName: tProducts('columns.quantityOnHand'), width: 130, type: 'numericColumn',
       valueFormatter: (p: ValueFormatterParams) => p.value ? parseFloat(p.value as string).toLocaleString(undefined, { maximumFractionDigits: 4 }) : '0' },
@@ -85,12 +100,13 @@ export default function ProductsContent() {
       hide: true,
       valueFormatter: (p: ValueFormatterParams) => formatLocalDate(p.value as string),
     },
-  ], [tCommon, tProducts]);
+  ], [tCommon, tProducts, tStates]);
 
   return (
     <DataGrid
       endpoint="/api/products"
       columns={columns}
+      customFieldEntityType="products"
       gridKey="ops-products"
       searchPlaceholder={tProducts('placeholders.searchProducts')}
       exportFileName="products"

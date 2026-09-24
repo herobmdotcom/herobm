@@ -100,6 +100,7 @@ export default function PurchaseDebitNotesPage() {
       <DataGrid
         columns={gridColumns}
         endpoint="/api/purchase-debit-notes"
+        customFieldEntityType="purchaseDebitNotes"
         refreshTrigger={refreshTrigger}
         gridKey="purchase-debit-notes-list"
         rowIdField="debitNoteId"

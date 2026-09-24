@@ -5,9 +5,11 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
+import type { SalesCreditNoteResponseDtoMetadata } from './salesCreditNoteResponseDtoMetadata';
 
 export interface SalesCreditNoteResponseDto {
   creditNoteId: string;
   creditNoteNumber: string;
   stateCode: string;
+  metadata?: SalesCreditNoteResponseDtoMetadata;
 }

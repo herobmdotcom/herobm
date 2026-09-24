@@ -19,7 +19,7 @@ describe('Subledger GL Reversal Coverage (structural)', () => {
   }[] = [
     {
       name: 'Sales Invoices',
-      file: 'invoices/sales-invoice.service.ts',
+      file: 'invoices/sales-invoice-state.helper.ts',
       cancelledStateOrMethod: 'SALES_INVOICE_STATE.CANCELLED',
     },
     {

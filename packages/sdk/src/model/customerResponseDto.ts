@@ -5,6 +5,7 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
+import type { CustomerResponseDtoMetadata } from './customerResponseDtoMetadata';
 import type { CustomerResponseDtoEventsItem } from './customerResponseDtoEventsItem';
 import type { CustomerResponseDtoContactsItem } from './customerResponseDtoContactsItem';
 import type { CustomerResponseDtoDeliveryAddressesItem } from './customerResponseDtoDeliveryAddressesItem';
@@ -48,6 +49,8 @@ export interface CustomerResponseDto {
   createdBy?: string;
   createdOn?: string;
   modifiedOn?: string;
+  /** @nullable */
+  metadata?: CustomerResponseDtoMetadata;
   /** @nullable */
   parentCustomerId?: string | null;
   /** @nullable */

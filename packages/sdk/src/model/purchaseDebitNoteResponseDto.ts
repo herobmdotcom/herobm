@@ -5,6 +5,7 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
+import type { PurchaseDebitNoteResponseDtoMetadata } from './purchaseDebitNoteResponseDtoMetadata';
 import type { PurchaseDebitNoteLineResponseDto } from './purchaseDebitNoteLineResponseDto';
 
 export interface PurchaseDebitNoteResponseDto {
@@ -24,5 +25,7 @@ export interface PurchaseDebitNoteResponseDto {
   createdOn?: string | null;
   /** @nullable */
   modifiedOn?: string | null;
+  /** @nullable */
+  metadata?: PurchaseDebitNoteResponseDtoMetadata;
   lines?: PurchaseDebitNoteLineResponseDto[];
 }

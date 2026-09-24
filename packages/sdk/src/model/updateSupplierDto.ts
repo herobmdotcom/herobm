@@ -5,12 +5,15 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
+import type { UpdateSupplierDtoMetadata } from './updateSupplierDtoMetadata';
 import type { UpdateSupplierDtoPurchasingBlockReason } from './updateSupplierDtoPurchasingBlockReason';
 import type { UpdateSupplierDtoPaymentBlockReason } from './updateSupplierDtoPaymentBlockReason';
 
 export interface UpdateSupplierDto {
   earlyPaymentDiscount?: string;
   earlyPaymentDiscountDays?: number;
+  /** Custom metadata object */
+  metadata?: UpdateSupplierDtoMetadata;
   organizationId?: string;
   vendorNumber?: string;
   name?: string;

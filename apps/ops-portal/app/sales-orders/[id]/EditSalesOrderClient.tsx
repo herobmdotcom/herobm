@@ -43,6 +43,7 @@ import { formatLocationDisplay } from '@/lib/formatters';
 import OrderDetailsCard from './OrderDetailsCard';
 import DeliveryCard from './DeliveryCard';
 import OverrideCreditHoldModal from './OverrideCreditHoldModal';
+import { DynamicForm } from '@/components/DynamicForm';
 
 import type { TaxCategory, OrderLine } from './types';
 import { getTaxLabel } from './types';
@@ -132,7 +133,8 @@ function EventIcon({ type }: { type: string }) {
 
 function PurchaseReturnStateBadge({ state }: { state: ValidState }) {
     const t = useTranslations('common.states');
-    return <span className={`badge badge-return-${state}`}>{t(state)}</span>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- State key mapping
+    return <span className={`badge badge-return-${state}`}>{t(state as any)}</span>;
 }
 
 const PICKING_INVOICE_STATES: string[] = [
@@ -187,6 +189,13 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
 
     /* ── Discrepancy Modal ─────────────────────────────────────────────────── */
     const [showDiscrepancyModal, setShowDiscrepancyModal] = useState(false);
+
+    const [localMetadata, setLocalMetadata] = useState<Record<string, unknown>>({});
+    useEffect(() => {
+        if (o.order?.metadata) {
+            setLocalMetadata(o.order.metadata as Record<string, unknown>);
+        }
+    }, [o.order?.metadata]);
 
     // Scroll to hash fragment (e.g. #invoices-section) after data loads
     useEffect(() => {
@@ -269,7 +278,8 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
         editDeliveryCity, setEditDeliveryCity,
         editDeliveryState, setEditDeliveryState,
         editDeliveryPostalCode, setEditDeliveryPostalCode,
-        editDeliveryCountry, setEditDeliveryCountry
+        editDeliveryCountry, setEditDeliveryCountry,
+        salesOrderMetadataSchema
     } = o;
 
     const selectedAddressId = customerDeliveryAddresses.find(a => a.addressLine1 === editDeliveryAddressLine1 && a.city === editDeliveryCity)?.deliveryAddressId || (editDeliveryAddressLine1 ? 'other' : '');
@@ -504,6 +514,30 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                     onAddAddress={() => setIsAddressSlideOverOpen(true)}
                     saveHeader={saveHeader}
                 />
+
+                {!!(
+                    salesOrderMetadataSchema?.properties &&
+                    typeof salesOrderMetadataSchema.properties === 'object' &&
+                    Object.keys(salesOrderMetadataSchema.properties).length > 0
+                ) && (
+                    <div id="custom-fields-section" className="card mt-3">
+                        <h3 className="section-heading">
+                            <span className="material-symbols-outlined">tune</span>
+                            {tSales('customFields')}
+                        </h3>
+                        <DynamicForm
+                            schema={salesOrderMetadataSchema}
+                            data={localMetadata}
+                            onChange={(newMetadata) => {
+                                setLocalMetadata(newMetadata);
+                            }}
+                            onBlur={(newMetadata) => {
+                                saveHeader({ metadata: newMetadata });
+                            }}
+                            readOnly={!isOrderDetailsEditable}
+                        />
+                    </div>
+                )}
 
                 {PICKING_INVOICE_STATES.includes(order.stateCode) && (
                     <>

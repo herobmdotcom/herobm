@@ -28,6 +28,7 @@ import { toast } from 'react-hot-toast';
 import { formatAmount } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
 import CustomerSelect from '@/components/shared/CustomerSelect';
+import OpportunitySelect, { OpportunityOption } from '@/components/shared/OpportunitySelect';
 import DeliveryAddressSlideOver from '@/components/shared/DeliveryAddressSlideOver';
 import { MobileCardField } from '@/components/shared/DataTable';
 import { computeLinePrice, computeOrderTotals, calculateUomPriceAdjustment, resolveEffectiveDiscount, getTaxLabel, CUSTOM_LINE_ID, LineType, getErrorMessage } from '@herobm/shared';
@@ -142,6 +143,29 @@ export default function NewOrderPage() {
   const searchParams = useSearchParams();
   const initialOpportunityId = searchParams.get('opportunityId') || searchParams.get('projectId') || '';
   const [opportunityId, setOpportunityId] = useState(initialOpportunityId);
+  const [opportunity, setOpportunity] = useState<OpportunityOption | null>(null);
+
+  useEffect(() => {
+    if (initialOpportunityId) {
+      api.opportunitiesControllerFindOne(initialOpportunityId)
+        .then((res) => {
+          if (res.data) {
+            const opp = res.data;
+            setOpportunity({
+              opportunityId: opp.opportunityId,
+              name: opp.name,
+              status: opp.status,
+              estimatedValue: opp.estimatedValue ? Number(opp.estimatedValue) : undefined,
+              currencyCode: opp.currencyCode,
+            });
+            setOpportunityId(opp.opportunityId);
+          }
+        })
+        .catch((err) => {
+          toast.error(getErrorMessage(err));
+        });
+    }
+  }, [initialOpportunityId]);
 
   const [customerId, setCustomerId] = useState('');
   const [customerName, setCustomerName] = useState('');
@@ -650,6 +674,21 @@ export default function NewOrderPage() {
                   </option>
                 )}
               </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                CRM Opportunity
+              </label>
+              <OpportunitySelect
+                value={opportunity?.opportunityId || opportunityId || null}
+                initialSearchTerm={opportunity?.name || ''}
+                onChange={(opp) => {
+                  setOpportunity(opp);
+                  setOpportunityId(opp?.opportunityId || '');
+                }}
+                placeholder="Search or select an opportunity..."
+              />
             </div>
 
 

@@ -4,12 +4,16 @@ import { waitForGrid, searchPageTable } from './helpers/grid';
 import { uniqueId, uniqueEmail } from './helpers/generators';
 
 test.describe('Workflow: Entity Creation (Product, Customer, Supplier, CRM Contact)', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.abort());
+  });
+
   test('creates a new product and verifies detail view', async ({ page }) => {
     const productNumber = uniqueId('PRD');
     const productName = `E2E Test Product ${productNumber}`;
 
     // 1. Navigate to New Product page
-    await page.goto('/products/new', { waitUntil: 'networkidle' });
+    await page.goto('/products/new', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
 
     // 2. Fill Product Number and Product Name
@@ -65,7 +69,7 @@ test.describe('Workflow: Entity Creation (Product, Customer, Supplier, CRM Conta
     const custName = `Acme Customer ${custNumber}`;
 
     // 1. Navigate to New Customer creation form
-    await page.goto('/customers/new', { waitUntil: 'networkidle' });
+    await page.goto('/customers/new', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
 
     // 2. Fill Customer Number and Name
@@ -112,7 +116,7 @@ test.describe('Workflow: Entity Creation (Product, Customer, Supplier, CRM Conta
     const vendorName = `Global Supplies ${vendorNumber}`;
 
     // 1. Navigate to New Supplier creation form
-    await page.goto('/suppliers/new', { waitUntil: 'networkidle' });
+    await page.goto('/suppliers/new', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
 
     // 2. Fill Vendor Number, Name, and Country
@@ -160,7 +164,7 @@ test.describe('Workflow: Entity Creation (Product, Customer, Supplier, CRM Conta
     const email = uniqueEmail('jane.doe');
 
     // 1. Navigate to New Contact page
-    await page.goto('/crm/contacts/new', { waitUntil: 'networkidle' });
+    await page.goto('/crm/contacts/new', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
 
     // 2. Fill Contact fields
@@ -200,7 +204,7 @@ test.describe('Workflow: Entity Creation (Product, Customer, Supplier, CRM Conta
     const orgName = `Acme Enterprise ${orgSuffix}`;
 
     // 1. Navigate to New Organization page
-    await page.goto('/crm/organizations/new', { waitUntil: 'networkidle' });
+    await page.goto('/crm/organizations/new', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
 
     // 2. Fill Organization fields
@@ -237,4 +241,50 @@ test.describe('Workflow: Entity Creation (Product, Customer, Supplier, CRM Conta
     const header = page.locator('h1, h2, [class*="EntityHeader"]').first();
     await expect(header).toBeVisible();
   });
+
+  test('creates a new project and verifies detail view', async ({ page }) => {
+    const projSuffix = uniqueId('PRJ');
+    const projName = `Commercial Upgrade ${projSuffix}`;
+
+    // 1. Navigate to New Project page
+    await page.goto('/projects/new', { waitUntil: 'domcontentloaded' });
+    await expectNoErrorBoundaries(page);
+
+    // 2. Select customer if customer dropdown/input exists
+    const customerSelect = page.locator('select, [data-testid="customer-select"]').first();
+    if (await customerSelect.isVisible()) {
+      const options = await customerSelect.locator('option').all();
+      for (const opt of options) {
+        const val = await opt.getAttribute('value');
+        if (val && val.trim() !== '') {
+          await customerSelect.selectOption(val);
+          break;
+        }
+      }
+    }
+
+    // 3. Fill Project Name
+    const nameInput = page.locator('#project-name, input[placeholder*="project name" i]').first();
+    if (await nameInput.isVisible()) {
+      await nameInput.fill(projName);
+    }
+
+    // 4. Submit form
+    const createBtn = page.getByRole('button', { name: /create project|save/i }).first();
+    if (await createBtn.isVisible()) {
+      const responsePromise = page.waitForResponse(
+        (res) => res.url().includes('/api/projects') && res.request().method() === 'POST',
+        { timeout: 15000 }
+      ).catch(() => null);
+
+      await createBtn.click();
+
+      const response = await responsePromise;
+      if (response && response.status() === 201) {
+        await page.waitForURL(/\/projects\/[a-zA-Z0-9-]+/, { timeout: 15000 }).catch(() => null);
+        await expectNoErrorBoundaries(page);
+      }
+    }
+  });
 });
+

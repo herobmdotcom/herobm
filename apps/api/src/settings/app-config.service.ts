@@ -197,6 +197,11 @@ export class AppConfigService implements OnModuleInit {
     return this.getApp().inventoryAccountingMode;
   }
 
+  /** Whether negative inventory balances are permitted in warehouse movements. */
+  allowNegativeInventory(): boolean {
+    return this.getApp().allowNegativeInventory ?? false;
+  }
+
   /** Credit limit behavior: 'hard' or 'soft'. */
   creditLimitBehavior(): 'hard' | 'soft' {
     return this.getApp().creditLimitBehavior as 'hard' | 'soft';

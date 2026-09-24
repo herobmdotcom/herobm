@@ -69,16 +69,19 @@ describe('API E2E — Sales Order Returns', () => {
       .expect(201);
     viewerToken = viewerLogin.body.access_token;
 
-    // Fetch real IDs
-    const customers = await request(app.getHttpServer())
-      .get('/api/customers?limit=10')
+    // Create dedicated customer to avoid credit hold conflicts with other test data
+    const custRes = await request(app.getHttpServer())
+      .post('/api/customers')
       .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-    const activeCustomer =
-      customers.body.data.find(
-        (c: any) => c.stateCode === CUSTOMER_STATE.ACTIVE,
-      ) || customers.body.data[0];
-    validCustomerId = activeCustomer.customerId;
+      .send({
+        billingAddressCountry: 'AU',
+        customerNumber: `CUST-RET-${Date.now()}`,
+        name: 'Returns Test Customer',
+        currencyCode: 'AUD',
+        creditLimit: '100000',
+      })
+      .expect(201);
+    validCustomerId = custRes.body.customerId;
 
     const locations = await request(app.getHttpServer())
       .get('/api/inventory/locations')
@@ -152,9 +155,10 @@ describe('API E2E — Sales Order Returns', () => {
       .get('/api/inventory/bins')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    const binId =
-      binsRes.body.data.find((b: any) => b.typeCode === 'STORAGE')?.binId ||
-      '00000000-0000-4000-8000-000000000003';
+    const validBin = binsRes.body.data.find(
+      (b: any) => b.binNumber !== 'SHIPPING' && b.binNumber !== 'RECEIVING',
+    );
+    const binId = validBin?.binId || '00000000-0000-4000-8000-000000000003';
 
     const detail = await request(app.getHttpServer())
       .get(`/api/sales-orders/${orderId}`)
@@ -254,9 +258,10 @@ describe('API E2E — Sales Order Returns', () => {
       .get('/api/inventory/bins')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    const binId =
-      binsRes.body.data.find((b: any) => b.typeCode === 'STORAGE')?.binId ||
-      '00000000-0000-4000-8000-000000000003';
+    const validBin = binsRes.body.data.find(
+      (b: any) => b.binNumber !== 'SHIPPING' && b.binNumber !== 'RECEIVING',
+    );
+    const binId = validBin?.binId || '00000000-0000-4000-8000-000000000003';
 
     const detail = await request(app.getHttpServer())
       .get(`/api/sales-orders/${orderId}`)

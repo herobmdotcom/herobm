@@ -282,6 +282,7 @@ export class OrderCreationService {
           discrepanciesAcknowledged: false,
           source: 'app',
           customFields: dto.customFields || null,
+          metadata: dto.metadata || null,
           opportunityId: dto.opportunityId || null,
         })
         .returning();

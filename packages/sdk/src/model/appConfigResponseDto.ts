@@ -13,6 +13,7 @@ import type { OrderedSettingDto } from './orderedSettingDto';
 export interface AppConfigResponseDto {
   defaultFulfillmentLocationId: string;
   apiRateLimit: string;
+  allowNegativeInventory?: boolean;
   creditLimitBehavior?: AppConfigResponseDtoCreditLimitBehavior;
   taxProviderMappings?: AppConfigResponseDtoTaxProviderMappings;
   enrichmentProviderMappings?: AppConfigResponseDtoEnrichmentProviderMappings;
@@ -33,6 +34,7 @@ export interface AppConfigResponseDto {
   opportunityOrganizationRoles?: OrderedSettingDto[];
   opportunityStages?: OrderedSettingDto[];
   opportunityTypes?: OrderedSettingDto[];
+  projectStages?: OrderedSettingDto[];
   activityTypes?: OrderedSettingDto[];
   referralModes?: OrderedSettingDto[];
   salesAnalysisCodes?: OrderedSettingDto[];

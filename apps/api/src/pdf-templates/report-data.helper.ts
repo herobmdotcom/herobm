@@ -54,6 +54,7 @@ interface RawOrderLine {
 export function assembleOrderData(
   orderDetail: {
     orderNumber?: string | null;
+    projectNumber?: string | null;
     customerName?: string | null;
     customerOrderNumber?: string | null;
     createdOn?: string | Date | null;
@@ -101,6 +102,7 @@ export function assembleOrderData(
   return {
     header: {
       orderNumber: orderDetail.orderNumber || '',
+      projectNumber: orderDetail.projectNumber || '',
       customerName: orderDetail.customerName || '',
       customerOrderNumber: orderDetail.customerOrderNumber || '',
       orderDate: orderDetail.createdOn

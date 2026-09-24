@@ -36,7 +36,7 @@ describe('GoodsReceivedCoreService', () => {
   beforeEach(async () => {
     await pg.db
       .insert(uomDictionary)
-      .values({ uomCode: 'EA', description: 'Each' });
+      .values({ uomCode: 'EA', description: 'Each', category: 'goods' });
     await pg.db.insert(taxCategories).values({
       taxCategoryId: TAX_CAT_ID,
       code: 'GST',
@@ -221,6 +221,110 @@ describe('GoodsReceivedCoreService', () => {
       await expect(
         service.findOne('00000000-0000-4000-8000-000000000999'),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('findAll and search filtering', () => {
+    it('should correctly count and return receipts when searching by vendor/receipt with days filter', async () => {
+      await seedBasics();
+      const [gr] = await pg.db
+        .insert(goodsReceived)
+        .values({
+          receiptNumber: 'GR-SEARCH-001',
+          packingSlipNumber: 'PS-12345',
+          vendorId: VENDOR_ID,
+          locationId: LOCATION_ID,
+          stateCode: GOODS_RECEIVED_STATE.RECEIVED,
+        })
+        .returning();
+
+      await pg.db.insert(goodsReceivedLines).values({
+        goodsReceivedId: gr.goodsReceivedId,
+        productId: PROD_ID,
+        quantityReceived: '5',
+        matchStatus: MATCH_STATUS.UNMATCHED,
+        putawayStatus: PUTAWAY_STATUS.PENDING_PUTAWAY,
+      });
+
+      // Search matching organization name 'Supplier 1'
+      const result = await service.findAll({
+        q: 'Supplier',
+        days: 90,
+      });
+
+      expect(result.total).toBe(1);
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].receiptNumber).toBe('GR-SEARCH-001');
+      expect(result.data[0].vendorName).toBe('Supplier 1');
+    });
+  });
+
+  describe('findAllLines and search filtering', () => {
+    it('should correctly count and return lines when searching across line joins (ADV-199 regression)', async () => {
+      await seedBasics();
+      const [gr] = await pg.db
+        .insert(goodsReceived)
+        .values({
+          receiptNumber: 'GR-LINE-001',
+          packingSlipNumber: 'PS-67890',
+          vendorId: VENDOR_ID,
+          locationId: LOCATION_ID,
+          stateCode: GOODS_RECEIVED_STATE.RECEIVED,
+        })
+        .returning();
+
+      await pg.db.insert(goodsReceivedLines).values({
+        goodsReceivedId: gr.goodsReceivedId,
+        productId: PROD_ID,
+        quantityReceived: '8',
+        matchStatus: MATCH_STATUS.UNMATCHED,
+        putawayStatus: PUTAWAY_STATUS.PENDING_PUTAWAY,
+      });
+
+      // Search with query params mimicking the exact console failure: searchTerm and days
+      const result = await service.findAllLines({
+        q: 'Supplier',
+        days: 90,
+      });
+
+      expect(result.total).toBe(1);
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].receiptNumber).toBe('GR-LINE-001');
+      expect(result.data[0].vendorName).toBe('Supplier 1');
+      expect(result.data[0].productName).toBe('Product 1');
+    });
+  });
+
+  describe('getLines and search filtering', () => {
+    it('should correctly count and return lines when searching by receipt or product', async () => {
+      await seedBasics();
+      const [gr] = await pg.db
+        .insert(goodsReceived)
+        .values({
+          receiptNumber: 'GR-GET-001',
+          vendorId: VENDOR_ID,
+          locationId: LOCATION_ID,
+          stateCode: GOODS_RECEIVED_STATE.RECEIVED,
+        })
+        .returning();
+
+      await pg.db.insert(goodsReceivedLines).values({
+        goodsReceivedId: gr.goodsReceivedId,
+        productId: PROD_ID,
+        quantityReceived: '12',
+        matchStatus: MATCH_STATUS.MATCHED,
+        putawayStatus: PUTAWAY_STATUS.COMPLETED,
+      });
+
+      const result = await service.getLines({
+        q: 'Product',
+        productId: PROD_ID,
+      });
+
+      expect(result.total).toBe(1);
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].receiptNumber).toBe('GR-GET-001');
+      expect(result.data[0].productNumber).toBe('P1');
     });
   });
 });

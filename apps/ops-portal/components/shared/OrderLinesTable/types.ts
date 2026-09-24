@@ -45,6 +45,9 @@ export interface OrderLineItem {
   gapMessage?: string;
   isBackordered?: boolean;
   warningTitle?: string;
+  minPurchaseQty?: string | number | null;
+  purchaseUnit?: string | null;
+  supplierPartNumber?: string | null;
 }
 
 export interface OrderLinesTableProps<T extends OrderLineItem = OrderLineItem> {

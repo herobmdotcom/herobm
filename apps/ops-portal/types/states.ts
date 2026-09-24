@@ -23,5 +23,20 @@ export type ValidState =
   | 'paid'
   | 'partially_paid'
   | 'submitted'
-  | 'overdue';
+  | 'on_hold'
+  | 'closed'
+  | 'overdue'
+  | 'not_started'
+  | 'closed_short'
+  | 'staged'
+  | 'open'
+  | 'review'
+  | 'picked'
+  | 'pending'
+  | 'pending_supply'
+  | 'awaiting_receipt'
+  | 'received_reserved'
+  | 'fulfilled'
+  | 'exported'
+  | 'planned';
 

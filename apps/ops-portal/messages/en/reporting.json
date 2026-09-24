@@ -1,0 +1,18 @@
+{
+  "dashboard": {
+    "errorLoading": "There was an error loading the business reports. They might not be configured correctly.",
+    "goToConfig": "Go to Configuration",
+    "loading": "Loading Business Reports...",
+    "noReports": "There are currently no business reports available to view.",
+    "noReportsTitle": "No Reports Available"
+  },
+  "dateRange": {
+    "days": "Days",
+    "fixedDates": "Fixed Dates",
+    "lastFull": "Last full",
+    "latest": "Latest",
+    "months": "Months",
+    "relative": "Relative",
+    "years": "Years"
+  }
+}

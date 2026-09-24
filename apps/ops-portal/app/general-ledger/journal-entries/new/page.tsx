@@ -27,6 +27,13 @@ interface GlAccount {
 
 
 
+interface ProjectOption {
+  projectId: string;
+  projectNumber: string;
+  name: string;
+  tasks?: { projectTaskId: string; taskCode: string; name?: string; taskName?: string }[];
+}
+
 interface JournalLineForm {
   id: string;
   accountCode: string;
@@ -34,6 +41,8 @@ interface JournalLineForm {
   partyId: string;
   costCenterId: string;
   activityId: string;
+  projectId: string;
+  projectTaskId: string;
   debit: string;
   credit: string;
   memo: string;
@@ -54,13 +63,14 @@ export default function NewJournalEntryPage() {
   const [sourceType, setSourceType] = useState<api.CreateJournalEntryDtoSourceType>('manual');
   const [memo, setMemo] = useState('');
   const [lines, setLines] = useState<JournalLineForm[]>([
-    { id: uid(), accountCode: '', partyType: 'none', partyId: '', costCenterId: '', activityId: '', debit: '', credit: '', memo: '' },
-    { id: uid(), accountCode: '', partyType: 'none', partyId: '', costCenterId: '', activityId: '', debit: '', credit: '', memo: '' },
+    { id: uid(), accountCode: '', partyType: 'none', partyId: '', costCenterId: '', activityId: '', projectId: '', projectTaskId: '', debit: '', credit: '', memo: '' },
+    { id: uid(), accountCode: '', partyType: 'none', partyId: '', costCenterId: '', activityId: '', projectId: '', projectTaskId: '', debit: '', credit: '', memo: '' },
   ]);
 
   const [accounts, setAccounts] = useState<GlAccount[]>([]);
   const [costCenters, setCostCenters] = useState<{ costCenterId: string; code: string; name: string }[]>([]);
   const [activities, setActivities] = useState<{ activityId: string; code: string; name: string }[]>([]);
+  const [projects, setProjects] = useState<ProjectOption[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -85,6 +95,14 @@ export default function NewJournalEntryPage() {
         setActivities(aData.filter(a => a.isActive));
       })
       .catch((err) => reportError(err, 'NewJournalEntryPage - activities'));
+
+    api.projectsControllerFindAll({ limit: 200 })
+      .then(res => {
+        const responseData = res.data as unknown as { data?: ProjectOption[] } | ProjectOption[];
+        const raw = Array.isArray(responseData) ? responseData : (responseData?.data || []);
+        setProjects(raw);
+      })
+      .catch((err) => reportError(err, 'NewJournalEntryPage - projects'));
   }, []);
 
   const totalDebit = useMemo(() => {
@@ -107,6 +125,9 @@ export default function NewJournalEntryPage() {
       if (field === 'partyType' && value === 'none') updated.partyId = '';
       if (field === 'partyType' && value !== l.partyType) updated.partyId = '';
 
+      // Reset projectTaskId if project changes
+      if (field === 'projectId') updated.projectTaskId = '';
+
       // Auto-clear opposite amount
       if (field === 'debit' && value) updated.credit = '';
       if (field === 'credit' && value) updated.debit = '';
@@ -116,7 +137,7 @@ export default function NewJournalEntryPage() {
   };
 
   const addLine = () => {
-    setLines([...lines, { id: uid(), accountCode: '', partyType: 'none', partyId: '', costCenterId: '', activityId: '', debit: '', credit: '', memo: '' }]);
+    setLines([...lines, { id: uid(), accountCode: '', partyType: 'none', partyId: '', costCenterId: '', activityId: '', projectId: '', projectTaskId: '', debit: '', credit: '', memo: '' }]);
   };
 
   const removeLine = (id: string) => {
@@ -134,6 +155,8 @@ export default function NewJournalEntryPage() {
       partyId: line.partyId || undefined,
       costCenterId: line.costCenterId || undefined,
       activityId: line.activityId || undefined,
+      projectId: line.projectId || undefined,
+      projectTaskId: line.projectTaskId || undefined,
       debit: parseFloat(line.debit) || 0,
       credit: parseFloat(line.credit) || 0,
       memo: line.memo || undefined,
@@ -242,158 +265,243 @@ export default function NewJournalEntryPage() {
           </div>
 
           <div className="overflow-x-auto w-full">
-            <table className="table-lines w-full">
+            <table className="w-full text-left border-collapse">
               <thead>
-                <tr>
-                  <th>{t('columns.glAccount')}</th>
-                  <th>{t('columns.partyType')}</th>
-                  <th>{t('columns.party')}</th>
-                  <th>{tCommon('costCenter')}</th>
-                  <th>{tCommon('activity')}</th>
-                  <th>{t('columns.memo')}</th>
-                  <th className="w-[120px] text-right">{t('columns.debit')}</th>
-                  <th className="w-[120px] text-right">{t('columns.credit')}</th>
-                  <th className="w-[50px]"></th>
+                <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
+                  <th className="py-2.5 px-2 w-8 text-center">#</th>
+                  <th className="py-2.5 px-2 w-[28%]">{t('columns.glAccount')} *</th>
+                  <th className="py-2.5 px-2">{t('columns.memo')}</th>
+                  <th className="py-2.5 px-2 w-36 text-right">{t('columns.debit')}</th>
+                  <th className="py-2.5 px-2 w-36 text-right">{t('columns.credit')}</th>
+                  <th className="py-2.5 px-2 w-10 text-center"></th>
                 </tr>
               </thead>
-              <tbody>
-                {lines.map((line) => (
-                  <tr key={line.id}>
-                    <td>
+              {lines.map((line, idx) => (
+                <tbody key={line.id} className="group border-b border-slate-200 dark:border-slate-800">
+                  {/* Row 1: Core Financials */}
+                  <tr className="bg-[var(--bg-card)]">
+                    <td className="py-2.5 px-2 text-center text-sm font-mono text-[var(--text-muted)] align-middle">
+                      {idx + 1}
+                    </td>
+                    <td className="py-2.5 px-2">
                       <select
                         value={line.accountCode}
                         onChange={(e) => updateLine(line.id, 'accountCode', e.target.value)}
-                        className="input w-full text-[13px]"
+                        className="input w-full text-sm font-medium h-9"
                       >
                         <option value="">{t('placeholders.selectAccount')}</option>
-                        {accounts.map(a => (
+                        {accounts.map((a) => (
                           <option key={a.accountCode} value={a.accountCode}>
                             {a.accountCode} - {a.name}
                           </option>
                         ))}
                       </select>
                     </td>
-                    <td>
-                      <select
-                        value={line.partyType}
-                        onChange={(e) => updateLine(line.id, 'partyType', e.target.value)}
-                        className="input w-full text-[13px]"
-                      >
-                        <option value="none">{t('partyTypes.none')}</option>
-                        <option value="customer">{t('partyTypes.customer')}</option>
-                        <option value="supplier">{t('partyTypes.supplier')}</option>
-                      </select>
-                    </td>
-                    <td>
-                      {line.partyType === 'none' && (
-                        <div className="input text-gray-400 bg-gray-50 flex items-center w-full h-8 text-[13px]">
-                          —
-                        </div>
-                      )}
-                      {line.partyType === 'customer' && (
-                        <CustomerSelect
-                          value={line.partyId}
-                          onChange={(acc) => updateLine(line.id, 'partyId', acc ? acc.customerId : '')}
-                          placeholder={t('placeholders.selectParty')}
-                        />
-                      )}
-                      {line.partyType === 'supplier' && (
-                        <SupplierSelect
-                          value={line.partyId}
-                          onChange={(sup) => updateLine(line.id, 'partyId', sup ? sup.vendorId : '')}
-                          placeholder={t('placeholders.selectParty')}
-                        />
-                      )}
-                    </td>
-                    <td>
-                      <select
-                        value={line.costCenterId}
-                        onChange={(e) => updateLine(line.id, 'costCenterId', e.target.value)}
-                        className="input w-full text-[13px]"
-                      >
-                        <option value="">—</option>
-                        {costCenters.map(cc => (
-                          <option key={cc.costCenterId} value={cc.costCenterId}>{cc.code} - {cc.name}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td>
-                      <select
-                        value={line.activityId}
-                        onChange={(e) => updateLine(line.id, 'activityId', e.target.value)}
-                        className="input w-full text-[13px]"
-                      >
-                        <option value="">—</option>
-                        {activities.map(act => (
-                          <option key={act.activityId} value={act.activityId}>{act.code} - {act.name}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td>
+                    <td className="py-2.5 px-2">
                       <input
                         type="text"
                         value={line.memo}
                         onChange={(e) => updateLine(line.id, 'memo', e.target.value)}
                         placeholder={t('placeholders.lineMemo')}
-                        className="input w-full text-[13px]"
+                        className="input w-full text-sm h-9"
                       />
                     </td>
-                    <td className="text-right">
+                    <td className="py-2.5 px-2">
                       <input
                         type="number"
                         step="0.01"
                         min="0"
                         value={line.debit}
                         onChange={(e) => updateLine(line.id, 'debit', e.target.value)}
-                        className="input w-full text-right text-[13px]"
+                        placeholder="0.00"
+                        className="input w-full text-right text-sm font-mono font-medium h-9"
                       />
                     </td>
-                    <td className="text-right">
+                    <td className="py-2.5 px-2">
                       <input
                         type="number"
                         step="0.01"
                         min="0"
                         value={line.credit}
                         onChange={(e) => updateLine(line.id, 'credit', e.target.value)}
-                        className="input w-full text-right text-[13px]"
+                        placeholder="0.00"
+                        className="input w-full text-right text-sm font-mono font-medium h-9"
                       />
                     </td>
-                    <td className="text-center">
-                      <Button variant="ghost"
+                    <td className="py-2.5 px-2 text-center align-middle">
+                      <Button
+                        variant="ghost"
                         onClick={() => removeLine(line.id)}
                         disabled={lines.length <= 2}
                         className="p-1.5 text-red-500 hover:bg-red-50 rounded disabled:opacity-30 disabled:hover:bg-transparent"
+                        title="Delete Line"
                       >
-                        { }
-                        <span className="material-symbols-outlined text-[16px]">delete</span>
+                        <span className="material-symbols-outlined text-[18px]">delete</span>
                       </Button>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            
-            <div className="flex justify-end mt-4">
-              <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col w-full md:w-80">
-                <div className="flex justify-between items-center py-1 border-b border-slate-100 pb-2 mb-2">
-                  <span className="text-sm font-semibold text-slate-500">{t('totals')}</span>
-                </div>
-                <div className="flex justify-between items-center py-1">
-                  <span className="text-sm font-medium text-slate-500">{t('columns.debit')}</span>
-                  <span className="text-sm font-semibold">{formatAmount(totalDebit, baseCurrency)}</span>
-                </div>
-                <div className="flex justify-between items-center py-1">
-                  <span className="text-sm font-medium text-slate-500">{t('columns.credit')}</span>
-                  <span className="text-sm font-semibold">{formatAmount(totalCredit, baseCurrency)}</span>
-                </div>
-                {!isBalanced && totalDebit > 0 && (
-                  <div className="mt-2 text-xs font-semibold text-red-600 bg-red-50 px-3 py-1.5 rounded-md border border-red-200">
-                    {t('unbalancedWarning', { amount: formatAmount(Math.abs(totalDebit - totalCredit), baseCurrency) })}
-                  </div>
+
+                  {/* Row 2: Dimension Lines (3 lines x 2 columns) */}
+                  <tr className="bg-[var(--bg-card)]">
+                    <td className="py-1 px-2"></td>
+                    <td colSpan={4} className="py-1 px-2 pb-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2.5 max-w-4xl">
+                        {/* Line 1: Party Type & Party */}
+                        <div className="flex items-center gap-2">
+                          <span className="w-24 shrink-0 text-xs font-medium text-[var(--text-muted)]">
+                            {t('columns.partyType')}:
+                          </span>
+                          <select
+                            value={line.partyType}
+                            onChange={(e) => updateLine(line.id, 'partyType', e.target.value)}
+                            className="input h-9 text-sm flex-1 px-3"
+                          >
+                            <option value="none">{t('partyTypes.none')}</option>
+                            <option value="customer">{t('partyTypes.customer')}</option>
+                            <option value="supplier">{t('partyTypes.supplier')}</option>
+                          </select>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="w-24 shrink-0 text-xs font-medium text-[var(--text-muted)]">
+                            {t('columns.party')}:
+                          </span>
+                          <div className="flex-1">
+                            {line.partyType === 'customer' ? (
+                              <CustomerSelect
+                                value={line.partyId}
+                                onChange={(acc) => updateLine(line.id, 'partyId', acc ? acc.customerId : '')}
+                                placeholder={t('placeholders.selectParty')}
+                                className="!h-9 !text-sm w-full"
+                              />
+                            ) : line.partyType === 'supplier' ? (
+                              <SupplierSelect
+                                value={line.partyId}
+                                onChange={(sup) => updateLine(line.id, 'partyId', sup ? sup.vendorId : '')}
+                                placeholder={t('placeholders.selectParty')}
+                                className="!h-9 !text-sm w-full"
+                              />
+                            ) : (
+                              <input
+                                type="text"
+                                disabled
+                                placeholder={t('placeholders.selectParty')}
+                                className="input h-9 text-sm w-full opacity-50 cursor-not-allowed"
+                              />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Line 2: Project & Task */}
+                        <div className="flex items-center gap-2">
+                          <span className="w-24 shrink-0 text-xs font-medium text-[var(--text-muted)]">
+                            {t('columns.project')}:
+                          </span>
+                          <select
+                            value={line.projectId}
+                            onChange={(e) => updateLine(line.id, 'projectId', e.target.value)}
+                            className="input h-9 text-sm flex-1 px-3"
+                          >
+                            <option value="">—</option>
+                            {projects.map((p) => (
+                              <option key={p.projectId} value={p.projectId}>
+                                {p.projectNumber} - {p.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="w-24 shrink-0 text-xs font-medium text-[var(--text-muted)]">
+                            {t('columns.task')}:
+                          </span>
+                          <select
+                            value={line.projectTaskId}
+                            onChange={(e) => updateLine(line.id, 'projectTaskId', e.target.value)}
+                            disabled={!line.projectId}
+                            className="input h-9 text-sm flex-1 px-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <option value="">—</option>
+                            {line.projectId &&
+                              projects
+                                .find((p) => p.projectId === line.projectId)
+                                ?.tasks?.map((task) => (
+                                  <option key={task.projectTaskId} value={task.projectTaskId}>
+                                    {task.taskCode} - {task.name || task.taskName || ''}
+                                  </option>
+                                ))}
+                          </select>
+                        </div>
+
+                        {/* Line 3: Cost Center & Activity */}
+                        <div className="flex items-center gap-2">
+                          <span className="w-24 shrink-0 text-xs font-medium text-[var(--text-muted)]">
+                            {tCommon('costCenter')}:
+                          </span>
+                          <select
+                            value={line.costCenterId}
+                            onChange={(e) => updateLine(line.id, 'costCenterId', e.target.value)}
+                            className="input h-9 text-sm flex-1 px-3"
+                          >
+                            <option value="">—</option>
+                            {costCenters.map((cc) => (
+                              <option key={cc.costCenterId} value={cc.costCenterId}>
+                                {cc.code} - {cc.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="w-24 shrink-0 text-xs font-medium text-[var(--text-muted)]">
+                            {tCommon('activity')}:
+                          </span>
+                          <select
+                            value={line.activityId}
+                            onChange={(e) => updateLine(line.id, 'activityId', e.target.value)}
+                            className="input h-9 text-sm flex-1 px-3"
+                          >
+                            <option value="">—</option>
+                            {activities.map((act) => (
+                              <option key={act.activityId} value={act.activityId}>
+                                {act.code} - {act.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-1 px-2"></td>
+                  </tr>
+                </tbody>
+              ))}
+              <tfoot>
+                <tr className="border-t-2 border-slate-200 dark:border-slate-800 bg-[var(--bg-card)]">
+                  <td colSpan={3} className="py-3 px-2 text-right text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
+                    {t('totals')}
+                  </td>
+                  <td className="py-3 px-2 text-right text-sm font-bold font-mono">
+                    <div className="pr-3">{formatAmount(totalDebit, baseCurrency)}</div>
+                  </td>
+                  <td className="py-3 px-2 text-right text-sm font-bold font-mono">
+                    <div className="pr-3">{formatAmount(totalCredit, baseCurrency)}</div>
+                  </td>
+                  <td className="py-3 px-2"></td>
+                </tr>
+                {!isBalanced && (totalDebit > 0 || totalCredit > 0) && (
+                  <tr className="border-t border-red-200 dark:border-red-900/50 bg-red-50/60 dark:bg-red-950/20">
+                    <td colSpan={6} className="py-2.5 px-4 text-right">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-600 dark:text-red-400">
+                        <span className="material-symbols-outlined text-[16px]">warning</span>
+                        {t('unbalancedWarning', {
+                          amount: formatAmount(Math.abs(totalDebit - totalCredit), baseCurrency),
+                        })}
+                      </span>
+                    </td>
+                  </tr>
                 )}
-              </div>
-            </div>
-            
+              </tfoot>
+            </table>
           </div>
         </div>
       </div>

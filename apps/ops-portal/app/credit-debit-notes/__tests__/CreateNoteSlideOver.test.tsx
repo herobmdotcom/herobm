@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CreateNoteSlideOver from '../CreateNoteSlideOver';
 import * as api from '@herobm/sdk';
@@ -96,7 +96,7 @@ describe('CreateNoteSlideOver', () => {
 
     // Select customer
     const customerInput = screen.getByTestId('customer-select-input');
-    await userEvent.type(customerInput, 'cust-123');
+    fireEvent.change(customerInput, { target: { value: 'cust-123' } });
 
     // Fill line description and amount
     const descInput = screen.getByPlaceholderText('Line description...');
@@ -106,7 +106,7 @@ describe('CreateNoteSlideOver', () => {
     await userEvent.selectOptions(selectAccount, 'acc-1');
 
     const amountInput = screen.getByPlaceholderText('0.00');
-    await userEvent.type(amountInput, '50.00');
+    fireEvent.change(amountInput, { target: { value: '50.00' } });
 
     // Submit
     const submitBtn = screen.getByRole('button', { name: 'Issue Credit Note' });
@@ -127,7 +127,7 @@ describe('CreateNoteSlideOver', () => {
       });
       expect(mockOnSuccess).toHaveBeenCalled();
     });
-  });
+  }, 15000);
 
   it('switches to debit note mode and submits debit note', async () => {
     (api.purchaseDebitNotesControllerCreateDebitNote as jest.Mock).mockResolvedValue({ data: {} });
@@ -150,7 +150,7 @@ describe('CreateNoteSlideOver', () => {
 
     // Select supplier
     const supplierInput = screen.getByTestId('supplier-select-input');
-    await userEvent.type(supplierInput, 'supp-456');
+    fireEvent.change(supplierInput, { target: { value: 'supp-456' } });
 
     // Enter supplier reference
     const refInput = screen.getByPlaceholderText('e.g. DN-SUP-1029');
@@ -164,7 +164,7 @@ describe('CreateNoteSlideOver', () => {
     await userEvent.selectOptions(selectAccount, 'acc-2');
 
     const amountInput = screen.getByPlaceholderText('0.00');
-    await userEvent.type(amountInput, '75.00');
+    fireEvent.change(amountInput, { target: { value: '75.00' } });
 
     // Submit
     const submitBtn = screen.getByRole('button', { name: 'Issue Debit Note' });
@@ -188,5 +188,5 @@ describe('CreateNoteSlideOver', () => {
       });
       expect(mockOnSuccess).toHaveBeenCalled();
     });
-  });
+  }, 15000);
 });

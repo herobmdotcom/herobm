@@ -33,6 +33,7 @@ import { InventoryQueryService } from './inventory-query.service';
 import { WorkOrdersWriteService } from '../manufacturing/work-orders-write.service';
 import { BackordersService } from '../orders/backorders.service';
 import { ReturnsWriteService } from '../orders/returns-write.service';
+import { ProjectsInventoryService } from '../projects/projects-inventory.service';
 
 describe('InventoryService - Quarantine', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
@@ -88,6 +89,13 @@ describe('InventoryService - Quarantine', () => {
               .mockResolvedValue(undefined),
           },
         },
+        {
+          provide: ProjectsInventoryService,
+          useValue: {
+            recordProjectReturnCredit: jest.fn().mockResolvedValue(undefined),
+            recordProjectStagingCharge: jest.fn().mockResolvedValue(undefined),
+          },
+        },
       ],
     }).compile();
 
@@ -113,21 +121,10 @@ describe('InventoryService - Quarantine', () => {
     // The locations trigger automatically scaffolds system bins. Let's fetch them.
     const autoBins = await pg.db.select().from(bins);
     RECV_BIN_ID = autoBins.find((b) => b.binNumber === 'RECEIVING')!.binId;
-
-    // Manually insert QUARANTINE bin since it was removed from auto-scaffolding
-    QUAR_BIN_ID = '00000000-0000-4000-8000-000000000010';
-    await pg.db.insert(bins).values({
-      binId: QUAR_BIN_ID,
-      zoneId: autoBins[0].zoneId,
-      binNumber: 'QUARANTINE',
-      binType: 'quarantine',
-      isUnavailable: true,
-      source: 'system',
-      createdBy: 'system',
-    });
+    QUAR_BIN_ID = autoBins.find((b) => b.binNumber === 'QUARANTINE')!.binId;
     await pg.db
       .insert(uomDictionary)
-      .values({ uomCode: 'EA', description: 'Each' });
+      .values({ uomCode: 'EA', description: 'Each', category: 'goods' });
     await pg.db.insert(products).values({
       productId: PROD_ID,
       productNumber: 'P1',

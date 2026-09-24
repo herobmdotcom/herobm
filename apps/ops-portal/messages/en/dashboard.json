@@ -1,0 +1,269 @@
+{
+  "failedToLoadReport": "Failed to load report configuration.",
+  "loadingReport": "Loading report...",
+  "managePinnedReports": "Manage Pinned Reports",
+  "noPinnedReports": "You haven't pinned any reports yet. Click the settings icon to add some.",
+  "noSavedReports": "You don't have any saved report views yet. Go to the Reporting section to save some!",
+  "pinnedReports": "Pinned Reports",
+  "quickActions": {
+    "addCustomAction": "Add Custom Action",
+    "counterSale": "New Counter Sale",
+    "counterSaleDesc": "Direct point-of-sale walk-in transaction",
+    "createContact": "Create Contact",
+    "createContactDesc": "Add a new CRM contact",
+    "createCustomer": "Create Customer",
+    "createCustomerDesc": "Register a new customer account",
+    "createProduct": "Create Product",
+    "createProductDesc": "Add a new product or SKU",
+    "createProject": "Create Project",
+    "createProjectDesc": "Start a new customer project",
+    "createPurchaseDesc": "Restock inventory from supplier",
+    "createPurchaseOrder": "Create Purchase Order",
+    "createQuote": "Create Quote",
+    "createQuoteDesc": "Draft a new quote for a customer",
+    "createSalesDesc": "New customer sales order",
+    "createSalesOrder": "Create Sales Order",
+    "createSupplier": "Create Supplier",
+    "createSupplierDesc": "Register a new supplier / vendor",
+    "createTransfer": "Transfer Inventory",
+    "createTransferDesc": "Move stock between warehouse locations",
+    "createWorkOrder": "Create Work Order",
+    "createWorkOrderDesc": "Start a manufacturing work order",
+    "customActions": "Custom Actions",
+    "deleteCustomAction": "Delete Action",
+    "editCustomAction": "Edit Custom Action",
+    "form": {
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "desc": "Description",
+      "descPlaceholder": "e.g. View open customer ledger balances",
+      "href": "Target Route / URL",
+      "hrefPlaceholder": "e.g. /balances/customers",
+      "icon": "Icon",
+      "save": "Save Action",
+      "title": "Action Title",
+      "titlePlaceholder": "e.g. Customer Balances",
+      "validation": "Title and route are required"
+    },
+    "journalEntry": "New Journal Entry",
+    "journalEntryDesc": "Create a manual GL journal entry",
+    "manage": "Manage Quick Actions",
+    "noCustomActions": "No custom quick actions configured.",
+    "presets": "Standard Actions",
+    "receiveGoods": "Receive Goods",
+    "receiveGoodsDesc": "Process incoming supplier shipment",
+    "recordPayment": "Record Payment",
+    "recordPaymentDesc": "Record customer receipt or supplier payment",
+    "salesReturn": "Create Sales Return",
+    "salesReturnDesc": "Process customer product return",
+    "scanDispatch": "Scan to Dispatch",
+    "scanDispatchDesc": "Scan and dispatch packed orders",
+    "settings": "Quick Action Settings",
+    "settingsDesc": "Choose standard quick actions or configure custom actions for fast navigation.",
+    "stockAdjustment": "Stock Adjustment",
+    "stockAdjustmentDesc": "View and adjust stock ledger entries",
+    "stocktake": "Stocktake",
+    "stocktakeDesc": "Physical inventory counting and audit",
+    "title": "Quick Actions"
+  },
+  "reportSettingsDescription": "Select which saved report views you want to pin to your dashboard.",
+  "search": {
+    "deselectAll": "Deselect All",
+    "noResults": "No results found",
+    "placeholder": "Search products, customers, orders, suppliers, invoices...",
+    "resetToDefault": "Reset to Defaults",
+    "selectAll": "Select All",
+    "settings": "Search Settings",
+    "settingsDesc": "Select which business entities to include when searching from the dashboard.",
+    "typeMinChars": "Type at least 2 characters...",
+    "types": {
+      "contact": "Contacts",
+      "customer": "Customers",
+      "goods_receipt": "Goods Receipts",
+      "payment": "Payments",
+      "product": "Products",
+      "project": "Projects",
+      "purchase_debit_note": "Purchase Debit Notes",
+      "purchase_invoice": "Purchase Invoices",
+      "purchase_order": "Purchase Orders",
+      "purchase_return": "Purchase Returns",
+      "sales_credit_note": "Sales Credit Notes",
+      "sales_invoice": "Sales Invoices",
+      "sales_order": "Sales Orders",
+      "sales_return": "Sales Returns",
+      "shipment": "Shipments",
+      "supplier": "Suppliers",
+      "transfer_order": "Transfer Orders",
+      "work_order": "Work Orders"
+    }
+  },
+  "stats": {
+    "customers": "Customers",
+    "inventoryLevels": "Inventory Levels",
+    "orderLines": "Order Lines",
+    "products": "Products"
+  },
+  "tasks": {
+    "allOpen": "All Open Tasks",
+    "assignedTo": "Assigned to",
+    "completed": "Completed",
+    "createTask": "Create Task",
+    "due": "Due",
+    "dueToday": "Due Today",
+    "empty": "No open tasks",
+    "failedToComplete": "Failed to update task",
+    "failedToLoad": "Failed to load tasks",
+    "myTasks": "My Tasks",
+    "newTask": "New Task",
+    "openCount": "{count} open",
+    "overdue": "Overdue",
+    "priority": "Priority",
+    "taskCompleted": "Task completed",
+    "title": "Tasks",
+    "upcoming": "Upcoming",
+    "viewAll": "View All"
+  },
+  "timeline": {
+    "configureInfo": "Select which business events you want to see in your recent events feed.",
+    "empty": "No recent events to display.",
+    "errors": {
+      "failedToLoad": "Failed to load timeline.",
+      "retry": "Retry"
+    },
+    "relativeUnits": {
+      "d": "{count}d ago",
+      "h": "{count}h ago",
+      "justNow": "just now",
+      "m": "{count}m ago"
+    },
+    "settings": "Timeline Settings",
+    "title": "Recent Events",
+    "types": {
+      "api_key": {
+        "created": "API key created",
+        "deleted": "API key deleted"
+      },
+      "contact": {
+        "created": "Contact created",
+        "deleted": "Contact deleted",
+        "updated": "Contact updated"
+      },
+      "customer": {
+        "created": "Customer created",
+        "status_changed": "Customer status changed",
+        "updated": "Customer updated"
+      },
+      "email": {
+        "failed": "Email failed",
+        "queued": "Email queued",
+        "sent": "Email sent"
+      },
+      "fiscal_period": {
+        "created": "Fiscal period created",
+        "status_changed": "Fiscal period status changed"
+      },
+      "general_ledger": {
+        "entry_posted": "Journal entry posted",
+        "integrity_violation": "Ledger integrity anomaly detected"
+      },
+      "gl_reconciliation": {
+        "created": "Bank reconciliation created",
+        "deleted": "Bank reconciliation deleted"
+      },
+      "inventory_ledger": {
+        "entry_posted": "Ledger entry posted"
+      },
+      "organization": {
+        "created": "Organization created",
+        "deleted": "Organization deleted",
+        "updated": "Organization updated"
+      },
+      "payment": {
+        "allocated": "Payment allocated",
+        "cancelled": "Payment cancelled",
+        "created": "Payment created",
+        "submitted": "Payment submitted"
+      },
+      "product": {
+        "created": "Product created",
+        "status_changed": "Product status changed",
+        "updated": "Product updated"
+      },
+      "project": {
+        "created": "Project created",
+        "deleted": "Project deleted",
+        "updated": "Project updated"
+      },
+      "purchase_invoice": {
+        "created": "Purchase Invoice created",
+        "status_changed": "Purchase Invoice status changed"
+      },
+      "purchase_order": {
+        "created": "Purchase Order created",
+        "debit_note_created": "Debit Note created",
+        "debit_note_posted": "Debit Note posted",
+        "deleted": "Purchase Order deleted",
+        "status_changed": "Purchase Order status changed"
+      },
+      "purchase_return": {
+        "created": "Purchase Return created",
+        "status_changed": "Purchase Return status changed"
+      },
+      "sales_invoice": {
+        "created": "Sales Invoice created",
+        "credit_note_posted": "Credit Note posted",
+        "status_changed": "Sales Invoice status changed"
+      },
+      "sales_order": {
+        "created": "Sales Order created",
+        "credit_note_posted": "Credit Note posted",
+        "deleted": "Sales Order deleted",
+        "status_changed": "Sales Order status changed"
+      },
+      "sales_return": {
+        "created": "Sales Return created",
+        "status_changed": "Sales Return status changed"
+      },
+      "stock_adjusted": "Stock adjusted",
+      "supplier": {
+        "created": "Supplier created",
+        "status_changed": "Supplier status changed",
+        "updated": "Supplier updated"
+      },
+      "transfer_order": {
+        "created": "Transfer Order created",
+        "status_changed": "Transfer Order status changed",
+        "stock_dispatched": "Transfer dispatched"
+      },
+      "user": {
+        "created": "User created",
+        "status_changed": "User status changed",
+        "updated": "User updated"
+      },
+      "warehouse": {
+        "goods_received": "Goods received",
+        "receipt_created": "Receipt created",
+        "receipt_status_changed": "Receipt status changed",
+        "shipment_created": "Shipment created",
+        "shipment_dispatched": "Shipment dispatched",
+        "shipment_status_changed": "Shipment status changed"
+      },
+      "webhook": {
+        "created": "Webhook created",
+        "deleted": "Webhook deleted",
+        "updated": "Webhook updated"
+      },
+      "work_order": {
+        "created": "Work Order created",
+        "status_changed": "Work Order status changed",
+        "updated": "Work Order updated"
+      },
+      "work_order_pick": {
+        "created": "Work Order Pick created",
+        "status_changed": "Work Order Pick status changed"
+      }
+    }
+  },
+  "title": "Dashboard",
+  "viewFull": "View Full"
+}

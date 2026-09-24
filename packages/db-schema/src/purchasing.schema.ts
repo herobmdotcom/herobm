@@ -52,6 +52,7 @@ export const purchaseOrders = herobmCore.table(
     exchangeRate: numeric('exchange_rate').notNull(),
     notes: text('notes'),
     customFields: jsonb('custom_fields'),
+    metadata: jsonb('metadata').$type<Record<string, unknown>>(),
     expectedDate: timestamp('expected_date', { withTimezone: true }),
     termsDescription: text('terms_description'),
     createdBy: text('created_by'),
@@ -245,6 +246,7 @@ export const purchaseDebitNotes = herobmCore.table(
     exchangeRate: numeric('exchange_rate').notNull(),
     stateCode: text('state_code').$type<PurchaseDebitNoteState>().notNull(),
     notes: text('notes'),
+    metadata: jsonb('metadata').$type<Record<string, unknown>>(),
     createdBy: text('created_by'),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
     modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
@@ -468,5 +470,16 @@ export const procurementEvents = herobmCore.table('procurement_events', {
   actor: text('actor'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
 });
+
+// ---------------------------------------------------------------------------
+// purchasing_settings (Singleton table for purchasing metadata schema configurations)
+// ---------------------------------------------------------------------------
+export const purchasingSettings = herobmCore.table('purchasing_settings', {
+  purchasingSettingsId: uuid('purchasing_settings_id').primaryKey().defaultRandom(),
+  purchaseOrderMetadataSchema: jsonb('purchase_order_metadata_schema').$type<Record<string, unknown>>(),
+  debitNoteMetadataSchema: jsonb('debit_note_metadata_schema').$type<Record<string, unknown>>(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+
 
 // END

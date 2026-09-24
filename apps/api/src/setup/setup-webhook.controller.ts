@@ -32,7 +32,7 @@ export class SetupWebhookController {
     type: SuccessResponseDto,
   })
   async handleWebhook(@Body() payload: WebhookPayloadDto) {
-    this.setupService.handleWebhook(payload);
+    await this.setupService.handleWebhook(payload);
     return { success: true };
   }
 }

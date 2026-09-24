@@ -119,10 +119,10 @@ export default function SystemLogsPage() {
                     value={lineLimit} 
                     onChange={(e) => setLineLimit(Number(e.target.value))}
                   >
-                    <option value={100}>{t('filters.limits.100')}</option>
-                    <option value={500}>{t('filters.limits.500')}</option>
-                    <option value={1000}>{t('filters.limits.1000')}</option>
-                    <option value={5000}>{t('filters.limits.5000')}</option>
+                    <option value={100}>{t('limits.lines', { count: '100' })}</option>
+                    <option value={500}>{t('limits.lines', { count: '500' })}</option>
+                    <option value={1000}>{t('limits.lines', { count: '1000' })}</option>
+                    <option value={5000}>{t('limits.lines', { count: '5000' })}</option>
                   </select>
                 </div>
               ),

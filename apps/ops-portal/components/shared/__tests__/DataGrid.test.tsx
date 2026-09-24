@@ -52,6 +52,16 @@ jest.mock('@herobm/sdk', () => {
   return {
     ...original,
     customFetch: jest.fn(),
+    productsControllerGetSettings: jest.fn().mockResolvedValue({
+      data: {
+        productMetadataSchema: {
+          type: 'object',
+          properties: {
+            brand: { type: 'string', title: 'Product Brand' },
+          },
+        },
+      },
+    }),
   };
 });
 
@@ -283,6 +293,34 @@ describe('DataGrid', () => {
     expect(screen.getByText('Jane Smith')).toBeInTheDocument();
     expect(screen.queryByText('John Doe')).toBeNull();
   });
+
+  it('renders noRowsToShow translation key when no rows exist on mobile / empty view', () => {
+    render(
+      <DataGrid<{ name: string }>
+        rowData={[]}
+        columns={[{ field: 'name', headerName: 'Name' }]}
+      />,
+    );
+
+    expect(screen.getByText('noRowsToShow')).toBeInTheDocument();
+  });
+
+  it('renders noSearchResults translation key when search yields no matches', async () => {
+    const user = userEvent.setup();
+    const testRows = [{ id: '1', name: 'Alpha' }];
+    render(
+      <DataGrid<{ id: string; name: string }>
+        rowData={testRows}
+        columns={[{ field: 'name', headerName: 'Name' }]}
+        searchPlaceholder="Search..."
+      />
+    );
+
+    const searchInput = screen.getByPlaceholderText('Search...');
+    await user.type(searchInput, 'NonExistentTerm');
+
+    expect(screen.getByText('noSearchResults')).toBeInTheDocument();
+  });
 });
 
 /* ── localStorage helper tests ────────────────────────────────────── */
@@ -335,5 +373,23 @@ describe('DataGrid — localStorage helpers', () => {
     localStorage.setItem = () => { throw new DOMException('QuotaExceededError'); };
     expect(() => saveGridState('full', { sort: { sortModel: [] } } as never)).not.toThrow();
     localStorage.setItem = origSetItem;
+  });
+
+  it('automatically fetches and injects dynamic custom field columns when customFieldEntityType is provided', async () => {
+    render(
+      <DataGrid
+        endpoint="/api/products"
+        columns={[{ field: 'name', headerName: 'Name' }]}
+        customFieldEntityType="products"
+      />,
+    );
+
+    await waitFor(() => {
+      expect(latestAgGridProps).not.toBeNull();
+      const customCol = latestAgGridProps.columnDefs.find((c: any) => c.colId === 'custom_brand');
+      expect(customCol).toBeDefined();
+      expect(customCol.headerName).toBe('Product Brand');
+      expect(customCol.hide).toBe(true);
+    });
   });
 });

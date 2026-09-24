@@ -17,12 +17,14 @@ import { ContactListTab } from '@/components/shared/ContactListTab';
 import { OpportunitiesTab } from '@/components/shared/OpportunitiesTab';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import CrmActivitiesSection from '@/components/shared/CrmActivitiesSection';
+import NotesSection from '@/components/shared/NotesSection';
 import { COUNTRIES, getErrorMessage } from '@herobm/shared';
 import { extensionTabs } from '@/src/generated/extension-tabs';
 import { useSettings } from '@/components/SettingsProvider';
 import { ORGANIZATION_STATE, SystemResource, hasPermission } from '@herobm/shared';
 import OrganizationSelect, { type Organization } from '@/components/shared/OrganizationSelect';
 import ContactSelect, { type Contact } from '@/components/shared/ContactSelect';
+import { DynamicForm } from '@/components/DynamicForm';
 import { OrganizationCommercialTab } from './components/OrganizationCommercialTab';
 import { OrganizationHierarchyTab } from './components/OrganizationHierarchyTab';
 
@@ -52,6 +54,7 @@ interface OrganizationFormDto {
   referredByContactName?: string | null;
   referralNote?: string | null;
   ownerId?: string | null;
+  metadata?: Record<string, unknown>;
 }
 
 function GeneralInfoTab({
@@ -386,70 +389,7 @@ function GeneralInfoTab({
   );
 }
 
-function NotesTab({ organizationId, notes, onNoteAdded }: { organizationId: string; notes: api.OrganizationNoteResponseDto[]; onNoteAdded: () => void }) {
-  const [content, setContent] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const t = useTranslations('common');
 
-  const handleAddNote = async () => {
-    if (!content.trim()) return;
-    setSubmitting(true);
-    try {
-      await api.organizationsControllerAddNote(organizationId, { content });
-      toast.success('Note added');
-      setContent('');
-      onNoteAdded();
-    } catch {
-      toast.error('Failed to add note');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const sortedNotes = [...notes].sort((a, b) => new Date(b.createdOn).getTime() - new Date(a.createdOn).getTime());
-
-  return (
-    <div className="max-w-5xl flex flex-col gap-6" id="notes-section">
-      <div className="card">
-        <h3 className="section-heading">
-          <span className="material-symbols-outlined">edit_note</span>
-          NOTES
-        </h3>
-        <textarea
-          className="input w-full min-h-[100px] mb-3"
-          placeholder="Type your note here..."
-          value={content}
-          onChange={e => setContent(e.target.value)}
-          disabled={submitting}
-        />
-        <div className="flex justify-end mb-6">
-          <Button variant="primary" onClick={handleAddNote} disabled={submitting || !content.trim()}>
-            {submitting ? t('loading') : t('add')}
-          </Button>
-        </div>
-
-        <div className="flex flex-col gap-6 mt-4">
-          {sortedNotes.length === 0 ? (
-            <p className="text-sm text-[var(--text-muted)] italic">No notes found.</p>
-          ) : (
-            sortedNotes.map(note => (
-              <div key={note.noteId} className="border-b border-[var(--border)] last:border-b-0 pb-6 last:pb-0">
-                <div className="flex items-center gap-1 mb-2 text-xs font-medium text-[var(--text-muted)]">
-                  <span>{new Date(note.createdOn).toLocaleString()}</span>
-                  <span>-</span>
-                  <span>{((note.createdBy as Record<string, unknown>)?.displayName as string) || ((note.createdBy as Record<string, unknown>)?.username as string) || note.createdById || t('system')}</span>
-                </div>
-                <div className="text-sm text-[var(--text-primary)] whitespace-pre-wrap">
-                  {note.content}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function EditOrganizationClient({ organizationId }: { organizationId: string }) {
   const searchParams = useSearchParams();
@@ -458,6 +398,7 @@ export default function EditOrganizationClient({ organizationId }: { organizatio
   const initialTab = searchParams.get('tab') || 'overview';
   const [activeTab, setActiveTab] = useState<string>(initialTab);
   const [users, setUsers] = useState<api.UserResponseDto[]>([]);
+  const [organizationMetadataSchema, setOrganizationMetadataSchema] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     const loadUsers = async () => {
@@ -472,6 +413,16 @@ export default function EditOrganizationClient({ organizationId }: { organizatio
       }
     };
     loadUsers();
+
+    api.organizationsControllerGetSettings()
+      .then((res) => {
+        if (res.data?.organizationMetadataSchema) {
+          setOrganizationMetadataSchema(res.data.organizationMetadataSchema as Record<string, unknown>);
+        }
+      })
+      .catch((e) => {
+        reportError(e, 'EditOrganizationClient - loadSettings');
+      });
   }, []);
 
   const {
@@ -511,6 +462,7 @@ export default function EditOrganizationClient({ organizationId }: { organizatio
       referredByOrganizationName: data.referredByOrganizationName || null,
       referredByContactName: data.referredByContactName || null,
       ownerId: data.ownerId || '',
+      metadata: (data.metadata as Record<string, unknown>) || {},
     }),
   });
 
@@ -547,6 +499,12 @@ export default function EditOrganizationClient({ organizationId }: { organizatio
     await saveField(field as keyof OrganizationFormDto, value);
   };
 
+  const hasCustomFields = !!(
+    organizationMetadataSchema?.properties &&
+    typeof organizationMetadataSchema.properties === 'object' &&
+    Object.keys(organizationMetadataSchema.properties).length > 0
+  );
+
   const navItems = [
     {
       id: "tab-overview",
@@ -557,6 +515,7 @@ export default function EditOrganizationClient({ organizationId }: { organizatio
       subtargets: [
         { id: 'info-section', label: 'Info', onClick: () => { setActiveTab('overview'); setTimeout(() => document.getElementById('info-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
         { id: 'address-section', label: 'Address', onClick: () => { setActiveTab('overview'); setTimeout(() => document.getElementById('address-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        ...(hasCustomFields ? [{ id: 'custom-fields-section', label: 'Custom Fields', onClick: () => { setActiveTab('overview'); setTimeout(() => document.getElementById('custom-fields-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } }] : []),
         { id: 'notes-section', label: 'Notes', onClick: () => { setActiveTab('overview'); setTimeout(() => document.getElementById('notes-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
         { id: 'activities-section', label: 'Activities', onClick: () => { setActiveTab('overview'); setTimeout(() => document.getElementById('activities-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
         { id: 'activity-section', label: 'System Log', onClick: () => { setActiveTab('overview'); setTimeout(() => document.getElementById('activity-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
@@ -640,7 +599,39 @@ export default function EditOrganizationClient({ organizationId }: { organizatio
             <div id="info-section">
               <GeneralInfoTab dto={dto} updateField={(f, v) => updateField(f as keyof OrganizationFormDto, v)} saveField={(f, v) => saveFieldWrapper(f as keyof api.UpdateOrganizationDto, v)} loading={loading} users={users} />
             </div>
-            <NotesTab organizationId={organizationId} notes={org?.notes || []} onNoteAdded={loadOrg} />
+            {hasCustomFields && (
+              <div id="custom-fields-section" className="card">
+                <h3 className="section-heading">
+                  <span className="material-symbols-outlined">tune</span>
+                  <span>Custom Fields</span>
+                </h3>
+                <DynamicForm
+                  schema={organizationMetadataSchema!}
+                  data={(dto.metadata || org?.metadata || {}) as Record<string, unknown>}
+                  onChange={(newMetadata) => {
+                    updateField('metadata', newMetadata);
+                  }}
+                  onBlur={(newMetadata) => {
+                    saveField('metadata', newMetadata);
+                  }}
+                  readOnly={loading}
+                />
+              </div>
+            )}
+            <NotesSection
+              id="notes-section"
+              placeholder="Type your note here..."
+              notes={org?.notes || []}
+              onAddNote={async (content) => {
+                try {
+                  await api.organizationsControllerAddNote(organizationId, { content: content.trim() });
+                  toast.success('Note added');
+                  loadOrg();
+                } catch {
+                  toast.error('Failed to add note');
+                }
+              }}
+            />
             <div id="activities-section">
               <CrmActivitiesSection
                 entityType="organization"

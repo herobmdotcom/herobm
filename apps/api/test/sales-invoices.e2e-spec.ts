@@ -36,18 +36,21 @@ describe('API E2E — Sales Invoices', () => {
       .expect(200);
     locationId = locRes.body[0].locationId;
 
-    // Fetch real IDs from mart data
-    const customers = await request(app.getHttpServer())
-      .get('/api/customers?limit=10')
+    // Create a fresh dedicated customer to avoid state/credit conflicts with seed data
+    const custRes = await request(app.getHttpServer())
+      .post('/api/customers')
       .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-    const activeCustomer =
-      customers.body.data.find(
-        (c: any) => c.stateCode === CUSTOMER_STATE.ACTIVE,
-      ) || customers.body.data[0];
-    validCustomerId = activeCustomer.customerId;
+      .send({
+        billingAddressCountry: 'AU',
+        customerNumber: `CUST-INV-${Date.now()}`,
+        name: 'Sales Invoices E2E Customer',
+        currencyCode: 'AUD',
+        creditLimit: '100000',
+      })
+      .expect(201);
+    validCustomerId = custRes.body.customerId;
 
-    // Create an explicit inventory product to test physical goods logic
+    // Create explicit inventory products to test physical goods logic
     const prodRes = await request(app.getHttpServer())
       .post('/api/products')
       .set('Authorization', `Bearer ${adminToken}`)
@@ -77,6 +80,33 @@ describe('API E2E — Sales Invoices', () => {
       .expect(201);
 
     validProductId2 = prodRes2.body.productId;
+
+    // Create supplier and receive inventory to avoid inventory gaps on confirmation
+    const createVendorRes = await request(app.getHttpServer())
+      .post('/api/suppliers')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        address1Country: 'AU',
+        vendorNumber: `VEND-INV-${Date.now()}`,
+        name: 'Invoice Test Vendor',
+        currencyCode: 'AUD',
+      })
+      .expect(201);
+    const vendorId = createVendorRes.body.vendorId;
+
+    await request(app.getHttpServer())
+      .post('/api/goods-received')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        vendorId,
+        locationId,
+        packingSlipNumber: `RCV-INV-${Date.now()}`,
+        lines: [
+          { productId: validProductId1, quantityReceived: '50' },
+          { productId: validProductId2, quantityReceived: '50' },
+        ],
+      })
+      .expect(201);
   }, 120_000);
 
   afterAll(async () => {
@@ -274,7 +304,7 @@ describe('API E2E — Sales Invoices', () => {
 
       expect(badInvoiceRes.status).toBe(400);
       expect(badInvoiceRes.body.message).toMatch(
-        /Cannot invoice more than available quantity/,
+        /exceeds available invoice quantity/,
       );
     });
 
@@ -367,13 +397,64 @@ describe('API E2E — Sales Invoices', () => {
       expect(parseFloat(arLine.debit)).toBeGreaterThan(19.0); // 20 + tax
     });
 
-    it('Cancels the AR invoice and verifies the GL reversal is posted', async () => {
-      // 1. Cancel the invoice (this actually tests the internal `changeSalesInvoiceState` implicitly because there is no API route for this).
-      // Wait, there is no API route for sales invoice cancellation!
-      // So how do I test it in E2E?
-      // Since there is no controller endpoint, I cannot test it via E2E request directly.
-      // I would have to create a dummy endpoint or use a unit test.
-      // For now, we will trust the internal implementation until a business requirement exposes the cancellation endpoint.
+    it('GET /api/sales-invoices/:id — hydrates line items with snapshot discount, tax, and product info', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/api/sales-invoices/${createdInvoiceId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.body.invoiceId).toBe(createdInvoiceId);
+      expect(res.body.salesOrderId).toBe(orderId);
+      expect(res.body.customerId).toBe(validCustomerId);
+      expect(Array.isArray(res.body.lines)).toBe(true);
+      expect(res.body.lines.length).toBeGreaterThan(0);
+
+      const line = res.body.lines[0];
+      expect(line.productId).toBe(validProductId1);
+      expect(line.quantityInvoiced).toBe('2');
+      expect(parseFloat(line.pricePerUnit)).toBe(10);
+      expect(line.discountPercentage).toBeDefined();
+      expect(line.taxAmount).toBeDefined();
+      expect(line.amount).toBeDefined();
+    });
+
+    it('Cancels the AR invoice via PATCH /api/sales-invoices/:id/state and verifies the GL reversal is posted', async () => {
+      // 1. Cancel the invoice
+      const cancelRes = await request(app.getHttpServer())
+        .patch(`/api/sales-invoices/${createdInvoiceId}/state`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ stateCode: 'cancelled' })
+        .expect(200);
+
+      expect(cancelRes.body.stateCode).toBe('cancelled');
+
+      // 2. Verify subsequent cancellation fails (off golden path)
+      const repeatCancelRes = await request(app.getHttpServer())
+        .patch(`/api/sales-invoices/${createdInvoiceId}/state`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ stateCode: 'cancelled' });
+      expect(repeatCancelRes.status).toBe(400);
+
+      // 3. Verify invalid transition fails (off golden path)
+      const invalidTransitionRes = await request(app.getHttpServer())
+        .patch(`/api/sales-invoices/${createdInvoiceId}/state`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ stateCode: 'invoiced' });
+      expect(invalidTransitionRes.status).toBe(400);
+
+      // 4. Verify GL reversal entry is posted with sourceType sales_invoice_reversal
+      const glRes = await request(app.getHttpServer())
+        .get(
+          `/api/gl/journal-entries?sourceType=sales_invoice_reversal&limit=1000`,
+        )
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      const reversal = glRes.body.data.find(
+        (j: { sourceId: string; memo?: string }) =>
+          j.sourceId === createdInvoiceId,
+      );
+      expect(reversal).toBeDefined();
     });
   });
 });

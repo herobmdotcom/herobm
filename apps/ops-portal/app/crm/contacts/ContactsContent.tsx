@@ -28,6 +28,7 @@ export default function ContactsContent() {
     <DataGrid
       endpoint="/api/contacts"
       columns={columns}
+      customFieldEntityType="contacts"
       gridKey="crm-contacts"
       searchPlaceholder="Search contacts..."
       exportFileName="contacts"

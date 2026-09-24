@@ -34,6 +34,13 @@ export default function GlobalInvoicesPage() {
         { field: 'invoiceId', headerName: 'ID', hide: true },
         { field: 'invoiceNumber', headerName: t('columns.invoiceNumber'), width: 180 },
         { field: 'orderNumber', headerName: t('columns.orderNumber'), width: 160 },
+        { 
+            field: 'projectNumber', 
+            headerName: t('columns.projectNumber'), 
+            width: 160, 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+            valueFormatter: (p: import("ag-grid-community").ValueFormatterParams<any>) => p.value || '—' 
+        },
         { field: 'customerOrderNumber', headerName: tCommon('columns.customerPO'), width: 140 },
         { field: 'customerName', headerName: t('columns.customer'), width: 250 },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
@@ -68,6 +75,7 @@ export default function GlobalInvoicesPage() {
         <DataGrid 
             endpoint={gridEndpoint} 
             columns={gridColumns} 
+            customFieldEntityType="salesInvoices"
             gridKey="global-invoices"
             rowIdField="invoiceId"
             rowHref={(row) => `/sales-invoices/${row.invoiceId}`}

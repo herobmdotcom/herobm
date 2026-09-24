@@ -22,6 +22,9 @@ export enum SystemResource {
   // Manufacturing
   WORK_ORDERS = 'work-orders',
 
+  // Projects / Services
+  PROJECTS = 'projects',
+
   // CRM
   CRM = 'crm',
 

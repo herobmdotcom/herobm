@@ -42,16 +42,19 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
     }
     adminToken = loginRes.body.access_token;
 
-    // Fetch dependencies
-    const customers = await request(app.getHttpServer())
-      .get('/api/customers?limit=10')
+    // Create dedicated customer to avoid credit hold conflicts with other test data
+    const custRes = await request(app.getHttpServer())
+      .post('/api/customers')
       .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-    const activeCustomer =
-      customers.body.data.find(
-        (c: any) => c.stateCode === CUSTOMER_STATE.ACTIVE,
-      ) || customers.body.data[0];
-    customerId = activeCustomer.customerId;
+      .send({
+        billingAddressCountry: 'AU',
+        customerNumber: `CUST-FRT-${Date.now()}`,
+        name: 'Freight Test Customer',
+        currencyCode: 'AUD',
+        creditLimit: '100000',
+      })
+      .expect(201);
+    customerId = custRes.body.customerId;
 
     const suppliers = await request(app.getHttpServer())
       .get('/api/suppliers?limit=1')

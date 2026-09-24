@@ -9,8 +9,8 @@
 export interface CreatePurchaseOrderLineDto {
   productId?: string;
   productDescription?: string;
-  quantity: string;
-  pricePerUnit: string;
+  quantity?: string;
+  pricePerUnit?: string;
   discountPercentage?: string;
   unitOfMeasure?: string;
   taxCategoryId?: string;

@@ -18,6 +18,8 @@ import {
   transferOrderShipments,
   transferOrderShipmentLines,
   organizations,
+  projects,
+  bins,
 } from '@herobm/db-schema';
 import { findOrder, getCommittedPerLine } from './shipment-helpers';
 import { getCreditBlockedSql } from './orders.sql';
@@ -102,14 +104,21 @@ export class PickingShippingQueryService {
       .select({
         id: transferOrders.transferOrderId,
         orderNumber: transferOrders.orderNumber,
-        name: sql<string | null>`NULL`,
-        customerName: locations.name,
+        name: sql<
+          string | null
+        >`CASE WHEN ${transferOrders.projectId} IS NOT NULL THEN ${projects.name} ELSE 'Internal Transfer' END`,
+        customerName: sql<
+          string | null
+        >`CASE WHEN ${transferOrders.isProjectReturn} = true THEN CONCAT('Return: ', ${projects.projectNumber}) WHEN ${transferOrders.projectId} IS NOT NULL THEN CONCAT('Project: ', ${projects.projectNumber}) ELSE ${locations.name} END`,
         customerOrderNumber: sql<string | null>`NULL`,
         stateCode: transferOrders.stateCode,
         createdOn: transferOrders.createdOn,
         createdBy: transferOrders.createdBy,
         currencyCode: sql<string | null>`NULL`,
         isCreditBlocked: sql<boolean>`false`,
+        sourceLocationId: transferOrders.sourceLocationId,
+        destinationLocationId: transferOrders.destinationLocationId,
+        isSameSite: sql<boolean>`CASE WHEN ${transferOrders.sourceLocationId} = ${transferOrders.destinationLocationId} THEN true ELSE false END`,
         lineId: transferOrderLines.transferOrderLineId,
         lineQuantity: transferOrderLines.quantity,
         isPhysical: sql<boolean>`CASE WHEN ${coreProducts.productType} IS NULL OR (${coreProducts.productType} != 'service' AND ${coreProducts.productType} != 'freight') THEN true ELSE false END`,
@@ -135,8 +144,9 @@ export class PickingShippingQueryService {
       )
       .leftJoin(
         locations,
-        eq(transferOrders.sourceLocationId, locations.locationId),
+        eq(transferOrders.destinationLocationId, locations.locationId),
       )
+      .leftJoin(projects, eq(transferOrders.projectId, projects.projectId))
       .leftJoin(
         coreProducts,
         eq(transferOrderLines.productId, coreProducts.productId),
@@ -152,7 +162,13 @@ export class PickingShippingQueryService {
       .orderBy(transferOrders.createdOn);
 
     const allLines = [
-      ...rawLines.map((l) => ({ ...l, type: 'sales_order' as const })),
+      ...rawLines.map((l) => ({
+        ...l,
+        type: 'sales_order' as const,
+        sourceLocationId: undefined,
+        destinationLocationId: undefined,
+        isSameSite: false,
+      })),
       ...rawTransferLines.map((l) => ({
         ...l,
         type: 'transfer_order' as const,
@@ -173,6 +189,9 @@ export class PickingShippingQueryService {
         currencyCode: string | null;
         isCreditBlocked?: boolean;
         type: string;
+        sourceLocationId?: string;
+        destinationLocationId?: string;
+        isSameSite?: boolean;
         _totalPhysicalLines?: number;
         _fullyPickedLines?: number;
         _shippableLines?: number;
@@ -194,6 +213,9 @@ export class PickingShippingQueryService {
           createdBy: row.createdBy,
           currencyCode: row.currencyCode,
           type: row.type,
+          sourceLocationId: row.sourceLocationId,
+          destinationLocationId: row.destinationLocationId,
+          isSameSite: Boolean(row.isSameSite),
           _totalPhysicalLines: 0,
           _fullyPickedLines: 0,
           _shippableLines: 0,
@@ -535,13 +557,45 @@ export class PickingShippingQueryService {
       where: eq(locations.locationId, order.destinationLocationId as string),
     });
 
+    const project = order.projectId
+      ? await this.db.query.projects.findFirst({
+          where: eq(projects.projectId, order.projectId),
+        })
+      : null;
+
+    const stagingBin = project?.stagingBinId
+      ? await this.db.query.bins.findFirst({
+          where: eq(bins.binId, project.stagingBinId),
+        })
+      : null;
+
+    const destLocationName = destLocation
+      ? destLocation.code
+        ? `${destLocation.code} - ${destLocation.name}`
+        : destLocation.name
+      : 'Unknown Location';
+
+    const projectInfo = project
+      ? `${order.isProjectReturn ? 'Return · ' : ''}Project: ${project.projectNumber} - ${project.name}${stagingBin ? ` (Staging Bin: ${stagingBin.binNumber})` : ''}`
+      : undefined;
+
     return {
       order: {
         id: order.transferOrderId,
         orderNumber: order.orderNumber,
-        name: 'Internal Transfer',
+        name: project ? project.name : 'Internal Transfer',
         type: 'transfer_order',
-        deliveryAddressLine1: destLocation?.name ?? 'Unknown Location',
+        sourceLocationId: order.sourceLocationId,
+        destinationLocationId: order.destinationLocationId,
+        isSameSite: order.sourceLocationId === order.destinationLocationId,
+        deliveryName: destLocation?.addressLine1 ? destLocationName : undefined,
+        deliveryCompanyName: projectInfo,
+        deliveryAddressLine1: destLocation?.addressLine1 || destLocationName,
+        deliveryAddressLine2: destLocation?.addressLine2 ?? undefined,
+        deliveryCity: destLocation?.city ?? undefined,
+        deliveryState: destLocation?.stateOrProvince ?? undefined,
+        deliveryPostalCode: destLocation?.postalCode ?? undefined,
+        deliveryCountry: destLocation?.country ?? undefined,
         shippingNotes: order.shippingNotes ?? null,
       },
       lines: enrichedLines,

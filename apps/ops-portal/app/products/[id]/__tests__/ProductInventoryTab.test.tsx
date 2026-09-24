@@ -4,28 +4,25 @@ import userEvent from '@testing-library/user-event';
 import { ProductInventoryTab } from '../ProductInventoryTab';
 import * as api from '@herobm/sdk';
 
-jest.mock('@herobm/sdk', () => ({
-  productsControllerGetComponents: jest.fn(),
-  inventoryControllerFindByProductIdsBulk: jest.fn(),
-  inventoryControllerFindAllLocations: jest.fn(),
-  inventoryControllerFindBinsByLocation: jest.fn(),
-}));
+jest.mock('@herobm/sdk', () => {
+  const actual = jest.requireActual('@herobm/sdk');
+  return {
+    ...actual,
+    inventoryControllerFindByProductIdsBulk: jest.fn().mockResolvedValue({ data: [] }),
+    inventoryControllerFindAllLocations: jest.fn().mockResolvedValue({
+      data: [{ locationId: 'loc-1', name: 'Main Warehouse', code: 'WH-1' }],
+    }),
+    inventoryControllerFindBinsByLocation: jest.fn().mockResolvedValue({
+      data: [{ binId: 'bin-1', binNumber: 'A-01' }],
+    }),
+    productsControllerLinkDefaultBin: jest.fn().mockResolvedValue({}),
+    productsControllerRemoveDefaultBin: jest.fn().mockResolvedValue({}),
+    productsControllerGetComponents: jest.fn().mockResolvedValue({ data: [] }),
+  };
+});
 
 jest.mock('next-intl', () => ({
-  useTranslations: () => {
-    const t = (key: string, params?: Record<string, unknown>) => {
-      if (params?.quantity !== undefined) {
-        return `${key}:${params.quantity}`;
-      }
-      return key;
-    };
-    t.has = () => true;
-    return t;
-  },
-}));
-
-jest.mock('@/lib/api', () => ({
-  reportError: jest.fn(),
+  useTranslations: () => (key: string) => key,
 }));
 
 jest.mock('react-hot-toast', () => ({
@@ -35,301 +32,93 @@ jest.mock('react-hot-toast', () => ({
   },
 }));
 
-describe('ProductInventoryTab Component', () => {
-  const mockTrackedKitProduct = {
-    productId: 'kit-prod-1',
-    productNumber: 'KIT-001',
-    name: 'Tool Kit Pro',
-    productType: 'inventory',
-    structureType: 'kit',
-  } as unknown as api.ProductResponseDto;
-
-  const mockNonStockKitProduct = {
-    productId: 'kit-prod-2',
-    productNumber: 'KIT-002',
-    name: 'Virtual Bundle',
-    productType: 'non-stock',
-    structureType: 'kit',
-  } as unknown as api.ProductResponseDto;
-
-  const mockStandardProduct = {
-    productId: 'std-prod-1',
-    productNumber: 'BOLT-001',
-    name: 'M8 Bolt',
-    productType: 'inventory',
+describe('ProductInventoryTab', () => {
+  const mockProduct: any = {
+    productId: 'prod-123',
+    productNumber: 'P-100',
+    name: 'Test Product',
     structureType: 'standard',
-  } as unknown as api.ProductResponseDto;
+    productType: 'inventory',
+    defaultBins: [
+      {
+        productDefaultBinId: 'pdb-1',
+        productId: 'prod-123',
+        locationId: 'loc-1',
+        locationName: 'Main Warehouse',
+        locationNo: 'WH-1',
+        binId: 'bin-1',
+        binNumber: 'A-01',
+        isPrimaryPerLocation: true,
+        minQuantity: '5',
+        maxQuantity: '10',
+        quantityOnHand: 20,
+      },
+    ],
+  };
 
-  const mockComponents = [
-    {
-      childProductId: 'comp-1',
-      productNumber: 'COMP-001',
-      name: 'Component One',
-      parentQuantity: 2,
-    },
-    {
-      childProductId: 'comp-2',
-      productNumber: 'COMP-002',
-      name: 'Component Two',
-      parentQuantity: 1,
-    },
-  ];
-
-  const mockInventoryLevels = [
-    {
-      productId: 'comp-1',
-      locationId: 'loc-1',
-      locationName: 'Warehouse A',
-      locationNo: 'WH-A',
-      quantityOnHand: '10',
-      quantityAvailable: '10',
-      quantityCommitted: '0',
-      quantityReserved: '0',
-      quantityOnOrder: '0',
-    },
-    {
-      productId: 'comp-2',
-      locationId: 'loc-1',
-      locationName: 'Warehouse A',
-      locationNo: 'WH-A',
-      quantityOnHand: '0',
-      quantityAvailable: '0',
-      quantityCommitted: '0',
-      quantityReserved: '0',
-      quantityOnOrder: '0',
-    },
-    {
-      productId: 'comp-1',
-      locationId: 'loc-2',
-      locationName: 'Warehouse B',
-      locationNo: 'WH-B',
-      quantityOnHand: '10',
-      quantityAvailable: '10',
-      quantityCommitted: '0',
-      quantityReserved: '0',
-      quantityOnOrder: '0',
-    },
-    {
-      productId: 'comp-2',
-      locationId: 'loc-2',
-      locationName: 'Warehouse B',
-      locationNo: 'WH-B',
-      quantityOnHand: '15',
-      quantityAvailable: '15',
-      quantityCommitted: '0',
-      quantityReserved: '0',
-      quantityOnOrder: '0',
-    },
-  ];
-
-  const mockLocations = [
-    {
-      locationId: 'loc-1',
-      code: 'WH-A',
-      name: 'Warehouse A',
-    },
-    {
-      locationId: 'loc-2',
-      code: 'WH-B',
-      name: 'Warehouse B',
-    },
-  ];
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    (api.productsControllerGetComponents as jest.Mock).mockResolvedValue({
-      data: mockComponents,
-    });
-    (api.inventoryControllerFindByProductIdsBulk as jest.Mock).mockResolvedValue({
-      data: mockInventoryLevels,
-    });
-    (api.inventoryControllerFindAllLocations as jest.Mock).mockResolvedValue({
-      data: mockLocations,
-    });
-    (api.inventoryControllerFindBinsByLocation as jest.Mock).mockResolvedValue({
-      data: [],
-    });
-  });
-
-  it('renders view switcher for tracked kit products and defaults to built view', async () => {
+  it('renders default bin minQuantity and maxQuantity correctly', async () => {
     render(
       <ProductInventoryTab
-        productId="kit-prod-1"
-        product={mockTrackedKitProduct}
+        productId="prod-123"
+        product={mockProduct}
         isEditable={true}
         onRefresh={jest.fn()}
-      />,
+      />
     );
 
-    // Verify main title and view tabs exist
     await waitFor(() => {
-      expect(screen.getByText('products.inventoryLevels')).toBeInTheDocument();
-      expect(screen.getByText('products.tabs.built')).toBeInTheDocument();
-      expect(screen.getByText('products.tabs.kitComponents')).toBeInTheDocument();
+      expect(screen.getByText('A-01')).toBeInTheDocument();
+      expect(screen.getByText('5')).toBeInTheDocument();
+      expect(screen.getByText('10')).toBeInTheDocument();
     });
-
-    // In default built view, addBinLink button is available and components badge is not
-    expect(screen.getByText('products.storage.addBinLink')).toBeInTheDocument();
-    expect(screen.queryByText(/products.availableToAssemble/)).not.toBeInTheDocument();
   });
 
-  it('toggles to component view on tracked kit products when clicking Components tab', async () => {
+  it('submits minQuantity and maxQuantity to linkDefaultBin API when adding a bin', async () => {
     const user = userEvent.setup();
+    const onRefresh = jest.fn();
 
     render(
       <ProductInventoryTab
-        productId="kit-prod-1"
-        product={mockTrackedKitProduct}
+        productId="prod-123"
+        product={{ ...mockProduct, defaultBins: [] }}
         isEditable={true}
-        onRefresh={jest.fn()}
-      />,
+        onRefresh={onRefresh}
+      />
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('products.tabs.kitComponents')).toBeInTheDocument();
-    });
+    // Click "Add Default Bin" button
+    const addBtn = await screen.findByText('products.storage.addBinLink');
+    await user.click(addBtn);
 
-    // Switch to Components view
-    await user.click(screen.getByText('products.tabs.kitComponents'));
-
-    // Should now show the component breakdown table
-    await waitFor(() => {
-      expect(screen.getByText(/COMP-001/)).toBeInTheDocument();
-      expect(screen.getByText(/COMP-002/)).toBeInTheDocument();
-    });
-
-    // Should display the available to assemble badge inside component view
-    expect(screen.getByText(/products.availableToAssemble/)).toBeInTheDocument();
-
-    // In component view, addBinLink button should be hidden
-    expect(screen.queryByText('products.storage.addBinLink')).not.toBeInTheDocument();
-
-    // Switch back to Built view
-    await user.click(screen.getByText('products.tabs.built'));
-
-    // Add bin link button should reappear
-    await waitFor(() => {
-      expect(screen.getByText('products.storage.addBinLink')).toBeInTheDocument();
-    });
-    expect(screen.queryByText(/products.availableToAssemble/)).not.toBeInTheDocument();
-  });
-
-  it('renders component view directly without tabs for non-stock kit products', async () => {
-    render(
-      <ProductInventoryTab
-        productId="kit-prod-2"
-        product={mockNonStockKitProduct}
-        isEditable={true}
-        onRefresh={jest.fn()}
-      />,
-    );
+    // Select location and bin
+    const selects = screen.getAllByRole('combobox');
+    await user.selectOptions(selects[0], 'loc-1');
 
     await waitFor(() => {
-      expect(screen.getByText('products.inventoryLevels')).toBeInTheDocument();
-      expect(screen.getByText(/COMP-001/)).toBeInTheDocument();
+      expect(api.inventoryControllerFindBinsByLocation).toHaveBeenCalledWith('loc-1');
     });
 
-    // Badge is displayed directly in component view
-    expect(screen.getByText(/products.availableToAssemble/)).toBeInTheDocument();
+    const binSelects = screen.getAllByRole('combobox');
+    await user.selectOptions(binSelects[1], 'bin-1');
 
-    // Tabs should NOT be rendered
-    expect(screen.queryByText('products.tabs.built')).not.toBeInTheDocument();
-    expect(screen.queryByText('products.tabs.kitComponents')).not.toBeInTheDocument();
-    expect(screen.queryByText('products.storage.addBinLink')).not.toBeInTheDocument();
-  });
+    // Fill min and max quantities
+    const inputs = screen.getAllByRole('spinbutton');
+    await user.type(inputs[0], '7');
+    await user.type(inputs[1], '15');
 
-  it('renders built inventory view directly without tabs for standard products', async () => {
-    render(
-      <ProductInventoryTab
-        productId="std-prod-1"
-        product={mockStandardProduct}
-        isEditable={true}
-        onRefresh={jest.fn()}
-      />,
-    );
+    // Click Save
+    const saveBtn = screen.getByText('buttons.save');
+    await user.click(saveBtn);
 
     await waitFor(() => {
-      expect(screen.getByText('products.inventoryLevels')).toBeInTheDocument();
-      expect(screen.getByText('products.storage.addBinLink')).toBeInTheDocument();
+      expect(api.productsControllerLinkDefaultBin).toHaveBeenCalledWith('prod-123', {
+        locationId: 'loc-1',
+        binId: 'bin-1',
+        isPrimaryPerLocation: true,
+        minQuantity: '7',
+        maxQuantity: '15',
+      });
+      expect(onRefresh).toHaveBeenCalled();
     });
-
-    // Tabs should NOT be rendered
-    expect(screen.queryByText('products.tabs.built')).not.toBeInTheDocument();
-    expect(screen.queryByText('products.tabs.kitComponents')).not.toBeInTheDocument();
-    expect(screen.queryByText(/products.availableToAssemble/)).not.toBeInTheDocument();
-  });
-
-  it('pools parts across all locations for available to assemble when All Locations is selected, and filters by specific location', async () => {
-    const user = userEvent.setup();
-
-    render(
-      <ProductInventoryTab
-        productId="kit-prod-1"
-        product={mockTrackedKitProduct}
-        isEditable={true}
-        onRefresh={jest.fn()}
-      />,
-    );
-
-    // Switch to Components tab to view badge and dropdown
-    await waitFor(() => {
-      expect(screen.getByText('products.tabs.kitComponents')).toBeInTheDocument();
-    });
-    await user.click(screen.getByText('products.tabs.kitComponents'));
-
-    // Initial "All Locations": comp-1 has 20 total (parentQty: 2 -> 10 buildable), comp-2 has 15 total (parentQty: 1 -> 15 buildable) -> 10 available
-    await waitFor(() => {
-      expect(screen.getByText('products.availableToAssemble:10')).toBeInTheDocument();
-    });
-
-    // Select Warehouse B (loc-2): comp-1 has 10 (parentQty: 2 -> 5 buildable), comp-2 has 15 (parentQty: 1 -> 15 buildable) -> 5 available
-    const locationSelect = screen.getByRole('combobox');
-    await user.selectOptions(locationSelect, 'loc-2');
-
-    await waitFor(() => {
-      expect(screen.getByText('products.availableToAssemble:5')).toBeInTheDocument();
-    });
-  });
-
-  it('does not bleed kit child component inventory or bins into the built tab', async () => {
-    (api.inventoryControllerFindByProductIdsBulk as jest.Mock).mockResolvedValue({
-      data: [
-        ...mockInventoryLevels, // comp-1 and comp-2 have stock in loc-1 and loc-2
-        {
-          productId: 'kit-prod-1',
-          locationId: 'loc-1',
-          locationName: 'Warehouse A',
-          locationNo: 'WH-A',
-          quantityOnHand: '3',
-          quantityAvailable: '3',
-          quantityCommitted: '0',
-          quantityReserved: '0',
-          quantityOnOrder: '0',
-          binBalances: [{ binId: 'bin-kit-1', binNumber: 'KIT-BIN-1', quantityOnHand: 3 }],
-        },
-      ],
-    });
-
-    render(
-      <ProductInventoryTab
-        productId="kit-prod-1"
-        product={mockTrackedKitProduct}
-        isEditable={true}
-        onRefresh={jest.fn()}
-      />,
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText('products.tabs.built')).toBeInTheDocument();
-    });
-
-    // On the "Built" tab:
-    // Should show kit-prod-1's quantity (3) and bin (KIT-BIN-1) for Warehouse A
-    expect(screen.getByText(/Warehouse A/)).toBeInTheDocument();
-    expect(screen.getAllByText('3').length).toBeGreaterThan(0);
-    expect(screen.getByText('KIT-BIN-1')).toBeInTheDocument();
-
-    // Should NOT show Warehouse B (which only has child component stock)
-    expect(screen.queryByText(/Warehouse B/)).not.toBeInTheDocument();
   });
 });

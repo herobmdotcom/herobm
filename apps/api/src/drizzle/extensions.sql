@@ -23,9 +23,10 @@ SELECT
         JOIN herobm_core.zones z ON z.zone_id = b.zone_id
         WHERE bc.product_id = p.product_id
           AND z.location_id = l.location_id
-          AND b.bin_type NOT IN ('staging', 'quarantine')
+          AND b.bin_type IN ('storage', 'pick', 'bulk')
           AND COALESCE(b.is_unavailable, false) = false
           AND COALESCE(b.is_bonded, false) = false
+          AND COALESCE(b.is_consignment, false) = false
     ), 0) AS quantity_on_hand,
     COALESCE((
         -- Committed: Backorders marked 'received_reserved' AND any confirmed sales orders that haven't been picked.
@@ -104,7 +105,8 @@ BEGIN
         ('RECEIVING', handling_zone_id, 'staging', 'system', true, 'system'),
         ('CUSTOMER_RETURNS', handling_zone_id, 'staging', 'system', true, 'system'),
         ('SUPPLIER_RETURNS', handling_zone_id, 'staging', 'system', true, 'system'),
-        ('INTRA_TRANSIT', handling_zone_id, 'in_transit', 'system', true, 'system');
+        ('INTRA_TRANSIT', handling_zone_id, 'in_transit', 'system', true, 'system'),
+        ('QUARANTINE', handling_zone_id, 'quarantine', 'system', true, 'system');
 
     RETURN NEW;
 END;
@@ -552,6 +554,7 @@ SELECT ptype, v0, v1, v2, v3 FROM (
     ('p', 'viewer', 'receptions', 'read', 'allow'),
     ('p', 'viewer', 'goods-received', 'read', 'allow'),
     ('p', 'viewer', 'work-orders', 'read', 'allow'),
+    ('p', 'viewer', 'projects', 'read', 'allow'),
     ('p', 'viewer', 'crm', 'read', 'allow'),
     ('p', 'viewer', 'dashboard', 'read', 'allow'),
     ('p', 'viewer', 'tax-categories', 'read', 'allow'),
@@ -598,6 +601,10 @@ SELECT ptype, v0, v1, v2, v3 FROM (
     ('p', 'admin', 'work-orders', 'write', 'allow'),
     ('p', 'admin', 'work-orders', 'archive', 'allow'),
     ('p', 'admin', 'work-orders', 'handle', 'allow'),
+    ('p', 'admin', 'projects', 'read', 'allow'),
+    ('p', 'admin', 'projects', 'write', 'allow'),
+    ('p', 'admin', 'projects', 'archive', 'allow'),
+    ('p', 'admin', 'projects', 'handle', 'allow'),
     ('p', 'admin', 'purchase-returns', 'read', 'allow'),
     ('p', 'admin', 'purchase-returns', 'write', 'allow'),
     ('p', 'admin', 'purchase-returns', 'archive', 'allow'),

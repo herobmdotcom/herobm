@@ -1,6 +1,6 @@
 {
   "name": "herobm",
-  "version": "1.1.5",
+  "version": "1.2.0",
   "description": "HeroBM: Modern, Real-Time Business Management & Operations Platform",
   "private": true,
   "author": "Norbe Systems <support@herobm.com>",
@@ -27,6 +27,7 @@
     "lint": "npm run lint -w apps/api -w apps/ops-portal -w packages/db-schema -w packages/shared -w packages/sdk && node scripts/run-on-enabled-extensions.mjs lint",
     "knip": "knip",
     "knip-report": "knip --reporter markdown > knip-report.md",
+    "test:structural": "tsx infra/test-utils/run-structural.ts && knip",
     "turbo:verify": "turbo run verify-fast",
     "turbo:test": "turbo run test:unit",
     "turbo:check": "turbo run typecheck lint"

@@ -68,6 +68,7 @@ describe('DashboardService', () => {
       .values({
         uomCode: 'EA',
         description: 'Each',
+        category: 'goods',
       })
       .onConflictDoNothing();
 

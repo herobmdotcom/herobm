@@ -1,0 +1,23 @@
+{
+  "addAddress": "Add Delivery Address",
+  "addressLine1": "Address Line 1 *",
+  "addressLine2": "Address Line 2",
+  "addressName": "Address Name",
+  "addressNamePlaceholder": "e.g. Headquarters",
+  "city": "City",
+  "companyName": "Company Name",
+  "contactPerson": "Contact Person",
+  "contactPersonPlaceholder": "Attention to",
+  "contactPhone": "Contact Phone",
+  "contactPhonePlaceholder": "Phone number",
+  "country": "Country *",
+  "createdSuccess": "Address created",
+  "editAddress": "Edit Delivery Address",
+  "postalCode": "Postal Code",
+  "requiredError": "Address Line 1 and Country are required",
+  "saveToCustomerRecord": "Save to customer record",
+  "selectCountry": "Select Country",
+  "setAsPrimary": "Set as primary delivery address",
+  "stateOrProvince": "State / Province",
+  "updatedSuccess": "Address updated"
+}

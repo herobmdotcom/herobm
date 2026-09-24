@@ -204,8 +204,8 @@ if [ "$(uname -s)" = "Linux" ]; then
 elif [ "$(uname -s)" = "Darwin" ] && command -v podman >/dev/null 2>&1; then
     MACHINE_LIST=$(podman machine list --format "{{.Name}}" 2>/dev/null || true)
     if [ -z "$MACHINE_LIST" ]; then
-        echo -e "  \033[33mNo Podman machine found. Initialising...\033[0m"
-        podman machine init --now || true
+        echo -e "  \033[33mNo Podman machine found. Initialising with 4GB RAM...\033[0m"
+        podman machine init --cpus 4 --memory 4096 --now || true
     else
         echo -e "  \033[32m[OK]\033[0m Podman machine exists: $MACHINE_LIST"
         echo -e "  Ensuring Podman machine is running..."

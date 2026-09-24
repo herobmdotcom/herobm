@@ -12,6 +12,7 @@ import {
   users,
   salesOrders,
   salesOrderLineItems,
+  projects,
   masterDataEvents,
 } from '@herobm/db-schema';
 
@@ -61,6 +62,7 @@ export class OpportunitiesService {
         probability: dto.probability,
         actualValue: dto.actualValue,
         description: dto.description,
+        metadata: dto.metadata ?? {},
       })
       .returning();
 
@@ -77,7 +79,18 @@ export class OpportunitiesService {
       actor: userId,
     });
 
-    return this.mapResponse(newOpportunity);
+    if (dto.organizationId) {
+      await this.db.insert(opportunityOrganizations).values({
+        opportunityId: newOpportunity.opportunityId,
+        organizationId: dto.organizationId,
+        roles: ['Customer'],
+      });
+    }
+
+    return this.mapResponse({
+      ...newOpportunity,
+      organizationId: dto.organizationId ?? null,
+    });
   }
 
   async updateOpportunity(
@@ -106,6 +119,7 @@ export class OpportunitiesService {
       updateValues.actualValue = dto.actualValue;
     if (dto.description !== undefined)
       updateValues.description = dto.description;
+    if (dto.metadata !== undefined) updateValues.metadata = dto.metadata;
 
     const [updatedOpportunity] = await this.db
       .update(opportunities)
@@ -115,6 +129,40 @@ export class OpportunitiesService {
 
     if (!updatedOpportunity) {
       throw new NotFoundException(`Opportunity with ID ${id} not found`);
+    }
+
+    if (dto.organizationId !== undefined) {
+      const existing = await this.db.query.opportunityOrganizations.findFirst({
+        where: eq(opportunityOrganizations.opportunityId, id),
+      });
+      if (dto.organizationId) {
+        if (existing) {
+          await this.db
+            .update(opportunityOrganizations)
+            .set({ organizationId: dto.organizationId })
+            .where(
+              eq(
+                opportunityOrganizations.opportunityOrganizationId,
+                existing.opportunityOrganizationId,
+              ),
+            );
+        } else {
+          await this.db.insert(opportunityOrganizations).values({
+            opportunityId: id,
+            organizationId: dto.organizationId,
+            roles: ['Customer'],
+          });
+        }
+      } else if (existing) {
+        await this.db
+          .delete(opportunityOrganizations)
+          .where(
+            eq(
+              opportunityOrganizations.opportunityOrganizationId,
+              existing.opportunityOrganizationId,
+            ),
+          );
+      }
     }
 
     await emitEvent(this.db, {
@@ -130,7 +178,12 @@ export class OpportunitiesService {
       actor: userId,
     });
 
-    return this.mapResponse(updatedOpportunity);
+    return this.mapResponse({
+      ...updatedOpportunity,
+      ...(dto.organizationId !== undefined
+        ? { organizationId: dto.organizationId || null }
+        : {}),
+    });
   }
 
   async archiveOpportunity(
@@ -205,7 +258,11 @@ export class OpportunitiesService {
         },
         opportunityOrganizations: {
           with: {
-            organization: true,
+            organization: {
+              with: {
+                customers: true,
+              },
+            },
           },
         },
         opportunityContacts: {
@@ -240,6 +297,18 @@ export class OpportunitiesService {
         ),
       );
 
+    const [projectCountRes] = await this.db
+      .select({
+        projectCount: sql<number>`COUNT(DISTINCT ${projects.projectId})::int`,
+      })
+      .from(projects)
+      .where(
+        and(
+          eq(projects.opportunityId, id),
+          sql`${projects.stateCode} != 'cancelled'`,
+        ),
+      );
+
     const events = await this.db
       .select()
       .from(masterDataEvents)
@@ -253,6 +322,7 @@ export class OpportunitiesService {
       events,
       dealRevenue: revenueRes?.dealRevenue ?? 0,
       quoteCount: revenueRes?.quoteCount ?? 0,
+      projectCount: projectCountRes?.projectCount ?? 0,
     });
   }
 
@@ -786,7 +856,11 @@ export class OpportunitiesService {
     const linkedOrgs = await this.db.query.opportunityOrganizations.findMany({
       where: inArray(opportunityOrganizations.opportunityId, oppIds),
       with: {
-        organization: true,
+        organization: {
+          with: {
+            customers: true,
+          },
+        },
       },
     });
 
@@ -849,6 +923,27 @@ export class OpportunitiesService {
       }
     }
 
+    const projectRows = await this.db
+      .select({
+        opportunityId: projects.opportunityId,
+        projectCount: sql<number>`COUNT(DISTINCT ${projects.projectId})::int`,
+      })
+      .from(projects)
+      .where(
+        and(
+          inArray(projects.opportunityId, oppIds),
+          sql`${projects.stateCode} != 'cancelled'`,
+        ),
+      )
+      .groupBy(projects.opportunityId);
+
+    const projectsByOpp = new Map<string, number>();
+    for (const p of projectRows) {
+      if (p.opportunityId) {
+        projectsByOpp.set(p.opportunityId, Number(p.projectCount || 0));
+      }
+    }
+
     return items.map((item) => ({
       ...item,
       opportunityOrganizations: orgsByOpp.get(item.opportunityId) || [],
@@ -856,6 +951,7 @@ export class OpportunitiesService {
       owner: item.ownerId ? ownersById.get(item.ownerId) : null,
       dealRevenue: revenueByOpp.get(item.opportunityId)?.dealRevenue ?? 0,
       quoteCount: revenueByOpp.get(item.opportunityId)?.quoteCount ?? 0,
+      projectCount: projectsByOpp.get(item.opportunityId) ?? 0,
     }));
   }
 
@@ -868,6 +964,30 @@ export class OpportunitiesService {
   }
 
   private mapResponse(item: Record<string, unknown>): OpportunityResponseDto {
-    return item as unknown as OpportunityResponseDto;
+    const orgs = (item.opportunityOrganizations || item.opportunityActors) as
+      | Array<{
+          organizationId?: string;
+          organization?: {
+            organizationId?: string;
+            customers?: Array<{ customerId?: string }>;
+          };
+        }>
+      | undefined;
+    const primaryOrg = orgs?.[0];
+    const organizationId =
+      (item.organizationId as string | undefined) ??
+      primaryOrg?.organizationId ??
+      primaryOrg?.organization?.organizationId ??
+      null;
+    const customerId =
+      (item.customerId as string | undefined) ??
+      primaryOrg?.organization?.customers?.[0]?.customerId ??
+      null;
+
+    return {
+      ...item,
+      organizationId,
+      customerId,
+    } as unknown as OpportunityResponseDto;
   }
 }

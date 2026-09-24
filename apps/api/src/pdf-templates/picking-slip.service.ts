@@ -18,6 +18,7 @@ import {
   transferOrderLines,
   transferOrderPicks,
   organizations,
+  projects,
 } from '@herobm/db-schema';
 import {
   SALES_ORDER_PICK_STATE,
@@ -213,6 +214,8 @@ export class PickingSlipService {
         customerOrderNumber: sql<string>`''`,
         createdOn: transferOrders.createdOn,
         locationName: sql<string>`src.name`,
+        projectId: transferOrders.projectId,
+        isProjectReturn: transferOrders.isProjectReturn,
       })
       .from(transferOrders)
       .leftJoin(
@@ -266,7 +269,39 @@ export class PickingSlipService {
         ),
       );
 
-    return this.computePickingSlipData(order, lines, picks);
+    let overrideBinMap:
+      | Map<string, { binId: string; binNumber: string }>
+      | undefined;
+    if (orderRows[0].projectId && orderRows[0].isProjectReturn) {
+      const [proj] = await this.db
+        .select({
+          stagingBinId: projects.stagingBinId,
+          binNumber: bins.binNumber,
+          zoneCode: zones.code,
+        })
+        .from(projects)
+        .leftJoin(bins, eq(projects.stagingBinId, bins.binId))
+        .leftJoin(zones, eq(bins.zoneId, zones.zoneId))
+        .where(eq(projects.projectId, orderRows[0].projectId))
+        .limit(1);
+
+      if (proj?.stagingBinId) {
+        overrideBinMap = new Map();
+        const binNumber = proj.zoneCode
+          ? `${proj.zoneCode}.${proj.binNumber}`
+          : proj.binNumber || 'STAGING';
+        for (const line of lines) {
+          if (line.productId) {
+            overrideBinMap.set(line.productId, {
+              binId: proj.stagingBinId,
+              binNumber,
+            });
+          }
+        }
+      }
+    }
+
+    return this.computePickingSlipData(order, lines, picks, overrideBinMap);
   }
 
   /**
@@ -276,6 +311,7 @@ export class PickingSlipService {
     header: RawOrderHeader,
     lines: RawLine[],
     picks: RawPick[],
+    overrideBinMap?: Map<string, { binId: string; binNumber: string }>,
   ): Promise<PickingSlipData> {
     const productIds = lines
       .map((l) => l.productId)
@@ -284,8 +320,10 @@ export class PickingSlipService {
     const lineIds = lines.map((l) => l.lineId);
 
     // 1. Resolve Bins
-    const binMap = new Map<string, { binId: string; binNumber: string }>();
-    if (productIds.length > 0) {
+    const binMap = new Map<string, { binId: string; binNumber: string }>(
+      overrideBinMap || [],
+    );
+    if (binMap.size === 0 && productIds.length > 0) {
       const binRows = await this.db
         .select({
           productId: binContents.productId,

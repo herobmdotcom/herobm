@@ -8,9 +8,13 @@
 import type { CrmMapOrganizationNodeDto } from './crmMapOrganizationNodeDto';
 import type { CrmMapContactNodeDto } from './crmMapContactNodeDto';
 import type { CrmMapOpportunityNodeDto } from './crmMapOpportunityNodeDto';
+import type { CrmMapSalesOrderNodeDto } from './crmMapSalesOrderNodeDto';
+import type { CrmMapProjectNodeDto } from './crmMapProjectNodeDto';
 
 export interface CrmMapNodesDto {
   organizations: CrmMapOrganizationNodeDto[];
   contacts: CrmMapContactNodeDto[];
   opportunities: CrmMapOpportunityNodeDto[];
+  salesOrders: CrmMapSalesOrderNodeDto[];
+  projects: CrmMapProjectNodeDto[];
 }

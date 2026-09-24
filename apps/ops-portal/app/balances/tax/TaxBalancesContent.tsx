@@ -1,15 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import useSWR from 'swr';
 import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
-import EntityHeader from '@/components/shared/EntityHeader';
-import DetailsLayout from '@/components/shared/DetailsLayout';
 import { Button } from '@/components/shared/Button';
 import { toast } from 'react-hot-toast';
 import { usePersistedSetting } from '@/hooks/usePersistedSetting';
 import { formatAmount } from '@/lib/currency';
+import { useTranslations } from 'next-intl';
+import {
+  FinancialTable,
+  FinancialTableColumn,
+  FinancialTableTotalRow,
+  FinancialReportMetadata,
+  FinancialTableHandle,
+} from '@/components/shared/FinancialTable';
+import { FinancialReportLayout } from '@/components/shared/FinancialReportLayout';
+import { FinancialExportMenu } from '@/components/shared/FinancialExportMenu';
+import { useFinancialReportPeriod } from '@/hooks/useFinancialReportPeriod';
 
 const REPORT_TEMPLATES = [
   { id: 'generic', name: 'Generic Tax Summary (Global)' },
@@ -51,26 +60,32 @@ function getNetStatusBadgeClass(status?: string): string {
 }
 
 export default function TaxBalancesContent() {
+  const tCommon = useTranslations('common');
+  const tableRef = useRef<FinancialTableHandle>(null);
+
   const [reportType, setReportType, reportTypeReady] = usePersistedSetting(
     'tax-balances-report-type',
     'generic',
   );
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Date selection
-  const [fromDate, setFromDate] = useState<string>('');
-  const [toDate, setToDate] = useState<string>('');
+  const periodState = useFinancialReportPeriod({
+    defaultMode: 'custom_range',
+    supportedModes: ['fiscal_period', 'custom_range'],
+  });
+
+  const { mode, startDate, endDate, selectedPeriod } = periodState;
 
   const activeReportType = (reportTypeReady ? reportType : 'generic') as api.TaxReportsControllerGetTaxReportReportType;
 
   const { data: reportData, isLoading, mutate } = useSWR(
-    ['tax-report-summary', activeReportType, fromDate, toDate],
+    ['tax-report-summary', activeReportType, startDate, endDate],
     async () => {
       const params: api.TaxReportsControllerGetTaxReportParams = {
         reportType: activeReportType,
       };
-      if (fromDate) params.fromDate = fromDate;
-      if (toDate) params.toDate = toDate;
+      if (startDate) params.fromDate = startDate;
+      if (endDate) params.toDate = endDate;
       const response = await api.taxReportsControllerGetTaxReport(params);
       return response.data;
     },
@@ -95,82 +110,244 @@ export default function TaxBalancesContent() {
   const isGenericView = activeReportType === 'generic';
 
   // Calculate table column totals for the generic schedule
-  const totals = generic
-    ? {
-        salesBase: generic.categories.reduce((s, c) => s + (c.salesBase || 0), 0),
+  const totals: FinancialTableTotalRow = useMemo(() => {
+    if (!generic) {
+      return {
+        label: 'Total',
+        colSpanLabel: 3,
+        values: {},
+      };
+    }
+    const totalSalesBase = generic.categories.reduce((s, c) => s + (c.salesBase || 0), 0);
+    const totalPurchaseBase = generic.categories.reduce((s, c) => s + (c.purchaseBase || 0), 0);
+
+    return {
+      label: 'Total',
+      colSpanLabel: 3,
+      values: {
+        salesBase: formatAmount(totalSalesBase, currency),
+        outputTax: formatAmount(generic.totalOutputTax, currency),
+        purchaseBase: formatAmount(totalPurchaseBase, currency),
+        inputTax: formatAmount(generic.totalInputTax, currency),
+        netTax: formatAmount(generic.netTaxLiability, currency),
+      },
+      exportValues: {
+        salesBase: totalSalesBase,
         outputTax: generic.totalOutputTax,
-        purchaseBase: generic.categories.reduce((s, c) => s + (c.purchaseBase || 0), 0),
+        purchaseBase: totalPurchaseBase,
         inputTax: generic.totalInputTax,
         netTax: generic.netTaxLiability,
-      }
-    : { salesBase: 0, outputTax: 0, purchaseBase: 0, inputTax: 0, netTax: 0 };
+      },
+    };
+  }, [generic, currency]);
 
-  const headerActions = (
-    <div className="flex flex-wrap items-center gap-2.5">
-      <select
-        value={activeReportType}
-        onChange={(e) => setReportType(e.target.value)}
-        className="text-sm px-3 py-1.5 rounded-lg border outline-none transition-all bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-primary)] font-medium"
-      >
-        {REPORT_TEMPLATES.map((tmpl) => (
-          <option key={tmpl.id} value={tmpl.id}>
-            {tmpl.name}
-          </option>
-        ))}
-      </select>
+  const genericColumns: FinancialTableColumn<api.TaxCategoryBreakdownDto>[] = useMemo(
+    () => [
+      {
+        id: 'title',
+        header: 'Tax Category',
+        headerExportName: 'Tax Category',
+        accessor: 'title',
+        className: 'font-medium text-[var(--text-primary)]',
+        exportValue: (r) => r.title,
+      },
+      {
+        id: 'code',
+        header: 'Code',
+        headerExportName: 'Code',
+        accessor: 'code',
+        className: 'font-mono text-xs text-[var(--text-secondary)]',
+        exportValue: (r) => r.code,
+      },
+      {
+        id: 'rate',
+        header: 'Rate',
+        headerExportName: 'Rate',
+        isNumeric: true,
+        render: (r) => (
+          <span className="font-mono text-xs text-[var(--text-muted)]">
+            {getTaxRateDisplay(r.rate)}
+          </span>
+        ),
+        exportValue: (r) => (r.rate !== null && r.rate !== undefined ? `${r.rate}%` : '0%'),
+      },
+      {
+        id: 'salesBase',
+        header: 'Sales Base',
+        headerExportName: 'Sales Base',
+        isNumeric: true,
+        render: (r) => (
+          <span className="font-mono text-xs text-[var(--text-primary)]">
+            {formatAmount(r.salesBase, currency)}
+          </span>
+        ),
+        exportValue: (r) => r.salesBase ?? 0,
+      },
+      {
+        id: 'outputTax',
+        header: 'Output Tax',
+        headerExportName: 'Output Tax',
+        isNumeric: true,
+        render: (r) => (
+          <span className="font-mono text-xs font-semibold text-[var(--text-primary)]">
+            {formatAmount(r.outputTax, currency)}
+          </span>
+        ),
+        exportValue: (r) => r.outputTax ?? 0,
+      },
+      {
+        id: 'purchaseBase',
+        header: 'Purchases Base',
+        headerExportName: 'Purchases Base',
+        isNumeric: true,
+        render: (r) => (
+          <span className="font-mono text-xs text-[var(--text-primary)]">
+            {formatAmount(r.purchaseBase, currency)}
+          </span>
+        ),
+        exportValue: (r) => r.purchaseBase ?? 0,
+      },
+      {
+        id: 'inputTax',
+        header: 'Input Tax',
+        headerExportName: 'Input Tax',
+        isNumeric: true,
+        render: (r) => (
+          <span className="font-mono text-xs font-semibold text-[var(--text-primary)]">
+            {formatAmount(r.inputTax, currency)}
+          </span>
+        ),
+        exportValue: (r) => r.inputTax ?? 0,
+      },
+      {
+        id: 'netTax',
+        header: 'Net Tax',
+        headerExportName: 'Net Tax',
+        isNumeric: true,
+        render: (r) => (
+          <span className="font-mono text-xs font-bold text-[var(--text-primary)]">
+            {formatAmount(r.netTax, currency)}
+          </span>
+        ),
+        exportValue: (r) => r.netTax ?? 0,
+      },
+    ],
+    [currency],
+  );
 
-      <div className="flex items-center gap-1.5">
-        <label className="text-xs font-medium text-[var(--text-muted)] whitespace-nowrap">
-          From
-        </label>
-        <input
-          type="date"
-          value={fromDate}
-          onChange={(e) => setFromDate(e.target.value)}
-          className="text-sm px-2.5 py-1.5 rounded-lg border outline-none transition-all bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-primary)]"
-        />
-      </div>
+  const boxColumns: FinancialTableColumn<api.TaxReportBoxDto>[] = useMemo(
+    () => [
+      {
+        id: 'code',
+        header: 'Box / Line',
+        headerExportName: 'Box / Line',
+        width: '120px',
+        className: 'font-mono font-bold text-xs text-[var(--text-primary)]',
+        render: (r) => r.code || r.id,
+        exportValue: (r) => r.code || r.id,
+      },
+      {
+        id: 'description',
+        header: 'Description',
+        headerExportName: 'Description',
+        accessor: 'description',
+        className: 'text-[var(--text-secondary)]',
+        exportValue: (r) => r.description,
+      },
+      {
+        id: 'section',
+        header: 'Section',
+        headerExportName: 'Section',
+        width: '140px',
+        render: (r) =>
+          r.section ? (
+            <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded font-semibold bg-[var(--bg-secondary)] text-[var(--text-muted)] border border-[var(--border)]">
+              {r.section}
+            </span>
+          ) : null,
+        exportValue: (r) => r.section || '',
+      },
+      {
+        id: 'amount',
+        header: 'Amount (Copy)',
+        headerExportName: 'Amount',
+        width: '160px',
+        isNumeric: true,
+        render: (r) => (
+          <Button
+            variant="ghost"
+            size="sm"
+            type="button"
+            onClick={() => handleCopy(r.id, r.amount)}
+            className="font-mono text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)] hover:bg-[var(--bg-card)] border border-[var(--border)] px-3 py-1 rounded transition-all cursor-pointer"
+            title="Click to copy amount"
+          >
+            {getCopyButtonLabel(copiedId === r.id, r.amount)}
+          </Button>
+        ),
+        exportValue: (r) => r.amount ?? 0,
+      },
+    ],
+    [copiedId],
+  );
 
-      <div className="flex items-center gap-1.5">
-        <label className="text-xs font-medium text-[var(--text-muted)] whitespace-nowrap">
-          To
-        </label>
-        <input
-          type="date"
-          value={toDate}
-          onChange={(e) => setToDate(e.target.value)}
-          className="text-sm px-2.5 py-1.5 rounded-lg border outline-none transition-all bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-primary)]"
-        />
-      </div>
-
-      <Button
-        variant="secondary"
-        size="sm"
-        onClick={() => mutate()}
-        className="!py-1.5 !text-xs whitespace-nowrap"
-      >
-        Refresh
-      </Button>
-    </div>
+  const reportMetadata: FinancialReportMetadata = useMemo(
+    () => ({
+      title: reportData?.title || 'Tax Balances',
+      subtitle: periodState.formattedSubtitle,
+      period: mode === 'fiscal_period' ? selectedPeriod?.periodName : undefined,
+      currency,
+      extra: generic
+        ? {
+            'Total Output Tax (Sales)': formatAmount(generic.totalOutputTax, currency),
+            'Total Input Tax (Purchases)': formatAmount(generic.totalInputTax, currency),
+            'Net Tax Liability': formatAmount(generic.netTaxLiability, currency),
+            'Net Position Status': getNetStatusLabel(generic.netStatus as unknown as string),
+            'Total Turnover (Net Sales)': formatAmount(generic.totalNetSales, currency),
+            'Total Purchases Base': formatAmount(generic.totalNetPurchases, currency),
+          }
+        : undefined,
+    }),
+    [reportData?.title, periodState.formattedSubtitle, mode, selectedPeriod, currency, generic],
   );
 
   return (
-    <DetailsLayout
-      showPrint={true}
-      header={
-        <EntityHeader
-          title={reportData?.title || 'Tax Balances'}
-          subtitle={
-            reportData?.subtitle ||
-            'Tax Liability & Statutory Reporting'
-          }
-          actions={headerActions}
-        />
+    <FinancialReportLayout
+      title={reportData?.title || 'Tax Balances'}
+      periodState={periodState}
+      supportedModes={['fiscal_period', 'custom_range']}
+      extraControls={
+        <select
+          value={activeReportType}
+          onChange={(e) => setReportType(e.target.value)}
+          className="text-sm px-3 py-1.5 rounded-lg border outline-none transition-all bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-primary)] font-medium"
+        >
+          {REPORT_TEMPLATES.map((tmpl) => (
+            <option key={tmpl.id} value={tmpl.id}>
+              {tmpl.name}
+            </option>
+          ))}
+        </select>
       }
-    >
-      <div className="flex flex-col gap-6">
-        {/* ── Executive Summary Bar (Standard accounting KPI banner) ── */}
-        {generic && (
+      actions={
+        <>
+          <FinancialExportMenu
+            onExportCsv={() => tableRef.current?.exportCsv()}
+            onExportExcel={() => tableRef.current?.exportExcel()}
+          />
+
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => mutate()}
+            className="!py-1.5 !text-xs whitespace-nowrap"
+          >
+            {tCommon('reporting.refresh')}
+          </Button>
+        </>
+      }
+      banner={
+        generic && (
           <div className="p-4 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] flex flex-wrap items-center justify-between gap-6 shadow-xs">
             <div className="flex flex-wrap items-center gap-8">
               {/* Output Tax */}
@@ -203,11 +380,19 @@ export default function TaxBalancesContent() {
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                     Net Position
                   </span>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider ${getNetStatusBadgeClass(generic.netStatus as unknown as string)}`}>
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider ${getNetStatusBadgeClass(
+                      generic.netStatus as unknown as string,
+                    )}`}
+                  >
                     {getNetStatusLabel(generic.netStatus as unknown as string)}
                   </span>
                 </div>
-                <span className={`text-lg font-bold font-mono mt-0.5 ${getNetPositionTextClass(generic.netTaxLiability)}`}>
+                <span
+                  className={`text-lg font-bold font-mono mt-0.5 ${getNetPositionTextClass(
+                    generic.netTaxLiability,
+                  )}`}
+                >
                   {formatAmount(Math.abs(generic.netTaxLiability), currency)}
                 </span>
               </div>
@@ -233,184 +418,44 @@ export default function TaxBalancesContent() {
               </div>
             </div>
           </div>
-        )}
-
-        {/* ── Main Content Body ── */}
-        {isLoading && !reportData ? (
-          <div className="card p-12 text-center text-sm text-[var(--text-muted)] animate-pulse">
-            Loading tax report data...
-          </div>
-        ) : isGenericView && generic ? (
-          /* ── Generic View: Clean Standard Tax Category Schedule ── */
-          <div className="card overflow-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="border-b border-[var(--border)] bg-[var(--bg-secondary)]">
-                  <th className="text-left px-4 py-3 font-semibold text-[var(--text-secondary)] text-[11px] uppercase tracking-wider">
-                    Tax Category
-                  </th>
-                  <th className="text-left px-4 py-3 font-semibold text-[var(--text-secondary)] text-[11px] uppercase tracking-wider">
-                    Code
-                  </th>
-                  <th className="text-right px-4 py-3 font-semibold text-[var(--text-secondary)] text-[11px] uppercase tracking-wider">
-                    Rate
-                  </th>
-                  <th className="text-right px-4 py-3 font-semibold text-[var(--text-secondary)] text-[11px] uppercase tracking-wider">
-                    Sales Base
-                  </th>
-                  <th className="text-right px-4 py-3 font-semibold text-[var(--text-secondary)] text-[11px] uppercase tracking-wider">
-                    Output Tax
-                  </th>
-                  <th className="text-right px-4 py-3 font-semibold text-[var(--text-secondary)] text-[11px] uppercase tracking-wider">
-                    Purchases Base
-                  </th>
-                  <th className="text-right px-4 py-3 font-semibold text-[var(--text-secondary)] text-[11px] uppercase tracking-wider">
-                    Input Tax
-                  </th>
-                  <th className="text-right px-4 py-3 font-semibold text-[var(--text-secondary)] text-[11px] uppercase tracking-wider">
-                    Net Tax
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {generic.categories.map((cat) => (
-                  <tr
-                    key={cat.taxCategoryId}
-                    className="border-b border-[var(--border)] hover:bg-[var(--bg-secondary)] transition-colors"
-                  >
-                    <td className="px-4 py-2.5 font-medium text-[var(--text-primary)]">
-                      {cat.title}
-                    </td>
-                    <td className="px-4 py-2.5 font-mono text-xs text-[var(--text-secondary)]">
-                      {cat.code}
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-mono text-xs text-[var(--text-muted)]">
-                      {getTaxRateDisplay(cat.rate)}
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-mono text-xs text-[var(--text-primary)]">
-                      {formatAmount(cat.salesBase, currency)}
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-mono text-xs font-semibold text-[var(--text-primary)]">
-                      {formatAmount(cat.outputTax, currency)}
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-mono text-xs text-[var(--text-primary)]">
-                      {formatAmount(cat.purchaseBase, currency)}
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-mono text-xs font-semibold text-[var(--text-primary)]">
-                      {formatAmount(cat.inputTax, currency)}
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-mono text-xs font-bold text-[var(--text-primary)]">
-                      {formatAmount(cat.netTax, currency)}
-                    </td>
-                  </tr>
-                ))}
-                {generic.categories.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={8}
-                      className="px-4 py-8 text-center text-[var(--text-muted)]"
-                    >
-                      No tax category data recorded for this period.
-                    </td>
-                  </tr>
-                )}
-                {/* Standard Totals Row */}
-                {generic.categories.length > 0 && (
-                  <tr className="border-t-2 border-[var(--border)] bg-[var(--bg-secondary)]">
-                    <td
-                      colSpan={3}
-                      className="px-4 py-3 font-bold text-xs uppercase tracking-wider text-[var(--text-secondary)]"
-                    >
-                      Total
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-xs font-bold text-[var(--text-primary)]">
-                      {formatAmount(totals.salesBase, currency)}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-xs font-bold text-[var(--text-primary)]">
-                      {formatAmount(totals.outputTax, currency)}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-xs font-bold text-[var(--text-primary)]">
-                      {formatAmount(totals.purchaseBase, currency)}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-xs font-bold text-[var(--text-primary)]">
-                      {formatAmount(totals.inputTax, currency)}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-xs font-bold text-[var(--text-primary)]">
-                      {formatAmount(totals.netTax, currency)}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        ) : !isGenericView && reportData?.boxes ? (
-          /* ── Country Statutory View: Clean Box Schedule with 1-Click Copy ── */
-          <div className="card overflow-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="border-b border-[var(--border)] bg-[var(--bg-secondary)]">
-                  <th className="text-left px-4 py-3 font-semibold text-[var(--text-secondary)] text-[11px] uppercase tracking-wider w-28">
-                    Box / Line
-                  </th>
-                  <th className="text-left px-4 py-3 font-semibold text-[var(--text-secondary)] text-[11px] uppercase tracking-wider">
-                    Description
-                  </th>
-                  <th className="text-left px-4 py-3 font-semibold text-[var(--text-secondary)] text-[11px] uppercase tracking-wider w-36">
-                    Section
-                  </th>
-                  <th className="text-right px-4 py-3 font-semibold text-[var(--text-secondary)] text-[11px] uppercase tracking-wider w-40">
-                    Amount (Copy)
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {reportData.boxes.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="border-b border-[var(--border)] hover:bg-[var(--bg-secondary)] transition-colors"
-                  >
-                    <td className="px-4 py-3 font-mono font-bold text-xs text-[var(--text-primary)]">
-                      {row.code || row.id}
-                    </td>
-                    <td className="px-4 py-3 text-[var(--text-secondary)]">
-                      {row.description}
-                    </td>
-                    <td className="px-4 py-3">
-                      {row.section && (
-                        <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded font-semibold bg-[var(--bg-secondary)] text-[var(--text-muted)] border border-[var(--border)]">
-                          {row.section}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        type="button"
-                        onClick={() => handleCopy(row.id, row.amount)}
-                        className="font-mono text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)] hover:bg-[var(--bg-card)] border border-[var(--border)] px-3 py-1 rounded transition-all cursor-pointer"
-                        title="Click to copy amount"
-                      >
-                        {getCopyButtonLabel(copiedId === row.id, row.amount)}
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-                {reportData.boxes.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={4}
-                      className="px-4 py-8 text-center text-[var(--text-muted)]"
-                    >
-                      No data available for this reporting period.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        ) : null}
-      </div>
-    </DetailsLayout>
+        )
+      }
+    >
+      {isGenericView && generic ? (
+        <FinancialTable
+          ref={tableRef}
+          columns={genericColumns}
+          data={generic.categories}
+          totals={totals}
+          keyExtractor={(cat) => cat.taxCategoryId}
+          loading={isLoading && !reportData}
+          loadingMessage="Loading tax report data..."
+          emptyMessage="No tax category data recorded for this period."
+          exportFileName={`tax-balances_${activeReportType}_${startDate}_${endDate}`}
+          reportMetadata={reportMetadata}
+        />
+      ) : !isGenericView && reportData?.boxes ? (
+        <FinancialTable
+          ref={tableRef}
+          columns={boxColumns}
+          data={reportData.boxes}
+          keyExtractor={(r) => r.id}
+          loading={isLoading && !reportData}
+          loadingMessage="Loading statutory tax return..."
+          emptyMessage="No data available for this reporting period."
+          exportFileName={`tax-return_${activeReportType}_${startDate}_${endDate}`}
+          reportMetadata={reportMetadata}
+        />
+      ) : (
+        <div className="card p-12 text-center text-sm text-[var(--text-muted)]">
+          {isLoading ? (
+            <span>Loading tax report data...</span>
+          ) : (
+            <span>No tax report data available for the selected period.</span>
+          )}
+        </div>
+      )}
+    </FinancialReportLayout>
   );
 }
+

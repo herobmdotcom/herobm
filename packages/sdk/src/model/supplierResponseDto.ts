@@ -5,6 +5,7 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
+import type { SupplierResponseDtoMetadata } from './supplierResponseDtoMetadata';
 
 export interface SupplierResponseDto {
   /** @nullable */
@@ -63,6 +64,8 @@ export interface SupplierResponseDto {
   taxPositionId: string | null;
   /** @nullable */
   stateCode: string | null;
+  /** @nullable */
+  metadata?: SupplierResponseDtoMetadata;
   tenantId: string;
   createdAt: string;
   updatedAt: string;

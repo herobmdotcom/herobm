@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test';
 // This ensures that even if the crawler misses a link on the dashboard,
 // the primary routes are still smoke tested.
 const ROUTES = [
-  '/admin',
+  '/admin/settings',
   '/customers',
   '/general-ledger',
   '/inventory',
@@ -12,6 +12,8 @@ const ROUTES = [
   '/manufacturing/work-orders/new',
   '/payments',
   '/products',
+  '/projects',
+  '/projects/new',
   '/purchase-orders',
   '/receiving',
   '/reconciliations',
@@ -27,10 +29,14 @@ const ROUTES = [
 ];
 
 test.describe('Static Route Smoke Tests', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.abort());
+  });
+
   for (const route of ROUTES) {
     test(`Smoke test for ${route}`, async ({ page }) => {
-      // Go to the route and wait for network to settle
-      await page.goto(route, { waitUntil: 'networkidle' });
+      // Go to the route
+      await page.goto(route, { waitUntil: 'domcontentloaded' });
 
       // Check for generic React Error Boundaries or Next.js error pages
       const errorBoundaryText = page.locator('text=Something went wrong').first();

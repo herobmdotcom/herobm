@@ -21,6 +21,7 @@ import { Button } from '@/components/shared/Button';
 import { toast } from 'react-hot-toast';
 import EmailDocumentDialog from '@/components/shared/EmailDocumentDialog';
 import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
+import { DynamicForm } from '@/components/DynamicForm';
 
 interface DebitNoteDetailLine {
   debitNoteLineId: string;
@@ -50,6 +51,7 @@ interface DebitNoteDetailData {
   outstandingAmount?: number | string | null;
   currencyCode?: string | null;
   stateCode: string;
+  metadata?: Record<string, unknown> | null;
   lines?: DebitNoteDetailLine[];
   events?: TimelineEvent[];
 }
@@ -59,6 +61,7 @@ export default function DebitNoteDetailContent({ id }: { id: string }) {
   const { baseCurrency } = useSettings();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DebitNoteDetailData | null>(null);
+  const [debitNoteMetadataSchema, setDebitNoteMetadataSchema] = useState<Record<string, unknown> | null>(null);
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [emailDialogMode, setEmailDialogMode] = useState<'email' | 'print'>('email');
 
@@ -97,6 +100,16 @@ export default function DebitNoteDetailContent({ id }: { id: string }) {
     fetchDebitNote();
   }, [fetchDebitNote]);
 
+  useEffect(() => {
+    api.purchaseOrdersControllerGetSettings()
+      .then((res) => {
+        if (res.data?.debitNoteMetadataSchema) {
+          setDebitNoteMetadataSchema(res.data.debitNoteMetadataSchema as Record<string, unknown>);
+        }
+      })
+      .catch((err) => reportError(err, 'DebitNoteDetailContent:getSettings'));
+  }, []);
+
   useDocumentTitle(
     data
       ? data.vendorName
@@ -119,6 +132,12 @@ export default function DebitNoteDetailContent({ id }: { id: string }) {
   const feeAmount = parseFloat(data.feeAmount?.toString() || '0');
   const netDebitTotal = totalAmount + taxAmount - feeAmount;
   const lines = data.lines || [];
+
+  const hasCustomFields = !!(
+    debitNoteMetadataSchema?.properties &&
+    typeof debitNoteMetadataSchema.properties === 'object' &&
+    Object.keys(debitNoteMetadataSchema.properties).length > 0
+  );
 
   const lineColumns: DataTableColumn<DebitNoteDetailLine>[] = [
     {
@@ -324,6 +343,21 @@ export default function DebitNoteDetailContent({ id }: { id: string }) {
             )}
           />
         </div>
+
+        {/* Custom Fields Card */}
+        {hasCustomFields && (
+          <div id="custom-fields-section" className="card">
+            <h3 className="section-heading mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined shrink-0">tune</span>
+              <span>{tCommon('customFields')}</span>
+            </h3>
+            <DynamicForm
+              schema={debitNoteMetadataSchema!}
+              data={(data.metadata || {}) as Record<string, unknown>}
+              readOnly={true}
+            />
+          </div>
+        )}
 
         {/* Activity Timeline Card */}
         <div id="timeline-section" className="card">

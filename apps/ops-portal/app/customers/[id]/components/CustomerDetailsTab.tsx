@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { toast } from "react-hot-toast";
@@ -13,6 +13,8 @@ import { ValidState } from "@/types/states";
 import GroupSelect from "@/components/shared/GroupSelect";
 import * as api from "@herobm/sdk";
 import { Button } from '@/components/shared/Button';
+import { DynamicForm } from '@/components/DynamicForm';
+import { reportError } from '@/lib/api';
 import CustomerSelect from "@/components/shared/CustomerSelect";
 import DiscountMatrixSlideOver from "@/components/shared/DiscountMatrixSlideOver";
 import InheritedSelect from "@/components/shared/InheritedSelect";
@@ -70,6 +72,19 @@ export function CustomerDetailsTab({
   const tCommon = useTranslations("common");
   const { baseCurrency, app } = useSettings();
   const [showDiscounts, setShowDiscounts] = useState(false);
+  const [customerMetadataSchema, setCustomerMetadataSchema] = useState<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    api.organizationsControllerGetSettings()
+      .then((res) => {
+        if (res.data?.customerMetadataSchema) {
+          setCustomerMetadataSchema(res.data.customerMetadataSchema as Record<string, unknown>);
+        }
+      })
+      .catch((err) => {
+        reportError(err, 'CustomerDetailsTab:fetchSettings');
+      });
+  }, []);
 
   if (!customer) return null;
 
@@ -126,7 +141,7 @@ export function CustomerDetailsTab({
                 value={dto.name || ""}
                 onChange={(e) => updateField("name", e.target.value)}
                 onBlur={(e) => saveField("name", e.target.value)}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
               />
             </div>
             <div>
@@ -151,7 +166,7 @@ export function CustomerDetailsTab({
                   updateField("customerGroupId", val);
                   saveField("customerGroupId", val);
                 }}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
                 placeholder={t("customers.placeholders.noAccountGroup")}
               />
             </div>
@@ -169,7 +184,7 @@ export function CustomerDetailsTab({
                   updateField("parentCustomerName" as any, name);
                   saveField("parentCustomerId", id);
                 }}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
                 excludeId={paramsId}
                 initialSearchTerm={(dto as unknown as { parentCustomerName: string }).parentCustomerName || ""}
               />
@@ -199,7 +214,7 @@ export function CustomerDetailsTab({
                     saveField("currencyCode", newCurrency);
                   }
                 }}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
               >
                 <option value="">{t("common.notConfigured")}</option>
                 {COUNTRIES.map((c) => (
@@ -220,7 +235,7 @@ export function CustomerDetailsTab({
                 onChange={(e) => updateField("notes", e.target.value)}
                 onBlur={(e) => saveField("notes", e.target.value)}
                 placeholder={t("common.notesCardPlaceholder")}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
               />
             </div>
           </div>
@@ -348,7 +363,7 @@ export function CustomerDetailsTab({
                   updateField("currencyCode", e.target.value);
                   saveField("currencyCode", e.target.value);
                 }}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
               >
                 {CURRENCIES.map((c) => (
                   <option key={c.code} value={c.code}>
@@ -364,9 +379,9 @@ export function CustomerDetailsTab({
                 {t("common.columns.state")}
               </label>
               <div
-                className={`flex items-center gap-3 pt-1.5 ${!isEditable || saving ? "cursor-not-allowed" : "cursor-pointer"}`}
+                className={`flex items-center gap-3 pt-1.5 ${!isEditable ? "cursor-not-allowed" : "cursor-pointer"}`}
                 onClick={() => {
-                  if (!isEditable || saving) return;
+                  if (!isEditable) return;
                   const newState =
                     dto.stateCode === CUSTOMER_STATE.ACTIVE
                       ? CUSTOMER_STATE.INACTIVE
@@ -376,7 +391,7 @@ export function CustomerDetailsTab({
                 }}
               >
                 <div
-                  className={`w-10 h-[22px] rounded-[11px] relative transition-colors duration-200 ${dto.stateCode === CUSTOMER_STATE.ACTIVE ? "bg-[var(--accent)]" : "bg-[var(--border)]"} ${!isEditable || saving ? "opacity-50" : "opacity-100"}`}
+                  className={`w-10 h-[22px] rounded-[11px] relative transition-colors duration-200 ${dto.stateCode === CUSTOMER_STATE.ACTIVE ? "bg-[var(--accent)]" : "bg-[var(--border)]"} ${!isEditable ? "opacity-50" : "opacity-100"}`}
                 >
                   <div
                     className={`w-4 h-4 rounded-full bg-white absolute top-[3px] transition-all duration-200 ${dto.stateCode === CUSTOMER_STATE.ACTIVE ? "left-[21px]" : "left-[3px]"}`}
@@ -432,7 +447,7 @@ export function CustomerDetailsTab({
                 onBlur={(e) => {
                   saveField("businessNumber", e.target.value);
                 }}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
                 placeholder="Enter business number..."
               />
             </div>
@@ -443,15 +458,15 @@ export function CustomerDetailsTab({
                 {t("customers.fields.taxRegistered")}
               </label>
               <div
-                className={`flex items-center gap-3 pt-1.5 ${!isEditable || saving ? "cursor-not-allowed" : "cursor-pointer"}`}
+                className={`flex items-center gap-3 pt-1.5 ${!isEditable ? "cursor-not-allowed" : "cursor-pointer"}`}
                 onClick={() => {
-                  if (!isEditable || saving) return;
+                  if (!isEditable) return;
                   updateField("isTaxRegistered", !dto.isTaxRegistered);
                   saveField("isTaxRegistered", !dto.isTaxRegistered);
                 }}
               >
                 <div
-                  className={`w-10 h-[22px] rounded-[11px] relative transition-colors duration-200 ${dto.isTaxRegistered ? "bg-[var(--accent)]" : "bg-[var(--border)]"} ${!isEditable || saving ? "opacity-50" : "opacity-100"}`}
+                  className={`w-10 h-[22px] rounded-[11px] relative transition-colors duration-200 ${dto.isTaxRegistered ? "bg-[var(--accent)]" : "bg-[var(--border)]"} ${!isEditable ? "opacity-50" : "opacity-100"}`}
                 >
                   <div
                     className={`w-4 h-4 rounded-full bg-white absolute top-[3px] transition-all duration-200 ${dto.isTaxRegistered ? "left-[21px]" : "left-[3px]"}`}
@@ -470,7 +485,7 @@ export function CustomerDetailsTab({
               </label>
               <InheritedSelect
                 className="input"
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
                 value={dto.taxPositionId || ""}
                 onChange={(val) => {
                   updateField("taxPositionId", val);
@@ -493,7 +508,7 @@ export function CustomerDetailsTab({
               </label>
               <InheritedSelect
                 className="input"
-                disabled={!isEditable || saving || !canManageCredit}
+                disabled={!isEditable || !canManageCredit}
                 value={dto.tradingTermsId || ""}
                 onChange={(val) => {
                   updateField("tradingTermsId", val);
@@ -524,7 +539,7 @@ export function CustomerDetailsTab({
                   onBlur={(e) => {
                     saveField("creditLimit", e.target.value);
                   }}
-                  disabled={!isEditable || saving || !canManageCredit}
+                  disabled={!isEditable || !canManageCredit}
                   placeholder="0.00"
                   inheritedValue={creditLimitInheritance.inheritedValue}
                   inheritedSourceLabel={creditLimitInheritance.inheritedSourceLabel}
@@ -547,7 +562,7 @@ export function CustomerDetailsTab({
               </label>
               <InheritedSelect
                 className="input"
-                disabled={!isEditable || saving || !canManageCredit}
+                disabled={!isEditable || !canManageCredit}
                 value={dto.isOnCreditHold === true ? 'true' : dto.isOnCreditHold === false ? 'false' : ''}
                 onChange={(val) => {
                   const boolVal = val === 'true' ? true : val === 'false' ? false : null;
@@ -629,7 +644,7 @@ export function CustomerDetailsTab({
                 variant="secondary"
                 className="relative"
                 onClick={() => setShowDiscounts(true)}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
               >
                 {t("customers.fields.manage")}
                 {hasDiscountRules && (
@@ -663,7 +678,7 @@ export function CustomerDetailsTab({
                   updateField("emailAddress1", e.target.value)
                 }
                 onBlur={(e) => saveField("emailAddress1", e.target.value)}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
               />
             </div>
             <div>
@@ -676,7 +691,7 @@ export function CustomerDetailsTab({
                 value={dto.telephone1 || ""}
                 onChange={(e) => updateField("telephone1", e.target.value)}
                 onBlur={(e) => saveField("telephone1", e.target.value)}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
               />
             </div>
             <div className="md:col-span-2">
@@ -691,7 +706,7 @@ export function CustomerDetailsTab({
                   updateField("billingAddressLine1", e.target.value)
                 }
                 onBlur={(e) => saveField("billingAddressLine1", e.target.value)}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
               />
             </div>
             <div className="md:col-span-2">
@@ -706,7 +721,7 @@ export function CustomerDetailsTab({
                   updateField("billingAddressLine2", e.target.value)
                 }
                 onBlur={(e) => saveField("billingAddressLine2", e.target.value)}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
               />
             </div>
             <div>
@@ -721,7 +736,7 @@ export function CustomerDetailsTab({
                   updateField("billingAddressCity", e.target.value)
                 }
                 onBlur={(e) => saveField("billingAddressCity", e.target.value)}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
               />
             </div>
             <div>
@@ -738,7 +753,7 @@ export function CustomerDetailsTab({
                 onBlur={(e) =>
                   saveField("billingAddressStateOrProvince", e.target.value)
                 }
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
               />
             </div>
             <div>
@@ -755,7 +770,7 @@ export function CustomerDetailsTab({
                 onBlur={(e) =>
                   saveField("billingAddressPostalCode", e.target.value)
                 }
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
               />
             </div>
           </div>
@@ -785,7 +800,7 @@ export function CustomerDetailsTab({
                   updateField("bankAccountName", e.target.value)
                 }
                 onBlur={(e) => saveField("bankAccountName", e.target.value)}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
                 placeholder="e.g. John Doe Pty Ltd"
               />
             </div>
@@ -799,7 +814,7 @@ export function CustomerDetailsTab({
                 value={dto.bankBsb || ""}
                 onChange={(e) => updateField("bankBsb", e.target.value)}
                 onBlur={(e) => saveField("bankBsb", e.target.value)}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
                 placeholder="e.g. 062-000"
               />
             </div>
@@ -817,7 +832,7 @@ export function CustomerDetailsTab({
                 onBlur={(e) =>
                   saveField("bankAccountNumber", e.target.value)
                 }
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
                 placeholder="e.g. 12345678"
               />
             </div>
@@ -869,6 +884,27 @@ export function CustomerDetailsTab({
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Custom Fields Card */}
+        {!!(customerMetadataSchema?.properties && typeof customerMetadataSchema.properties === 'object' && Object.keys(customerMetadataSchema.properties).length > 0) && (
+          <div id="custom-fields-section" className="card">
+            <h3 className="section-heading">
+              <span className="material-symbols-outlined">tune</span>
+              <span>{t("customers.customFields")}</span>
+            </h3>
+            <DynamicForm
+              schema={customerMetadataSchema}
+              data={(dto.metadata || customer.metadata || {}) as Record<string, unknown>}
+              onChange={(newMetadata) => {
+                updateField("metadata" as never, newMetadata);
+              }}
+              onBlur={(newMetadata) => {
+                saveField("metadata" as never, newMetadata);
+              }}
+              readOnly={!isEditable}
+            />
           </div>
         )}
 

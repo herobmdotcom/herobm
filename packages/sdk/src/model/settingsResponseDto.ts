@@ -5,12 +5,12 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
-import type { SettingsResponseDtoAccountMetadataSchemaItem } from './settingsResponseDtoAccountMetadataSchemaItem';
+import type { SettingsResponseDtoAccountMetadataSchema } from './settingsResponseDtoAccountMetadataSchema';
 
 export interface SettingsResponseDto {
   settingsId?: string;
   /** @nullable */
-  accountMetadataSchema?: SettingsResponseDtoAccountMetadataSchemaItem[] | null;
+  accountMetadataSchema?: SettingsResponseDtoAccountMetadataSchema;
   fiscalYearStartMonth?: number;
   bankMatchDateToleranceDays?: number;
   /** @nullable */
@@ -45,6 +45,10 @@ export interface SettingsResponseDto {
   defaultOtcCashAccountId?: string | null;
   /** @nullable */
   defaultOtcCardAccountId?: string | null;
+  /** @nullable */
+  defaultSuspenseAccountId?: string | null;
+  /** @nullable */
+  defaultRetainedEarningsAccountId?: string | null;
   /** @nullable */
   defaultCostCenterId?: string | null;
   /** @nullable */

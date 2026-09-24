@@ -1,0 +1,58 @@
+{
+  "backToTransfers": "Back to Transfers",
+  "buttons": {
+    "addLines": "Add Lines",
+    "createTransfer": "Create Transfer",
+    "customLine": "Add Custom Line",
+    "save": "💾 Save"
+  },
+  "cancelConfirm": "Are you sure you want to cancel this transfer order?",
+  "cancelShipment": "Cancel Shipment",
+  "cancelShipmentConfirm": "Are you sure you want to cancel this shipment? The items will be returned to the picking area.",
+  "columns": {
+    "createdBy": "Created By",
+    "createdOn": "Created On",
+    "description": "Description",
+    "destinationBin": "Destination Bin",
+    "destinationLocation": "Destination Location",
+    "notes": "Notes",
+    "orderNumber": "Order Number",
+    "ordered": "Ordered",
+    "product": "Product",
+    "project": "Project",
+    "received": "Received",
+    "shipped": "Shipped",
+    "shippingNotes": "Shipping Instructions",
+    "sourceBin": "Source Bin",
+    "sourceLocation": "Source Location",
+    "status": "Status"
+  },
+  "createSlideOver": {
+    "subtitle": "Create an internal transfer between locations",
+    "title": "New Transfer Order"
+  },
+  "lineItems": "Line Items",
+  "noLineItems": "No line items",
+  "noLinesAdded": "No lines added.",
+  "notFound": "Transfer order not found",
+  "placeholders": {
+    "notes": "Transfer notes...",
+    "searchProduct": "Add product... (search)",
+    "searchTransfer": "Search or scan transfers...",
+    "selectDestinationLocation": "Select Destination Location",
+    "selectSourceLocation": "Select Source Location",
+    "shippingNotes": "Shipping instructions..."
+  },
+  "removeLine": "Remove line",
+  "status": {
+    "cancelled": "Cancelled",
+    "confirmed": "Confirmed",
+    "picking": "Picking",
+    "received": "Received",
+    "shipped": "Shipped"
+  },
+  "subtitle": "Manage internal inventory transfers",
+  "subtitleFlow": "From {source} to {destination}",
+  "title": "Transfer Orders",
+  "transferTitle": "Transfer {number}"
+}

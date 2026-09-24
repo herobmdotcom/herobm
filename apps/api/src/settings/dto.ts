@@ -14,32 +14,57 @@ import {
   IsArray,
   ValidateNested,
   MaxLength,
+  IsIn,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class OrderedSettingDto {
+  @ApiProperty()
   @IsString()
   @IsNotEmpty()
   value!: string;
 
+  @ApiProperty()
   @IsNumber()
   order!: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  isSystem?: boolean;
 }
 
 export class CreateUomDto {
+  @ApiProperty()
   @IsString()
   @IsNotEmpty()
   uomCode!: string;
 
+  @ApiProperty()
   @IsString()
   @IsNotEmpty()
   description!: string;
+
+  @ApiProperty({
+    enum: ['goods', 'service'],
+    required: false,
+    default: 'goods',
+  })
+  @IsOptional()
+  @IsIn(['goods', 'service'])
+  category?: 'goods' | 'service';
 }
 
 export class UpdateUomDto {
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   description?: string;
+
+  @ApiProperty({ enum: ['goods', 'service'], required: false })
+  @IsOptional()
+  @IsIn(['goods', 'service'])
+  category?: 'goods' | 'service';
 }
 
 export class CreateExchangeRateDto {
@@ -255,6 +280,7 @@ export class BulkImportResultDto {
 export class UomResponseDto {
   @ApiProperty() uomCode!: string;
   @ApiProperty() description!: string;
+  @ApiProperty({ enum: ['goods', 'service'] }) category!: string;
 }
 export class ActivityResponseDto {
   @ApiProperty() activityId!: string;
@@ -302,6 +328,7 @@ export class OrganizationSettingsResponseDto {
 export class AppConfigResponseDto {
   @ApiProperty() defaultFulfillmentLocationId!: string;
   @ApiProperty() apiRateLimit!: string;
+  @ApiProperty({ required: false }) allowNegativeInventory?: boolean;
   @ApiProperty({ required: false }) creditLimitBehavior?:
     | 'hard'
     | 'soft'
@@ -338,6 +365,8 @@ export class AppConfigResponseDto {
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
   opportunityTypes?: OrderedSettingDto[];
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
+  projectStages?: OrderedSettingDto[];
+  @ApiProperty({ required: false, type: [OrderedSettingDto] })
   activityTypes?: OrderedSettingDto[];
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
   referralModes?: OrderedSettingDto[];
@@ -349,6 +378,11 @@ export class UpdateAppConfigDto {
   @IsOptional()
   @IsString()
   defaultFulfillmentLocationId?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  allowNegativeInventory?: boolean;
 
   @ApiProperty({ required: false, enum: ['hard', 'soft', 'notify'] })
   @IsOptional()
@@ -464,6 +498,13 @@ export class UpdateAppConfigDto {
   @ValidateNested({ each: true })
   @Type(() => OrderedSettingDto)
   opportunityTypes?: OrderedSettingDto[];
+
+  @ApiProperty({ required: false, type: [OrderedSettingDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OrderedSettingDto)
+  projectStages?: OrderedSettingDto[];
 
   @ApiProperty({ required: false, type: [OrderedSettingDto] })
   @IsOptional()

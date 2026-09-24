@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
 import * as api from '@herobm/sdk';
+import { useTaxCategories } from '@/hooks/useReferenceData';
 import {
   PURCHASE_ORDER_TRANSITIONS as STATE_TRANSITIONS,
   PURCHASE_ORDER_LIFECYCLE as ORDER_LIFECYCLE,
@@ -59,9 +60,16 @@ export function usePurchaseOrder(id: string) {
   const [editLocationId, setEditLocationId] = useState<string | null>(null);
   const [editCurrencyCode, setEditCurrencyCode] = useState('');
   const [headerDirty, setHeaderDirty] = useState(false);
+  const [purchaseOrderMetadataSchema, setPurchaseOrderMetadataSchema] = useState<Record<string, unknown> | null>(null);
 
   /* ── GST categories ──────────────────────────────────────────── */
-  const [taxCategories, setTaxCategories] = useState<TaxCategory[]>([]);
+  const { taxCategories: rawTaxCategories } = useTaxCategories();
+  const taxCategories = useMemo<TaxCategory[]>(() => {
+    return rawTaxCategories.map((t: import('@herobm/sdk').TaxCategoryResponseDto) => ({
+      ...t,
+      taxCategoryId: (t as unknown as { id?: string }).id || t.taxCategoryId,
+    } as unknown as TaxCategory));
+  }, [rawTaxCategories]);
 
   /* ── Tab state for line items / availability ────────────────── */
   const [activeTab, setActiveTab] = useState<'lines' | 'availability' | 'status'>('lines');
@@ -209,9 +217,13 @@ export function usePurchaseOrder(id: string) {
   // Initial load
   useEffect(() => {
     loadOrder();
-    api.taxCategoriesControllerFindAll()
-      .then(res => setTaxCategories((res.data || []).map((t: import('@herobm/sdk').TaxCategoryResponseDto) => ({ ...t, taxCategoryId: (t as unknown as { id?: string }).id || t.taxCategoryId } as unknown as TaxCategory))))
-      .catch((err) => reportError(err, 'OrderDetailPage'));
+    api.purchaseOrdersControllerGetSettings()
+      .then((res) => {
+        if (res.data?.purchaseOrderMetadataSchema) {
+          setPurchaseOrderMetadataSchema(res.data.purchaseOrderMetadataSchema as Record<string, unknown>);
+        }
+      })
+      .catch((err) => reportError(err, 'usePurchaseOrder:getSettings'));
   }, [id]);
 
   // Load allocations, returns and invoices based on order state
@@ -260,8 +272,8 @@ export function usePurchaseOrder(id: string) {
 
   /* ── Mutations ──────────────────────────────────────────────── */
 
-  const saveHeader = async () => {
-    if (!headerDirty) return;
+  const saveHeader = async (overrides?: Partial<api.UpdatePurchaseOrderDto>) => {
+    if (!headerDirty && !overrides) return;
     setSaving(true);
     try {
       await api.purchaseOrdersControllerUpdate(id, {
@@ -271,6 +283,7 @@ export function usePurchaseOrder(id: string) {
         notes: editNotes || undefined,
         deliveryLocationId: editLocationId || undefined,
         currencyCode: editCurrencyCode || undefined,
+        ...(overrides || {}),
       });
       await loadOrder(undefined, false);
     } catch (err) {
@@ -394,10 +407,6 @@ export function usePurchaseOrder(id: string) {
       await api.purchaseOrdersControllerAddLine(id, {
         productId: p.productId,
         productDescription: p.name,
-        quantity: '1',
-        pricePerUnit: parseFloat(p.standardCost || p.tradePrice || p.listPrice || '0').toFixed(2),
-        discountPercentage: '0',
-        unitOfMeasure: 'EA',
       });
       await loadOrder(undefined, false);
     } catch (err) {
@@ -513,6 +522,7 @@ export function usePurchaseOrder(id: string) {
     loadInvoices,
     loadReturns,
     loadAllocations,
+    purchaseOrderMetadataSchema,
   };
 }
 

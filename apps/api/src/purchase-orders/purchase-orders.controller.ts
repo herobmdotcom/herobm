@@ -39,6 +39,8 @@ import {
   EmptyBodyDto,
   ChangeStateDto,
   EmailDocumentDto,
+  UpdatePurchasingSettingsDto,
+  PurchasingSettingsResponseDto,
 } from './dto';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
@@ -54,6 +56,29 @@ export class PurchaseOrdersController {
     private readonly purchaseOrdersQueryService: PurchaseOrdersQueryService,
     private readonly documentDispatchService: DocumentDispatchService,
   ) {}
+
+  @Get('settings')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Purchasing Settings',
+    description: 'Retrieve purchasing domain settings and metadata schemas.',
+  })
+  @ApiOkResponse({ type: PurchasingSettingsResponseDto })
+  async getSettings() {
+    return this.purchaseOrdersService.getSettings();
+  }
+
+  @Patch('settings')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Purchasing Settings',
+    description: 'Update purchasing domain settings and metadata schemas.',
+  })
+  @ApiBody({ type: UpdatePurchasingSettingsDto })
+  @ApiOkResponse({ type: PurchasingSettingsResponseDto })
+  async updateSettings(@Body() body: UpdatePurchasingSettingsDto) {
+    return this.purchaseOrdersService.updateSettings(body);
+  }
 
   @Post()
   @ApiBody({ type: CreatePurchaseOrderDto })

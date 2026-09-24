@@ -20,18 +20,19 @@ import {
   TaxPositionMappingResponseDto,
 } from './tax-positions.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { SkipCasbin } from '../auth/casbin.guard';
+import { SystemResource } from '@herobm/shared';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 
 @ApiTags('Tax')
 @ApiBearerAuth()
 @UseGuards(ThrottlerGuard)
-@SkipCasbin()
+@CasbinResource(SystemResource.SETTINGS)
 @Controller('tax-positions')
 export class TaxPositionMappingsController {
   constructor(private readonly taxPositionsService: TaxPositionsService) {}
 
   @Get('mappings')
-  @SkipCasbin()
+  @CasbinAction('read')
   @ApiOperation({
     summary: 'List all tax position mappings (ignores path param for now)',
     description:
@@ -43,7 +44,7 @@ export class TaxPositionMappingsController {
   }
 
   @Post(':taxPositionId/mappings')
-  @SkipCasbin()
+  @CasbinAction('write')
   @ApiOperation({
     summary: 'Create a new mapping for a tax position',
     description:
@@ -58,7 +59,7 @@ export class TaxPositionMappingsController {
   }
 
   @Delete(':taxPositionId/mappings/:sourceTaxCategoryId')
-  @SkipCasbin()
+  @CasbinAction('write')
   @ApiOperation({
     summary: 'Remove a mapping from a tax position',
     description: 'Deletes a specific tax category mapping from a tax position.',

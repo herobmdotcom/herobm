@@ -50,6 +50,8 @@ import {
   CashFlowDrilldownResponseDto,
   LedgerIntegrityAuditResponseDto,
   RunIntegrityAuditDto,
+  ProfitAndLossResponseDto,
+  BalanceSheetResponseDto,
 } from './dto';
 import { AppConfigService } from '../settings/app-config.service';
 import { SystemResource } from '@herobm/shared';
@@ -152,6 +154,7 @@ export class GlController {
   @ApiQuery({ name: 'toDate', required: false })
   @ApiQuery({ name: 'sourceType', required: false })
   @ApiQuery({ name: 'sourceId', required: false })
+  @ApiQuery({ name: 'projectId', required: false })
   @ApiQuery({ name: 'q', required: false })
   @ApiQuery({ name: 'limit', required: false })
   @ApiQuery({ name: 'page', required: false })
@@ -160,6 +163,7 @@ export class GlController {
     @Query('toDate') toDate?: string,
     @Query('sourceType') sourceType?: string,
     @Query('sourceId') sourceId?: string,
+    @Query('projectId') projectId?: string,
     @Query('q') entryNumber?: string,
     @Query('limit') limitStr?: string,
     @Query('page') pageStr?: string,
@@ -171,6 +175,7 @@ export class GlController {
       toDate,
       sourceType,
       sourceId,
+      projectId,
       entryNumber,
       limit,
       page,
@@ -256,6 +261,63 @@ export class GlController {
     return this.glService.getTrialBalance(asOfDate, periodStart);
   }
 
+  @Get('profit-and-loss')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Profit and Loss Statement',
+    description:
+      'Calculate and retrieve the Profit and Loss statement (Income Statement) for a date range or fiscal period.',
+  })
+  @ApiOkResponse({ type: ProfitAndLossResponseDto })
+  @ApiQuery({ name: 'startDate', required: true, example: '2026-08-01' })
+  @ApiQuery({ name: 'endDate', required: true, example: '2026-08-31' })
+  @ApiQuery({ name: 'periodName', required: false })
+  @ApiQuery({ name: 'fiscalYear', required: false, type: Number })
+  @ApiQuery({ name: 'periodNumber', required: false, type: Number })
+  async getProfitAndLoss(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Query('periodName') periodName?: string,
+    @Query('fiscalYear') fiscalYearStr?: string,
+    @Query('periodNumber') periodNumberStr?: string,
+  ) {
+    const fiscalYear = fiscalYearStr ? parseInt(fiscalYearStr, 10) : undefined;
+    const periodNumber = periodNumberStr
+      ? parseInt(periodNumberStr, 10)
+      : undefined;
+    return this.glService.getProfitAndLoss({
+      startDate,
+      endDate,
+      periodName,
+      fiscalYear,
+      periodNumber,
+    });
+  }
+
+  @Get('balance-sheet')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Balance Sheet',
+    description:
+      'Calculate and retrieve the Balance Sheet (Statement of Financial Position) as of a specific date.',
+  })
+  @ApiOkResponse({ type: BalanceSheetResponseDto })
+  @ApiQuery({ name: 'asOfDate', required: true, example: '2026-08-31' })
+  @ApiQuery({ name: 'periodName', required: false })
+  @ApiQuery({ name: 'fiscalYear', required: false, type: Number })
+  async getBalanceSheet(
+    @Query('asOfDate') asOfDate: string,
+    @Query('periodName') periodName?: string,
+    @Query('fiscalYear') fiscalYearStr?: string,
+  ) {
+    const fiscalYear = fiscalYearStr ? parseInt(fiscalYearStr, 10) : undefined;
+    return this.glService.getBalanceSheet({
+      asOfDate,
+      periodName,
+      fiscalYear,
+    });
+  }
+
   @Get('cash-flow')
   @CasbinAction('read')
   @ApiOperation({
@@ -331,12 +393,14 @@ export class GlController {
   @ApiQuery({ name: 'account', required: false })
   @ApiQuery({ name: 'fromDate', required: false })
   @ApiQuery({ name: 'toDate', required: false })
+  @ApiQuery({ name: 'projectId', required: false })
   @ApiQuery({ name: 'limit', required: false })
   @ApiQuery({ name: 'page', required: false })
   async getGeneralLedger(
     @Query('account') accountCode?: string,
     @Query('fromDate') fromDate?: string,
     @Query('toDate') toDate?: string,
+    @Query('projectId') projectId?: string,
     @Query('limit') limitStr?: string,
     @Query('page') pageStr?: string,
   ) {
@@ -346,6 +410,7 @@ export class GlController {
       accountCode,
       fromDate,
       toDate,
+      projectId,
       limit,
       page,
     });

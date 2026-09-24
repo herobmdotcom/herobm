@@ -44,6 +44,7 @@ describe('LocationsService', () => {
     await pg.db.insert(uomDictionary).values({
       uomCode: 'EA',
       description: 'Each',
+      category: 'goods',
     });
   });
 
@@ -58,6 +59,35 @@ describe('LocationsService', () => {
         .from(locations)
         .where(eq(locations.locationId, result.locationId));
       expect(rows).toHaveLength(1);
+    });
+
+    it('should automatically scaffold HANDLING zone and all 6 system bins upon location creation (ADV-200)', async () => {
+      const dto = { code: 'WH-TOP', name: 'Topography Test WH' };
+      const result = await service.createLocation(dto, 'admin');
+
+      const handlingZones = await pg.db
+        .select()
+        .from(zones)
+        .where(eq(zones.locationId, result.locationId));
+      expect(handlingZones).toHaveLength(1);
+      expect(handlingZones[0].code).toBe('HANDLING');
+      expect(handlingZones[0].source).toBe('system');
+
+      const systemBins = await pg.db
+        .select()
+        .from(bins)
+        .where(eq(bins.zoneId, handlingZones[0].zoneId));
+      expect(systemBins).toHaveLength(6);
+
+      const binNumbers = systemBins.map((b) => b.binNumber).sort();
+      expect(binNumbers).toEqual([
+        'CUSTOMER_RETURNS',
+        'INTRA_TRANSIT',
+        'QUARANTINE',
+        'RECEIVING',
+        'SHIPPING',
+        'SUPPLIER_RETURNS',
+      ]);
     });
 
     it('should update a location', async () => {
@@ -100,6 +130,7 @@ describe('LocationsService', () => {
         apiRateLimit: '100',
         inventoryValuationMethod: 'fifo',
         inventoryAccountingMode: 'perpetual',
+        allowNegativeInventory: false,
       });
 
       await expect(service.deleteLocation(loc.locationId)).rejects.toThrow(
@@ -534,6 +565,47 @@ describe('LocationsService', () => {
       await expect(service.deleteBin(bin.binId)).rejects.toThrow(
         BadRequestException,
       );
+    });
+
+    it('should create bins in bulk across multiple chunks', async () => {
+      const [loc] = await pg.db
+        .insert(locations)
+        .values({
+          code: 'L-BULK',
+          name: 'Bulk Loc',
+          source: 'app',
+          createdBy: 'system',
+        })
+        .returning();
+      const [zone] = await pg.db
+        .insert(zones)
+        .values({
+          locationId: loc.locationId,
+          code: 'Z-BULK',
+          name: 'Bulk Zone',
+          source: 'app',
+          createdBy: 'system',
+        })
+        .returning();
+
+      // Create 600 bins (spanning across the 500-chunk threshold)
+      const binDtos = Array.from({ length: 600 }, (_, i) => ({
+        binNumber: `BIN-${i + 1}`,
+        zoneId: zone.zoneId,
+        binType: 'storage' as const,
+      }));
+
+      const results = await service.createBinsBulk(
+        { bins: binDtos },
+        'test-user',
+      );
+      expect(results).toHaveLength(600);
+
+      const dbBins = await pg.db
+        .select()
+        .from(bins)
+        .where(eq(bins.zoneId, zone.zoneId));
+      expect(dbBins).toHaveLength(600);
     });
   });
 });

@@ -1,0 +1,96 @@
+{
+  "balancesSearchPlaceholder": "Search account no. or name...",
+  "billing": "Billing",
+  "buttons": {
+    "createCustomer": "Create Customer"
+  },
+  "columns": {
+    "accountType": "Type",
+    "accountsContact": "Accounts Contact",
+    "creditHold": "Credit Hold",
+    "customerId": "Customer ID",
+    "customerNumber": "Customer Number",
+    "discountPct": "Customer Discount %",
+    "email": "Email",
+    "outstandingBalance": "Outstanding Balance",
+    "salesContact": "Sales Contact",
+    "telephone": "Telephone",
+    "uninvoicedOrders": "Uninvoiced Orders"
+  },
+  "company": "Customer",
+  "contactManagement": {
+    "addContact": "Add Contact",
+    "confirmDeleteContact": "Are you sure you want to delete this contact? This action cannot be undone.",
+    "contactAdded": "Contact added successfully",
+    "contactDeleted": "Contact deleted successfully",
+    "contactUpdated": "Contact updated successfully",
+    "deleteContact": "Delete Contact",
+    "editContact": "Edit Contact",
+    "email": "Email",
+    "errors": {
+      "firstNameRequired": "First Name is required",
+      "lastNameRequired": "Last Name is required"
+    },
+    "firstName": "First Name",
+    "isPrimary": "Primary Contact",
+    "jobTitle": "Job Title",
+    "lastName": "Last Name",
+    "mobile": "Mobile",
+    "nonStandardPhone": "Non-standard phone number",
+    "phone": "Phone",
+    "primaryBadge": "Primary"
+  },
+  "contacts": "Contacts",
+  "creditHold": {
+    "activeDesc": "This order is blocked because the customer is on credit hold.",
+    "activeTitle": "Credit Hold Active",
+    "bypassDesc": "Temporarily bypass all credit holds to allow sales orders to proceed. This expires automatically at midnight on the selected date.",
+    "overriddenDesc": "Temporarily bypass all credit holds to allow sales orders to proceed. This expires automatically at midnight on {date}.",
+    "overriddenTitle": "Credit Hold Overridden",
+    "reasons": {
+      "credit_limit_exceeded": "Credit limit exceeded",
+      "customer_archived": "Customer is archived",
+      "customer_credit_hold": "Manual credit hold (Customer)",
+      "customer_draft": "Customer is in draft state",
+      "group_credit_hold": "Manual credit hold (Customer Group)",
+      "overdue_balance": "Overdue balance"
+    }
+  },
+  "customFields": "Custom Fields",
+  "deliveryAddresses": "Delivery Addresses",
+  "earlyPaymentDiscount": "Early Payment Discount %",
+  "earlyPaymentDiscountDesc": "A percentage discount given if the invoice is paid within the specified number of days.",
+  "enrichment": {
+    "nameUpdated": "Name updated",
+    "taxUpdated": "Tax updated"
+  },
+  "fields": {
+    "accountNumber": "Account Number",
+    "bankAccountName": "Bank Account Name",
+    "billingEmail": "Billing Email",
+    "businessNumber": "Business Number",
+    "childAccounts": "Child Accounts ({count})",
+    "creditLimit": "Credit Limit",
+    "discountRules": "Product Discount Rules",
+    "manage": "Manage",
+    "parentCustomer": "Parent Customer",
+    "taxRegistered": "Tax Registered"
+  },
+  "financials": "Financials",
+  "generalInfo": "General Information",
+  "invoices": "Invoices",
+  "management": "Customer Management",
+  "newTitle": "Create Customer",
+  "orders": "Orders",
+  "overview": "Overview",
+  "placeholders": {
+    "customerGroup": "Customer Group",
+    "noAccountGroup": "No Customer Group",
+    "searchAccounts": "Search by name, customer number, or email..."
+  },
+  "pricingCurrency": "Pricing & Currency",
+  "projects": "Projects",
+  "subtitle": "Manage customer customers",
+  "title": "Customers",
+  "totalAccounts": "TOTAL ACCOUNTS"
+}

@@ -2,10 +2,12 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useHelp } from './HelpContext';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { Button } from '@/components/shared/Button';
+import { routes } from '@/lib/routes';
 
 function getFieldDetails(fieldKey: string, val: unknown) {
   if (typeof val === 'object' && val !== null) {
@@ -22,6 +24,7 @@ function getFieldDetails(fieldKey: string, val: unknown) {
 }
 
 export function HelpDrawer() {
+  const router = useRouter();
   const t = useTranslations('help');
   const {
     isOpen,
@@ -51,6 +54,7 @@ export function HelpDrawer() {
     'Inventory',
     'Purchasing',
     'Manufacturing',
+    'Projects',
     'CRM',
     'Finance',
     'Reporting',
@@ -80,6 +84,16 @@ export function HelpDrawer() {
   const isViewingSubTopic = Boolean(activeTopic && contextTopic && activeTopic.id !== contextTopic.id);
   const activeCategory = activeTopic?.category ? activeTopic.category : 'General';
   const expandIcon = isFieldsExpanded ? 'expand_less' : 'expand_more';
+  const manualUrl = routes.help(activeTopic?.id);
+
+  const handleFullManual = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
+      return;
+    }
+    e.preventDefault();
+    closeHelp();
+    router.push(manualUrl);
+  };
 
   return (
     <div className="fixed inset-0 z-[99999] overflow-hidden" role="dialog" aria-modal="true" aria-label={t('title')}>
@@ -116,9 +130,9 @@ export function HelpDrawer() {
 
               <div className="flex items-center gap-1.5">
                 <Link
-                  href="/help"
-                  onClick={closeHelp}
-                  className="px-2.5 py-1 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] rounded-md border border-[var(--border)] transition-colors flex items-center gap-1 no-underline"
+                  href={manualUrl}
+                  onClick={handleFullManual}
+                  className="px-2.5 py-1 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] rounded-md border border-[var(--border)] transition-colors flex items-center gap-1 no-underline cursor-pointer"
                   title={t('fullManual')}
                 >
                   <span className="material-symbols-outlined text-[16px]">open_in_new</span>

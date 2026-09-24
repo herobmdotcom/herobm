@@ -5,8 +5,11 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
+import type { CreateOrganizationDtoMetadata } from './createOrganizationDtoMetadata';
 
 export interface CreateOrganizationDto {
+  /** Custom metadata */
+  metadata?: CreateOrganizationDtoMetadata;
   name: string;
   legalStatus?: string;
   headquartersAddressLine1?: string;

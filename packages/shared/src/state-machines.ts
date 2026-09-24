@@ -113,6 +113,22 @@ export const RECONCILIATION_TRANSITIONS: Record<string, string[]> = {
   [RECONCILIATION_STATE.POSTED]: [],
 };
 
+export const STOCKTAKE_STATE = {
+  CANCELLED: 'cancelled',
+  DRAFT: 'draft',
+  OPEN: 'open',
+  REVIEW: 'review',
+  SUBMITTED: 'submitted',
+} as const;
+
+export const STOCKTAKE_TRANSITIONS: Record<string, string[]> = {
+  [STOCKTAKE_STATE.DRAFT]: [STOCKTAKE_STATE.OPEN, STOCKTAKE_STATE.CANCELLED],
+  [STOCKTAKE_STATE.OPEN]: [STOCKTAKE_STATE.REVIEW, STOCKTAKE_STATE.DRAFT, STOCKTAKE_STATE.CANCELLED],
+  [STOCKTAKE_STATE.REVIEW]: [STOCKTAKE_STATE.OPEN, STOCKTAKE_STATE.SUBMITTED, STOCKTAKE_STATE.CANCELLED],
+  [STOCKTAKE_STATE.SUBMITTED]: [],
+  [STOCKTAKE_STATE.CANCELLED]: [STOCKTAKE_STATE.DRAFT],
+};
+
 export const SHIPMENT_TRANSITIONS: Record<string, string[]> = {
   [SHIPMENT_STATE.DRAFT]: [SHIPMENT_STATE.DISPATCHED, SHIPMENT_STATE.CANCELLED],
   [SHIPMENT_STATE.DISPATCHED]: [SHIPMENT_STATE.PARTIALLY_RECEIVED, SHIPMENT_STATE.RECEIVED, SHIPMENT_STATE.CANCELLED],
@@ -306,9 +322,21 @@ export const TRANSFER_ORDER_STATE = {
 
 export const TRANSFER_ORDER_TRANSITIONS: Record<string, string[]> = {
   [TRANSFER_ORDER_STATE.CONFIRMED]: [TRANSFER_ORDER_STATE.PICKING, TRANSFER_ORDER_STATE.CANCELLED],
-  [TRANSFER_ORDER_STATE.PICKING]: [TRANSFER_ORDER_STATE.SHIPPED, TRANSFER_ORDER_STATE.CANCELLED],
-  [TRANSFER_ORDER_STATE.SHIPPED]: [TRANSFER_ORDER_STATE.PARTIALLY_RECEIVED, TRANSFER_ORDER_STATE.RECEIVED, TRANSFER_ORDER_STATE.PICKING],
-  [TRANSFER_ORDER_STATE.PARTIALLY_RECEIVED]: [TRANSFER_ORDER_STATE.RECEIVED],
+  [TRANSFER_ORDER_STATE.PICKING]: [
+    TRANSFER_ORDER_STATE.SHIPPED,
+    TRANSFER_ORDER_STATE.PARTIALLY_RECEIVED,
+    TRANSFER_ORDER_STATE.RECEIVED,
+    TRANSFER_ORDER_STATE.CANCELLED,
+  ],
+  [TRANSFER_ORDER_STATE.SHIPPED]: [
+    TRANSFER_ORDER_STATE.PARTIALLY_RECEIVED,
+    TRANSFER_ORDER_STATE.RECEIVED,
+    TRANSFER_ORDER_STATE.PICKING,
+  ],
+  [TRANSFER_ORDER_STATE.PARTIALLY_RECEIVED]: [
+    TRANSFER_ORDER_STATE.RECEIVED,
+    TRANSFER_ORDER_STATE.PICKING,
+  ],
   [TRANSFER_ORDER_STATE.RECEIVED]: [],
   [TRANSFER_ORDER_STATE.CANCELLED]: [],
 };
@@ -390,7 +418,69 @@ export const OPPORTUNITY_STATE = {
   ARCHIVED: 'archived',
 } as const;
 
-export const PROJECT_STATE = OPPORTUNITY_STATE;
+export const PROJECT_STATE = {
+  DRAFT: 'draft',
+  ACTIVE: 'active',
+  CLOSED: 'closed',
+} as const;
+
+export const PROJECT_TRANSITIONS: Record<string, string[]> = {
+  [PROJECT_STATE.DRAFT]: [PROJECT_STATE.ACTIVE, PROJECT_STATE.CLOSED],
+  [PROJECT_STATE.ACTIVE]: [PROJECT_STATE.CLOSED],
+  [PROJECT_STATE.CLOSED]: [PROJECT_STATE.ACTIVE],
+};
+
+export const PROJECT_RESOURCE_STATE = {
+  ACTIVE: 'active',
+  ARCHIVED: 'archived',
+} as const;
+
+export const PROJECT_TASK_STATE = {
+  NOT_STARTED: 'not_started',
+  IN_PROGRESS: 'in_progress',
+  COMPLETED: 'completed',
+  CANCELLED: 'cancelled',
+} as const;
+
+export const PROJECT_TASK_TRANSITIONS: Record<string, string[]> = {
+  [PROJECT_TASK_STATE.NOT_STARTED]: [PROJECT_TASK_STATE.IN_PROGRESS, PROJECT_TASK_STATE.CANCELLED],
+  [PROJECT_TASK_STATE.IN_PROGRESS]: [PROJECT_TASK_STATE.COMPLETED, PROJECT_TASK_STATE.NOT_STARTED, PROJECT_TASK_STATE.CANCELLED],
+  [PROJECT_TASK_STATE.COMPLETED]: [],
+  [PROJECT_TASK_STATE.CANCELLED]: [PROJECT_TASK_STATE.NOT_STARTED],
+};
+
+export const PROJECT_BILLING_TYPE = {
+  TIME_AND_MATERIALS: 'time_and_materials',
+  FIXED_PRICE: 'fixed_price',
+  MILESTONE: 'milestone',
+  COST_PLUS: 'cost_plus',
+} as const;
+
+export const RESOURCE_TYPE = {
+  PERSON: 'person',
+  CONTRACTOR: 'contractor',
+  EQUIPMENT: 'equipment',
+} as const;
+
+export const PROJECT_LINE_TYPE = {
+  RESOURCE: 'resource',
+  ITEM: 'item',
+  EXPENSE: 'expense',
+} as const;
+
+export const PROJECT_LEDGER_ENTRY_TYPE = {
+  USAGE: 'usage',
+  SALE: 'sale',
+} as const;
+
+export const PROJECT_SOURCE_TYPE = {
+  TIMESHEET: 'timesheet',
+  INVENTORY_ISSUE: 'inventory_issue',
+  INVENTORY_RETURN: 'inventory_return',
+  PURCHASE_INVOICE: 'purchase_invoice',
+  MANUAL_JOURNAL: 'manual_journal',
+  SALES_INVOICE: 'sales_invoice',
+} as const;
 
 export const PRODUCT_TRANSITIONS: Record<string, string[]> = {
   [PRODUCT_STATE.DRAFT]: [PRODUCT_STATE.ACTIVE, PRODUCT_STATE.ARCHIVED],
@@ -439,8 +529,15 @@ export type ProductState = typeof PRODUCT_STATE[keyof typeof PRODUCT_STATE];
 export type OrganizationState = typeof ORGANIZATION_STATE[keyof typeof ORGANIZATION_STATE];
 export type ContactState = typeof CONTACT_STATE[keyof typeof CONTACT_STATE];
 export type OpportunityState = typeof OPPORTUNITY_STATE[keyof typeof OPPORTUNITY_STATE];
-export type ProjectState = OpportunityState;
+export type ProjectState = typeof PROJECT_STATE[keyof typeof PROJECT_STATE];
+export type ProjectTaskState = typeof PROJECT_TASK_STATE[keyof typeof PROJECT_TASK_STATE];
+export type ProjectBillingType = typeof PROJECT_BILLING_TYPE[keyof typeof PROJECT_BILLING_TYPE];
+export type ResourceType = typeof RESOURCE_TYPE[keyof typeof RESOURCE_TYPE];
+export type ProjectLineType = typeof PROJECT_LINE_TYPE[keyof typeof PROJECT_LINE_TYPE];
+export type ProjectLedgerEntryType = typeof PROJECT_LEDGER_ENTRY_TYPE[keyof typeof PROJECT_LEDGER_ENTRY_TYPE];
+export type ProjectSourceType = typeof PROJECT_SOURCE_TYPE[keyof typeof PROJECT_SOURCE_TYPE];
 export type ReconciliationState = typeof RECONCILIATION_STATE[keyof typeof RECONCILIATION_STATE];
+export type StocktakeState = typeof STOCKTAKE_STATE[keyof typeof STOCKTAKE_STATE];
 export type PurchaseReturnShipmentState = typeof PURCHASE_RETURN_SHIPMENT_STATE[keyof typeof PURCHASE_RETURN_SHIPMENT_STATE];
 export type PurchaseDebitNoteState = typeof PURCHASE_DEBIT_NOTE_STATE[keyof typeof PURCHASE_DEBIT_NOTE_STATE];
 export type WorkOrderState = typeof WORK_ORDER_STATE[keyof typeof WORK_ORDER_STATE];
@@ -490,9 +587,15 @@ export const ON_ORDER_PURCHASE_ORDER_STATES: readonly PurchaseOrderState[] = [
   PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED,
 ] as const;
 
+export const OPEN_SALES_ORDER_STATES: readonly SalesOrderState[] = [
+  SALES_ORDER_STATE.CONFIRMED,
+  SALES_ORDER_STATE.PICKING,
+  SALES_ORDER_STATE.SHIPPED,
+] as const;
+
 /**
- * Sales order states representing active pending outbound commitments ("Committed").
- * Excludes `draft`/`quoted` (unconfirmed) and `shipped`/`invoiced` (already deducted from physical QOH).
+ * Sales order states representing active open orders being fulfilled (confirmed, picking, shipped).
+ * Excludes `draft`/`quoted` (quotes/drafts), `invoiced` (completed), and `cancelled`.
  */
 export const COMMITTED_SALES_ORDER_STATES: readonly SalesOrderState[] = [
   SALES_ORDER_STATE.CONFIRMED,
@@ -531,12 +634,31 @@ export const RECONCILIATION_LIFECYCLE: Record<string, number> = {
   [RECONCILIATION_STATE.POSTED]: 2,
 };
 
+export const STOCKTAKE_LIFECYCLE: Record<string, number> = {
+  [STOCKTAKE_STATE.CANCELLED]: 0,
+  [STOCKTAKE_STATE.DRAFT]: 1,
+  [STOCKTAKE_STATE.OPEN]: 2,
+  [STOCKTAKE_STATE.REVIEW]: 3,
+  [STOCKTAKE_STATE.SUBMITTED]: 4,
+};
+
 export const GOODS_RECEIVED_LIFECYCLE: Record<string, number> = {
   [GOODS_RECEIVED_STATE.CANCELLED]: 0,
   [GOODS_RECEIVED_STATE.RECEIVED]: 1,
 };
 
+export const PROJECT_LIFECYCLE: Record<string, number> = {
+  [PROJECT_STATE.DRAFT]: 1,
+  [PROJECT_STATE.ACTIVE]: 2,
+  [PROJECT_STATE.CLOSED]: 3,
+};
 
+export const PROJECT_TASK_LIFECYCLE: Record<string, number> = {
+  [PROJECT_TASK_STATE.CANCELLED]: 0,
+  [PROJECT_TASK_STATE.NOT_STARTED]: 1,
+  [PROJECT_TASK_STATE.IN_PROGRESS]: 2,
+  [PROJECT_TASK_STATE.COMPLETED]: 3,
+};
 
 export const PURCHASE_RETURN_LIFECYCLE: Record<string, number> = {
   [PURCHASE_RETURN_STATE.CANCELLED]: 0,
@@ -637,3 +759,9 @@ export function isOnOrderPurchaseOrderState(state: string): boolean {
 export function isCommittedSalesOrderState(state: string): boolean {
   return (COMMITTED_SALES_ORDER_STATES as readonly string[]).includes(state);
 }
+
+/** Check whether a sales order state represents an active open order. */
+export function isOpenSalesOrderState(state: string): boolean {
+  return (OPEN_SALES_ORDER_STATES as readonly string[]).includes(state);
+}
+

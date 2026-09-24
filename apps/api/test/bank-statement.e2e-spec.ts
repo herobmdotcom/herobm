@@ -11,7 +11,7 @@ import {
   glJournalLines,
   glReconciliations,
 } from '@herobm/db-schema';
-import { eq } from 'drizzle-orm';
+import { eq, ne } from 'drizzle-orm';
 import { RECONCILIATION_STATE } from '@herobm/shared';
 import * as crypto from 'crypto';
 
@@ -139,6 +139,13 @@ describe('BankStatementController (e2e)', () => {
       })
       .returning();
 
+    const otherAccounts = await db
+      .select({ glAccountId: glAccounts.glAccountId })
+      .from(glAccounts)
+      .where(ne(glAccounts.glAccountId, bankAccountId))
+      .limit(1);
+    const offsetAccountId = otherAccounts[0]?.glAccountId || bankAccountId;
+
     const jl = await db
       .insert(glJournalLines)
       .values([
@@ -151,6 +158,18 @@ describe('BankStatementController (e2e)', () => {
           foreignCredit: '0.00',
           foreignCurrencyCode: 'AUD',
           memo: 'Dummy match line',
+          exchangeRate: '1',
+          isReconciled: false,
+        },
+        {
+          journalEntryId: je[0].journalEntryId,
+          glAccountId: offsetAccountId,
+          debit: '0.00',
+          credit: '100.00',
+          foreignDebit: '0.00',
+          foreignCredit: '100.00',
+          foreignCurrencyCode: 'AUD',
+          memo: 'Dummy match offset line',
           exchangeRate: '1',
           isReconciled: false,
         },

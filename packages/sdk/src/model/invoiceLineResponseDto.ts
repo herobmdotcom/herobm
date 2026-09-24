@@ -17,6 +17,8 @@ export interface InvoiceLineResponseDto {
   productNumber?: string;
   glAccountId?: string;
   matchStatus: string;
+  discountPercentage?: string;
+  taxAmount?: string;
   purchaseOrderId?: string;
   purchaseOrderNumber?: string;
   purchaseOrderLineId?: string;

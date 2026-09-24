@@ -37,7 +37,6 @@ export async function searchPageTable(page: Page, query: string): Promise<void> 
   const searchInput = page.locator('input[placeholder*="Search"], input[placeholder*="search"]').first();
   if (await searchInput.isVisible()) {
     await searchInput.fill(query);
-    await page.waitForTimeout(800); // Allow debounce and API fetch
-    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(500); // Allow debounce and API fetch
   }
 }

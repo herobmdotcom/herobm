@@ -1,7 +1,13 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { purchasingSettings } from '@herobm/db-schema';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
 import type { PaginationQuery } from '../common/pagination';
 import type { PurchaseOrderState } from '@herobm/shared';
+import type { UpdatePurchasingSettingsDto } from './dto';
 
 import { PurchaseOrdersQueryService } from './purchase-orders-query.service';
 import { PurchaseOrdersStateService } from './purchase-orders-state.service';
@@ -14,6 +20,7 @@ export class PurchaseOrdersService {
   private readonly logger = new Logger(PurchaseOrdersService.name);
 
   constructor(
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly queryService: PurchaseOrdersQueryService,
     private readonly stateService: PurchaseOrdersStateService,
     private readonly writeService: PurchaseOrdersWriteService,
@@ -102,5 +109,74 @@ export class PurchaseOrdersService {
       productId,
       taxCategoryIdOverride,
     );
+  }
+
+  async getSettings(tx?: DrizzleDB) {
+    const db = tx || this.db;
+    const [settings] = await db.select().from(purchasingSettings).limit(1);
+    return (
+      settings || {
+        purchaseOrderMetadataSchema: null,
+        debitNoteMetadataSchema: null,
+      }
+    );
+  }
+
+  async updateSettings(data: UpdatePurchasingSettingsDto, tx?: DrizzleDB) {
+    const db = tx || this.db;
+    const [existing] = await db.select().from(purchasingSettings).limit(1);
+
+    if (!existing) {
+      const [created] = await db
+        .insert(purchasingSettings)
+        .values({
+          purchaseOrderMetadataSchema: data.purchaseOrderMetadataSchema ?? null,
+          debitNoteMetadataSchema: data.debitNoteMetadataSchema ?? null,
+        })
+        .returning();
+
+      await emitEvent(db, {
+        entityType: EntityType.PURCHASING_SETTINGS,
+        entityId: created.purchasingSettingsId,
+        entityDisplayName: 'Purchasing Settings',
+        eventType: EventType.UPDATED,
+        payload: { changes: data },
+        actor: 'system',
+      });
+
+      return created;
+    }
+
+    const [updated] = await db
+      .update(purchasingSettings)
+      .set({
+        purchaseOrderMetadataSchema:
+          data.purchaseOrderMetadataSchema !== undefined
+            ? data.purchaseOrderMetadataSchema
+            : existing.purchaseOrderMetadataSchema,
+        debitNoteMetadataSchema:
+          data.debitNoteMetadataSchema !== undefined
+            ? data.debitNoteMetadataSchema
+            : existing.debitNoteMetadataSchema,
+        modifiedOn: new Date(),
+      })
+      .where(
+        eq(
+          purchasingSettings.purchasingSettingsId,
+          existing.purchasingSettingsId,
+        ),
+      )
+      .returning();
+
+    await emitEvent(db, {
+      entityType: EntityType.PURCHASING_SETTINGS,
+      entityId: updated.purchasingSettingsId,
+      entityDisplayName: 'Purchasing Settings',
+      eventType: EventType.UPDATED,
+      payload: { changes: data },
+      actor: 'system',
+    });
+
+    return updated;
   }
 }

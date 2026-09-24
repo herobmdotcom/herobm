@@ -1,0 +1,5 @@
+ALTER TABLE "herobm_core"."sales_invoice_lines" ADD COLUMN IF NOT EXISTS "discount_percentage" numeric NOT NULL DEFAULT '0';--> statement-breakpoint
+ALTER TABLE "herobm_core"."sales_invoice_lines" ADD COLUMN IF NOT EXISTS "tax_amount" numeric NOT NULL DEFAULT '0';--> statement-breakpoint
+ALTER TABLE "herobm_core"."sales_invoice_lines" ADD COLUMN IF NOT EXISTS "tax_category_id" uuid;--> statement-breakpoint
+ALTER TABLE "herobm_core"."sales_invoice_lines" ADD CONSTRAINT "sales_invoice_lines_tax_category_id_tax_categories_tax_category_id_fk" FOREIGN KEY ("tax_category_id") REFERENCES "herobm_core"."tax_categories"("tax_category_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_sales_invoice_lines_tax_category" ON "herobm_core"."sales_invoice_lines" USING btree ("tax_category_id");

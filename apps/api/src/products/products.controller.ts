@@ -49,6 +49,10 @@ import {
   AddProductComponentDto,
   UpdateProductComponentDto,
   EmptyBodyDto,
+  ProductSettingsResponseDto,
+  UpdateProductSettingsDto,
+  AddServiceMemberDto,
+  ServiceMemberResponseDto,
 } from './dto';
 import { CasbinResource, CasbinAction, SkipCasbin } from '../auth/casbin.guard';
 import { Public } from '../auth/public.decorator';
@@ -69,6 +73,29 @@ export class ProductsController {
     private readonly productsWriteService: ProductsWriteService,
     private readonly storageService: StorageService,
   ) {}
+
+  @Get('settings')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Product Settings',
+    description: 'Retrieve the product domain settings and metadata schema.',
+  })
+  @ApiOkResponse({ type: ProductSettingsResponseDto })
+  async getSettings() {
+    return this.productsService.getSettings();
+  }
+
+  @Patch('settings')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Product Settings',
+    description: 'Update the product domain settings and metadata schema.',
+  })
+  @ApiBody({ type: UpdateProductSettingsDto })
+  @ApiOkResponse({ type: ProductSettingsResponseDto })
+  async updateSettings(@Body() body: UpdateProductSettingsDto) {
+    return this.productsService.updateSettings(body);
+  }
 
   @Get('images/*path')
   @SkipCasbin()
@@ -474,5 +501,63 @@ export class ProductsController {
   async removeImage(@Param('id') id: string, @AuthUser() user: JwtUser) {
     await this.productsWriteService.removeImage(id, user.username);
     return this.productsService.findOne(id);
+  }
+
+  @Get(':id/members')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Service Product Members',
+    description: 'List assigned people (resources) for a service product.',
+  })
+  @ApiOkResponse({ type: [ServiceMemberResponseDto] })
+  async getServiceMembers(@Param('id') id: string) {
+    return this.productsService.getServiceMembers(id);
+  }
+
+  @Post(':id/members')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Add Service Product Member',
+    description: 'Assign a person resource to a service product.',
+  })
+  @ApiCreatedResponse({ type: ServiceMemberResponseDto })
+  async addServiceMember(
+    @Param('id') id: string,
+    @Body() dto: AddServiceMemberDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.productsService.addServiceMember(
+      id,
+      dto.resourceId,
+      user.username,
+    );
+  }
+
+  @Delete(':id/members/:resourceId')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Remove Service Product Member',
+    description: 'Remove a person resource from a service product.',
+  })
+  @ApiOkResponse({
+    schema: {
+      type: 'object',
+      properties: {
+        deleted: { type: 'boolean' },
+        productId: { type: 'string' },
+        resourceId: { type: 'string' },
+      },
+    },
+  })
+  async removeServiceMember(
+    @Param('id') id: string,
+    @Param('resourceId') resourceId: string,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.productsService.removeServiceMember(
+      id,
+      resourceId,
+      user.username,
+    );
   }
 }

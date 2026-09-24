@@ -5,8 +5,10 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
+import type { UomResponseDtoCategory } from './uomResponseDtoCategory';
 
 export interface UomResponseDto {
   uomCode: string;
   description: string;
+  category: UomResponseDtoCategory;
 }

@@ -11,6 +11,8 @@ export interface GlAccountResponseDto {
   accountCode: string;
   name: string;
   accountType: string;
+  /** @nullable */
+  reportCategory?: string | null;
   isGroup: boolean;
   isActive: boolean;
   /** @nullable */

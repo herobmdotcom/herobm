@@ -25,6 +25,7 @@ import {
   workOrderComponents,
   workOrderPicks,
   organizations,
+  projects,
 } from '@herobm/db-schema';
 import { findOrder, getCommittedPerLine } from './shipment-helpers';
 import { getCreditBlockedSql } from './orders.sql';
@@ -136,12 +137,19 @@ export class PickingQueryService {
               binNumber: bins.binNumber,
               binType: bins.binType,
               isUnavailable: bins.isUnavailable,
+              isBonded: bins.isBonded,
+              isConsignment: bins.isConsignment,
               onHand: binContents.actualQuantity,
             })
             .from(binContents)
             .innerJoin(bins, eq(binContents.binId, bins.binId))
             .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-            .where(inArray(binContents.productId, productIds))
+            .where(
+              and(
+                inArray(binContents.productId, productIds),
+                isPickableBinCondition(bins),
+              ),
+            )
         : Promise.resolve(
             [] as {
               productId: string;
@@ -150,7 +158,9 @@ export class PickingQueryService {
               binId: string;
               binNumber: string;
               binType: string;
-              isUnavailable: boolean;
+              isUnavailable: boolean | null;
+              isBonded: boolean | null;
+              isConsignment: boolean | null;
               onHand: string;
             }[],
           ),
@@ -422,8 +432,8 @@ export class PickingQueryService {
         .select({
           id: transferOrders.transferOrderId,
           orderNumber: transferOrders.orderNumber,
-          name: sql<string>`'Internal Transfer'`,
-          customerName: locations.name,
+          name: sql<string>`CASE WHEN ${transferOrders.projectId} IS NOT NULL THEN ${projects.name} ELSE 'Internal Transfer' END`,
+          customerName: sql<string>`CASE WHEN ${transferOrders.isProjectReturn} = true THEN CONCAT('Return: ', ${projects.projectNumber}) WHEN ${transferOrders.projectId} IS NOT NULL THEN CONCAT('Project: ', ${projects.projectNumber}) ELSE ${locations.name} END`,
           customerOrderNumber: sql<string>`'N/A'`,
           stateCode: transferOrders.stateCode,
           createdOn: transferOrders.createdOn,
@@ -436,6 +446,8 @@ export class PickingQueryService {
           lineQuantity: transferOrderLines.quantity,
           isPhysical: sql<boolean>`CASE WHEN ${coreProducts.productType} = 'inventory' THEN true ELSE false END`,
           type: sql<string>`'transfer_order'`,
+          isProjectReturn: transferOrders.isProjectReturn,
+          projectId: transferOrders.projectId,
         })
         .from(transferOrders)
         .innerJoin(
@@ -449,6 +461,7 @@ export class PickingQueryService {
           locations,
           eq(transferOrders.destinationLocationId, locations.locationId),
         )
+        .leftJoin(projects, eq(transferOrders.projectId, projects.projectId))
         .leftJoin(
           coreProducts,
           eq(transferOrderLines.productId, coreProducts.productId),
@@ -513,99 +526,134 @@ export class PickingQueryService {
       ),
     );
 
-    const [soPicks, toPicks, woPicks, allocatedBackorderLines, stockRows] =
-      await Promise.all([
-        soLineIds.length > 0
-          ? this.db
-              .select({
-                lineId: salesOrderPicks.salesOrderLineId,
-                pickedQty:
-                  sql<number>`COALESCE(SUM(${salesOrderPicks.quantity}), 0)`.mapWith(
-                    Number,
-                  ),
-              })
-              .from(salesOrderPicks)
-              .where(
-                and(
-                  inArray(salesOrderPicks.salesOrderLineId, soLineIds),
-                  sql`${salesOrderPicks.stateCode} != ${SALES_ORDER_PICK_STATE.CANCELLED}`,
-                ),
-              )
-              .groupBy(salesOrderPicks.salesOrderLineId)
-          : Promise.resolve([]),
+    const projectReturnProjectIds = [
+      ...new Set(
+        rawTransferLines
+          .filter((r) => r.isProjectReturn && r.projectId)
+          .map((r) => r.projectId as string),
+      ),
+    ];
 
-        toLineIds.length > 0
-          ? this.db
-              .select({
-                lineId: transferOrderPicks.transferOrderLineId,
-                pickedQty:
-                  sql<number>`COALESCE(SUM(${transferOrderPicks.quantity}), 0)`.mapWith(
-                    Number,
-                  ),
-              })
-              .from(transferOrderPicks)
-              .where(
-                and(
-                  inArray(transferOrderPicks.transferOrderLineId, toLineIds),
-                  sql`${transferOrderPicks.stateCode} != ${TRANSFER_ORDER_PICK_STATE.CANCELLED}`,
+    const [
+      soPicks,
+      toPicks,
+      woPicks,
+      allocatedBackorderLines,
+      stockRows,
+      projectReturnStockRows,
+    ] = await Promise.all([
+      soLineIds.length > 0
+        ? this.db
+            .select({
+              lineId: salesOrderPicks.salesOrderLineId,
+              pickedQty:
+                sql<number>`COALESCE(SUM(${salesOrderPicks.quantity}), 0)`.mapWith(
+                  Number,
                 ),
-              )
-              .groupBy(transferOrderPicks.transferOrderLineId)
-          : Promise.resolve([]),
+            })
+            .from(salesOrderPicks)
+            .where(
+              and(
+                inArray(salesOrderPicks.salesOrderLineId, soLineIds),
+                sql`${salesOrderPicks.stateCode} != ${SALES_ORDER_PICK_STATE.CANCELLED}`,
+              ),
+            )
+            .groupBy(salesOrderPicks.salesOrderLineId)
+        : Promise.resolve([]),
 
-        woComponentIds.length > 0
-          ? this.db
-              .select({
-                lineId: workOrderPicks.workOrderComponentId,
-                pickedQty:
-                  sql<number>`COALESCE(SUM(${workOrderPicks.quantity}), 0)`.mapWith(
-                    Number,
-                  ),
-              })
-              .from(workOrderPicks)
-              .where(
-                and(
-                  inArray(workOrderPicks.workOrderComponentId, woComponentIds),
-                  eq(workOrderPicks.stateCode, WORK_ORDER_PICK_STATE.PICKED),
+      toLineIds.length > 0
+        ? this.db
+            .select({
+              lineId: transferOrderPicks.transferOrderLineId,
+              pickedQty:
+                sql<number>`COALESCE(SUM(${transferOrderPicks.quantity}), 0)`.mapWith(
+                  Number,
                 ),
-              )
-              .groupBy(workOrderPicks.workOrderComponentId)
-          : Promise.resolve([]),
+            })
+            .from(transferOrderPicks)
+            .where(
+              and(
+                inArray(transferOrderPicks.transferOrderLineId, toLineIds),
+                sql`${transferOrderPicks.stateCode} != ${TRANSFER_ORDER_PICK_STATE.CANCELLED}`,
+              ),
+            )
+            .groupBy(transferOrderPicks.transferOrderLineId)
+        : Promise.resolve([]),
 
-        soLineIds.length > 0
-          ? this.db
-              .select({ lineId: backorders.salesOrderLineId })
-              .from(backorders)
-              .where(
-                and(
-                  inArray(backorders.salesOrderLineId, soLineIds),
-                  eq(backorders.stateCode, BACKORDER_STATE.RECEIVED_RESERVED),
+      woComponentIds.length > 0
+        ? this.db
+            .select({
+              lineId: workOrderPicks.workOrderComponentId,
+              pickedQty:
+                sql<number>`COALESCE(SUM(${workOrderPicks.quantity}), 0)`.mapWith(
+                  Number,
                 ),
-              )
-          : Promise.resolve([]),
+            })
+            .from(workOrderPicks)
+            .where(
+              and(
+                inArray(workOrderPicks.workOrderComponentId, woComponentIds),
+                eq(workOrderPicks.stateCode, WORK_ORDER_PICK_STATE.PICKED),
+              ),
+            )
+            .groupBy(workOrderPicks.workOrderComponentId)
+        : Promise.resolve([]),
 
-        allProductIds.length > 0
-          ? this.db
-              .select({
-                productId: binContents.productId,
-                locationId: zones.locationId,
-                onHand:
-                  sql<number>`COALESCE(SUM(${binContents.actualQuantity}), 0)`.mapWith(
-                    Number,
-                  ),
-              })
-              .from(binContents)
-              .innerJoin(bins, eq(binContents.binId, bins.binId))
-              .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-              .where(
-                and(
-                  inArray(binContents.productId, allProductIds),
-                  isPickableBinCondition(bins),
+      soLineIds.length > 0
+        ? this.db
+            .select({ lineId: backorders.salesOrderLineId })
+            .from(backorders)
+            .where(
+              and(
+                inArray(backorders.salesOrderLineId, soLineIds),
+                eq(backorders.stateCode, BACKORDER_STATE.RECEIVED_RESERVED),
+              ),
+            )
+        : Promise.resolve([]),
+
+      allProductIds.length > 0
+        ? this.db
+            .select({
+              productId: binContents.productId,
+              locationId: zones.locationId,
+              onHand:
+                sql<number>`COALESCE(SUM(${binContents.actualQuantity}), 0)`.mapWith(
+                  Number,
                 ),
-              )
-              .groupBy(binContents.productId, zones.locationId)
-          : Promise.resolve([]),
-      ]);
+            })
+            .from(binContents)
+            .innerJoin(bins, eq(binContents.binId, bins.binId))
+            .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+            .where(
+              and(
+                inArray(binContents.productId, allProductIds),
+                isPickableBinCondition(bins),
+              ),
+            )
+            .groupBy(binContents.productId, zones.locationId)
+        : Promise.resolve([]),
+
+      projectReturnProjectIds.length > 0 && allProductIds.length > 0
+        ? this.db
+            .select({
+              projectId: projects.projectId,
+              productId: binContents.productId,
+              onHand:
+                sql<number>`COALESCE(SUM(${binContents.actualQuantity}), 0)`.mapWith(
+                  Number,
+                ),
+            })
+            .from(binContents)
+            .innerJoin(projects, eq(binContents.binId, projects.stagingBinId))
+            .where(
+              and(
+                inArray(projects.projectId, projectReturnProjectIds),
+                inArray(binContents.productId, allProductIds),
+              ),
+            )
+            .groupBy(projects.projectId, binContents.productId)
+        : Promise.resolve([]),
+    ]);
 
     const picksMap = new Map<string, number>();
     for (const p of soPicks) picksMap.set(p.lineId, p.pickedQty);
@@ -621,6 +669,10 @@ export class PickingQueryService {
     for (const s of stockRows)
       stockMap.set(`${s.productId}_${s.locationId}`, s.onHand);
 
+    const projectReturnStockMap = new Map<string, number>();
+    for (const pr of projectReturnStockRows)
+      projectReturnStockMap.set(`${pr.productId}_${pr.projectId}`, pr.onHand);
+
     const allLines = [
       ...rawLines.map((r) => ({
         ...r,
@@ -631,7 +683,10 @@ export class PickingQueryService {
       })),
       ...rawTransferLines.map((r) => ({
         ...r,
-        onHand: stockMap.get(`${r.productId}_${r.fulfillmentLocationId}`) || 0,
+        onHand:
+          r.isProjectReturn && r.projectId
+            ? projectReturnStockMap.get(`${r.productId}_${r.projectId}`) || 0
+            : stockMap.get(`${r.productId}_${r.fulfillmentLocationId}`) || 0,
         pickedQty: picksMap.get(r.lineId) || 0,
         hasAllocation: false,
       })),

@@ -103,14 +103,6 @@ jobs:
           make build-db-schema
           make build-sdk
 
-      - name: Install Typst CLI
-        run: |
-          if ! command -v typst >/dev/null 2>&1; then
-            echo "Installing Typst CLI..."
-            curl -fsSL https://github.com/typst/typst/releases/download/v0.12.0/typst-x86_64-unknown-linux-musl.tar.xz | sudo tar -xJ -C /usr/local/bin --strip-components=1 typst-x86_64-unknown-linux-musl/typst
-          fi
-          typst --version
-
       - name: Run Unit Tests
         run: ${{ matrix.run }}
 
@@ -210,8 +202,11 @@ jobs:
       - name: Install Typst CLI
         run: |
           if ! command -v typst >/dev/null 2>&1; then
-            echo "Installing Typst CLI..."
-            curl -fsSL https://github.com/typst/typst/releases/download/v0.12.0/typst-x86_64-unknown-linux-musl.tar.xz | sudo tar -xJ -C /usr/local/bin --strip-components=1 typst-x86_64-unknown-linux-musl/typst
+            echo "Installing Typst CLI via apt..."
+            sudo apt-get update -y && sudo apt-get install -y typst || {
+              echo "Apt install failed, attempting binary download..."
+              curl -fsSL --retry 5 --retry-connrefused https://github.com/typst/typst/releases/download/v0.11.0/typst-x86_64-unknown-linux-musl.tar.xz | sudo tar -xJ -C /usr/local/bin --strip-components=1 typst-x86_64-unknown-linux-musl/typst
+            }
           fi
           typst --version
 

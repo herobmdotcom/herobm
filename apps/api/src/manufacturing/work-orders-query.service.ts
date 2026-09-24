@@ -51,6 +51,7 @@ export interface WorkOrderRow {
   wipBinName?: string | null;
   outputBinId?: string | null;
   outputBinName?: string | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 @Injectable()
@@ -83,6 +84,7 @@ export class WorkOrdersQueryService {
         wipBinName: bins.binNumber,
         outputBinId: workOrders.outputBinId,
         outputBinName: outputBins.binNumber,
+        metadata: workOrders.metadata,
       })
       .from(workOrders)
       .innerJoin(products, eq(workOrders.productId, products.productId))

@@ -5,12 +5,15 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
+import type { CreateOrderDtoMetadata } from './createOrderDtoMetadata';
 import type { CreateOrderLineDto } from './createOrderLineDto';
 import type { OrderCustomFieldsDto } from './orderCustomFieldsDto';
 
 export interface CreateOrderDto {
+  salesOrderId?: string;
+  /** @nullable */
+  metadata?: CreateOrderDtoMetadata;
   opportunityId?: string;
-  salesOrderId: string;
   name?: string;
   customerId: string;
   customerOrderNumber?: string;

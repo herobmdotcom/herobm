@@ -4,12 +4,16 @@ import { waitForGrid } from './helpers/grid';
 import { uniqueId } from './helpers/generators';
 
 test.describe('Workflow: Procure-to-Pay', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.abort());
+  });
+
   test('executes end-to-end purchase order creation, redirect, and receiving queue workflow', async ({ page }) => {
     const poRef = uniqueId('PO');
     const lineDescription = `E2E Material Line ${poRef}`;
 
     // 1. Navigate to New Purchase Order page
-    await page.goto('/purchase-orders/new', { waitUntil: 'networkidle' });
+    await page.goto('/purchase-orders/new', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
 
     // 2. Select Supplier via SupplierSelect
@@ -67,7 +71,7 @@ test.describe('Workflow: Procure-to-Pay', () => {
     await expect(poTitle).toBeVisible();
 
     // 7. Follow through to Receiving queue
-    await page.goto('/receiving', { waitUntil: 'networkidle' });
+    await page.goto('/receiving', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
     await waitForGrid(page);
   });

@@ -11,6 +11,7 @@ export interface CreateAccountRequestDto {
   accountCode: string;
   name: string;
   accountType: string;
+  reportCategory?: string;
   parentAccountId?: string;
   isGroup?: boolean;
   isBankAccount?: boolean;

@@ -60,7 +60,11 @@ export class ReconciliationController {
     summary: 'Create Reconciliation',
     description: 'Start a new bank reconciliation process.',
   })
-  async createReconciliation(@Body() dto: CreateReconciliationDto) {
+  async createReconciliation(
+    @Body() dto: CreateReconciliationDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    dto.createdBy = user.username;
     return this.service.createReconciliation(dto);
   }
 
@@ -112,7 +116,7 @@ export class ReconciliationController {
     description: 'Finalize and post the completed bank reconciliation.',
   })
   async postReconciliation(@Param('id') id: string, @AuthUser() user: JwtUser) {
-    return this.service.postReconciliation(id, user.userId);
+    return this.service.postReconciliation(id, user.username);
   }
 
   @Delete(':id')
@@ -126,7 +130,7 @@ export class ReconciliationController {
     @Param('id') id: string,
     @AuthUser() user: JwtUser,
   ) {
-    return this.service.discardReconciliation(id, user.userId);
+    return this.service.discardReconciliation(id, user.username);
   }
 
   @Post(':id/adjustments')
@@ -140,9 +144,8 @@ export class ReconciliationController {
   async createAdjustment(
     @Param('id') id: string,
     @Body() dto: CreateAdjustmentDto,
+    @AuthUser() user: JwtUser,
   ) {
-    // In a real application, you'd extract the actor from the JWT token
-    const actor = 'system';
-    return this.service.createAdjustment(id, dto, actor);
+    return this.service.createAdjustment(id, dto, user.username);
   }
 }

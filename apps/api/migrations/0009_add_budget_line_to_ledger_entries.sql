@@ -1,0 +1,3 @@
+ALTER TABLE "herobm_core"."project_ledger_entries" ADD COLUMN IF NOT EXISTS "budget_line_id" uuid;--> statement-breakpoint
+ALTER TABLE "herobm_core"."project_ledger_entries" ADD CONSTRAINT "project_ledger_entries_budget_line_id_project_budget_lines_budget_line_id_fk" FOREIGN KEY ("budget_line_id") REFERENCES "herobm_core"."project_budget_lines"("budget_line_id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_project_ledger_entries_budget_line_id" ON "herobm_core"."project_ledger_entries" USING btree ("budget_line_id");

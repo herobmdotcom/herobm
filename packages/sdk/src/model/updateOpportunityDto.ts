@@ -5,8 +5,10 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
+import type { UpdateOpportunityDtoMetadata } from './updateOpportunityDtoMetadata';
 
 export interface UpdateOpportunityDto {
+  organizationId?: string;
   name?: string;
   status?: string;
   type?: string;
@@ -21,4 +23,6 @@ export interface UpdateOpportunityDto {
   probability?: number;
   actualValue?: string;
   description?: string;
+  /** Custom metadata object */
+  metadata?: UpdateOpportunityDtoMetadata;
 }

@@ -20,11 +20,13 @@ vendorId?: string;
 days?: Object;
 purchaseOrderId?: string;
 productId?: string;
+productType?: string;
 opportunityId?: string;
 projectId?: string;
 sort?: string;
 sortDirection?: Object;
 destinationLocationId?: string;
+hasPendingReceipt?: boolean;
 /**
  * Comma separated list of fields to include in the response (e.g. "id,name")
  */

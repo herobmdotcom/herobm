@@ -22,18 +22,19 @@ import {
   TaxPositionResponseDto,
 } from './tax-positions.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { SkipCasbin } from '../auth/casbin.guard';
+import { SystemResource } from '@herobm/shared';
+import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 
 @ApiTags('Tax')
 @ApiBearerAuth()
 @UseGuards(ThrottlerGuard)
-@SkipCasbin()
+@CasbinResource(SystemResource.SETTINGS)
 @Controller('tax-positions')
 export class TaxPositionsController {
   constructor(private readonly taxPositionsService: TaxPositionsService) {}
 
   @Get()
-  @SkipCasbin()
+  @CasbinAction('read')
   @ApiOperation({
     summary: 'List all tax positions',
     description: 'Retrieves a list of all configured tax positions.',
@@ -44,7 +45,7 @@ export class TaxPositionsController {
   }
 
   @Get(':id')
-  @SkipCasbin()
+  @CasbinAction('read')
   @ApiOperation({
     summary: 'Get a tax position by id',
     description: 'Retrieves a specific tax position by its unique identifier.',
@@ -55,7 +56,7 @@ export class TaxPositionsController {
   }
 
   @Post()
-  @SkipCasbin()
+  @CasbinAction('write')
   @ApiOperation({
     summary: 'Create a new tax position',
     description: 'Creates a new tax position for business context tax rules.',
@@ -66,7 +67,7 @@ export class TaxPositionsController {
   }
 
   @Put(':id')
-  @SkipCasbin()
+  @CasbinAction('write')
   @ApiOperation({
     summary: 'Update a tax position',
     description: 'Updates an existing tax position.',
@@ -80,7 +81,7 @@ export class TaxPositionsController {
   }
 
   @Delete(':id')
-  @SkipCasbin()
+  @CasbinAction('write')
   @ApiOperation({
     summary: 'Delete a tax position',
     description:

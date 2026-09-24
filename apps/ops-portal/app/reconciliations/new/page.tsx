@@ -58,7 +58,6 @@ export default function NewReconciliationPage() {
         glAccountId,
         statementDate,
         statementBalance: Number(statementBalance),
-        createdBy: 'System User', // Hardcoded for now
       });
       const data = res.data;
       

@@ -20,6 +20,7 @@ import {
 import { eq } from 'drizzle-orm';
 import {
   SALES_ORDER_STATE,
+  OPEN_SALES_ORDER_STATES,
   SALES_INVOICE_STATE,
   CUSTOMER_STATE,
   PRODUCT_STATE,
@@ -41,7 +42,7 @@ describe('OrdersService', () => {
     // Seed data
     await pg.db
       .insert(uomDictionary)
-      .values({ uomCode: 'EA', description: 'Each' });
+      .values({ uomCode: 'EA', description: 'Each', category: 'goods' });
 
     await pg.db.insert(taxCategories).values({
       taxCategoryId: TAX_CAT_ID,
@@ -181,6 +182,42 @@ describe('OrdersService', () => {
 
       const result = await service.findAll({ days: 'mtd' });
       expect(result.data.some((o) => o.id === recentOrderId)).toBe(true);
+    });
+
+    it('should filter by states (multiple comma-separated)', async () => {
+      const confirmedOrderId = '00000000-0000-4000-8000-000000000098';
+      await pg.db.insert(salesOrders).values({
+        salesOrderId: confirmedOrderId,
+        orderNumber: 'ORD-CONF-0001',
+        name: 'Confirmed Test Order',
+        customerId: ACCOUNT_ID,
+        customerOrderNumber: 'PO-CONF',
+        stateCode: SALES_ORDER_STATE.CONFIRMED,
+        source: 'app',
+        createdBy: 'admin',
+        createdOn: new Date(),
+        currencyCode: 'EUR',
+        fulfillmentLocationId: LOCATION_ID,
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+        discrepanciesAcknowledged: false,
+      });
+
+      // Filter for open states: confirmed,picking,shipped
+      const openResult = await service.findAll({
+        state: OPEN_SALES_ORDER_STATES.join(','),
+      });
+      expect(openResult.data.some((o) => o.id === confirmedOrderId)).toBe(true);
+      expect(openResult.data.some((o) => o.id === ORDER_ID)).toBe(false); // ORDER_ID is draft
+
+      // Filter for draft state
+      const draftResult = await service.findAll({
+        state: SALES_ORDER_STATE.DRAFT,
+      });
+      expect(draftResult.data.some((o) => o.id === ORDER_ID)).toBe(true);
+      expect(draftResult.data.some((o) => o.id === confirmedOrderId)).toBe(
+        false,
+      );
     });
   });
 
@@ -470,6 +507,8 @@ describe('OrdersService', () => {
           salesOrderLineId: SOL_1,
           quantityInvoiced: '1',
           pricePerUnit: '150.00',
+          discountPercentage: '0',
+          taxAmount: '0',
           amount: '150.00',
         },
         {
@@ -478,6 +517,8 @@ describe('OrdersService', () => {
           salesOrderLineId: SOL_2,
           quantityInvoiced: '2',
           pricePerUnit: '100.00',
+          discountPercentage: '0',
+          taxAmount: '0',
           amount: '200.00',
         },
         {
@@ -486,6 +527,8 @@ describe('OrdersService', () => {
           salesOrderLineId: SOL_1,
           quantityInvoiced: '1',
           pricePerUnit: '150.00',
+          discountPercentage: '0',
+          taxAmount: '0',
           amount: '150.00',
         },
         {
@@ -494,6 +537,8 @@ describe('OrdersService', () => {
           salesOrderLineId: SOL_1,
           quantityInvoiced: '1',
           pricePerUnit: '999.00',
+          discountPercentage: '0',
+          taxAmount: '0',
           amount: '999.00',
         },
       ]);

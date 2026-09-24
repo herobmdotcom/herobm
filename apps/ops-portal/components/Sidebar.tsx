@@ -50,6 +50,7 @@ export default function Sidebar() {
             { href: routes.inventory.bins(), label: tInventory('tabs.binContents') },
             { href: routes.inventory.ledger(), label: tInventory('tabs.ledger') },
             { href: routes.inventory.locations(), label: tInventory('tabs.locations') },
+            { href: routes.inventory.stocktakes.list(), label: t('items.stocktake') },
             { href: routes.inventory.transfers.list(), label: t('items.transfers') },
             { href: routes.inventory.quarantine(), label: t('items.quarantine') }
           ]
@@ -82,7 +83,16 @@ export default function Sidebar() {
       label: t('groups.purchasing'),
       items: [
         { href: routes.suppliers.list(), label: t('items.suppliers'), icon: 'factory' },
-        { href: routes.purchaseOrders.demands(), label: t('items.demand'), icon: 'list_alt' },
+        { 
+          href: routes.demand.open(), 
+          label: t('items.demand'), 
+          icon: 'list_alt',
+          subItems: [
+            { href: routes.demand.open(), label: t('items.openDemand') },
+            { href: routes.demand.restock(), label: t('items.restock') },
+            { href: routes.demand.movement(), label: t('items.movement') },
+          ]
+        },
         { href: routes.purchaseOrders.list(), label: t('items.purchaseOrders'), icon: 'local_shipping' },
         { href: routes.supplierInvoices.list(), label: t('items.supplierInvoices'), icon: 'request_quote' },
         { href: routes.purchaseOrders.returns.list(), label: t('items.purchaseReturns'), icon: 'assignment_return' },
@@ -96,7 +106,14 @@ export default function Sidebar() {
       ],
     },
     {
-      label: 'CRM',
+      label: t('groups.projects'),
+      items: [
+        { href: routes.projects.list(), label: 'Projects', icon: 'assignment' },
+        { href: routes.resources.list(), label: 'Resources', icon: 'badge' },
+      ],
+    },
+    {
+      label: t('groups.crm'),
       items: [
         { href: routes.crm.organizations.list(), label: 'Organizations', icon: 'business' },
         { href: routes.crm.opportunities.list(), label: 'Opportunities', icon: 'trending_up' },
@@ -117,8 +134,10 @@ export default function Sidebar() {
           icon: 'menu_book',
           subItems: [
             { href: routes.generalLedger.list(), label: t('items.generalLedger') },
+            { href: routes.generalLedger.profitAndLoss(), label: t('items.profitAndLoss') },
+            { href: routes.generalLedger.balanceSheet(), label: t('items.balanceSheet') },
             { href: routes.generalLedger.trialBalance(), label: t('items.trialBalance') },
-            { href: routes.generalLedger.cashFlow(), label: 'Cash Flow' },
+            { href: routes.generalLedger.cashFlow(), label: t('items.cashFlow') },
             { href: routes.generalLedger.journalEntries.list(), label: t('items.journalEntries') },
           ]
         },
@@ -197,6 +216,8 @@ export default function Sidebar() {
           icon: 'settings',
           subItems: [
             { href: routes.admin.settings.crm(), label: 'CRM' },
+            { href: routes.admin.settings.projects(), label: 'Projects' },
+            { href: routes.admin.settings.customFields(), label: t('items.customFields') },
             { href: routes.admin.settings.financial(), label: t('items.financial') },
             { href: routes.admin.settings.integrations(), label: 'Integrations' },
             { href: routes.admin.settings.license(), label: 'License' },

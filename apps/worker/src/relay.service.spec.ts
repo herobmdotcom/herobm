@@ -1,9 +1,42 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { pollOutbox, processEvent } from './relay.service';
+import { pollOutbox, processEvent, resolveWebhookSecretKey } from './relay.service';
 import { relayLogger } from './logger';
 import { Job } from 'bullmq';
+import { deriveEncryptionKey, encrypt } from '@herobm/shared/node';
+import * as crypto from 'crypto';
 
 describe('relay.service', () => {
+  describe('resolveWebhookSecretKey (BL-061)', () => {
+    const testSecret = 'whsec_mysecretkey1234567890';
+    const originalKey = process.env.ENCRYPTION_KEY;
+
+    beforeEach(() => {
+      process.env.ENCRYPTION_KEY = 'test-encryption-key-for-worker-suite';
+    });
+
+    afterEach(() => {
+      process.env.ENCRYPTION_KEY = originalKey;
+    });
+
+    it('should decrypt AES-256-GCM encrypted secret key', () => {
+      const encKey = deriveEncryptionKey(process.env.ENCRYPTION_KEY!);
+      const encryptedSecret = encrypt(testSecret, encKey);
+
+      const decrypted = resolveWebhookSecretKey(encryptedSecret);
+      expect(decrypted).toBe(testSecret);
+    });
+
+    it('should return raw plaintext secret key if not encrypted (legacy backward compatibility)', () => {
+      const plainSecret = 'whsec_plainlegacysecret';
+      const result = resolveWebhookSecretKey(plainSecret);
+      expect(result).toBe(plainSecret);
+    });
+
+    it('should return empty string if secret is empty', () => {
+      expect(resolveWebhookSecretKey('')).toBe('');
+    });
+  });
+
   describe('pollOutbox', () => {
     let mockDb: any;
     let mockQueue: any;
@@ -137,6 +170,39 @@ describe('relay.service', () => {
         expect(mockDb.set).toHaveBeenCalledWith({ processedAt: expect.any(Date), lockedUntil: null });
       });
 
+      it('should decrypt encrypted webhook secret and produce valid HMAC-SHA256 signature (BL-061)', async () => {
+        const rawSecret = 'whsec_secure_production_secret_999';
+        process.env.ENCRYPTION_KEY = 'test-encryption-key-for-worker-suite';
+        const encKey = deriveEncryptionKey(process.env.ENCRYPTION_KEY);
+        const encryptedSecret = encrypt(rawSecret, encKey);
+
+        mockDb.where.mockResolvedValue([
+          {
+            webhookId: 'wh-enc',
+            targetUrl: 'https://webhook.site/secure',
+            secretKey: encryptedSecret,
+            isActive: true,
+            eventTypes: ['sales_order.created'],
+          },
+        ]);
+
+        const job = createJob('sales_order.created', { orderId: 'SO-1' });
+        await processEvent(job, mockDb);
+
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+        const callArgs = fetchSpy.mock.calls[0];
+        const requestBody = callArgs[1].body;
+        const sentSignature = callArgs[1].headers['x-herobm-signature'];
+
+        // Expected signature calculated with the decrypted rawSecret
+        const expectedSignature = crypto
+          .createHmac('sha256', rawSecret)
+          .update(requestBody)
+          .digest('hex');
+
+        expect(sentSignature).toBe(expectedSignature);
+      });
+
       it('should attempt all webhooks and throw on HTTP 500 errors to trigger BullMQ retry', async () => {
         fetchSpy.mockResolvedValueOnce({ ok: false, status: 500 } as Response);
         const job = createJob('sales_order.created', { orderId: 'SO-1' });
@@ -182,3 +248,4 @@ describe('relay.service', () => {
     });
   });
 });
+

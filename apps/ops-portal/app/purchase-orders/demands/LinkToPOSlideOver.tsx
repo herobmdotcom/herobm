@@ -77,10 +77,8 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
 
       api.allocationsControllerGetAvailablePoLines({ productId: demand.productId })
         .then((res) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-          const lines = (res.data as any)?.data || [];
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-          const poIds = [...new Set(lines.map((l: any) => l.purchaseOrderId))] as string[];
+          const lines = res.data || [];
+          const poIds = [...new Set(lines.map((l) => l.purchaseOrderId))] as string[];
 
           setDemandStates((prev) => {
             const next = new Map(prev);

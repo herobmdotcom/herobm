@@ -5,6 +5,7 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
+import type { CreateWorkOrderDtoMetadata } from './createWorkOrderDtoMetadata';
 import type { CreateWorkOrderComponentDto } from './createWorkOrderComponentDto';
 
 export interface CreateWorkOrderDto {
@@ -24,6 +25,11 @@ export interface CreateWorkOrderDto {
   assemblyCostPerUnit?: string;
   /** Flat additional work order-level cost added to total */
   additionalCost?: string;
+  /**
+   * User-defined dynamic metadata attributes
+   * @nullable
+   */
+  metadata?: CreateWorkOrderDtoMetadata;
   /** Component lines snapshot (if empty, auto-populated from product BOM) */
   components?: CreateWorkOrderComponentDto[];
 }

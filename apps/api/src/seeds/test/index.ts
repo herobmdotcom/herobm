@@ -144,10 +144,17 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
     })
     .onConflictDoNothing();
 
-  // 4. Products
+  // 4. Products & UOMs
   await db
     .insert(uomDictionary)
-    .values({ uomCode: 'BOX', description: 'Box' })
+    .values([
+      { uomCode: 'BOX', description: 'Box', category: 'goods' },
+      { uomCode: 'EA', description: 'Each', category: 'goods' },
+      { uomCode: 'HR', description: 'Hourly Rate', category: 'service' },
+      { uomCode: 'HOUR', description: 'Labor Hours', category: 'service' },
+      { uomCode: 'DAY', description: 'Labor Days', category: 'service' },
+      { uomCode: 'JOB', description: 'Fixed Job', category: 'service' },
+    ])
     .onConflictDoNothing();
 
   const prodId = 'e2cd8fba-813c-48c0-84c1-4b13a375494d';

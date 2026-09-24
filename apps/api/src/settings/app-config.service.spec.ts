@@ -51,6 +51,7 @@ describe('AppConfigService', () => {
         defaultFulfillmentLocationId: testLocationId,
         inventoryValuationMethod: 'weighted_average',
         inventoryAccountingMode: 'periodic',
+        allowNegativeInventory: false,
         setupCompletedAt: new Date(),
         creditLimitBehavior: 'block',
         apiRateLimit: '100',
@@ -109,6 +110,7 @@ describe('AppConfigService', () => {
         defaultFulfillmentLocationId: testLocationId,
         inventoryValuationMethod: 'fifo',
         inventoryAccountingMode: 'perpetual',
+        allowNegativeInventory: false,
         setupCompletedAt: new Date(),
         creditLimitBehavior: 'block',
         apiRateLimit: '100',
@@ -129,6 +131,7 @@ describe('AppConfigService', () => {
           defaultFulfillmentLocationId: testLocationId,
           inventoryValuationMethod: 'fifo',
           inventoryAccountingMode: 'perpetual',
+          allowNegativeInventory: false,
           setupCompletedAt: new Date(),
           creditLimitBehavior: 'soft',
           apiRateLimit: '100',
@@ -160,6 +163,7 @@ describe('AppConfigService', () => {
         defaultFulfillmentLocationId: testLocationId,
         inventoryValuationMethod: 'fifo',
         inventoryAccountingMode: 'perpetual',
+        allowNegativeInventory: false,
         setupCompletedAt: new Date(),
         creditLimitBehavior: 'soft',
         apiRateLimit: '100',
@@ -174,6 +178,26 @@ describe('AppConfigService', () => {
         { value: 'demo', order: 1 },
         { value: 'discovery', order: 2 },
       ]);
+    });
+
+    it('should load allowNegativeInventory setting and default to false', async () => {
+      // Default when not configured or false
+      await pg.db.insert(appSettings).values({
+        defaultFulfillmentLocationId: testLocationId,
+        inventoryValuationMethod: 'fifo',
+        inventoryAccountingMode: 'perpetual',
+        allowNegativeInventory: false,
+        setupCompletedAt: new Date(),
+        creditLimitBehavior: 'soft',
+        apiRateLimit: '100',
+      });
+
+      await service.reload();
+      expect(service.allowNegativeInventory()).toBe(false);
+
+      // When updated to true
+      await service.update({ allowNegativeInventory: true });
+      expect(service.allowNegativeInventory()).toBe(true);
     });
   });
 });

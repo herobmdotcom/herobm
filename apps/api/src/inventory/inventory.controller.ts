@@ -16,6 +16,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InventoryQueryService } from './inventory-query.service';
+import { DemandQueryService } from './demand-query.service';
 import { InventoryMovementService } from './inventory-movement.service';
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
@@ -35,6 +36,8 @@ import {
   TopographyLocationResponseDto,
   PendingPutawayResponseDto,
   InventorySuccessResponseDto,
+  RestockResponseDto,
+  MovementReportResponseDto,
 } from './dto';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
@@ -45,6 +48,7 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 export class InventoryController {
   constructor(
     private readonly inventoryQueryService: InventoryQueryService,
+    private readonly demandQueryService: DemandQueryService,
     private readonly inventoryMovementService: InventoryMovementService,
   ) {}
 
@@ -131,21 +135,33 @@ export class InventoryController {
     });
   }
 
-  @Get('putaway-context')
+  @Get('putaway/context')
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Get Putaway Context',
     description: 'Retrieve context for putting away inventory.',
   })
+  @ApiQuery({ name: 'productId', required: true, type: String })
+  @ApiQuery({ name: 'locationId', required: true, type: String })
+  @ApiQuery({ name: 'projectId', required: false, type: String })
+  @ApiQuery({ name: 'isProjectReturn', required: false, type: Boolean })
   @ApiOkResponse({ type: PutawayContextResponseDto })
   async getPutawayContext(
     @Query('productId') productId: string,
     @Query('locationId') locationId: string,
+    @Query('projectId') projectId?: string,
+    @Query('isProjectReturn') isProjectReturn?: string,
   ) {
     if (!productId || !locationId) {
       throw new NotFoundException('productId and locationId are required');
     }
-    return this.inventoryQueryService.getPutawayContext(productId, locationId);
+    const isReturn = isProjectReturn === 'true' || isProjectReturn === '1';
+    return this.inventoryQueryService.getPutawayContext(
+      productId,
+      locationId,
+      projectId,
+      isReturn,
+    );
   }
 
   @Get('locations')
@@ -210,6 +226,58 @@ export class InventoryController {
   @ApiOkResponse({ type: InventoryEntryDetailsResponseDto })
   getEntryDetails(@Param('id') id: string) {
     return this.inventoryQueryService.getEntryDetails(id);
+  }
+
+  @Get('restock')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'List Restock Needs',
+    description:
+      'Retrieve items below minimum threshold with suggested resupply quantities.',
+  })
+  @ApiOkResponse({ type: RestockResponseDto })
+  @ApiQuery({ name: 'locationId', required: false, type: String })
+  @ApiQuery({ name: 'productGroupId', required: false, type: String })
+  @ApiQuery({ name: 'q', required: false, type: String })
+  async getRestock(
+    @Query('locationId') locationId?: string,
+    @Query('productGroupId') productGroupId?: string,
+    @Query('q') q?: string,
+  ) {
+    return this.demandQueryService.getRestockList({
+      locationId,
+      productGroupId,
+      q,
+    });
+  }
+
+  @Get('movement')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Stock Movement Report',
+    description:
+      'Retrieve stock movement report for a given time period and product group.',
+  })
+  @ApiOkResponse({ type: MovementReportResponseDto })
+  @ApiQuery({ name: 'productGroupId', required: false, type: String })
+  @ApiQuery({ name: 'locationId', required: false, type: String })
+  @ApiQuery({ name: 'startDate', required: false, type: String })
+  @ApiQuery({ name: 'endDate', required: false, type: String })
+  @ApiQuery({ name: 'q', required: false, type: String })
+  async getMovement(
+    @Query('productGroupId') productGroupId?: string,
+    @Query('locationId') locationId?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('q') q?: string,
+  ) {
+    return this.demandQueryService.getStockMovementReport({
+      productGroupId,
+      locationId,
+      startDate,
+      endDate,
+      q,
+    });
   }
 
   @Get('pending-putaway')

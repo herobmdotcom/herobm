@@ -28,6 +28,7 @@ jest.mock('@herobm/sdk', () => ({
   pdfTemplatesControllerGetAssignments: jest.fn().mockResolvedValue({ data: [] }),
   macrosControllerFindAll: jest.fn().mockResolvedValue({ data: [] }),
   suppliersControllerFindOne: jest.fn().mockResolvedValue({ data: { contacts: [] } }),
+  purchaseOrdersControllerGetSettings: jest.fn().mockResolvedValue({ data: {} }),
 }));
 
 describe('DebitNoteDetailContent', () => {

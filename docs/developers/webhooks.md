@@ -94,7 +94,7 @@ function verifyWebhookSignature(
 
 ## Supported Events Matrix
 
-The following 186 event types are actively supported across 51 domain entity types:
+The following 193 event types are actively supported across 55 domain entity types:
 
 | Entity Type | Supported Event Actions |
 |-------------|--------------------------|
@@ -128,6 +128,10 @@ The following 186 event types are actively supported across 51 domain entity typ
 | `product` | `archived`, `created`, `status_changed`, `unarchived`, `uom_added`, `uom_removed`, `updated` |
 | `product_group` | `created`, `deleted`, `updated` |
 | `product_supplier` | `linked`, `unlinked` |
+| `project` | `created`, `status_changed`, `updated` |
+| `project_ledger` | `created` |
+| `project_resource` | `created`, `deleted`, `status_changed`, `updated` |
+| `project_task` | `created`, `updated` |
 | `purchase_invoice` | `status_changed`, `updated` |
 | `purchase_order` | `archived`, `created`, `debit_note_created`, `debit_note_posted`, `demand_allocated`, `demand_unallocated`, `invoice_matched`, `invoice_unmatched`, `return_created`, `status_changed`, `unarchived`, `updated` |
 | `purchase_return` | `created`, `status_changed` |
@@ -136,6 +140,7 @@ The following 186 event types are actively supported across 51 domain entity typ
 | `sales_order` | `archived`, `auto_status_changed`, `backorders_allocated`, `created`, `credit_note_posted`, `demand_allocated`, `demand_reallocated`, `demand_unallocated`, `post_confirmation_line_added`, `return_created`, `return_line_added`, `return_line_removed`, `return_line_updated`, `return_updated`, `sales_invoiced`, `status_changed`, `tax_calculated`, `unarchived`, `updated` |
 | `sales_return` | `created`, `status_changed`, `updated` |
 | `shipment` | `shipment_created`, `shipment_line_added`, `shipment_line_removed`, `shipment_line_updated`, `shipment_updated` |
+| `stocktake` | `counted`, `created`, `deleted`, `status_changed`, `submitted`, `updated` |
 | `supplier` | `added_expiry`, `archived`, `created`, `debit_note_posted`, `deleted_expiry`, `status_changed`, `unarchived`, `updated`, `updated_expiry` |
 | `supplier_group` | `created`, `deleted`, `updated` |
 | `system` | `ledger_integrity_violation`, `updated` |

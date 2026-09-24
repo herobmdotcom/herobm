@@ -10,6 +10,9 @@ import type { CreateTransferOrderLineDto } from './createTransferOrderLineDto';
 export interface CreateTransferOrderDto {
   sourceLocationId: string;
   destinationLocationId: string;
+  projectId?: string;
+  projectTaskId?: string;
+  isProjectReturn?: boolean;
   notes?: string;
   shippingNotes?: string;
   lines: CreateTransferOrderLineDto[];

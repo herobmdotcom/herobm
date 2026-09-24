@@ -8,6 +8,7 @@ import {
   ORGANIZATION_CONTACT_ROLE,
   DEFAULT_OPPORTUNITY_STAGES,
   DEFAULT_OPPORTUNITY_TYPES,
+  DEFAULT_PROJECT_STAGES,
   DEFAULT_OPPORTUNITY_CONTACT_ROLES,
   DEFAULT_OPPORTUNITY_ORGANIZATION_ROLES,
   DEFAULT_ORGANIZATION_TAGS,
@@ -88,9 +89,7 @@ export async function runCoreSeeds(db: SeedDB, dryRun = false) {
   await seedSystemEntities(db, dryRun);
   await seedOrganization(db, dryRun);
   await seedBaseGlSettings(db, dryRun);
-  await seedCoaAccounts(db, dryRun, 'au_standard');
   await seedAppSettings(db, dryRun);
-  await seedCoaSettings(db, dryRun, 'au_standard');
   await seedFinancialDimensions(db, dryRun);
   await seedReports(db, dryRun);
 
@@ -168,6 +167,13 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
       ptype: 'p',
       v0: 'viewer',
       v1: SystemResource.WORK_ORDERS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'viewer',
+      v1: SystemResource.PROJECTS,
       v2: 'read',
       v3: 'allow',
     },
@@ -522,6 +528,35 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
       ptype: 'p',
       v0: 'admin',
       v1: SystemResource.WORK_ORDERS,
+      v2: 'handle',
+      v3: 'allow',
+    },
+
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.PROJECTS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.PROJECTS,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.PROJECTS,
+      v2: 'archive',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.PROJECTS,
       v2: 'handle',
       v3: 'allow',
     },
@@ -1477,13 +1512,32 @@ async function seedSystemEntities(db: SeedDB, dryRun: boolean) {
     return;
   }
 
-  await db
-    .insert(uomDictionary)
-    .values({ uomCode: 'EA', description: 'Each' })
-    .onConflictDoUpdate({
-      target: uomDictionary.uomCode,
-      set: { description: 'Each' },
-    });
+  const standardUoms = [
+    { uomCode: 'EA', description: 'Each', category: 'goods' },
+    { uomCode: 'BOX', description: 'Box', category: 'goods' },
+    { uomCode: 'KG', description: 'Kilograms', category: 'goods' },
+    { uomCode: 'SET', description: 'Complete Set', category: 'goods' },
+    { uomCode: 'KIT', description: 'Manufactured Kit', category: 'goods' },
+    { uomCode: 'PALLET', description: 'Shipping Pallet', category: 'goods' },
+    { uomCode: 'HR', description: 'Hourly Rate', category: 'service' },
+    { uomCode: 'HOUR', description: 'Labor Hours', category: 'service' },
+    { uomCode: 'DAY', description: 'Daily Rate', category: 'service' },
+    {
+      uomCode: 'JOB',
+      description: 'Fixed Job / Deliverable',
+      category: 'service',
+    },
+  ];
+
+  for (const uom of standardUoms) {
+    await db
+      .insert(uomDictionary)
+      .values(uom)
+      .onConflictDoUpdate({
+        target: uomDictionary.uomCode,
+        set: { description: uom.description, category: uom.category },
+      });
+  }
 
   await db
     .insert(products)
@@ -1638,6 +1692,7 @@ async function seedAppSettings(db: SeedDB, dryRun: boolean) {
       (row.organizationContactRoles as Array<{
         value: string;
         order: number;
+        isSystem?: boolean;
       }>) || [];
     if (currentRoles.length === 0) {
       await db.update(appSettings).set({
@@ -1647,28 +1702,47 @@ async function seedAppSettings(db: SeedDB, dryRun: boolean) {
         '  Updated existing app_settings with default organizationContactRoles.',
       );
     } else {
-      // Ensure all canonical organization contact roles exist
+      // Ensure all canonical organization contact roles exist and have isSystem: true
+      let rolesModified = false;
+      const updatedRoles = currentRoles.map((r) => {
+        const canonical = DEFAULT_ORGANIZATION_CONTACT_ROLES.find(
+          (def) => def.value.toLowerCase() === r.value.toLowerCase(),
+        );
+        if (canonical?.isSystem && !r.isSystem) {
+          rolesModified = true;
+          return { ...r, isSystem: true };
+        }
+        return r;
+      });
+
       const missingRoles = DEFAULT_ORGANIZATION_CONTACT_ROLES.filter(
         (def) =>
-          !currentRoles.some(
+          !updatedRoles.some(
             (r) => r.value.toLowerCase() === def.value.toLowerCase(),
           ),
       );
       if (missingRoles.length > 0) {
-        let maxOrder = currentRoles.reduce(
+        rolesModified = true;
+        let maxOrder = updatedRoles.reduce(
           (max, r) => Math.max(max, Number(r.order) || 0),
           0,
         );
-        const updatedRoles = [...currentRoles];
         for (const missing of missingRoles) {
           maxOrder += 1;
-          updatedRoles.push({ value: missing.value, order: maxOrder });
+          updatedRoles.push({
+            value: missing.value,
+            order: maxOrder,
+            isSystem: missing.isSystem,
+          });
         }
+      }
+
+      if (rolesModified) {
         await db
           .update(appSettings)
           .set({ organizationContactRoles: updatedRoles });
         console.log(
-          `  Added missing canonical roles (${missingRoles.map((r) => r.value).join(', ')}) to app_settings.organizationContactRoles.`,
+          `  Updated canonical roles in app_settings.organizationContactRoles.`,
         );
       }
     }
@@ -1722,6 +1796,64 @@ async function seedAppSettings(db: SeedDB, dryRun: boolean) {
       console.log(
         '  Updated existing app_settings with default opportunityOrganizationRoles.',
       );
+    } else {
+      let orgRolesModified = false;
+      const currentOrgRoles = (
+        row.opportunityOrganizationRoles as Array<{
+          value: string;
+          order: number;
+          isSystem?: boolean;
+        }>
+      ).map((r) => {
+        // Migrate 'Client' -> 'Customer'
+        if (r.value.toLowerCase() === 'client') {
+          orgRolesModified = true;
+          return { ...r, value: 'Customer', isSystem: true };
+        }
+        return r;
+      });
+
+      const updatedOrgRoles = currentOrgRoles.map((r) => {
+        const canonical = DEFAULT_OPPORTUNITY_ORGANIZATION_ROLES.find(
+          (def) => def.value.toLowerCase() === r.value.toLowerCase(),
+        );
+        if (canonical?.isSystem && !r.isSystem) {
+          orgRolesModified = true;
+          return { ...r, isSystem: true };
+        }
+        return r;
+      });
+
+      const missingOrgRoles = DEFAULT_OPPORTUNITY_ORGANIZATION_ROLES.filter(
+        (def) =>
+          !updatedOrgRoles.some(
+            (r) => r.value.toLowerCase() === def.value.toLowerCase(),
+          ),
+      );
+      if (missingOrgRoles.length > 0) {
+        orgRolesModified = true;
+        let maxOrder = updatedOrgRoles.reduce(
+          (max, r) => Math.max(max, Number(r.order) || 0),
+          0,
+        );
+        for (const missing of missingOrgRoles) {
+          maxOrder += 1;
+          updatedOrgRoles.push({
+            value: missing.value,
+            order: maxOrder,
+            isSystem: missing.isSystem,
+          });
+        }
+      }
+
+      if (orgRolesModified) {
+        await db
+          .update(appSettings)
+          .set({ opportunityOrganizationRoles: updatedOrgRoles });
+        console.log(
+          `  Updated canonical roles in app_settings.opportunityOrganizationRoles.`,
+        );
+      }
     }
     if (!row.organizationTags || row.organizationTags.length === 0) {
       await db.update(appSettings).set({
@@ -1739,6 +1871,14 @@ async function seedAppSettings(db: SeedDB, dryRun: boolean) {
         '  Updated existing app_settings with default referralModes.',
       );
     }
+    if (!row.projectStages || row.projectStages.length === 0) {
+      await db.update(appSettings).set({
+        projectStages: DEFAULT_PROJECT_STAGES,
+      });
+      console.log(
+        '  Updated existing app_settings with default projectStages.',
+      );
+    }
     return;
   }
 
@@ -1751,12 +1891,14 @@ async function seedAppSettings(db: SeedDB, dryRun: boolean) {
     .values({
       inventoryValuationMethod: 'weighted_average',
       inventoryAccountingMode: 'perpetual',
+      allowNegativeInventory: false,
       creditLimitBehavior: 'soft',
       setupCompletedAt: now,
       systemIdentifier: sid,
       organizationContactRoles: DEFAULT_ORGANIZATION_CONTACT_ROLES,
       opportunityStages: DEFAULT_OPPORTUNITY_STAGES,
       opportunityTypes: DEFAULT_OPPORTUNITY_TYPES,
+      projectStages: DEFAULT_PROJECT_STAGES,
       opportunityContactRoles: DEFAULT_OPPORTUNITY_CONTACT_ROLES,
       opportunityOrganizationRoles: DEFAULT_OPPORTUNITY_ORGANIZATION_ROLES,
       organizationTags: DEFAULT_ORGANIZATION_TAGS,
@@ -1802,14 +1944,12 @@ async function seedBaseGlSettings(db: SeedDB, dryRun: boolean) {
   await db
     .insert(glSettings)
     .values({
-      // @ts-expect-error -- Mock data
       settingsId: '4e185bce-d31a-4caa-8462-73c261864eff', // Use same constant ID
-      apiRateLimit: '100',
       fiscalYearStartMonth: 7, // default
       baseCurrency: 'AUD', // fallback
-      bankMatchDateToleranceDays: 0,
-      revenueRoutingPrecedence: 0,
-      expenseRoutingPrecedence: 0,
+      bankMatchDateToleranceDays: 3,
+      revenueRoutingPrecedence: 'product_first',
+      expenseRoutingPrecedence: 'product_first',
     })
     .onConflictDoNothing();
 
@@ -1866,10 +2006,13 @@ export async function seedCoaAccounts(
       const code = node.account_number || String(autoCode++);
       const isGroup = node.is_group === 1 || !!node.children;
 
+      const reportCategory = node.report_category || null;
+
       insertRows.push({
         code,
         name,
         accountType,
+        reportCategory,
         parentCode,
         isGroup,
       });
@@ -1891,6 +2034,7 @@ export async function seedCoaAccounts(
         accountCode: row.code,
         name: row.name,
         accountType: row.accountType,
+        reportCategory: row.reportCategory,
         isGroup: row.isGroup,
         isSystem: true,
         currencyCode: prefix === 'us_standard' ? 'USD' : 'AUD', // testData
@@ -1902,6 +2046,7 @@ export async function seedCoaAccounts(
         set: {
           name: row.name,
           accountType: row.accountType,
+          reportCategory: row.reportCategory,
           isGroup: row.isGroup,
         },
       });

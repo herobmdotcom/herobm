@@ -13,6 +13,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { herobmCore, validCurrencyCheck } from './core.schema';
+import { projects, projectTasks } from './projects.schema';
 
 // ---------------------------------------------------------------------------
 // payment_entries  (Cash flow records)
@@ -110,6 +111,46 @@ export const activities = herobmCore.table('activities', {
 // GENERAL LEDGER (Native Double-Entry Accounting)
 // ===========================================================================
 
+export const GL_REPORT_CATEGORIES = [
+  // Assets
+  'cash_and_bank',
+  'accounts_receivable',
+  'inventory',
+  'current_asset',
+  'fixed_asset',
+  'accumulated_depreciation',
+  'non_current_asset',
+  'intangible_asset',
+  // Liabilities
+  'accounts_payable',
+  'tax_liability',
+  'payroll_liability',
+  'current_liability',
+  'long_term_debt',
+  'non_current_liability',
+  // Equity
+  'share_capital',
+  'retained_earnings',
+  'current_earnings',
+  'drawings',
+  'suspense',
+  'other_equity',
+  // Revenue
+  'operating_revenue',
+  'other_revenue',
+  'sales_discount',
+  // Expenses
+  'cost_of_goods_sold',
+  'operating_expense',
+  'payroll_expense',
+  'depreciation_expense',
+  'tax_expense',
+  'interest_expense',
+  'other_expense',
+] as const;
+
+export type GLReportCategory = (typeof GL_REPORT_CATEGORIES)[number];
+
 // ---------------------------------------------------------------------------
 // gl_accounts  (Chart of Accounts — hierarchical, customisable)
 // ---------------------------------------------------------------------------
@@ -122,6 +163,9 @@ export const glAccounts = herobmCore.table(
     accountType: text('account_type', {
       enum: ['asset', 'liability', 'equity', 'revenue', 'expense'],
     }).notNull(),
+    reportCategory: text('report_category', {
+      enum: GL_REPORT_CATEGORIES,
+    }),
     parentAccountId: uuid('parent_account_id'), // self-ref for hierarchy
     isGroup: boolean('is_group').notNull(),
     isSystem: boolean('is_system').notNull(), // prevents deletion
@@ -209,17 +253,24 @@ export const glJournalLines = herobmCore.table('gl_journal_lines', {
     () => costCenters.costCenterId,
   ),
   activityId: uuid('activity_id').references(() => activities.activityId),
+  projectId: uuid('project_id').references(() => projects.projectId),
+  projectTaskId: uuid('project_task_id').references(
+    () => projectTasks.projectTaskId,
+  ),
   matchGroupId: uuid('match_group_id').references(
     () => glMatchGroups.matchGroupId,
   ),
-});
+}, (t) => ({
+  projectIdx: index('idx_gl_journal_lines_project_id').on(t.projectId),
+  taskIdx: index('idx_gl_journal_lines_task_id').on(t.projectTaskId),
+}));
 
 // ---------------------------------------------------------------------------
 // gl_settings  (Singleton config — fiscal year + default account mappings)
 // ---------------------------------------------------------------------------
 export const glSettings = herobmCore.table('gl_settings', {
   settingsId: uuid('settings_id').primaryKey().defaultRandom(),
-  accountMetadataSchema: jsonb('account_metadata_schema').$type<unknown[]>(),
+  accountMetadataSchema: jsonb('account_metadata_schema').$type<Record<string, unknown>>(),
   fiscalYearStartMonth: integer('fiscal_year_start_month').notNull(), // Sourced from settings JSON
   bankMatchDateToleranceDays: integer(
     'bank_match_date_tolerance_days',
@@ -296,6 +347,12 @@ export const glSettings = herobmCore.table('gl_settings', {
   defaultOtcCardAccountId: uuid('default_otc_card_account_id').references(
     () => glAccounts.glAccountId,
   ),
+  defaultSuspenseAccountId: uuid('default_suspense_account_id').references(
+    () => glAccounts.glAccountId,
+  ),
+  defaultRetainedEarningsAccountId: uuid(
+    'default_retained_earnings_account_id',
+  ).references(() => glAccounts.glAccountId),
 });
 
 // ---------------------------------------------------------------------------

@@ -46,8 +46,10 @@ import type {
   InventoryControllerFindBinsParams,
   InventoryControllerFindByProductIdsParams,
   InventoryControllerGetLedgerParams,
+  InventoryControllerGetMovementParams,
   InventoryControllerGetPendingPutawayParams,
   InventoryControllerGetPutawayContextParams,
+  InventoryControllerGetRestockParams,
   InventoryEntryDetailsResponseDto,
   InventoryLedgerResponseDto,
   InventoryLocationResponseDto,
@@ -56,6 +58,7 @@ import type {
   LinkDemandToPoDto,
   LocationResponseDto,
   MoveStockDto,
+  MovementReportResponseDto,
   OpenDemandDto,
   OrderPickingControllerGetPickingQueueParams,
   OrderPickingControllerGetShippingQueueParams,
@@ -72,6 +75,7 @@ import type {
   ReallocateDemandDto,
   ResolveAllocationDto,
   ResolveAllocationResponseDto,
+  RestockResponseDto,
   ShipmentResponseDto,
   ShippingContextDto,
   ShippingQueueOrderDto,
@@ -318,7 +322,7 @@ export const getInventoryControllerGetPutawayContextUrl = (params: InventoryCont
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/inventory/putaway-context?${stringifiedParams}` : `/inventory/putaway-context`
+  return stringifiedParams.length > 0 ? `/inventory/putaway/context?${stringifiedParams}` : `/inventory/putaway/context`
 }
 
 export const inventoryControllerGetPutawayContext = async (params: InventoryControllerGetPutawayContextParams, options?: RequestInit): Promise<inventoryControllerGetPutawayContextResponse> => {
@@ -564,6 +568,92 @@ export const getInventoryControllerGetEntryDetailsUrl = (id: string,) => {
 export const inventoryControllerGetEntryDetails = async (id: string, options?: RequestInit): Promise<inventoryControllerGetEntryDetailsResponse> => {
   
   return customFetch<inventoryControllerGetEntryDetailsResponse>(getInventoryControllerGetEntryDetailsUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * Retrieve items below minimum threshold with suggested resupply quantities.
+ * @summary List Restock Needs
+ */
+export type inventoryControllerGetRestockResponse200 = {
+  data: RestockResponseDto
+  status: 200
+}
+    
+export type inventoryControllerGetRestockResponseSuccess = (inventoryControllerGetRestockResponse200) & {
+  headers: Headers;
+};
+;
+
+export type inventoryControllerGetRestockResponse = (inventoryControllerGetRestockResponseSuccess)
+
+export const getInventoryControllerGetRestockUrl = (params?: InventoryControllerGetRestockParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/inventory/restock?${stringifiedParams}` : `/inventory/restock`
+}
+
+export const inventoryControllerGetRestock = async (params?: InventoryControllerGetRestockParams, options?: RequestInit): Promise<inventoryControllerGetRestockResponse> => {
+  
+  return customFetch<inventoryControllerGetRestockResponse>(getInventoryControllerGetRestockUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * Retrieve stock movement report for a given time period and product group.
+ * @summary Stock Movement Report
+ */
+export type inventoryControllerGetMovementResponse200 = {
+  data: MovementReportResponseDto
+  status: 200
+}
+    
+export type inventoryControllerGetMovementResponseSuccess = (inventoryControllerGetMovementResponse200) & {
+  headers: Headers;
+};
+;
+
+export type inventoryControllerGetMovementResponse = (inventoryControllerGetMovementResponseSuccess)
+
+export const getInventoryControllerGetMovementUrl = (params?: InventoryControllerGetMovementParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/inventory/movement?${stringifiedParams}` : `/inventory/movement`
+}
+
+export const inventoryControllerGetMovement = async (params?: InventoryControllerGetMovementParams, options?: RequestInit): Promise<inventoryControllerGetMovementResponse> => {
+  
+  return customFetch<inventoryControllerGetMovementResponse>(getInventoryControllerGetMovementUrl(params),
   {      
     ...options,
     method: 'GET'

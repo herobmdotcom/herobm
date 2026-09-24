@@ -64,16 +64,19 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
       .expect(200);
     locationId = locRes.body[0].locationId;
 
-    // Fetch real IDs from mart data
-    const customers = await request(app.getHttpServer())
-      .get('/api/customers?limit=10')
+    // Create dedicated customer to avoid credit hold conflicts with other test data
+    const custRes = await request(app.getHttpServer())
+      .post('/api/customers')
       .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-    const activeCustomer =
-      customers.body.data.find(
-        (c: any) => c.stateCode === CUSTOMER_STATE.ACTIVE,
-      ) || customers.body.data[0];
-    validCustomerId = activeCustomer.customerId;
+      .send({
+        billingAddressCountry: 'AU',
+        customerNumber: `CUST-PICK-${Date.now()}`,
+        name: 'Picking Test Customer',
+        currencyCode: 'AUD',
+        creditLimit: '100000',
+      })
+      .expect(201);
+    validCustomerId = custRes.body.customerId;
 
     const p1 = await request(app.getHttpServer())
       .post('/api/products')

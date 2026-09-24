@@ -60,9 +60,12 @@ jest.mock('fs', () => {
 });
 
 jest.mock('child_process', () => ({
-  exec: jest.fn((cmd, ...args) => {
-    const cb = args[args.length - 1];
-    if (cmd.includes('fail_binary')) {
+  execFile: jest.fn((file, args, ...rest) => {
+    const cb = rest[rest.length - 1];
+    if (
+      file?.includes('fail_binary') ||
+      (Array.isArray(args) && args.includes('fail_binary'))
+    ) {
       const err = new Error('Typst error');
       (err as Error & { stderr?: string }).stderr = 'Compiler failed';
       cb(err, '', 'Compiler failed');
@@ -342,6 +345,21 @@ describe('PdfTemplatesService', () => {
       const writtenJson = JSON.parse(writeCall[1]);
       expect(writtenJson._org).toBeDefined();
       expect(writtenJson._org.logoFile).toBeUndefined();
+    });
+
+    it('should invoke execFile with explicit argument arrays without shell interpolation (BL-062)', async () => {
+      await service.renderPreview('test template', { customerName: 'Acme' });
+
+      expect(child_process.execFile).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.arrayContaining([
+          'compile',
+          expect.stringContaining('.typ'),
+          expect.stringContaining('.pdf'),
+          '--input',
+        ]),
+        expect.any(Function),
+      );
     });
   });
 });

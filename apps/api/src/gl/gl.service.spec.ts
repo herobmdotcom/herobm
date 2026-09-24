@@ -1,5 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ORGANIZATION_STATE, CUSTOMER_STATE } from '@herobm/shared';
+import {
+  ORGANIZATION_STATE,
+  CUSTOMER_STATE,
+  PROJECT_STATE,
+  PROJECT_TASK_STATE,
+} from '@herobm/shared';
 import { GlService } from './gl.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
@@ -21,17 +26,23 @@ import {
   customers,
   suppliers,
   organizations,
+  projects,
+  projectTasks,
+  projectLedgerEntries,
 } from '@herobm/db-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq, sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 
 describe('GlService', () => {
-  const pg = setupPgliteSuite({ skipSeeds: true });
+  const pg = setupPgliteSuite();
   let service: GlService;
 
   beforeEach(async () => {
     // Clean tables for isolation
+    await pg.db.delete(projectLedgerEntries);
+    await pg.db.delete(projectTasks);
+    await pg.db.delete(projects);
     await pg.db.delete(glJournalLines);
     await pg.db.delete(glJournalEntries);
     await pg.db.delete(glSettings);
@@ -1058,6 +1069,124 @@ describe('GlService', () => {
 
       expect(result.data[0].runningBalance).toBe(1800);
     });
+
+    it('should filter general ledger lines and journal entries by projectId', async () => {
+      const orgId = randomUUID();
+      await pg.db.insert(organizations).values({
+        organizationId: orgId,
+        name: 'Test Org',
+        stateCode: ORGANIZATION_STATE.ACTIVE,
+        isTaxRegistered: false,
+      });
+
+      const customerId = randomUUID();
+      await pg.db.insert(customers).values({
+        customerId,
+        organizationId: orgId,
+        currencyCode: 'AUD',
+        stateCode: CUSTOMER_STATE.ACTIVE,
+        customerNumber: 'CUST-TEST-001',
+        source: 'manual',
+      });
+
+      const mockProject1 = randomUUID();
+      const mockProject2 = randomUUID();
+
+      await pg.db.insert(projects).values([
+        {
+          projectId: mockProject1,
+          projectNumber: 'PRJ-2026-001',
+          name: 'Project Alpha',
+          customerId,
+          currencyCode: 'AUD',
+          billingType: 'time_and_materials',
+          stateCode: PROJECT_STATE.ACTIVE,
+          stage: 'Execution',
+          createdBy: 'admin',
+        },
+        {
+          projectId: mockProject2,
+          projectNumber: 'PRJ-2026-002',
+          name: 'Project Beta',
+          customerId,
+          currencyCode: 'AUD',
+          billingType: 'time_and_materials',
+          stateCode: PROJECT_STATE.ACTIVE,
+          stage: 'Execution',
+          createdBy: 'admin',
+        },
+      ]);
+
+      // Journal 1: Project 1
+      const je1 = await service.postJournalEntry(
+        [
+          {
+            accountCode: '1000',
+            debit: 400,
+            credit: 0,
+            projectId: mockProject1,
+          },
+          {
+            accountCode: '4000',
+            debit: 0,
+            credit: 400,
+            projectId: mockProject1,
+          },
+        ],
+        { sourceType: 'manual', entryDate: '2026-03-01' },
+      );
+
+      // Journal 2: Project 2
+      const je2 = await service.postJournalEntry(
+        [
+          {
+            accountCode: '1000',
+            debit: 600,
+            credit: 0,
+            projectId: mockProject2,
+          },
+          {
+            accountCode: '4000',
+            debit: 0,
+            credit: 600,
+            projectId: mockProject2,
+          },
+        ],
+        { sourceType: 'manual', entryDate: '2026-03-02' },
+      );
+
+      // 1. Test getGeneralLedger filtering by projectId
+      const glProj1 = await service.getGeneralLedger({
+        accountCode: '1000',
+        projectId: mockProject1,
+      });
+      expect(glProj1.data.length).toBe(1);
+      expect(glProj1.data[0].journalEntryId).toBe(je1.journalEntryId);
+      expect(glProj1.data[0].projectId).toBe(mockProject1);
+      expect(glProj1.accountSummary?.periodDebit).toBe(400);
+
+      const glProj2 = await service.getGeneralLedger({
+        accountCode: '1000',
+        projectId: mockProject2,
+      });
+      expect(glProj2.data.length).toBe(1);
+      expect(glProj2.data[0].journalEntryId).toBe(je2.journalEntryId);
+      expect(glProj2.data[0].projectId).toBe(mockProject2);
+      expect(glProj2.accountSummary?.periodDebit).toBe(600);
+
+      // 2. Test getJournalEntries filtering by projectId
+      const jeProj1 = await service.getJournalEntries({
+        projectId: mockProject1,
+      });
+      expect(jeProj1.data.length).toBe(1);
+      expect(jeProj1.data[0].journalEntryId).toBe(je1.journalEntryId);
+
+      const jeProj2 = await service.getJournalEntries({
+        projectId: mockProject2,
+      });
+      expect(jeProj2.data.length).toBe(1);
+      expect(jeProj2.data[0].journalEntryId).toBe(je2.journalEntryId);
+    });
   });
 
   describe('runIntegrityAudit', () => {
@@ -1138,6 +1267,246 @@ describe('GlService', () => {
       expect(audit.anomaliesCount).toBe(0);
       expect(audit.anomalies).toHaveLength(0);
       expect(audit.verifiedJournalsCount).toBe(2);
+    });
+  });
+
+  describe('postJournalEntry & getJournalEntry with project dimension', () => {
+    it('should persist projectId/projectTaskId on lines and synchronize to project_ledger_entries', async () => {
+      // 1. Seed accounts
+      const bankAcctId = randomUUID();
+      const expenseAcctId = randomUUID();
+      await pg.db.insert(glAccounts).values([
+        {
+          glAccountId: bankAcctId,
+          accountCode: '1000',
+          name: 'Main Bank Account',
+          accountType: 'asset',
+          isGroup: false,
+          isActive: true,
+          isSystem: false,
+          isBankAccount: true,
+          currencyCode: 'EUR',
+        },
+        {
+          glAccountId: expenseAcctId,
+          accountCode: '6000',
+          name: 'Consulting & Travel Expense',
+          accountType: 'expense',
+          isGroup: false,
+          isActive: true,
+          isSystem: false,
+          isBankAccount: false,
+          currencyCode: 'EUR',
+        },
+      ]);
+
+      // 2. Seed customer, project and task
+      const orgId = randomUUID();
+      await pg.db.insert(organizations).values({
+        organizationId: orgId,
+        name: 'Acme Global Corp',
+        stateCode: ORGANIZATION_STATE.ACTIVE,
+        isTaxRegistered: false,
+      });
+
+      const customerId = randomUUID();
+      await pg.db.insert(customers).values({
+        customerId,
+        organizationId: orgId,
+        currencyCode: 'EUR',
+        stateCode: CUSTOMER_STATE.ACTIVE,
+        customerNumber: 'CUST-001',
+        source: 'manual',
+      });
+
+      const projectId = randomUUID();
+      const projectTaskId = randomUUID();
+      await pg.db.insert(projects).values({
+        projectId,
+        projectNumber: 'PRJ-2026-001',
+        name: 'Datacenter Overhaul',
+        customerId,
+        currencyCode: 'EUR',
+        billingType: 'time_and_materials',
+        stateCode: PROJECT_STATE.ACTIVE,
+        stage: 'Execution',
+        createdBy: 'finance-admin',
+      });
+
+      await pg.db.insert(projectTasks).values({
+        projectTaskId,
+        projectId,
+        taskCode: '2.1',
+        name: 'Hardware Setup & Travel',
+        stateCode: PROJECT_TASK_STATE.IN_PROGRESS,
+        isMilestone: false,
+        isBillable: true,
+        createdBy: 'finance-admin',
+      });
+
+      // 3. Post manual journal with project dimensions on the expense line
+      const je = await service.postJournalEntry(
+        [
+          {
+            accountCode: '6000',
+            debit: 750,
+            credit: 0,
+            memo: 'Airfare for datacenter technicians',
+            projectId,
+            projectTaskId,
+          },
+          {
+            accountCode: '1000',
+            debit: 0,
+            credit: 750,
+            memo: 'Payment from bank',
+          },
+        ],
+        {
+          sourceType: 'manual',
+          entryDate: '2026-03-20',
+          memo: 'Travel expense adjustment',
+          actor: 'finance-admin',
+        },
+      );
+
+      expect(je).toBeDefined();
+      expect(je.journalEntryId).toBeDefined();
+
+      // 4. Verify getJournalEntry returns project metadata
+      const entryDetail = await service.getJournalEntry(je.journalEntryId);
+      expect(entryDetail).toBeDefined();
+      expect(entryDetail.lines).toHaveLength(2);
+
+      const expenseLine = entryDetail.lines.find(
+        (l) => l.accountCode === '6000',
+      );
+      expect(expenseLine).toBeDefined();
+      expect(expenseLine?.projectId).toBe(projectId);
+      expect(expenseLine?.projectNumber).toBe('PRJ-2026-001');
+      expect(expenseLine?.projectName).toBe('Datacenter Overhaul');
+      expect(expenseLine?.projectTaskId).toBe(projectTaskId);
+      expect(expenseLine?.taskCode).toBe('2.1');
+      expect(expenseLine?.taskName).toBe('Hardware Setup & Travel');
+
+      // 5. Verify project_ledger_entries subledger synchronization
+      const subledgerRows = await pg.db
+        .select()
+        .from(projectLedgerEntries)
+        .where(eq(projectLedgerEntries.projectId, projectId));
+
+      expect(subledgerRows).toHaveLength(1);
+      const row = subledgerRows[0];
+      expect(row.projectId).toBe(projectId);
+      expect(row.projectTaskId).toBe(projectTaskId);
+      expect(row.lineType).toBe('expense');
+      expect(row.entryType).toBe('usage');
+      expect(row.sourceType).toBe('manual_journal');
+      expect(row.sourceId).toBe(je.journalEntryId);
+      expect(Number(row.totalCostBase)).toBe(750);
+      expect(Number(row.totalPriceBase)).toBe(0);
+      expect(row.description).toBe('Airfare for datacenter technicians');
+    });
+
+    it('should ignore balance sheet accounts (asset/liability/equity) when tagged with project dimensions in subledger sync', async () => {
+      // 1. Seed accounts
+      await pg.db.insert(glAccounts).values([
+        {
+          glAccountId: randomUUID(),
+          accountCode: '1000',
+          name: 'Main Bank Account',
+          accountType: 'asset',
+          isGroup: false,
+          isActive: true,
+          isSystem: false,
+          isBankAccount: true,
+          currencyCode: 'EUR',
+        },
+        {
+          glAccountId: randomUUID(),
+          accountCode: '6000',
+          name: 'Consulting & Travel Expense',
+          accountType: 'expense',
+          isGroup: false,
+          isActive: true,
+          isSystem: false,
+          isBankAccount: false,
+          currencyCode: 'EUR',
+        },
+      ]);
+
+      // 2. Setup customer & project
+      const customerId = randomUUID();
+      await pg.db.insert(customers).values({
+        customerId,
+        customerNumber: 'CUST-002',
+        source: 'manual',
+        stateCode: CUSTOMER_STATE.ACTIVE,
+        currencyCode: 'EUR',
+      });
+
+      const projectId = randomUUID();
+      const projectTaskId = randomUUID();
+      await pg.db.insert(projects).values({
+        projectId,
+        projectNumber: 'PRJ-2026-002',
+        name: 'Warehouse Migration',
+        customerId,
+        currencyCode: 'EUR',
+        billingType: 'time_and_materials',
+        stateCode: PROJECT_STATE.ACTIVE,
+        stage: 'Execution',
+        createdBy: 'finance-admin',
+      });
+      await pg.db.insert(projectTasks).values({
+        projectTaskId,
+        projectId,
+        taskCode: '1.0',
+        name: 'Initial Setup',
+        stateCode: PROJECT_TASK_STATE.IN_PROGRESS,
+        isMilestone: false,
+        isBillable: true,
+        createdBy: 'finance-admin',
+      });
+
+      // Post journal where BOTH lines have project tagged, but line 2 is Bank (Asset)
+      const je = await service.postJournalEntry(
+        [
+          {
+            accountCode: '6000', // Expense
+            debit: 500,
+            credit: 0,
+            memo: 'Contractor tool purchase',
+            projectId,
+            projectTaskId,
+          },
+          {
+            accountCode: '1000', // Asset (Bank)
+            debit: 0,
+            credit: 500,
+            memo: 'Bank cash disbursement',
+            projectId, // Even if tagged on balance sheet line
+            projectTaskId,
+          },
+        ],
+        {
+          sourceType: 'manual',
+          entryDate: '2026-03-22',
+          memo: 'Tool purchase journal',
+          actor: 'finance-admin',
+        },
+      );
+
+      const subledgerRows = await pg.db
+        .select()
+        .from(projectLedgerEntries)
+        .where(eq(projectLedgerEntries.projectId, projectId));
+
+      // Should only have 1 subledger row for the Expense line, skipping the Bank Asset line
+      expect(subledgerRows).toHaveLength(1);
+      expect(subledgerRows[0].lineType).toBe('expense');
+      expect(Number(subledgerRows[0].totalCostBase)).toBe(500);
+      expect(Number(subledgerRows[0].totalPriceBase)).toBe(0);
     });
   });
 });

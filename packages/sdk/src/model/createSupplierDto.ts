@@ -5,12 +5,15 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
+import type { CreateSupplierDtoMetadata } from './createSupplierDtoMetadata';
 import type { CreateSupplierDtoPurchasingBlockReason } from './createSupplierDtoPurchasingBlockReason';
 import type { CreateSupplierDtoPaymentBlockReason } from './createSupplierDtoPaymentBlockReason';
 
 export interface CreateSupplierDto {
   earlyPaymentDiscount?: string;
   earlyPaymentDiscountDays?: number;
+  /** Custom metadata object */
+  metadata?: CreateSupplierDtoMetadata;
   organizationId?: string;
   vendorNumber: string;
   name: string;

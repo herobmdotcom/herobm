@@ -27,7 +27,8 @@ import { useSettings } from '@/components/SettingsProvider';
 
 function PurchaseReturnStateBadge({ state }: { state: ValidState }) {
     const t = useTranslations('common.states');
-    return <span className={`badge badge-${state}`}>{t(state)}</span>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- State key mapping
+    return <span className={`badge badge-${state}`}>{t(state as any)}</span>;
 }
 
 interface NewReturnLine {

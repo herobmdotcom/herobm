@@ -105,11 +105,13 @@ export async function getInvoicedPerLine(
 
   const invoicedQtyByLine = new Map<string, number>();
   for (const invLine of priorInvoices) {
-    const current = invoicedQtyByLine.get(invLine.salesOrderLineId) || 0;
-    invoicedQtyByLine.set(
-      invLine.salesOrderLineId,
-      current + parseFloat(invLine.quantityInvoiced),
-    );
+    if (invLine.salesOrderLineId) {
+      const current = invoicedQtyByLine.get(invLine.salesOrderLineId) || 0;
+      invoicedQtyByLine.set(
+        invLine.salesOrderLineId,
+        current + parseFloat(invLine.quantityInvoiced),
+      );
+    }
   }
 
   return invoicedQtyByLine;

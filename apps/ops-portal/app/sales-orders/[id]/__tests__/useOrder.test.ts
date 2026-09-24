@@ -45,6 +45,7 @@ jest.mock('@herobm/sdk', () => ({
     orderShipmentsControllerFindShipments: (...args: any[]) => mockSdkFetch('/shipments', ...args),
     orderReturnsControllerFindReturns: (...args: any[]) => mockSdkFetch('/returns', ...args),
     salesInvoiceControllerGetSalesInvoices: (...args: any[]) => mockSdkFetch('/invoices', ...args),
+    ordersControllerGetSettings: () => Promise.resolve({ data: { salesOrderMetadataSchema: null } }),
 }));
 
 import { useOrder } from '../useOrder';

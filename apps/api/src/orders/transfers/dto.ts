@@ -5,14 +5,24 @@ import {
   IsArray,
   ValidateNested,
   IsNumberString,
+  IsBoolean,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationQuery } from '../../common/pagination';
 
 export class TransferPaginationQuery extends PaginationQuery {
   @IsOptional()
   @IsString()
   destinationLocationId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  @Transform(
+    ({ value }) =>
+      value === 'true' || value === true || value === '1' || value === 1,
+  )
+  hasPendingReceipt?: boolean;
 }
 
 export class CreateTransferOrderLineDto {
@@ -22,6 +32,10 @@ export class CreateTransferOrderLineDto {
 
   @IsNumberString()
   quantity!: string;
+
+  @IsOptional()
+  @IsString()
+  projectTaskId?: string;
 }
 
 export class CreateTransferOrderDto {
@@ -32,6 +46,18 @@ export class CreateTransferOrderDto {
   @IsString()
   @IsNotEmpty()
   destinationLocationId!: string;
+
+  @IsOptional()
+  @IsString()
+  projectId?: string;
+
+  @IsOptional()
+  @IsString()
+  projectTaskId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isProjectReturn?: boolean;
 
   @IsOptional()
   @IsString()
@@ -58,6 +84,18 @@ export class UpdateTransferOrderDto {
 
   @IsOptional()
   @IsString()
+  projectId?: string;
+
+  @IsOptional()
+  @IsString()
+  projectTaskId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isProjectReturn?: boolean;
+
+  @IsOptional()
+  @IsString()
   notes?: string;
 
   @IsOptional()
@@ -69,6 +107,10 @@ export class UpdateTransferOrderLineDto {
   @IsOptional()
   @IsNumberString()
   quantity?: string;
+
+  @IsOptional()
+  @IsString()
+  projectTaskId?: string;
 }
 
 export class CreateTransferFromDemandsDto {
@@ -109,16 +151,16 @@ export class ReceiveTransferDto {
 
 export class EmptyBodyDto {}
 
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-
 export class TransferLineResponseDto {
   @ApiProperty() transferOrderLineId!: string;
   @ApiProperty() productId!: string;
   @ApiPropertyOptional() productNumber?: string;
   @ApiPropertyOptional() productDescription?: string;
+  @ApiPropertyOptional() projectTaskId?: string;
   @ApiProperty() quantity!: string;
   @ApiPropertyOptional() quantityShipped?: string;
   @ApiPropertyOptional() quantityReceived?: string;
+  @ApiPropertyOptional() quantityPutaway?: string;
 }
 
 export class TransferEventResponseDto {
@@ -137,6 +179,17 @@ export class TransferResponseDto {
   @ApiPropertyOptional() sourceLocationName?: string;
   @ApiProperty() destinationLocationId!: string;
   @ApiPropertyOptional() destinationLocationName?: string;
+  @ApiPropertyOptional() projectId?: string;
+  @ApiPropertyOptional() projectTaskId?: string;
+  @ApiPropertyOptional() isProjectReturn?: boolean;
+  @ApiPropertyOptional() projectNumber?: string;
+  @ApiPropertyOptional() projectName?: string;
+  @ApiPropertyOptional() stagingBinId?: string;
+  @ApiPropertyOptional() stagingBinNumber?: string;
+  @ApiPropertyOptional() sourceBinId?: string;
+  @ApiPropertyOptional() sourceBinNumber?: string;
+  @ApiPropertyOptional() destinationBinId?: string;
+  @ApiPropertyOptional() destinationBinNumber?: string;
   @ApiPropertyOptional() notes?: string;
   @ApiPropertyOptional() shippingNotes?: string;
   @ApiPropertyOptional() createdBy?: string;

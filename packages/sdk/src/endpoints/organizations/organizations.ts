@@ -10,6 +10,7 @@ import type {
   CreateOrganizationDto,
   CreateOrganizationLinkDto,
   CreateOrganizationNoteDto,
+  CrmSettingsResponseDto,
   EmptyBodyDto,
   OrganizationLinkResponseDto,
   OrganizationNoteResponseDto,
@@ -17,11 +18,85 @@ import type {
   OrganizationsControllerFindAll200,
   OrganizationsControllerFindAllParams,
   SuccessResponseDto,
+  UpdateCrmSettingsDto,
   UpdateOrganizationContactDto,
   UpdateOrganizationDto
 } from '../../model';
 
 import { customFetch } from '../../mutator';
+
+/**
+ * Retrieve the CRM domain settings and metadata schemas.
+ * @summary Get CRM Settings
+ */
+export type organizationsControllerGetSettingsResponse200 = {
+  data: CrmSettingsResponseDto
+  status: 200
+}
+    
+export type organizationsControllerGetSettingsResponseSuccess = (organizationsControllerGetSettingsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type organizationsControllerGetSettingsResponse = (organizationsControllerGetSettingsResponseSuccess)
+
+export const getOrganizationsControllerGetSettingsUrl = () => {
+
+
+  
+
+  return `/organizations/settings`
+}
+
+export const organizationsControllerGetSettings = async ( options?: RequestInit): Promise<organizationsControllerGetSettingsResponse> => {
+  
+  return customFetch<organizationsControllerGetSettingsResponse>(getOrganizationsControllerGetSettingsUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * Update the CRM domain settings and metadata schemas.
+ * @summary Update CRM Settings
+ */
+export type organizationsControllerUpdateSettingsResponse200 = {
+  data: CrmSettingsResponseDto
+  status: 200
+}
+    
+export type organizationsControllerUpdateSettingsResponseSuccess = (organizationsControllerUpdateSettingsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type organizationsControllerUpdateSettingsResponse = (organizationsControllerUpdateSettingsResponseSuccess)
+
+export const getOrganizationsControllerUpdateSettingsUrl = () => {
+
+
+  
+
+  return `/organizations/settings`
+}
+
+export const organizationsControllerUpdateSettings = async (updateCrmSettingsDto: UpdateCrmSettingsDto, options?: RequestInit): Promise<organizationsControllerUpdateSettingsResponse> => {
+  
+  return customFetch<organizationsControllerUpdateSettingsResponse>(getOrganizationsControllerUpdateSettingsUrl(),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateCrmSettingsDto,)
+  }
+);}
+
 
 /**
  * Create Organization

@@ -116,6 +116,28 @@ export default function TopographyView() {
     });
   };
 
+  const handleCopyBinId = (binId: string) => {
+    navigator.clipboard.writeText(binId);
+    toast.success(tCommon('copiedToClipboard'));
+  };
+
+  const handleDeleteBin = (binId: string, binNumber: string) => {
+    if (binNumber === 'RECEIVING' || binNumber === 'SHIPPING') return;
+    if (confirm(tCommon('confirmDelete'))) {
+      api.locationsControllerDeleteBin(binId)
+        .then(() => {
+          toast.success(tCommon('deleted'));
+          fetchLocations();
+        })
+        .catch((err) => toast.error(getErrorMessage(err)));
+    }
+  };
+
+  const handleEditBin = (bin: Bin, zoneId: string) => {
+    setEditingBin({ bin, zoneId });
+    setIsBinModalOpen(true);
+  };
+
   const totalBins = (locations || []).reduce(
     (acc, loc) => acc + (loc?.zones || []).reduce((za, z) => za + (z?.bins || []).length, 0),
     0,
@@ -229,7 +251,6 @@ export default function TopographyView() {
                   >
                     <div className="flex items-center gap-2.5 sm:gap-3 flex-1 min-w-0">
                       <span className={`material-symbols-outlined text-[18px] transition-transform text-[var(--accent)] shrink-0 ${isLocExpanded ? 'rotate-90' : 'rotate-0'}`}>chevron_right</span>
-                      {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                       <span className="material-symbols-outlined text-[20px] sm:text-[22px] text-[var(--accent)] shrink-0">warehouse</span>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-1.5 sm:gap-3">
@@ -413,228 +434,14 @@ export default function TopographyView() {
                             </div>
 
                             {/* Bins */}
-                            {isZoneExpanded && (zone?.bins || []).length > 0 && (
-                              <div className="px-3 pb-3 sm:pl-10 sm:pr-4 md:pl-20 md:pr-5">
-                                {/* Mobile Cards View */}
-                                <div className="md:hidden flex flex-col gap-2">
-                                  {[...(zone?.bins || [])].sort((a, b) => compareBinNumbers(a.binNumber, b.binNumber)).map((bin) => (
-                                    <div
-                                      key={bin.binId}
-                                      className="p-2.5 rounded-lg border border-[var(--border)] bg-[var(--bg-card)] flex items-center justify-between gap-2"
-                                    >
-                                      <div className="flex flex-col gap-1 min-w-0">
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-xs font-bold font-mono text-[var(--text-primary)]">
-                                            {bin.binNumber}
-                                          </span>
-                                          {bin.binType && (
-                                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-medium">
-                                              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown. */}
-                                              {tLoc(`binTypes.${bin.binType}` as any)}
-                                            </span>
-                                          )}
-                                        </div>
-                                        <div className="flex items-center gap-1.5">
-                                          {bin.isConsignment && (
-                                            <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-indigo-500/10 text-indigo-400">
-                                              {/* eslint-disable-next-line no-restricted-syntax -- Technical constant representing consignment status. */}
-                                              {'CSG'}
-                                            </span>
-                                          )}
-                                          {bin.isBonded && (
-                                            <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-500/10 text-amber-400">
-                                              {/* eslint-disable-next-line no-restricted-syntax -- Technical constant representing bonded status. */}
-                                              {'BND'}
-                                            </span>
-                                          )}
-                                          {bin.isUnavailable && (
-                                            <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-red-500/10 text-red-400">
-                                              {tCommon('na')}
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-
-                                      <div className="flex items-center gap-1 shrink-0">
-                                        {canEdit && (
-                                          <>
-                                            <Button variant="ghost"
-                                              onClick={() => {
-                                                setEditingBin({ bin, zoneId: zone.zoneId });
-                                                setIsBinModalOpen(true);
-                                              }}
-                                              className="p-1 hover:bg-[var(--bg-card-hover)] rounded text-[var(--text-secondary)] transition-colors"
-                                              title={tCommon('edit')}
-                                            >
-                                              <span className="material-symbols-outlined text-[16px]">edit</span>
-                                            </Button>
-                                            <Button variant="ghost"
-                                              onClick={() => {
-                                                if (bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING') return;
-                                                if (confirm(tCommon('confirmDelete'))) {
-                                                  api.locationsControllerDeleteBin(bin.binId)
-                                                    .then(() => {
-                                                      toast.success(tCommon('deleted'));
-                                                      fetchLocations();
-                                                    })
-                                                    .catch((err) => toast.error(getErrorMessage(err)));
-                                                }
-                                              }}
-                                              disabled={bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING'}
-                                              title={(bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING') ? 'System bins cannot be deleted' : tCommon('delete')}
-                                              className={`p-1 rounded transition-colors ${(bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING') ? 'text-gray-500 cursor-not-allowed' : 'hover:bg-red-500/10 text-red-400'}`}
-                                            >
-                                              <span className="material-symbols-outlined text-[16px]">delete</span>
-                                            </Button>
-                                          </>
-                                        )}
-                                        <Button variant="ghost"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            navigator.clipboard.writeText(bin.binId);
-                                            toast.success(tCommon('copiedToClipboard'));
-                                          }}
-                                          className="p-1 hover:bg-[var(--bg-card-hover)] rounded text-[var(--text-secondary)] transition-colors"
-                                          title={`UUID: ${bin.binId}`}
-                                        >
-                                          <span className="material-symbols-outlined text-[16px]">info</span>
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-
-                                {/* Desktop Table View */}
-                                <div className="hidden md:block rounded-lg border overflow-hidden border-[var(--border)]">
-                                  <table className="w-full text-sm border-collapse">
-                                    <thead>
-                                      <tr className="bg-[var(--bg-secondary)]">
-                                        <th
-                                          className="text-left px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]"
-                                        >
-                                          {tLoc('bins')}
-                                        </th>
-                                        <th
-                                          className="text-left px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]"
-                                        >
-                                          {tCommon('columns.type')}
-                                        </th>
-                                        <th
-                                          className="text-center px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]"
-                                        >
-                                          {tLoc('fields.flags')}
-                                        </th>
-                                        <th
-                                          className="px-4 py-2 text-right text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]"
-                                        >
-                                        </th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {[...(zone?.bins || [])].sort((a, b) => compareBinNumbers(a.binNumber, b.binNumber)).map((bin, idx) => (
-                                        <tr
-                                          key={bin.binId}
-                                          className={idx > 0 ? 'border-t border-[var(--border)]' : ''}
-                                        >
-                                          <td className="px-4 py-2 font-medium text-[var(--text-primary)] tabular-nums">
-                                            {bin.binNumber}
-                                          </td>
-                                          <td className="px-4 py-2 text-[var(--text-secondary)]">
-                                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown. */}
-                                            {bin.binType ? tLoc(`binTypes.${bin.binType}` as any) : '—'}
-                                          </td>
-                                          <td className="px-4 py-2 text-center">
-                                            <div className="flex items-center justify-center gap-1.5">
-                                              {bin.isConsignment && (
-                                                <span
-                                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400"
-                                                >
-                                                  {/* eslint-disable-next-line no-restricted-syntax -- Technical constant representing consignment status. */}
-                                                  {'CSG'}
-                                                </span>
-                                              )}
-                                              {bin.isBonded && (
-                                                <span
-                                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400"
-                                                >
-                                                  {/* eslint-disable-next-line no-restricted-syntax -- Technical constant representing bonded status. */}
-                                                  {'BND'}
-                                                </span>
-                                              )}
-                                              {bin.isUnavailable && (
-                                                <span
-                                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/10 text-red-400"
-                                                >
-                                                  {tCommon('na')}
-                                                </span>
-                                              )}
-                                              {!bin.isConsignment && !bin.isBonded && !bin.isUnavailable && (
-                                                <span className="text-[var(--text-muted)]">—</span>
-                                              )}
-                                            </div>
-                                          </td>
-                                          <td className="px-2 py-2">
-                                            <div className="flex items-center justify-end gap-1">
-                                              {canEdit && (
-                                                <>
-                                                  <Button variant="ghost"
-                                                    onClick={() => {
-                                                      setEditingBin({ bin, zoneId: zone.zoneId });
-                                                      setIsBinModalOpen(true);
-                                                    }}
-                                                    className="p-1 hover:bg-[var(--bg-card-hover)] rounded text-[var(--text-secondary)] transition-colors"
-                                                  >
-                                                    { }
-                                                    <span className="material-symbols-outlined text-[16px]">edit</span>
-                                                  </Button>
-                                                  <Button variant="ghost"
-                                                    onClick={() => {
-                                                      if (bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING') return;
-                                                      if (confirm(tCommon('confirmDelete'))) {
-                                                        api.locationsControllerDeleteBin(bin.binId)
-                                                          .then(() => {
-                                                            toast.success(tCommon('deleted'));
-                                                            fetchLocations();
-                                                          })
-                                                          .catch((err) => toast.error(getErrorMessage(err)));
-                                                      }
-                                                    }}
-                                                    disabled={bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING'}
-                                                    title={(bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING') ? 'System bins cannot be deleted' : tCommon('delete')}
-                                                    className={`p-1 rounded transition-colors ${(bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING') ? 'text-gray-500 cursor-not-allowed' : 'hover:bg-red-500/10 text-red-400'}`}
-                                                  >
-                                                    { }
-                                                    <span className="material-symbols-outlined text-[16px]">delete</span>
-                                                  </Button>
-                                                </>
-                                              )}
-                                              <Button variant="ghost"
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  navigator.clipboard.writeText(bin.binId);
-                                                  toast.success(tCommon('copiedToClipboard'));
-                                                }}
-                                                className="p-1 hover:bg-[var(--bg-card-hover)] rounded text-[var(--text-secondary)] transition-colors"
-                                                title={`UUID: ${bin.binId}`}
-                                              >
-                                                <span className="material-symbols-outlined text-[16px]">info</span>
-                                              </Button>
-                                            </div>
-                                          </td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              </div>
-                            )}
-
-                            {isZoneExpanded && (zone?.bins || []).length === 0 && (
-                              <div className="px-3 pb-3 sm:pl-10 md:pl-20 pr-5">
-                                <p className="text-sm italic mb-2 text-[var(--text-muted)]">
-                                  {tLoc('noBinsInZone')}
-                                </p>
-                              </div>
+                            {isZoneExpanded && (
+                              <ZoneBinList
+                                zone={zone}
+                                canEdit={canEdit}
+                                onEditBin={handleEditBin}
+                                onDeleteBin={handleDeleteBin}
+                                onCopyBinId={handleCopyBinId}
+                              />
                             )}
                           </div>
                         );
@@ -667,6 +474,314 @@ export default function TopographyView() {
         onSuccess={fetchLocations}
         initialData={editingBin}
       />
+    </div>
+  );
+}
+
+interface ZoneBinListProps {
+  zone: Zone;
+  canEdit: boolean;
+  onEditBin: (bin: Bin, zoneId: string) => void;
+  onDeleteBin: (binId: string, binNumber: string) => void;
+  onCopyBinId: (binId: string) => void;
+}
+
+function ZoneBinList({
+  zone,
+  canEdit,
+  onEditBin,
+  onDeleteBin,
+  onCopyBinId,
+}: ZoneBinListProps) {
+  const tLoc = useTranslations('inventory.locations');
+  const tCommon = useTranslations('common');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 50;
+
+  const sortedBins = useMemo(() => {
+    return [...(zone?.bins || [])].sort((a, b) => compareBinNumbers(a.binNumber, b.binNumber));
+  }, [zone?.bins]);
+
+  const filteredBins = useMemo(() => {
+    if (!search.trim()) return sortedBins;
+    const q = search.trim().toUpperCase();
+    return sortedBins.filter(
+      (b) =>
+        b.binNumber.toUpperCase().includes(q) ||
+        (b.binType && b.binType.toUpperCase().includes(q)),
+    );
+  }, [sortedBins, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredBins.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+
+  const paginatedBins = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredBins.slice(start, start + PAGE_SIZE);
+  }, [filteredBins, currentPage]);
+
+  if ((zone?.bins || []).length === 0) {
+    return (
+      <div className="px-3 pb-3 sm:pl-10 md:pl-20 pr-5">
+        <p className="text-sm italic mb-2 text-[var(--text-muted)]">
+          {tLoc('noBinsInZone')}
+        </p>
+      </div>
+    );
+  }
+
+  const startItem = filteredBins.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const endItem = Math.min(currentPage * PAGE_SIZE, filteredBins.length);
+
+  return (
+    <div className="px-3 pb-3 sm:pl-10 sm:pr-4 md:pl-20 md:pr-5 flex flex-col gap-3">
+      {/* Search & Pagination Bar */}
+      {(sortedBins.length > 10 || search) && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 pb-1">
+          <div className="relative flex-1 max-w-xs">
+            <span className="material-symbols-outlined text-[18px] text-[var(--text-muted)] absolute left-2.5 top-1/2 -translate-y-1/2">
+              search
+            </span>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              placeholder={tLoc('placeholders.searchBins')}
+              className="w-full pl-8 pr-3 py-1 text-xs rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-hidden focus:border-[var(--accent)]"
+            />
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center gap-2 self-end sm:self-auto text-xs text-[var(--text-muted)]">
+              <span>
+                {tLoc('pagination.showing', {
+                  start: startItem,
+                  end: endItem,
+                  total: filteredBins.length,
+                })}
+              </span>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={currentPage <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  className="px-2 py-0.5 text-xs h-7 disabled:opacity-40"
+                >
+                  {tLoc('pagination.prev')}
+                </Button>
+                <span className="px-1 font-mono text-[11px] text-[var(--text-primary)]">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  className="px-2 py-0.5 text-xs h-7 disabled:opacity-40"
+                >
+                  {tLoc('pagination.next')}
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {filteredBins.length === 0 ? (
+        <p className="text-xs italic text-[var(--text-muted)] py-2">
+          {tCommon('noMatchingResults')}
+        </p>
+      ) : (
+        <>
+          {/* Mobile Cards View */}
+          <div className="md:hidden flex flex-col gap-2">
+            {paginatedBins.map((bin) => (
+              <div
+                key={bin.binId}
+                className="p-2.5 rounded-lg border border-[var(--border)] bg-[var(--bg-card)] flex items-center justify-between gap-2"
+              >
+                <div className="flex flex-col gap-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold font-mono text-[var(--text-primary)]">
+                      {bin.binNumber}
+                    </span>
+                    {bin.binType && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-medium">
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown. */}
+                        {tLoc(`binTypes.${bin.binType}` as any)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {bin.isConsignment && (
+                      <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-indigo-500/10 text-indigo-400">
+                        {/* eslint-disable-next-line no-restricted-syntax -- Technical constant representing consignment status. */}
+                        {'CSG'}
+                      </span>
+                    )}
+                    {bin.isBonded && (
+                      <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-500/10 text-amber-400">
+                        {/* eslint-disable-next-line no-restricted-syntax -- Technical constant representing bonded status. */}
+                        {'BND'}
+                      </span>
+                    )}
+                    {bin.isUnavailable && (
+                      <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-red-500/10 text-red-400">
+                        {tCommon('na')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1 shrink-0">
+                  {canEdit && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        onClick={() => onEditBin(bin, zone.zoneId)}
+                        className="p-1 hover:bg-[var(--bg-card-hover)] rounded text-[var(--text-secondary)] transition-colors"
+                        title={tCommon('edit')}
+                      >
+                        <span className="material-symbols-outlined text-[16px]">edit</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={() => onDeleteBin(bin.binId, bin.binNumber)}
+                        disabled={bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING'}
+                        title={
+                          bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING'
+                            ? 'System bins cannot be deleted'
+                            : tCommon('delete')
+                        }
+                        className={`p-1 rounded transition-colors ${
+                          bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING'
+                            ? 'text-gray-500 cursor-not-allowed'
+                            : 'hover:bg-red-500/10 text-red-400'
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-[16px]">delete</span>
+                      </Button>
+                    </>
+                  )}
+                  <Button
+                    variant="ghost"
+                    onClick={() => onCopyBinId(bin.binId)}
+                    className="p-1 hover:bg-[var(--bg-card-hover)] rounded text-[var(--text-secondary)] transition-colors"
+                    title={`UUID: ${bin.binId}`}
+                  >
+                    <span className="material-symbols-outlined text-[16px]">info</span>
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block rounded-lg border overflow-hidden border-[var(--border)]">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="bg-[var(--bg-secondary)]">
+                  <th className="text-left px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                    {tLoc('bins')}
+                  </th>
+                  <th className="text-left px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                    {tCommon('columns.type')}
+                  </th>
+                  <th className="text-center px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                    {tLoc('fields.flags')}
+                  </th>
+                  <th className="px-4 py-2 text-right text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedBins.map((bin, idx) => (
+                  <tr
+                    key={bin.binId}
+                    className={idx > 0 ? 'border-t border-[var(--border)]' : ''}
+                  >
+                    <td className="px-4 py-2 font-medium text-[var(--text-primary)] tabular-nums">
+                      {bin.binNumber}
+                    </td>
+                    <td className="px-4 py-2 text-[var(--text-secondary)]">
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown. */}
+                      {bin.binType ? tLoc(`binTypes.${bin.binType}` as any) : '—'}
+                    </td>
+                    <td className="px-4 py-2 text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        {bin.isConsignment && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400">
+                            {/* eslint-disable-next-line no-restricted-syntax -- Technical constant representing consignment status. */}
+                            {'CSG'}
+                          </span>
+                        )}
+                        {bin.isBonded && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400">
+                            {/* eslint-disable-next-line no-restricted-syntax -- Technical constant representing bonded status. */}
+                            {'BND'}
+                          </span>
+                        )}
+                        {bin.isUnavailable && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/10 text-red-400">
+                            {tCommon('na')}
+                          </span>
+                        )}
+                        {!bin.isConsignment && !bin.isBonded && !bin.isUnavailable && (
+                          <span className="text-[var(--text-muted)]">—</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-2 py-2">
+                      <div className="flex items-center justify-end gap-1">
+                        {canEdit && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              onClick={() => onEditBin(bin, zone.zoneId)}
+                              className="p-1 hover:bg-[var(--bg-card-hover)] rounded text-[var(--text-secondary)] transition-colors"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">edit</span>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              onClick={() => onDeleteBin(bin.binId, bin.binNumber)}
+                              disabled={bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING'}
+                              title={
+                                bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING'
+                                  ? 'System bins cannot be deleted'
+                                  : tCommon('delete')
+                              }
+                              className={`p-1 rounded transition-colors ${
+                                bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING'
+                                  ? 'text-gray-500 cursor-not-allowed'
+                                  : 'hover:bg-red-500/10 text-red-400'
+                              }`}
+                            >
+                              <span className="material-symbols-outlined text-[16px]">delete</span>
+                            </Button>
+                          </>
+                        )}
+                        <Button
+                          variant="ghost"
+                          onClick={() => onCopyBinId(bin.binId)}
+                          className="p-1 hover:bg-[var(--bg-card-hover)] rounded text-[var(--text-secondary)] transition-colors"
+                          title={`UUID: ${bin.binId}`}
+                        >
+                          <span className="material-symbols-outlined text-[16px]">info</span>
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -1140,6 +1255,7 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
             <option value="pick">{tLoc('binTypes.pick')}</option>
             <option value="bulk">{tLoc('binTypes.bulk')}</option>
             <option value="staging">{tLoc('binTypes.staging')}</option>
+            <option value="project">{tLoc('binTypes.project')}</option>
             <option value="wip">{tLoc('binTypes.wip')}</option>
             <option value="quarantine">{tLoc('binTypes.quarantine')}</option>
           </select>

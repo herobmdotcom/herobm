@@ -29,6 +29,8 @@ fields:
     title: "Contracted Cost Price"
     summary: "Agreed unit purchasing price from the supplier catalog or last purchase cost."
 related:
+  - "demand-restock"
+  - "demand-movement"
   - "purchase-orders"
   - "sales-orders"
   - "work-orders"

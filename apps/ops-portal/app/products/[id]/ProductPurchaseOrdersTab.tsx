@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import DetailTabGrid from '@/components/shared/DetailTabGrid';
+import { Button } from '@/components/shared/Button';
 import { formatLocalDate } from '@/lib/date';
 
 interface ProductPurchaseOrdersTabProps {
@@ -8,6 +10,7 @@ interface ProductPurchaseOrdersTabProps {
 }
 
 export function ProductPurchaseOrdersTab({ productId }: ProductPurchaseOrdersTabProps) {
+  const router = useRouter();
   const t = useTranslations();
   const tCommon = useTranslations('common');
   const tStates = useTranslations('common.states');
@@ -87,6 +90,15 @@ export function ProductPurchaseOrdersTab({ productId }: ProductPurchaseOrdersTab
   return (
     <DetailTabGrid 
       title={t('purchaseOrders.title')}
+      headerActions={
+        <Button
+          size="sm"
+          variant="primary"
+          onClick={() => router.push(`/purchase-orders/new?productId=${productId}`)}
+        >
+          {t('purchaseOrders.buttons.createPO')}
+        </Button>
+      }
       endpoint={`/api/purchase-orders?productId=${encodeURIComponent(productId)}`}
       columns={columns}
       gridKey="product-purchase-orders-grid"

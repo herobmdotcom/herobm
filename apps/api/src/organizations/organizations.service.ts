@@ -26,6 +26,7 @@ import {
   masterDataEvents,
   contacts,
   users,
+  crmSettings,
 } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -42,6 +43,8 @@ import {
   OrganizationLinkResponseDto,
   SuccessResponseDto,
   OrganizationQueryDto,
+  CrmSettingsResponseDto,
+  UpdateCrmSettingsDto,
 } from './dto';
 
 @Injectable()
@@ -751,5 +754,90 @@ export class OrganizationsService {
     await this.touchOrganization(organizationId);
 
     return { success: true };
+  }
+
+  async getSettings(tx?: DrizzleDB): Promise<CrmSettingsResponseDto> {
+    const db = tx || this.db;
+    const [settings] = await db.select().from(crmSettings).limit(1);
+    return (
+      settings || {
+        organizationMetadataSchema: null,
+        opportunityMetadataSchema: null,
+        contactMetadataSchema: null,
+        customerMetadataSchema: null,
+        supplierMetadataSchema: null,
+      }
+    );
+  }
+
+  async updateSettings(
+    dto: UpdateCrmSettingsDto,
+    tx?: DrizzleDB,
+  ): Promise<CrmSettingsResponseDto> {
+    const db = tx || this.db;
+    const [existing] = await db.select().from(crmSettings).limit(1);
+
+    if (!existing) {
+      const [created] = await db
+        .insert(crmSettings)
+        .values({
+          organizationMetadataSchema: dto.organizationMetadataSchema ?? null,
+          opportunityMetadataSchema: dto.opportunityMetadataSchema ?? null,
+          contactMetadataSchema: dto.contactMetadataSchema ?? null,
+          customerMetadataSchema: dto.customerMetadataSchema ?? null,
+          supplierMetadataSchema: dto.supplierMetadataSchema ?? null,
+        })
+        .returning();
+
+      await emitEvent(db, {
+        entityType: EntityType.CRM_SETTINGS,
+        entityId: created.settingsId,
+        entityDisplayName: 'CRM Settings',
+        eventType: EventType.UPDATED,
+        payload: { changes: dto },
+        actor: 'system',
+      });
+
+      return created;
+    }
+
+    const [updated] = await db
+      .update(crmSettings)
+      .set({
+        organizationMetadataSchema:
+          dto.organizationMetadataSchema !== undefined
+            ? dto.organizationMetadataSchema
+            : existing.organizationMetadataSchema,
+        opportunityMetadataSchema:
+          dto.opportunityMetadataSchema !== undefined
+            ? dto.opportunityMetadataSchema
+            : existing.opportunityMetadataSchema,
+        contactMetadataSchema:
+          dto.contactMetadataSchema !== undefined
+            ? dto.contactMetadataSchema
+            : existing.contactMetadataSchema,
+        customerMetadataSchema:
+          dto.customerMetadataSchema !== undefined
+            ? dto.customerMetadataSchema
+            : existing.customerMetadataSchema,
+        supplierMetadataSchema:
+          dto.supplierMetadataSchema !== undefined
+            ? dto.supplierMetadataSchema
+            : existing.supplierMetadataSchema,
+        modifiedOn: new Date(),
+      })
+      .where(eq(crmSettings.settingsId, existing.settingsId))
+      .returning();
+
+    await emitEvent(db, {
+      entityType: EntityType.CRM_SETTINGS,
+      entityId: existing.settingsId,
+      entityDisplayName: 'CRM Settings',
+      eventType: EventType.UPDATED,
+      payload: { changes: dto },
+      actor: 'system',
+    });
+
+    return updated;
   }
 }

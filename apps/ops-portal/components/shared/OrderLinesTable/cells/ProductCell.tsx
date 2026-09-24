@@ -32,24 +32,34 @@ export function ProductCell({ line }: { line: OrderLineItem }) {
     line.productNumber === 'SYSTEM-CUSTOM-LINE';
 
   return (
-    <span className="font-semibold text-xs flex items-center font-mono">
-      {!isCustom && line.productId ? (
-        <Link
-          href={`/products/${line.productId}`}
-          className="text-[var(--accent)] no-underline hover:underline font-mono"
+    <div className="flex flex-col">
+      <span className="font-semibold text-xs flex items-center font-mono">
+        {!isCustom && line.productId ? (
+          <Link
+            href={`/products/${line.productId}`}
+            className="text-[var(--accent)] no-underline hover:underline font-mono"
+          >
+            {line.productNumber || line.productId?.substring(0, 8)}
+          </Link>
+        ) : (
+          <span className="text-[var(--text-muted)] font-medium text-xs font-sans">
+            CUSTOM
+          </span>
+        )}
+        {line.isPostConfirmation && (
+          <span className="ml-2 badge badge-sm badge-accent font-sans">
+            {tSales('columns.postConfirmation')}
+          </span>
+        )}
+      </span>
+      {line.supplierPartNumber && (
+        <span
+          className="text-[10px] text-[var(--text-muted)] font-normal font-sans truncate"
+          title={`Supplier SKU: ${line.supplierPartNumber}`}
         >
-          {line.productNumber || line.productId?.substring(0, 8)}
-        </Link>
-      ) : (
-        <span className="text-[var(--text-muted)] font-medium text-xs font-sans">
-          CUSTOM
+          SKU: {line.supplierPartNumber}
         </span>
       )}
-      {line.isPostConfirmation && (
-        <span className="ml-2 badge badge-sm badge-accent font-sans">
-          {tSales('columns.postConfirmation')}
-        </span>
-      )}
-    </span>
+    </div>
   );
 }

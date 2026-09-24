@@ -7,6 +7,7 @@
  */
 import type { WorkOrderResponseDtoCreatedOn } from './workOrderResponseDtoCreatedOn';
 import type { WorkOrderResponseDtoModifiedOn } from './workOrderResponseDtoModifiedOn';
+import type { WorkOrderResponseDtoMetadata } from './workOrderResponseDtoMetadata';
 import type { WorkOrderComponentResponseDto } from './workOrderComponentResponseDto';
 
 export interface WorkOrderResponseDto {
@@ -38,5 +39,7 @@ export interface WorkOrderResponseDto {
   createdBy?: string | null;
   createdOn?: WorkOrderResponseDtoCreatedOn;
   modifiedOn?: WorkOrderResponseDtoModifiedOn;
+  /** @nullable */
+  metadata?: WorkOrderResponseDtoMetadata;
   components?: WorkOrderComponentResponseDto[];
 }

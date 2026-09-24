@@ -5,8 +5,11 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
+import type { UpdatePurchaseOrderDtoMetadata } from './updatePurchaseOrderDtoMetadata';
 
 export interface UpdatePurchaseOrderDto {
+  /** @nullable */
+  metadata?: UpdatePurchaseOrderDtoMetadata;
   name?: string;
   vendorId?: string;
   currencyCode?: string;

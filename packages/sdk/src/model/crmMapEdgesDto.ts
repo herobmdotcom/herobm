@@ -9,6 +9,10 @@ import type { CrmMapOrganizationOrganizationLinkDto } from './crmMapOrganization
 import type { CrmMapOrganizationContactLinkDto } from './crmMapOrganizationContactLinkDto';
 import type { CrmMapOpportunityOrganizationLinkDto } from './crmMapOpportunityOrganizationLinkDto';
 import type { CrmMapOpportunityContactLinkDto } from './crmMapOpportunityContactLinkDto';
+import type { CrmMapOrganizationSalesOrderLinkDto } from './crmMapOrganizationSalesOrderLinkDto';
+import type { CrmMapOpportunitySalesOrderLinkDto } from './crmMapOpportunitySalesOrderLinkDto';
+import type { CrmMapOrganizationProjectLinkDto } from './crmMapOrganizationProjectLinkDto';
+import type { CrmMapOpportunityProjectLinkDto } from './crmMapOpportunityProjectLinkDto';
 
 export interface CrmMapEdgesDto {
   organizationOrganization?: CrmMapOrganizationOrganizationLinkDto[];
@@ -17,4 +21,8 @@ export interface CrmMapEdgesDto {
   opportunityContact: CrmMapOpportunityContactLinkDto[];
   referralOrganizationOrganization?: CrmMapOrganizationOrganizationLinkDto[];
   referralContactOrganization?: CrmMapOrganizationContactLinkDto[];
+  organizationSalesOrder?: CrmMapOrganizationSalesOrderLinkDto[];
+  opportunitySalesOrder?: CrmMapOpportunitySalesOrderLinkDto[];
+  organizationProject?: CrmMapOrganizationProjectLinkDto[];
+  opportunityProject?: CrmMapOpportunityProjectLinkDto[];
 }

@@ -5,6 +5,7 @@ import {
   uuid,
   integer,
   numeric,
+  jsonb,
 } from 'drizzle-orm/pg-core';
 import { herobmCore, validCurrencyCheck } from './core.schema';
 import { users } from './system.schema';
@@ -54,6 +55,7 @@ export const organizations = herobmCore.table('organizations', {
   ), // Reference to contacts
   referralNote: text('referral_note'),
   tags: text('tags').array(),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>(),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
   modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
 });
@@ -77,6 +79,7 @@ export const contacts = herobmCore.table('contacts', {
   referredByContactId: uuid('referred_by_contact_id').references(
     (): any => contacts.contactId,
   ), // Self-reference
+  metadata: jsonb('metadata').$type<Record<string, unknown>>(),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
   modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
 });
@@ -124,6 +127,7 @@ export const opportunities = herobmCore.table('opportunities', {
   probability: integer('probability'),
   actualValue: numeric('actual_value'),
   description: text('description'),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>(),
   ownerId: uuid('owner_id').references(() => users.userId),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
   modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
@@ -291,6 +295,7 @@ export const suppliers = herobmCore.table(
     stateCode: text('state_code').$type<SupplierState>().notNull(),
     externalId: text('external_id'),
     notes: text('notes'),
+    metadata: jsonb('metadata').$type<Record<string, unknown>>(),
     bankAccountName: text('bank_account_name'),
     bankBsb: text('bank_bsb'),
     bankAccountNumber: text('bank_account_number'),
@@ -341,6 +346,7 @@ export const customers = herobmCore.table(
     source: text('source').notNull(),
     priceTier: text('price_tier'),
     notes: text('notes'),
+    metadata: jsonb('metadata').$type<Record<string, unknown>>(),
     createdBy: text('created_by'),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
     modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
@@ -406,5 +412,19 @@ export const crmActivityContacts = herobmCore.table('crm_activity_contacts', {
     .notNull()
     .references(() => contacts.contactId, { onDelete: 'cascade' }),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// crm_settings (Domain-specific settings & metadata schemas)
+// ---------------------------------------------------------------------------
+export const crmSettings = herobmCore.table('crm_settings', {
+  settingsId: uuid('settings_id').primaryKey().defaultRandom(),
+  organizationMetadataSchema: jsonb('organization_metadata_schema').$type<Record<string, unknown>>(),
+  opportunityMetadataSchema: jsonb('opportunity_metadata_schema').$type<Record<string, unknown>>(),
+  contactMetadataSchema: jsonb('contact_metadata_schema').$type<Record<string, unknown>>(),
+  customerMetadataSchema: jsonb('customer_metadata_schema').$type<Record<string, unknown>>(),
+  supplierMetadataSchema: jsonb('supplier_metadata_schema').$type<Record<string, unknown>>(),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
 });
 

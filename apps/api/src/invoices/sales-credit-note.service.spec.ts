@@ -95,6 +95,7 @@ describe('SalesCreditNoteService', () => {
     await pg.db.insert(uomDictionary).values({
       uomCode: 'EA',
       description: 'Each',
+      category: 'goods',
     });
 
     await pg.db.insert(taxCategories).values({
@@ -391,6 +392,8 @@ describe('SalesCreditNoteService', () => {
         salesOrderLineId: line1Id,
         quantityInvoiced: String(l1Qty),
         pricePerUnit: String(l1Price),
+        discountPercentage: String(l1Disc),
+        taxAmount: '100.00',
         amount: String(l1Qty * l1Price * (1 - l1Disc / 100)),
       },
       {
@@ -399,6 +402,8 @@ describe('SalesCreditNoteService', () => {
         salesOrderLineId: line2Id,
         quantityInvoiced: String(l2Qty),
         pricePerUnit: String(l2Price),
+        discountPercentage: String(l2Disc),
+        taxAmount: '100.00',
         amount: String(l2Qty * l2Price * (1 - l2Disc / 100)),
       },
     ]);

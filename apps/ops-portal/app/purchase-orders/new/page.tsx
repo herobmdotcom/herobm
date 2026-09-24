@@ -2,8 +2,10 @@
 
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { formatAmount, CURRENCIES } from '@/lib/currency';
@@ -48,6 +50,9 @@ interface LineItem {
   unitOfMeasure: string;
   discountPercentage: string;
   taxCategoryId: string | null;
+  minPurchaseQty?: string | null;
+  purchaseUnit?: string | null;
+  supplierPartNumber?: string | null;
 }
 
 let lineKey = 0;
@@ -101,6 +106,10 @@ export default function NewPurchaseOrderPage() {
   const t = useTranslations();
   useDocumentTitle(t('purchaseOrders.newOrderTitle'));
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialVendorId = searchParams.get('vendorId') || '';
+  const initialProductId = searchParams.get('productId') || '';
+
   const [taxCategories, setTaxCategories] = useState<TaxCategory[]>([]);
   const defaultTaxCategoryId = taxCategories.find((c) => c.isDefault)?.taxCategoryId || '';
 
@@ -120,7 +129,7 @@ export default function NewPurchaseOrderPage() {
     );
   }, [defaultTaxCategoryId]);
 
-  const [vendorId, setVendorId] = useState('');
+  const [vendorId, setVendorId] = useState(initialVendorId);
   const [currencyCode, setCurrencyCode] = useState(baseCurrency);
   const [name, setName] = useState('');
   const [deliveryLocationId, setDeliveryLocationId] = useState<string | null>(null);
@@ -129,6 +138,116 @@ export default function NewPurchaseOrderPage() {
   const [notes, setNotes] = useState('');
 
   const [lines, setLines] = useState<LineItem[]>([]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function initFromParams() {
+      if (initialVendorId) {
+        setVendorId(initialVendorId);
+        try {
+          const res = await api.suppliersControllerFindOne(initialVendorId);
+          if (active && res.data?.currencyCode) {
+            setCurrencyCode(res.data.currencyCode);
+          }
+        } catch (err) {
+          reportError(err, 'NewPurchaseOrderPage_initVendor');
+          setError(err instanceof Error ? err.message : String(err));
+        }
+      }
+
+      if (initialProductId) {
+        try {
+          const prodRes = await api.productsControllerFindOne(initialProductId);
+          const prod = prodRes.data;
+          if (!prod || !active) return;
+
+          let matchedSupplier: {
+            vendorId: string;
+            costPrice?: string | null;
+            discountPercent?: string | null;
+            minPurchaseQty?: string | null;
+            purchaseUnit?: string | null;
+            isPreferred?: boolean;
+          } | undefined;
+
+          try {
+            const supRes = await api.suppliersControllerFindByProduct(initialProductId, { limit: 100 });
+            const raw = supRes.data;
+            const list: Array<{
+              vendorId: string;
+              costPrice?: string | null;
+              discountPercent?: string | null;
+              minPurchaseQty?: string | null;
+              purchaseUnit?: string | null;
+              isPreferred?: boolean;
+            }> = Array.isArray(raw)
+              ? raw
+              : Array.isArray((raw as { data?: unknown })?.data)
+              ? ((raw as { data: unknown[] }).data as never)
+              : [];
+
+            if (initialVendorId) {
+              matchedSupplier = list.find((s) => s.vendorId === initialVendorId);
+            } else if (list.length > 0) {
+              matchedSupplier = list.find((s) => s.isPreferred) || list[0];
+              if (matchedSupplier?.vendorId && active) {
+                setVendorId(matchedSupplier.vendorId);
+                try {
+                  const vRes = await api.suppliersControllerFindOne(matchedSupplier.vendorId);
+                  if (active && vRes.data?.currencyCode) {
+                    setCurrencyCode(vRes.data.currencyCode);
+                  }
+                } catch {
+                  // ignore
+                }
+              }
+            }
+          } catch {
+            // ignore
+          }
+
+          if (!active) return;
+
+          const moq = matchedSupplier?.minPurchaseQty ? String(matchedSupplier.minPurchaseQty) : '1';
+          const costPrice = matchedSupplier?.costPrice != null && matchedSupplier.costPrice !== ''
+            ? parseFloat(String(matchedSupplier.costPrice)).toFixed(2)
+            : parseFloat(prod.standardCost || prod.tradePrice || prod.listPrice || '0').toFixed(2);
+          const discount = matchedSupplier?.discountPercent ? String(matchedSupplier.discountPercent) : '0';
+          const uom = matchedSupplier?.purchaseUnit || prod.baseUom || 'EA';
+
+          setLines([
+            {
+              key: ++lineKey,
+              lineType: LineType.PRODUCT,
+              productId: prod.productId,
+              productNumber: prod.productNumber,
+              productDescription: prod.name,
+              quantity: moq,
+              pricePerUnit: costPrice,
+              unitOfMeasure: uom,
+              discountPercentage: discount,
+              taxCategoryId: prod.purchaseTaxCategoryId || defaultTaxCategoryId || null,
+              minPurchaseQty: matchedSupplier?.minPurchaseQty ?? null,
+              purchaseUnit: matchedSupplier?.purchaseUnit ?? null,
+              supplierPartNumber: (matchedSupplier as { supplierPartNumber?: string })?.supplierPartNumber ?? null,
+            },
+          ]);
+        } catch (err) {
+          reportError(err, 'NewPurchaseOrderPage_initProduct');
+          setError(err instanceof Error ? err.message : String(err));
+        }
+      }
+    }
+
+    if (initialVendorId || initialProductId) {
+      initFromParams();
+    }
+
+    return () => {
+      active = false;
+    };
+  }, [initialVendorId, initialProductId, defaultTaxCategoryId]);
   const prevLineCountRef = useRef<number | null>(null);
   useEffect(() => {
     if (prevLineCountRef.current !== null && lines.length > prevLineCountRef.current) {
@@ -162,19 +281,60 @@ export default function NewPurchaseOrderPage() {
     ]);
   };
 
-  const addLineFromProduct = (p: Product) => {
+  const addLineFromProduct = async (p: Product) => {
+    let moq = '1';
+    let costPrice = parseFloat(p.standardCost || p.tradePrice || p.listPrice || '0').toFixed(2);
+    let discount = '0';
+    let uom = 'EA';
+    let suppInfo: { minPurchaseQty?: string | null; purchaseUnit?: string | null; supplierPartNumber?: string | null } | undefined;
+
+    if (vendorId) {
+      try {
+        const supRes = await api.suppliersControllerFindByProduct(p.productId, { limit: 100 });
+        const raw = supRes.data;
+        const list: Array<{
+          vendorId: string;
+          costPrice?: string | null;
+          discountPercent?: string | null;
+          minPurchaseQty?: string | null;
+          purchaseUnit?: string | null;
+          supplierPartNumber?: string | null;
+        }> = Array.isArray(raw)
+          ? raw
+          : Array.isArray((raw as { data?: unknown })?.data)
+          ? ((raw as { data: unknown[] }).data as never)
+          : [];
+        const matched = list.find((s) => s.vendorId === vendorId);
+        if (matched) {
+          suppInfo = matched;
+          if (matched.minPurchaseQty) moq = String(matched.minPurchaseQty);
+          if (matched.costPrice != null && matched.costPrice !== '') {
+            costPrice = parseFloat(String(matched.costPrice)).toFixed(2);
+          }
+          if (matched.discountPercent) discount = String(matched.discountPercent);
+          if (matched.purchaseUnit) uom = matched.purchaseUnit;
+        }
+      } catch {
+        // ignore
+      }
+    }
+
     setLines((prev) => [
       ...prev,
       {
         key: ++lineKey,
+        lineType: LineType.PRODUCT,
         productId: p.productId,
         productNumber: p.productNumber,
         productDescription: p.name,
-        quantity: '1',
-        pricePerUnit: parseFloat(p.standardCost || p.tradePrice || p.listPrice || '0').toFixed(2),
-        unitOfMeasure: 'EA',
-        discountPercentage: '0',
+        quantity: moq,
+        pricePerUnit: costPrice,
+        unitOfMeasure: uom,
+        discountPercentage: discount,
         taxCategoryId: defaultTaxCategoryId || null,
+        minPurchaseQty: suppInfo?.minPurchaseQty ?? null,
+        purchaseUnit: suppInfo?.purchaseUnit ?? null,
+        supplierPartNumber: suppInfo?.supplierPartNumber ?? null,
       },
     ]);
   };

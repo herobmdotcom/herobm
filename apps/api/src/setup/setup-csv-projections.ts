@@ -12,6 +12,9 @@ import {
   uomDictionary,
   salesOrders,
   locations,
+  projects,
+  users,
+  opportunities,
 } from '@herobm/db-schema';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import type { ExportCsvQueryDto } from './setup.dto';
@@ -369,11 +372,85 @@ export const SALES_ORDERS_EXTENDED: CsvExportProjection = {
   },
 };
 
+export const PROJECTS_EXTENDED: CsvExportProjection = {
+  id: 'projects_extended',
+  name: 'Projects (Extended)',
+  baseTableId: 'projects',
+  uniqueKey: 'project_number',
+  columns: [
+    'project_number',
+    'name',
+    'description',
+    'customer_number',
+    'customer_name',
+    'opportunity_name',
+    'state_code',
+    'stage',
+    'billing_type',
+    'wip_method',
+    'currency_code',
+    'project_manager_name',
+    'start_date',
+    'target_end_date',
+    'actual_end_date',
+    'notes',
+    'created_by',
+  ],
+  execute: async (db: DrizzleDB, options: ExportCsvQueryDto) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic query builder
+    let query: any = db
+      .select({
+        project_number: projects.projectNumber,
+        name: projects.name,
+        description: projects.description,
+        customer_number: customers.customerNumber,
+        customer_name: organizations.name,
+        opportunity_name: opportunities.name,
+        state_code: projects.stateCode,
+        stage: projects.stage,
+        billing_type: projects.billingType,
+        currency_code: projects.currencyCode,
+        project_manager_name: users.displayName,
+        start_date: projects.startDate,
+        target_end_date: projects.targetEndDate,
+        actual_end_date: projects.actualEndDate,
+        notes: projects.notes,
+        created_by: projects.createdBy,
+      })
+      .from(projects)
+      .leftJoin(customers, eq(projects.customerId, customers.customerId))
+      .leftJoin(
+        organizations,
+        eq(customers.organizationId, organizations.organizationId),
+      )
+      .leftJoin(
+        opportunities,
+        eq(projects.opportunityId, opportunities.opportunityId),
+      )
+      .leftJoin(users, eq(projects.projectManagerId, users.userId));
+
+    if (!options.includeArchived) {
+      query = query.where(sql`${projects.stateCode} != 'cancelled'`);
+    }
+
+    if (options.limit && options.limit > 0) {
+      query = query.limit(options.limit);
+    }
+
+    const rows = (await query) as Record<string, unknown>[];
+    return {
+      headers: PROJECTS_EXTENDED.columns,
+      rows,
+    };
+  },
+};
+
 const PROJECTIONS: Record<string, CsvExportProjection> = {
   customers_extended: CUSTOMERS_EXTENDED,
   suppliers_extended: SUPPLIERS_EXTENDED,
   products_extended: PRODUCTS_EXTENDED,
   sales_orders_extended: SALES_ORDERS_EXTENDED,
+  projects_extended: PROJECTS_EXTENDED,
 };
 
 export function hasCsvProjection(id: string): boolean {

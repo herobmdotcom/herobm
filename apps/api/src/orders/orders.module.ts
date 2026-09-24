@@ -47,6 +47,8 @@ import { TransfersController } from './transfers/transfers.controller';
 import { TransfersCoreService } from './transfers/transfers-core.service';
 import { TransfersWriteService } from './transfers/transfers-write.service';
 import { TransfersStateService } from './transfers/transfers-state.service';
+import { TransfersPickingService } from './transfers/transfers-picking.service';
+import { TransfersShipmentService } from './transfers/transfers-shipment.service';
 import { TaxModule } from '../tax/tax.module';
 import { InventoryModule } from '../inventory/inventory.module';
 import { CustomersModule } from '../customers/customers.module';
@@ -122,6 +124,8 @@ import { PurchaseOrdersModule } from '../purchase-orders/purchase-orders.module'
     TransfersCoreService,
     TransfersWriteService,
     TransfersStateService,
+    TransfersPickingService,
+    TransfersShipmentService,
   ],
   exports: [
     OrdersService,
@@ -137,6 +141,8 @@ import { PurchaseOrdersModule } from '../purchase-orders/purchase-orders.module'
     PickingQueryService,
     PickingShippingQueryService,
     PickingActionService,
+    TransfersPickingService,
+    TransfersShipmentService,
   ],
 })
 export class OrdersModule implements OnModuleInit {
@@ -205,17 +211,30 @@ export class OrdersModule implements OnModuleInit {
         options?: Record<string, unknown>,
       ) => {
         const [inv] = await this.db
-          .select({ orderId: salesInvoices.salesOrderId })
+          .select({
+            orderId: salesInvoices.salesOrderId,
+            projectId: salesInvoices.projectId,
+          })
           .from(salesInvoices)
           .where(eq(salesInvoices.invoiceId, id));
-        if (!inv || !inv.orderId)
-          throw new NotFoundException(`Invoice ${id} not found`);
-        return (await this.reportSalesInvoiceService.assembleData(
-          inv.orderId,
-          'app',
-          id,
-          options,
-        )) as unknown as Record<string, unknown>;
+        if (!inv) throw new NotFoundException(`Invoice ${id} not found`);
+        if (inv.orderId) {
+          return (await this.reportSalesInvoiceService.assembleData(
+            inv.orderId,
+            'app',
+            id,
+            options,
+          )) as unknown as Record<string, unknown>;
+        }
+        if (inv.projectId) {
+          return (await this.reportSalesInvoiceService.assembleProjectInvoiceData(
+            id,
+            options,
+          )) as unknown as Record<string, unknown>;
+        }
+        throw new NotFoundException(
+          `Invoice ${id} has no associated sales order or project`,
+        );
       },
       getRandomId: async () => {
         const rows = await this.db

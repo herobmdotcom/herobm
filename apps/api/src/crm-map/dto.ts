@@ -49,6 +49,49 @@ export class CrmMapOpportunityNodeDto {
   name?: string;
 }
 
+export class CrmMapSalesOrderNodeDto {
+  @ApiProperty()
+  salesOrderId!: string;
+
+  @ApiProperty()
+  orderNumber!: string;
+
+  @ApiProperty()
+  stateCode!: string;
+
+  @ApiPropertyOptional()
+  baseTotalAmount?: string | null;
+
+  @ApiProperty()
+  currencyCode!: string;
+
+  @ApiPropertyOptional()
+  name?: string | null;
+
+  @ApiPropertyOptional()
+  createdOn?: Date | string | null;
+}
+
+export class CrmMapProjectNodeDto {
+  @ApiProperty()
+  projectId!: string;
+
+  @ApiProperty()
+  projectNumber!: string;
+
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty()
+  stateCode!: string;
+
+  @ApiPropertyOptional()
+  stage?: string | null;
+
+  @ApiProperty()
+  billingType!: string;
+}
+
 export class CrmMapOrganizationOrganizationLinkDto {
   @ApiProperty()
   sourceOrganizationId!: string;
@@ -90,6 +133,38 @@ export class CrmMapOpportunityContactLinkDto {
   roles?: string[];
 }
 
+export class CrmMapOrganizationSalesOrderLinkDto {
+  @ApiProperty()
+  organizationId!: string;
+
+  @ApiProperty()
+  salesOrderId!: string;
+}
+
+export class CrmMapOpportunitySalesOrderLinkDto {
+  @ApiProperty()
+  opportunityId!: string;
+
+  @ApiProperty()
+  salesOrderId!: string;
+}
+
+export class CrmMapOrganizationProjectLinkDto {
+  @ApiProperty()
+  organizationId!: string;
+
+  @ApiProperty()
+  projectId!: string;
+}
+
+export class CrmMapOpportunityProjectLinkDto {
+  @ApiProperty()
+  opportunityId!: string;
+
+  @ApiProperty()
+  projectId!: string;
+}
+
 export class CrmMapNodesDto {
   @ApiProperty({ type: [CrmMapOrganizationNodeDto] })
   organizations!: CrmMapOrganizationNodeDto[];
@@ -99,6 +174,12 @@ export class CrmMapNodesDto {
 
   @ApiProperty({ type: [CrmMapOpportunityNodeDto] })
   opportunities!: CrmMapOpportunityNodeDto[];
+
+  @ApiProperty({ type: [CrmMapSalesOrderNodeDto] })
+  salesOrders!: CrmMapSalesOrderNodeDto[];
+
+  @ApiProperty({ type: [CrmMapProjectNodeDto] })
+  projects!: CrmMapProjectNodeDto[];
 }
 
 export class CrmMapEdgesDto {
@@ -119,6 +200,18 @@ export class CrmMapEdgesDto {
 
   @ApiPropertyOptional({ type: [CrmMapOrganizationContactLinkDto] })
   referralContactOrganization?: CrmMapOrganizationContactLinkDto[];
+
+  @ApiPropertyOptional({ type: [CrmMapOrganizationSalesOrderLinkDto] })
+  organizationSalesOrder?: CrmMapOrganizationSalesOrderLinkDto[];
+
+  @ApiPropertyOptional({ type: [CrmMapOpportunitySalesOrderLinkDto] })
+  opportunitySalesOrder?: CrmMapOpportunitySalesOrderLinkDto[];
+
+  @ApiPropertyOptional({ type: [CrmMapOrganizationProjectLinkDto] })
+  organizationProject?: CrmMapOrganizationProjectLinkDto[];
+
+  @ApiPropertyOptional({ type: [CrmMapOpportunityProjectLinkDto] })
+  opportunityProject?: CrmMapOpportunityProjectLinkDto[];
 }
 
 export class CrmMapResponseDto {

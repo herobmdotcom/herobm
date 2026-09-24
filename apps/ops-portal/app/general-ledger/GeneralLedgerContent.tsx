@@ -208,10 +208,9 @@ export default function GeneralLedgerContent() {
                 setAuditEventId(null);
                 setIsIntegrityOpen(true);
               }}
-              className="whitespace-nowrap flex items-center gap-1.5 text-xs"
+              className="whitespace-nowrap text-xs"
             >
-              <span className="material-symbols-outlined text-[16px] text-accent">verified_user</span>
-              {t('auditStatus')}
+              {t('integrityReport')}
             </Button>
             <Button
               variant="secondary"

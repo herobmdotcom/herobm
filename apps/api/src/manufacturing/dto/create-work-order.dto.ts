@@ -6,6 +6,7 @@ import {
   IsUUID,
   IsArray,
   ValidateNested,
+  IsObject,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -77,6 +78,15 @@ export class CreateWorkOrderDto {
   @IsOptional()
   @IsString()
   additionalCost?: string;
+
+  @ApiPropertyOptional({
+    type: 'object',
+    additionalProperties: true,
+    description: 'User-defined dynamic metadata attributes',
+  })
+  @IsOptional()
+  @IsObject()
+  metadata?: Record<string, unknown> | null;
 
   @ApiPropertyOptional({
     type: [CreateWorkOrderComponentDto],

@@ -2,7 +2,7 @@
 
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import * as api from '@herobm/sdk';
@@ -10,7 +10,7 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { useTranslations } from 'next-intl';
 import GroupSelect from '@/components/shared/GroupSelect';
-import { PRODUCT_STATE, getErrorMessage } from '@herobm/shared';
+import { PRODUCT_STATE, getErrorMessage, isServiceProductType } from '@herobm/shared';
 import { Button } from '@/components/shared/Button';
 
 export default function NewProductPage() {
@@ -32,9 +32,26 @@ export default function NewProductPage() {
 
   useEffect(() => {
     api.uomDictionaryControllerFindAll()
-      .then((res: unknown) => setUomDictionary((res as { data: api.UomResponseDto[] }).data || []))
+      .then((res: unknown) => {
+        const uoms = (res as { data: api.UomResponseDto[] }).data || [];
+        setUomDictionary(uoms);
+        if (!dto.baseUom) {
+          const firstGoods = uoms.find((u) => (u.category || 'goods') === 'goods');
+          if (firstGoods) {
+            setDto((p) => ({ ...p, baseUom: firstGoods.uomCode }));
+          }
+        }
+      })
       .catch((err) => toast.error('Failed to load UOM dictionary: ' + getErrorMessage(err)));
   }, []);
+
+  const filteredUoms = useMemo(() => {
+    const isService = isServiceProductType(dto.productType);
+    return uomDictionary.filter((u) => {
+      const cat = u.category || 'goods';
+      return isService ? cat === 'service' : cat === 'goods';
+    });
+  }, [uomDictionary, dto.productType]);
 
   const handleSubmit = async () => {
     if (!isValid || submitting) return;
@@ -44,9 +61,11 @@ export default function NewProductPage() {
       const payload: Record<string, unknown> = { ...dto };
       if (!payload.productGroupId) delete payload.productGroupId;
 
-      const res = await api.productsControllerCreate(payload as unknown as api.CreateProductDto);
+      const res = await api.productsControllerCreate(
+        payload as unknown as api.CreateProductDto,
+      );
       const product = res.data;
-      toast.success(t('toast.productCreated'));
+      toast.success(tCommon('saved'));
       router.push(`/products/${product.productId}`);
     } catch (err: unknown) {
       toast.error(getErrorMessage(err));
@@ -60,6 +79,18 @@ export default function NewProductPage() {
       const next = { ...prev, [field]: value };
       if (field === 'structureType' && value === 'kit') {
         next.productType = 'non-stock';
+      }
+      if (field === 'productType') {
+        const isNewService = isServiceProductType(value);
+        const currentUom = uomDictionary.find((u) => u.uomCode === next.baseUom);
+        const currentCat = currentUom?.category || 'goods';
+        if ((isNewService && currentCat !== 'service') || (!isNewService && currentCat === 'service')) {
+          const validUom = uomDictionary.find((u) => {
+            const cat = u.category || 'goods';
+            return isNewService ? cat === 'service' : cat === 'goods';
+          });
+          next.baseUom = validUom ? validUom.uomCode : '';
+        }
       }
       return next;
     });
@@ -149,7 +180,7 @@ export default function NewProductPage() {
                   <option value="" disabled>
                     {tCommon('selectOption')}
                   </option>
-                  {uomDictionary.map((u) => (
+                  {filteredUoms.map((u) => (
                     <option key={u.uomCode} value={u.uomCode}>
                       {u.uomCode}{u.description ? ` — ${u.description}` : ''}
                     </option>

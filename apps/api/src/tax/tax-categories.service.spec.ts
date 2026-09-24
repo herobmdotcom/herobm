@@ -76,6 +76,7 @@ describe('TaxCategoriesService', () => {
         inventoryValuationMethod: 'average',
         inventoryAccountingMode: 'perpetual',
         creditLimitBehavior: 'hard',
+        allowNegativeInventory: false,
         apiRateLimit: '100',
       } as any);
       const result = await service.getDefaultSalesTax();

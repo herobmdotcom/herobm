@@ -33,12 +33,14 @@ import { useSettings } from '@/components/SettingsProvider';
 import { useAuth } from '@/components/shared/AuthGate';
 import { SUPPLIER_STATE, getErrorMessage, CURRENCIES as _CURRENCIES, COUNTRIES, getCurrencyForCountry, SystemResource, hasPermission } from '@herobm/shared';
 import { useSupplier, Supplier } from './useSupplier';
+import { DynamicForm } from '@/components/DynamicForm';
 
 export default function SupplierDetailPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
   const { baseCurrency, app } = useSettings();
   const t = useTranslations('suppliers');
   const tCommon = useTranslations('common');
   const tSales = useTranslations('salesOrders');
+  const tOrders = useTranslations('purchaseOrders');
   const tStates = useTranslations('common.states');
   const tToast = useTranslations('toast');
   const tConfirm = useTranslations('confirm');
@@ -63,6 +65,26 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
     supplierGroups,
     loadSupplier,
   } = useSupplier(params.id);
+
+  const [supplierMetadataSchema, setSupplierMetadataSchema] = useState<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    api.organizationsControllerGetSettings()
+      .then((res) => {
+        if (res.data?.supplierMetadataSchema) {
+          setSupplierMetadataSchema(res.data.supplierMetadataSchema as Record<string, unknown>);
+        }
+      })
+      .catch((e) => {
+        reportError(e, 'SupplierDetailPage - loadSettings');
+      });
+  }, []);
+
+  const hasCustomFields = !!(
+    supplierMetadataSchema?.properties &&
+    typeof supplierMetadataSchema.properties === 'object' &&
+    Object.keys(supplierMetadataSchema.properties).length > 0
+  );
 
   const error = ''; // Kept for compatibility with existing JSX if needed
 
@@ -224,6 +246,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         { id: 'notes-section', label: t('tabs.notes'), onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('notes-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
         { id: 'contact-section', label: t('tabs.contact'), onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('contact-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
         { id: 'bank-section', label: 'Bank', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('bank-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        ...(hasCustomFields ? [{ id: 'custom-fields-section', label: t('customFields'), onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('custom-fields-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } }] : []),
         { id: 'activity-section', label: t('tabs.activity'), onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('activity-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
       ]
     },
@@ -326,6 +349,17 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       {activeTab === 'purchaseOrders' && (
         <DetailTabGrid 
           title="Orders"
+          headerActions={
+            isEditable ? (
+              <Button
+                size="sm"
+                variant="primary"
+                onClick={() => router.push(`/purchase-orders/new?vendorId=${params.id}`)}
+              >
+                {tOrders('buttons.createPO')}
+              </Button>
+            ) : undefined
+          }
           endpoint={`/api/purchase-orders?vendorId=${encodeURIComponent(params.id)}`}
           columns={orderColumns}
           gridKey="supplier-orders"
@@ -379,7 +413,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 value={dto?.name || ''}
                 onChange={(e) => updateField('name', e.target.value)}
                 onBlur={() => saveField('name', dto?.name)}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
               />
             </div>
             <div>
@@ -404,7 +438,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                   updateField('supplierGroupId', val || null);
                   saveField('supplierGroupId', val || null);
                 }}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
                 placeholder={t('placeholders.noGroup')}
               />
             </div>
@@ -429,7 +463,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                     saveField('currencyCode', dto?.currencyCode);
                   }
                 }}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
               >
                 <option value="">{tCommon('notConfigured')}</option>
                 {COUNTRIES.map(c => (
@@ -451,7 +485,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 onChange={(e) => updateField('notes', e.target.value)}
                 onBlur={() => saveField('notes', dto?.notes)}
                 placeholder={tCommon('notesCardPlaceholder')}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
               />
             </div>
           </div>
@@ -478,7 +512,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                   updateField('currencyCode', e.target.value);
                   saveField('currencyCode', e.target.value);
                 }}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
               >
                 {CURRENCIES.map(c => (
                   <option key={c.code} value={c.code}>{c.code} - {c.name}</option>
@@ -492,11 +526,11 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 {tCommon('columns.state')}
               </label>
               <div
-                className={`flex items-center gap-3 pt-1.5 ${!isEditable || saving ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                className={`flex items-center gap-3 pt-1.5 ${!isEditable ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                 onClick={toggleState}
               >
                 <div
-                  className={`w-10 h-[22px] rounded-[11px] relative transition-colors duration-200 ${supplier.stateCode === SUPPLIER_STATE.ACTIVE ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'} ${!isEditable || saving ? 'opacity-50' : 'opacity-100'}`}
+                  className={`w-10 h-[22px] rounded-[11px] relative transition-colors duration-200 ${supplier.stateCode === SUPPLIER_STATE.ACTIVE ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'} ${!isEditable ? 'opacity-50' : 'opacity-100'}`}
                 >
                   <div
                     className={`w-4 h-4 rounded-full bg-white absolute top-[3px] transition-all duration-200 ${supplier.stateCode === SUPPLIER_STATE.ACTIVE ? 'left-[21px]' : 'left-[3px]'}`}
@@ -520,7 +554,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                     value={dto?.earlyPaymentDiscount || ''}
                     onChange={(val) => updateField('earlyPaymentDiscount', val)}
                     onBlur={() => saveField('earlyPaymentDiscount', dto?.earlyPaymentDiscount)}
-                    disabled={!isEditable || saving}
+                    disabled={!isEditable}
                     step="0.01"
                     min="0"
                     max="100"
@@ -540,7 +574,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                     value={dto?.earlyPaymentDiscountDays?.toString() || ''}
                     onChange={(val) => updateField('earlyPaymentDiscountDays', val ? Number(val) : null)}
                     onBlur={() => saveField('earlyPaymentDiscountDays', dto?.earlyPaymentDiscountDays)}
-                    disabled={!isEditable || saving}
+                    disabled={!isEditable}
                     step="1"
                     min="0"
                     placeholder="10"
@@ -572,7 +606,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                   value={dto?.creditLimit || ""}
                   onChange={(val) => updateField('creditLimit', val)}
                   onBlur={() => saveField("creditLimit", dto?.creditLimit)}
-                  disabled={!isEditable || saving}
+                  disabled={!isEditable}
                   placeholder="0.00"
                   inheritedValue={creditLimitInheritance.inheritedValue}
                   inheritedSourceLabel={creditLimitInheritance.inheritedSourceLabel}
@@ -618,7 +652,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 className="input w-full"
                 value={dto?.businessNumber || ''}
                 onChange={(e) => updateField('businessNumber', e.target.value)}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
                 onBlur={() => saveField('businessNumber', dto?.businessNumber)}
                 placeholder="Enter business number..."
               />
@@ -630,16 +664,16 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 {t('fields.taxRegistered')}
               </label>
               <div
-                className={`flex items-center gap-3 pt-1.5 ${!isEditable || saving ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                className={`flex items-center gap-3 pt-1.5 ${!isEditable ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                 onClick={() => {
-                  if (!isEditable || saving) return;
+                  if (!isEditable) return;
                   const newValue = !dto?.isTaxRegistered;
                   updateField('isTaxRegistered', newValue);
                   saveField('isTaxRegistered', newValue);
                 }}
               >
                 <div
-                  className={`w-10 h-[22px] rounded-[11px] relative transition-colors duration-200 ${dto?.isTaxRegistered ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'} ${!isEditable || saving ? 'opacity-50' : 'opacity-100'}`}
+                  className={`w-10 h-[22px] rounded-[11px] relative transition-colors duration-200 ${dto?.isTaxRegistered ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'} ${!isEditable ? 'opacity-50' : 'opacity-100'}`}
                 >
                   <div
                     className={`w-4 h-4 rounded-full bg-white absolute top-[3px] transition-all duration-200 ${dto?.isTaxRegistered ? 'left-[21px]' : 'left-[3px]'}`}
@@ -658,7 +692,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               </label>
               <InheritedSelect
                 className="input"
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
                 value={dto?.taxPositionId || ''}
                 onChange={(val) => {
                   updateField('taxPositionId', val || null);
@@ -681,7 +715,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               </label>
               <InheritedSelect
                 className="input"
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
                 value={dto?.tradingTermsId || ''}
                 onChange={(val) => {
                   updateField('tradingTermsId', val || null);
@@ -716,7 +750,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 value={dto?.emailAddress1 || ''}
                 onChange={(e) => updateField('emailAddress1', e.target.value)}
                 onBlur={() => saveField('emailAddress1', dto?.emailAddress1)}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
               />
             </div>
             <div>
@@ -729,7 +763,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 value={dto?.telephone1 || ''}
                 onChange={(e) => updateField('telephone1', e.target.value)}
                 onBlur={() => saveField('telephone1', dto?.telephone1)}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
               />
             </div>
             <div className="md:col-span-2">
@@ -742,7 +776,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 value={dto?.address1Line1 || ''}
                 onChange={(e) => updateField('address1Line1', e.target.value)}
                 onBlur={() => saveField('address1Line1', dto?.address1Line1)}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
               />
             </div>
             <div>
@@ -755,7 +789,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 value={dto?.address1City || ''}
                 onChange={(e) => updateField('address1City', e.target.value)}
                 onBlur={() => saveField('address1City', dto?.address1City)}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
               />
             </div>
           </div>
@@ -779,7 +813,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 value={dto?.bankAccountName || ''}
                 onChange={(e) => updateField('bankAccountName', e.target.value)}
                 onBlur={() => saveField('bankAccountName', dto?.bankAccountName)}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
                 placeholder="e.g. John Doe Pty Ltd"
               />
             </div>
@@ -793,7 +827,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 value={dto?.bankBsb || ''}
                 onChange={(e) => updateField('bankBsb', e.target.value)}
                 onBlur={() => saveField('bankBsb', dto?.bankBsb)}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
                 placeholder="e.g. 062-000"
               />
             </div>
@@ -807,12 +841,33 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 value={dto?.bankAccountNumber || ''}
                 onChange={(e) => updateField('bankAccountNumber', e.target.value)}
                 onBlur={() => saveField('bankAccountNumber', dto?.bankAccountNumber)}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
                 placeholder="e.g. 12345678"
               />
             </div>
           </div>
         </div>
+
+        {/* Custom Fields Card */}
+        {hasCustomFields && (
+          <div id="custom-fields-section" className="card">
+            <h3 className="section-heading">
+              <span className="material-symbols-outlined">tune</span>
+              {t('customFields')}
+            </h3>
+            <DynamicForm
+              schema={supplierMetadataSchema!}
+              data={(dto?.metadata || supplier.metadata || {}) as Record<string, unknown>}
+              onChange={(newMetadata) => {
+                updateField('metadata', newMetadata);
+              }}
+              onBlur={(newMetadata) => {
+                saveField('metadata', newMetadata);
+              }}
+              readOnly={!isEditable || saving}
+            />
+          </div>
+        )}
 
         {/* Activity Timeline — full width */}
         <div id="activity-section" className="card">
@@ -844,7 +899,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                   <label className="block text-xs font-medium m-0 text-[var(--text-muted)]">{t('compliance.purchasingBlock')}</label>
                   <InheritedSelect
                     className="input"
-                    disabled={!isEditable || saving}
+                    disabled={!isEditable}
                     value={dto?.isPurchasingBlocked === true ? 'true' : dto?.isPurchasingBlocked === false ? 'false' : ''}
                     onChange={(val) => {
                       const newBlocked = val === 'true' ? true : val === 'false' ? false : null;
@@ -867,7 +922,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                       value={dto?.purchasingBlockReason || ''}
                       onChange={e => updateField('purchasingBlockReason', e.target.value)}
                       onBlur={() => saveField('purchasingBlockReason', dto?.purchasingBlockReason)}
-                      disabled={!isEditable || saving}
+                      disabled={!isEditable}
                     >
                       <option value="">{tCommon('selectEllipsis')}</option>
                       <option value="compliance_breach">{t('compliance.reasons.compliance_breach')}</option>
@@ -890,7 +945,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                   <label className="block text-xs font-medium m-0 text-[var(--text-muted)]">{t('compliance.paymentBlock')}</label>
                   <InheritedSelect
                     className="input"
-                    disabled={!isEditable || saving}
+                    disabled={!isEditable}
                     value={dto?.isPaymentBlocked === true ? 'true' : dto?.isPaymentBlocked === false ? 'false' : ''}
                     onChange={(val) => {
                       const newBlocked = val === 'true' ? true : val === 'false' ? false : null;
@@ -913,7 +968,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                       value={dto?.paymentBlockReason || ''}
                       onChange={e => updateField('paymentBlockReason', e.target.value)}
                       onBlur={() => saveField('paymentBlockReason', dto?.paymentBlockReason)}
-                      disabled={!isEditable || saving}
+                      disabled={!isEditable}
                     >
                       <option value="">{tCommon('selectEllipsis')}</option>
                       <option value="invoice_dispute">{t('compliance.reasons.invoice_dispute')}</option>
@@ -942,7 +997,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 value={dto?.blockNotes || ''}
                 onChange={e => updateField('blockNotes', e.target.value)}
                 onBlur={() => saveField('blockNotes', dto?.blockNotes)}
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
               />
             </div>
           </div>

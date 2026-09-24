@@ -35,6 +35,28 @@ describe('State Machines', () => {
         StateMachines.PURCHASE_ORDER_STATE.DRAFT
       );
     });
+
+    it('should correctly configure Stocktake state machine and lifecycle', () => {
+      expect(StateMachines.STOCKTAKE_TRANSITIONS[StateMachines.STOCKTAKE_STATE.DRAFT]).toContain(
+        StateMachines.STOCKTAKE_STATE.OPEN
+      );
+      expect(StateMachines.STOCKTAKE_TRANSITIONS[StateMachines.STOCKTAKE_STATE.OPEN]).toContain(
+        StateMachines.STOCKTAKE_STATE.REVIEW
+      );
+      expect(StateMachines.STOCKTAKE_TRANSITIONS[StateMachines.STOCKTAKE_STATE.REVIEW]).toContain(
+        StateMachines.STOCKTAKE_STATE.SUBMITTED
+      );
+      expect(StateMachines.STOCKTAKE_TRANSITIONS[StateMachines.STOCKTAKE_STATE.REVIEW]).toContain(
+        StateMachines.STOCKTAKE_STATE.OPEN
+      );
+      expect(StateMachines.STOCKTAKE_TRANSITIONS[StateMachines.STOCKTAKE_STATE.SUBMITTED]).toEqual([]);
+      expect(StateMachines.STOCKTAKE_LIFECYCLE[StateMachines.STOCKTAKE_STATE.OPEN]).toBeGreaterThan(
+        StateMachines.STOCKTAKE_LIFECYCLE[StateMachines.STOCKTAKE_STATE.DRAFT]
+      );
+      expect(StateMachines.STOCKTAKE_LIFECYCLE[StateMachines.STOCKTAKE_STATE.SUBMITTED]).toBeGreaterThan(
+        StateMachines.STOCKTAKE_LIFECYCLE[StateMachines.STOCKTAKE_STATE.REVIEW]
+      );
+    });
   });
 
   describe('Helper Functions', () => {

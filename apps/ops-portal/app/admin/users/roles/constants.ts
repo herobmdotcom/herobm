@@ -28,6 +28,9 @@ export const VALID_ACTIONS: Record<string, string[]> = {
   // Manufacturing
   'work-orders': ['read', 'write'],
 
+  // Projects / Services
+  'projects': ['read', 'write', 'archive'],
+
   // CRM
   'crm': ['read', 'write', 'archive', 'delete'],
 

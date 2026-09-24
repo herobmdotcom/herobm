@@ -19,6 +19,10 @@ import {
   glAccounts,
   uomDictionary,
   salesInvoices,
+  salesInvoiceLines,
+  projects,
+  projectTasks,
+  projectLedgerEntries,
 } from '@herobm/db-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
@@ -29,6 +33,12 @@ import {
   CUSTOMER_STATE,
   PRODUCT_STATE,
   ORGANIZATION_STATE,
+  PROJECT_STATE,
+  PROJECT_BILLING_TYPE,
+  PROJECT_TASK_STATE,
+  PROJECT_LEDGER_ENTRY_TYPE,
+  PROJECT_LINE_TYPE,
+  PROJECT_SOURCE_TYPE,
 } from '@herobm/shared';
 
 jest.mock('../orders/order-lifecycle-rules', () => ({
@@ -54,6 +64,7 @@ describe('SalesInvoiceService', () => {
     await pg.db.insert(uomDictionary).values({
       uomCode: 'EA',
       description: 'Each',
+      category: 'goods',
     });
 
     await pg.db.insert(taxCategories).values({
@@ -667,8 +678,254 @@ describe('SalesInvoiceService', () => {
         service.findOne('00000000-0000-4000-8000-000000000888'),
       ).rejects.toThrow(NotFoundException);
     });
+
+    it('should hydrate lines with product number, discount percentage, and proportional tax', async () => {
+      const invId = '00000000-0000-4000-8000-000000000777';
+      const orderId = '00000000-0000-4000-8000-000000000778';
+      const soLineId = '00000000-0000-4000-8000-000000000779';
+
+      await pg.db.insert(salesOrders).values({
+        salesOrderId: orderId,
+        orderNumber: 'SO-HYDRATE',
+        customerId: CUSTOMER_ID,
+        fulfillmentLocationId: LOCATION_ID,
+        currencyCode: 'AUD',
+        stateCode: SALES_ORDER_STATE.CONFIRMED,
+        baseTotalAmount: '110.00',
+        exchangeRate: '1',
+        discrepanciesAcknowledged: false,
+        source: 'app',
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(salesOrderLineItems).values({
+        salesOrderLineId: soLineId,
+        salesOrderId: orderId,
+        lineNumber: 1,
+        productId: PRODUCT_ID,
+        productDescription: 'Hydrated Widget',
+        quantity: '2',
+        pricePerUnit: '50.00',
+        discountPercentage: '10.00',
+        amount: '90.00',
+        tax: '9.00',
+      });
+
+      await pg.db.insert(salesInvoices).values({
+        invoiceId: invId,
+        invoiceNumber: 'INV-HYDRATE',
+        salesOrderId: orderId,
+        currencyCode: 'AUD',
+        stateCode: SALES_INVOICE_STATE.INVOICED,
+        totalAmount: '99.00',
+        outstandingAmount: '99.00',
+        taxAmount: '9.00',
+        baseTotalAmount: '99.00',
+        baseOutstandingAmount: '99.00',
+        exchangeRate: '1',
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(salesInvoiceLines).values({
+        invoiceLineId: '00000000-0000-4000-8000-000000000780',
+        invoiceId: invId,
+        salesOrderLineId: soLineId,
+        productId: PRODUCT_ID,
+        quantityInvoiced: '2',
+        pricePerUnit: '50.00',
+        discountPercentage: '10.00',
+        taxAmount: '9.00',
+        amount: '90.00',
+      });
+
+      const result = await service.findOne(invId);
+      expect(result).toBeDefined();
+      expect(result.invoiceNumber).toBe('INV-HYDRATE');
+      expect(result.lines).toHaveLength(1);
+      expect(result.lines[0].productId).toBe(PRODUCT_ID);
+      expect(result.lines[0].productNumber).toBe('P1');
+      expect(result.lines[0].discountPercentage).toBe('10.00');
+      expect(result.lines[0].taxAmount).toBe('9.00');
+    });
+
+    it('should return 0 tax for zero-quantity line and proportional tax for partial line', async () => {
+      const orderId = '00000000-0000-4000-8000-000000000790';
+      const invId = '00000000-0000-4000-8000-000000000791';
+      const soLineId1 = '00000000-0000-4000-8000-000000000792';
+      const soLineId2 = '00000000-0000-4000-8000-000000000793';
+
+      await pg.db.insert(salesOrders).values({
+        salesOrderId: orderId,
+        orderNumber: 'SO-HYDRATE-2',
+        customerId: CUSTOMER_ID,
+        fulfillmentLocationId: LOCATION_ID,
+        stateCode: SALES_ORDER_STATE.SHIPPED,
+        currencyCode: 'AUD',
+        exchangeRate: '1',
+        discrepanciesAcknowledged: false,
+        source: 'app',
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(salesOrderLineItems).values([
+        {
+          salesOrderLineId: soLineId1,
+          salesOrderId: orderId,
+          lineNumber: 1,
+          productId: PRODUCT_ID,
+          productDescription: 'Widget Line 1',
+          quantity: '3',
+          pricePerUnit: '100.00',
+          discountPercentage: '0.00',
+          amount: '300.00',
+          tax: '30.00',
+        },
+        {
+          salesOrderLineId: soLineId2,
+          salesOrderId: orderId,
+          lineNumber: 2,
+          productId: PRODUCT_ID,
+          productDescription: 'Widget Line 2',
+          quantity: '5',
+          pricePerUnit: '100.00',
+          discountPercentage: '0.00',
+          amount: '500.00',
+          tax: '50.00',
+        },
+      ]);
+
+      await pg.db.insert(salesInvoices).values({
+        invoiceId: invId,
+        invoiceNumber: 'INV-HYDRATE-2',
+        salesOrderId: orderId,
+        currencyCode: 'AUD',
+        stateCode: SALES_INVOICE_STATE.INVOICED,
+        totalAmount: '110.00',
+        outstandingAmount: '110.00',
+        taxAmount: '10.00',
+        baseTotalAmount: '110.00',
+        baseOutstandingAmount: '110.00',
+        exchangeRate: '1',
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(salesInvoiceLines).values([
+        {
+          invoiceLineId: '00000000-0000-4000-8000-000000000794',
+          invoiceId: invId,
+          salesOrderLineId: soLineId1,
+          productId: PRODUCT_ID,
+          quantityInvoiced: '1',
+          pricePerUnit: '100.00',
+          discountPercentage: '0.00',
+          taxAmount: '10.00',
+          amount: '100.00',
+        },
+        {
+          invoiceLineId: '00000000-0000-4000-8000-000000000795',
+          invoiceId: invId,
+          salesOrderLineId: soLineId2,
+          productId: PRODUCT_ID,
+          quantityInvoiced: '0',
+          pricePerUnit: '100.00',
+          discountPercentage: '0.00',
+          taxAmount: '0',
+          amount: '0.00',
+        },
+      ]);
+
+      const result = await service.findOne(invId);
+      expect(result).toBeDefined();
+      expect(result.lines).toHaveLength(2);
+      // Line 1: 1 out of 3 invoiced -> 10.00 tax (not 30.00)
+      expect(result.lines[0].taxAmount).toBe('10.00');
+      // Line 2: 0 invoiced -> 0 tax (not 50.00)
+      expect(result.lines[1].taxAmount).toBe('0');
+    });
+
+    it('should hydrate projectId and projectNumber for project-generated invoices', async () => {
+      const projId = '00000000-0000-4000-8000-000000000991';
+      const invId = '00000000-0000-4000-8000-000000000992';
+
+      await pg.db.insert(projects).values({
+        projectId: projId,
+        projectNumber: 'PRJ-PROVENANCE-01',
+        name: 'Provenance Project',
+        customerId: CUSTOMER_ID,
+        currencyCode: 'AUD',
+        stateCode: PROJECT_STATE.ACTIVE,
+        billingType: PROJECT_BILLING_TYPE.TIME_AND_MATERIALS,
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(salesInvoices).values({
+        invoiceId: invId,
+        invoiceNumber: 'INV-PRJ-001',
+        projectId: projId,
+        currencyCode: 'AUD',
+        stateCode: SALES_INVOICE_STATE.INVOICED,
+        totalAmount: '200.00',
+        outstandingAmount: '200.00',
+        taxAmount: '0.00',
+        baseTotalAmount: '200.00',
+        baseOutstandingAmount: '200.00',
+        exchangeRate: '1',
+        createdBy: 'system',
+      });
+
+      const result = await service.findOne(invId);
+      expect(result).toBeDefined();
+      expect(result.invoiceNumber).toBe('INV-PRJ-001');
+      expect(result.projectId).toBe(projId);
+      expect(result.projectNumber).toBe('PRJ-PROVENANCE-01');
+    });
   });
   describe('findActiveInvoices', () => {
+    it('should return projectId and projectNumber in active invoices', async () => {
+      const projId = '00000000-0000-4000-8000-000000000993';
+      const invId = '00000000-0000-4000-8000-000000000994';
+
+      await pg.db.insert(projects).values({
+        projectId: projId,
+        projectNumber: 'PRJ-GRID-01',
+        name: 'Grid Project',
+        customerId: CUSTOMER_ID,
+        currencyCode: 'AUD',
+        stateCode: PROJECT_STATE.ACTIVE,
+        billingType: PROJECT_BILLING_TYPE.TIME_AND_MATERIALS,
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(salesInvoices).values({
+        invoiceId: invId,
+        invoiceNumber: 'INV-GRID-001',
+        projectId: projId,
+        currencyCode: 'AUD',
+        stateCode: SALES_INVOICE_STATE.INVOICED,
+        totalAmount: '150.00',
+        outstandingAmount: '150.00',
+        taxAmount: '0.00',
+        baseTotalAmount: '150.00',
+        baseOutstandingAmount: '150.00',
+        exchangeRate: '1',
+        invoiceDate: new Date('2026-09-20T00:00:00.000Z'),
+        dueDate: new Date('2026-10-20T00:00:00.000Z'),
+        termsDescription: 'Net 30',
+        createdOn: new Date(),
+        createdBy: 'system',
+      });
+
+      const result = await service.findActiveInvoices({ days: 30 });
+      const invoice = result.data.find((i: any) => i.invoiceId === invId);
+
+      expect(invoice).toBeDefined();
+      expect(invoice?.projectId).toBe(projId);
+      expect(invoice?.projectNumber).toBe('PRJ-GRID-01');
+      expect(invoice?.invoiceDate).toBeDefined();
+      expect(invoice?.dueDate).toBeDefined();
+      expect(invoice?.termsDescription).toBe('Net 30');
+    });
+
     it('should return early payment discount fields', async () => {
       // Seed a sales order and invoice with discount terms
       await pg.db.insert(salesOrders).values({
@@ -746,6 +1003,172 @@ describe('SalesInvoiceService', () => {
         (i: any) => i.invoiceId === '00000000-0000-4000-8000-000000000101',
       );
       expect(invoice).toBeDefined();
+    });
+  });
+
+  describe('createProjectInvoice', () => {
+    it('correctly calculates 10% tax and discount on project invoice lines', async () => {
+      const projectId = '00000000-0000-4000-8000-000000000999';
+      const projectTaxCatId = '00000000-0000-4000-8000-000000000998';
+
+      await pg.db.insert(taxCategories).values({
+        taxCategoryId: projectTaxCatId,
+        code: 'GST_10',
+        title: 'GST 10%',
+        rate: '10.0',
+        type: 'tax_applies',
+      });
+
+      await pg.db.insert(projects).values({
+        projectId,
+        projectNumber: 'FRE-PROJ-001',
+        name: 'FREMANTLE Project',
+        customerId: CUSTOMER_ID,
+        currencyCode: 'AUD',
+        stateCode: PROJECT_STATE.ACTIVE,
+        billingType: PROJECT_BILLING_TYPE.TIME_AND_MATERIALS,
+        createdBy: 'system',
+      });
+
+      const taxCategoriesService = (service as any).taxService;
+      taxCategoriesService.getById = jest
+        .fn()
+        .mockImplementation(async (id: string) => {
+          if (id === projectTaxCatId) return { rate: '10.0' };
+          return { rate: '0.1' };
+        });
+
+      const result = await service.createProjectInvoice(
+        {
+          projectId,
+          projectNumber: 'FRE-PROJ-001',
+          customerId: CUSTOMER_ID,
+          currencyCode: 'AUD',
+          name: 'FREMANTLE Project',
+        },
+        {
+          lines: [
+            {
+              projectTaskId: '00000000-0000-4000-8000-000000000001',
+              description:
+                'Resource usage: BOSCH REXROTH PTY LTD on FRE-PROJ-001',
+              quantity: 2,
+              pricePerUnit: 1000,
+              amount: 1800,
+              discountPercentage: 10,
+              taxCategoryId: projectTaxCatId,
+            },
+          ],
+        },
+        'test_user',
+      );
+
+      // Qty 2 @ 1000 = 2000. 10% disc = 1800 net. 10% GST = 180. Grand total = 1980.
+      expect(result.totalAmount).toBe('1980.00');
+      expect(result.taxAmount).toBe('180.00');
+    });
+
+    it('automatically unbills project ledger entries when a project invoice is cancelled', async () => {
+      const projectId = '00000000-0000-4000-8000-000000000888';
+      const taskId = '00000000-0000-4000-8000-000000000887';
+      const ledgerId = '00000000-0000-4000-8000-000000000886';
+
+      await pg.db.insert(projects).values({
+        projectId,
+        projectNumber: 'PRJ-CANCEL-001',
+        name: 'Cancellation Test Project',
+        customerId: CUSTOMER_ID,
+        currencyCode: 'AUD',
+        stateCode: PROJECT_STATE.ACTIVE,
+        billingType: PROJECT_BILLING_TYPE.TIME_AND_MATERIALS,
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(projectTasks).values({
+        projectTaskId: taskId,
+        projectId,
+        taskCode: '1.0',
+        name: 'Milestone / Task 1',
+        stateCode: PROJECT_TASK_STATE.IN_PROGRESS,
+        isMilestone: false,
+        isBillable: true,
+        createdBy: 'system',
+      });
+
+      const [entry] = await pg.db
+        .insert(projectLedgerEntries)
+        .values({
+          ledgerId,
+          projectId,
+          projectTaskId: taskId,
+          entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+          lineType: PROJECT_LINE_TYPE.RESOURCE,
+          sourceType: PROJECT_SOURCE_TYPE.TIMESHEET,
+          description: 'Consulting Delivery',
+          quantity: '5',
+          unitCostBase: '50.00',
+          totalCostBase: '250.00',
+          unitPriceBase: '100.00',
+          totalPriceBase: '500.00',
+          isBillable: true,
+          isBilled: true,
+          postingDate: new Date(),
+          createdBy: 'test_user',
+        })
+        .returning();
+
+      const invoiceResult = await service.createProjectInvoice(
+        {
+          projectId,
+          projectNumber: 'PRJ-CANCEL-001',
+          customerId: CUSTOMER_ID,
+          currencyCode: 'AUD',
+          name: 'Cancellation Test Project',
+        },
+        {
+          lines: [
+            {
+              projectTaskId: taskId,
+              projectLedgerEntryId: entry.ledgerId,
+              description: 'Consulting Delivery',
+              quantity: 5,
+              pricePerUnit: 100,
+              amount: 500,
+            },
+          ],
+        },
+        'test_user',
+      );
+
+      // Link the salesInvoiceLineId to the ledger entry
+      const invLine = invoiceResult.lines[0];
+      await pg.db
+        .update(projectLedgerEntries)
+        .set({ salesInvoiceLineId: invLine.invoiceLineId, isBilled: true })
+        .where(eq(projectLedgerEntries.ledgerId, entry.ledgerId));
+
+      // Verify it is billed
+      let [ledgerRow] = await pg.db
+        .select()
+        .from(projectLedgerEntries)
+        .where(eq(projectLedgerEntries.ledgerId, entry.ledgerId));
+      expect(ledgerRow.isBilled).toBe(true);
+      expect(ledgerRow.salesInvoiceLineId).toBe(invLine.invoiceLineId);
+
+      // Now cancel the invoice
+      await service.changeSalesInvoiceState(
+        invoiceResult.invoiceId,
+        SALES_INVOICE_STATE.CANCELLED,
+        'test_user',
+      );
+
+      // Verify the ledger entry was moved back to unbilled
+      [ledgerRow] = await pg.db
+        .select()
+        .from(projectLedgerEntries)
+        .where(eq(projectLedgerEntries.ledgerId, entry.ledgerId));
+      expect(ledgerRow.isBilled).toBe(false);
+      expect(ledgerRow.salesInvoiceLineId).toBeNull();
     });
   });
 });

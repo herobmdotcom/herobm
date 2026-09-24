@@ -5,7 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import Shell from '@/components/Shell';
-import { SettingsProvider } from '@/components/SettingsProvider';
+import { SWRProvider } from '@/components/SWRProvider';
 
 export const viewport: Viewport = {
   themeColor: '#006b5c',
@@ -104,9 +104,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               },
             }}
           />
-          <Shell>
-            {children}
-          </Shell>
+          <SWRProvider>
+            <Shell>
+              {children}
+            </Shell>
+          </SWRProvider>
         </NextIntlClientProvider>
       </body>
     </html>

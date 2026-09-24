@@ -8,17 +8,32 @@ import { OUTBOX_EVENT_TYPES } from '../common/event-types';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
+import { EncryptionService } from '../common/encryption.service';
 
 @Injectable()
 export class WebhooksService {
-  constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
+  constructor(
+    @Inject(DRIZZLE) private db: DrizzleDB,
+    private readonly encryptionService: EncryptionService,
+  ) {}
+
+  private decryptSecret(secret: string | null): string | null {
+    if (!secret) return null;
+    if (secret.includes(':')) {
+      return this.encryptionService.decrypt(secret);
+    }
+    return secret;
+  }
 
   async list() {
     const records = await this.db.select().from(webhooks);
-    return records.map((w) => ({
-      ...w,
-      secretKey: w.secretKey ? `${w.secretKey.substring(0, 10)}...` : null,
-    }));
+    return records.map((w) => {
+      const decrypted = this.decryptSecret(w.secretKey);
+      return {
+        ...w,
+        secretKey: decrypted ? `${decrypted.substring(0, 10)}...` : null,
+      };
+    });
   }
 
   async listEvents() {
@@ -27,7 +42,8 @@ export class WebhooksService {
 
   async create(body: CreateWebhookDto, actorUsername: string) {
     const { targetUrl, eventTypes } = body;
-    const secretKey = `whsec_${randomBytes(32).toString('hex')}`;
+    const rawSecretKey = `whsec_${randomBytes(32).toString('hex')}`;
+    const encryptedSecretKey = this.encryptionService.encrypt(rawSecretKey);
 
     const [created] = await this.db.transaction(async (tx) => {
       const [newWebhook] = await tx
@@ -35,7 +51,7 @@ export class WebhooksService {
         .values({
           targetUrl,
           eventTypes,
-          secretKey,
+          secretKey: encryptedSecretKey,
           isActive: true,
         })
         .returning();
@@ -52,7 +68,10 @@ export class WebhooksService {
       return [newWebhook];
     });
 
-    return created;
+    return {
+      ...created,
+      secretKey: rawSecretKey,
+    };
   }
 
   async update(id: string, body: UpdateWebhookDto, actorUsername: string) {
@@ -96,11 +115,10 @@ export class WebhooksService {
     });
 
     if (!updated) throw new NotFoundException('Webhook not found');
+    const decrypted = this.decryptSecret(updated.secretKey);
     return {
       ...updated,
-      secretKey: updated.secretKey
-        ? `${updated.secretKey.substring(0, 10)}...`
-        : null,
+      secretKey: decrypted ? `${decrypted.substring(0, 10)}...` : null,
     };
   }
 

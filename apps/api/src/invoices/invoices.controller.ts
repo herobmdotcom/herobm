@@ -183,12 +183,14 @@ export class InvoiceDetailController {
   @ApiPaginatedResponse(SalesInvoiceResponseDto)
   @ApiQuery({ name: 'days', required: false, type: Number })
   @ApiQuery({ name: 'customerId', required: false, type: String })
+  @ApiQuery({ name: 'projectId', required: false, type: String })
   @ApiQuery({ name: 'invoiceId', required: false, type: String })
   @ApiQuery({ name: 'balanceStatus', required: false, type: String })
   async getSalesInvoicesGlobal(
     @Query() query: PaginationQuery,
     @Query('days') days?: number | string,
     @Query('customerId') customerId?: string,
+    @Query('projectId') projectId?: string,
     @Query('invoiceId') invoiceId?: string,
     @Query('balanceStatus') balanceStatus?: string,
   ) {
@@ -202,6 +204,7 @@ export class InvoiceDetailController {
     const data = await this.salesInvoiceService.findActiveInvoices({
       days: parsedDays,
       customerId,
+      projectId,
       invoiceId,
       balanceStatus,
       limit,

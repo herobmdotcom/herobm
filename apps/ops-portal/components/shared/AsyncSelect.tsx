@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect, ReactNode } from 'react';
+import Link from 'next/link';
 import { Button } from './Button';
 
 function useDebounce<T extends unknown[]>(fn: (...args: T) => void, delay: number) {
@@ -19,6 +20,8 @@ export interface AsyncSelectProps<T> {
   required?: boolean;
   className?: string;
   style?: React.CSSProperties;
+  viewUrl?: string;
+  viewUrlTitle?: string;
   
   onSearch: (term: string) => Promise<T[]>;
   onChange: (item: T | null) => void;
@@ -40,6 +43,8 @@ export default function AsyncSelect<T>({
   required,
   className,
   style,
+  viewUrl,
+  viewUrlTitle,
   onSearch,
   onChange,
   getKey,
@@ -119,7 +124,7 @@ export default function AsyncSelect<T>({
     <div className="relative" ref={containerRef} style={style}>
       <div className="relative flex items-center">
         <input
-          className={`input ${className || ''}`}
+          className={`input ${viewUrl && value && searchTerm && !disabled ? 'pr-14' : searchTerm && !disabled ? 'pr-8' : ''} ${className || ''}`}
           style={style ? { width: '100%' } : undefined}
           autoComplete="off"
           placeholder={placeholder || 'Search...'}
@@ -144,17 +149,31 @@ export default function AsyncSelect<T>({
             }
           }}
         />
-        {searchTerm && !disabled && !clearOnSelect && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="absolute right-3 text-xs cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-primary)] !w-4 !h-4"
-            onClick={handleClear}
-          >
-            <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
-          </Button>
-        )}
+        <div className="absolute right-2.5 flex items-center gap-1">
+          {viewUrl && value && (
+            <Link
+              href={viewUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors p-0.5 rounded flex items-center justify-center cursor-pointer"
+              title={viewUrlTitle || 'View details'}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+            </Link>
+          )}
+          {searchTerm && !disabled && !clearOnSelect && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="text-xs cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-primary)] !w-4 !h-4"
+              onClick={handleClear}
+            >
+              <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
+            </Button>
+          )}
+        </div>
       </div>
 
       {showDropdown && searchTerm && !disabled && (

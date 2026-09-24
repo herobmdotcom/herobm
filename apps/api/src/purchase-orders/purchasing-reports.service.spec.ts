@@ -35,7 +35,7 @@ describe('PurchasingReportsService', () => {
   beforeEach(async () => {
     await pg.db
       .insert(uomDictionary)
-      .values({ uomCode: 'EA', description: 'Each' });
+      .values({ uomCode: 'EA', description: 'Each', category: 'goods' });
 
     await pg.db.insert(taxCategories).values({
       taxCategoryId: TAX_CAT_ID,

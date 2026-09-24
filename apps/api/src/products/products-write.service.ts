@@ -17,6 +17,7 @@ import {
   productSuppliers,
   bins,
   productImages,
+  uomDictionary,
 } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -25,6 +26,7 @@ import {
   PRODUCT_STATE,
   ProductState,
   normalizeUomCode,
+  isServiceProductType,
 } from '@herobm/shared';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import { StorageService } from '../common/storage/storage.service';
@@ -48,7 +50,44 @@ export class ProductsWriteService {
     private readonly productCopyService: ProductCopyService,
   ) {}
 
+  private async validateProductUomCategory(
+    baseUom: string | undefined | null,
+    productType: string | undefined | null,
+    txClient?: DrizzleDB,
+  ) {
+    if (!baseUom) return;
+    const client = txClient || this.db;
+    const normUom = normalizeUomCode(baseUom);
+    const [uom] = await client
+      .select({
+        uomCode: uomDictionary.uomCode,
+        category: uomDictionary.category,
+      })
+      .from(uomDictionary)
+      .where(eq(uomDictionary.uomCode, normUom))
+      .limit(1);
+
+    if (uom) {
+      const isService = isServiceProductType(productType);
+      if (isService && uom.category !== 'service') {
+        throw new BadRequestException(
+          `UOM '${baseUom}' is a Goods unit and cannot be assigned to a Service product. Please select a Service UOM (e.g. HR, HOUR, DAY, JOB).`,
+        );
+      }
+      if (!isService && uom.category === 'service') {
+        throw new BadRequestException(
+          `UOM '${baseUom}' is a Service unit and cannot be assigned to a Goods product (${productType ?? 'inventory'}). Please select a Goods UOM (e.g. EA, BOX, KG, SET).`,
+        );
+      }
+    }
+  }
+
   async create(dto: CreateProductDto, actor: string) {
+    await this.validateProductUomCategory(
+      dto.baseUom,
+      dto.productType ?? 'inventory',
+    );
+
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const [product] = await tx
         .insert(coreProducts)
@@ -97,6 +136,9 @@ export class ProductsWriteService {
 
     const finalStructureType = dto.structureType ?? existing[0].structureType;
     const finalProductType = dto.productType ?? existing[0].productType;
+    const finalBaseUom = dto.baseUom ?? existing[0].baseUom;
+
+    await this.validateProductUomCategory(finalBaseUom, finalProductType);
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const audit = calculateAuditTrail(dto, existing[0], AuditMode.DIFF);
@@ -288,12 +330,25 @@ export class ProductsWriteService {
       throw new NotFoundException(`Product not found`);
     }
 
+    const isPreferred = dto.isPreferred ?? false;
     const payload = {
       productId,
       vendorId: dto.vendorId,
       supplierPartNumber: dto.supplierPartNumber || null,
-      isPreferred: false,
-      costPrice: dto.costPrice ? dto.costPrice.toString() : '0',
+      isPreferred,
+      costPrice:
+        dto.costPrice !== undefined && dto.costPrice !== null
+          ? dto.costPrice.toString()
+          : '0',
+      discountPercent:
+        dto.discountPercent !== undefined && dto.discountPercent !== null
+          ? dto.discountPercent.toString()
+          : null,
+      minPurchaseQty:
+        dto.minPurchaseQty !== undefined && dto.minPurchaseQty !== null
+          ? dto.minPurchaseQty.toString()
+          : null,
+      purchaseUnit: dto.purchaseUnit || null,
       effectiveFrom: dto.effectiveFrom ? new Date(dto.effectiveFrom) : null,
       effectiveTo: dto.effectiveTo ? new Date(dto.effectiveTo) : null,
       stateCode: PRODUCT_STATE.ACTIVE,
@@ -301,6 +356,18 @@ export class ProductsWriteService {
     };
 
     return await this.db.transaction(async (tx) => {
+      if (isPreferred) {
+        await tx
+          .update(productSuppliers)
+          .set({ isPreferred: false, modifiedOn: new Date() })
+          .where(
+            and(
+              eq(productSuppliers.productId, productId),
+              eq(productSuppliers.isPreferred, true),
+            ),
+          );
+      }
+
       const [mapping] = await tx
         .insert(productSuppliers)
         .values({
@@ -486,6 +553,19 @@ export class ProductsWriteService {
           );
       }
 
+      const minQuantityVal =
+        dto.minQuantity !== undefined &&
+        dto.minQuantity !== null &&
+        dto.minQuantity !== ''
+          ? String(dto.minQuantity)
+          : '0';
+      const maxQuantityVal =
+        dto.maxQuantity !== undefined &&
+        dto.maxQuantity !== null &&
+        dto.maxQuantity !== ''
+          ? String(dto.maxQuantity)
+          : null;
+
       const [binLink] = await tx
         .insert(productDefaultBins)
         .values({
@@ -493,8 +573,8 @@ export class ProductsWriteService {
           locationId: dto.locationId,
           binId: dto.binId,
           isPrimaryPerLocation: dto.isPrimaryPerLocation ?? true,
-          minQuantity: dto.minQuantity || '0',
-          maxQuantity: dto.maxQuantity || null,
+          minQuantity: minQuantityVal,
+          maxQuantity: maxQuantityVal,
         })
         .onConflictDoUpdate({
           target: [
@@ -504,8 +584,8 @@ export class ProductsWriteService {
           ],
           set: {
             isPrimaryPerLocation: dto.isPrimaryPerLocation ?? true,
-            minQuantity: dto.minQuantity || '0',
-            maxQuantity: dto.maxQuantity || null,
+            minQuantity: minQuantityVal,
+            maxQuantity: maxQuantityVal,
             modifiedOn: new Date(),
           },
         })

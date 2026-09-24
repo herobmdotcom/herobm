@@ -8,6 +8,7 @@
 import type { InvoiceLineResponseDto } from './invoiceLineResponseDto';
 import type { SalesInvoiceResponseDtoAllocationsItem } from './salesInvoiceResponseDtoAllocationsItem';
 import type { SalesInvoiceResponseDtoEventsItem } from './salesInvoiceResponseDtoEventsItem';
+import type { SalesInvoiceResponseDtoMetadata } from './salesInvoiceResponseDtoMetadata';
 
 export interface SalesInvoiceResponseDto {
   invoiceId: string;
@@ -22,6 +23,9 @@ export interface SalesInvoiceResponseDto {
   stateCode: string;
   notes?: string;
   salesOrderId?: string;
+  orderNumber?: string;
+  projectId?: string;
+  projectNumber?: string;
   earlyPaymentDiscount?: string;
   earlyPaymentDiscountDays?: number;
   createdBy: string;
@@ -31,5 +35,6 @@ export interface SalesInvoiceResponseDto {
   lines: InvoiceLineResponseDto[];
   allocations?: SalesInvoiceResponseDtoAllocationsItem[];
   events?: SalesInvoiceResponseDtoEventsItem[];
+  metadata?: SalesInvoiceResponseDtoMetadata;
   termsDescription?: string;
 }

@@ -5,10 +5,13 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
+import type { CreateProductDtoMetadata } from './createProductDtoMetadata';
 import type { CreateProductDtoProductType } from './createProductDtoProductType';
 import type { CreateProductDtoStructureType } from './createProductDtoStructureType';
 
 export interface CreateProductDto {
+  /** Custom metadata */
+  metadata?: CreateProductDtoMetadata;
   productNumber: string;
   name: string;
   productType?: CreateProductDtoProductType;

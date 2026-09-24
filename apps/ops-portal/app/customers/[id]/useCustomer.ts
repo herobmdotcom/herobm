@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import * as api from '@herobm/sdk';
-import { reportError } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import { useAutoSaveEntity } from '@/hooks/useAutoSaveEntity';
+import { useTaxPositions, useTradingTerms, useCustomerGroups } from '@/hooks/useReferenceData';
 import { CUSTOMER_STATE } from '@herobm/shared';
 import type { ValidState } from '@/types/states';
 import { getErrorMessage } from '@herobm/shared';
@@ -18,9 +18,9 @@ export function useAccount(id: string) {
   const t = useTranslations();
 
   /* ── Extra state ─────────────────────────────────────────────── */
-  const [taxPositions, setTaxPositions] = useState<api.TaxPositionResponseDto[]>([]);
-  const [tradingTerms, setTradingTerms] = useState<api.TradingTermResponseDto[]>([]);
-  const [accountGroups, setAccountGroups] = useState<api.CustomerGroupResponseDto[]>([]);
+  const { taxPositions } = useTaxPositions();
+  const { tradingTerms } = useTradingTerms();
+  const { customerGroups: accountGroups } = useCustomerGroups();
   const [hasDiscountRules, setHasDiscountRules] = useState(false);
   const [creditAssessment, setCreditAssessment] = useState<api.CreditAssessmentResponseDto | null>(null);
 
@@ -56,12 +56,6 @@ export function useAccount(id: string) {
 
   const isEditable = customer?.stateCode !== CUSTOMER_STATE.ARCHIVED;
   const [isArchiving, setIsArchiving] = useState(false);
-
-  useEffect(() => {
-    api.taxPositionsControllerFindAll().then((res: unknown) => setTaxPositions((res as { data: unknown[] }).data as unknown as api.TaxPositionResponseDto[])).catch((err) => toast.error('Failed to load tax positions: ' + getErrorMessage(err)));
-    api.tradingTermsControllerFindAll().then((res: unknown) => setTradingTerms((res as { data: unknown[] }).data as unknown as api.TradingTermResponseDto[])).catch((err) => toast.error('Failed to load trading terms: ' + getErrorMessage(err)));
-    api.customerGroupsControllerFindAll().then((res: unknown) => setAccountGroups((res as { data: unknown[] }).data as unknown as api.CustomerGroupResponseDto[])).catch((err) => toast.error('Failed to load customer groups: ' + getErrorMessage(err)));
-  }, [id]);
 
   /* ── Archive / Unarchive ────────────────────────────────────── */
 

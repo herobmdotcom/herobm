@@ -49,6 +49,7 @@ import {
   transferOrderReceiptLines,
   workOrders,
   backorders,
+  projects,
 } from '@herobm/db-schema';
 import { randomUUID } from 'crypto';
 import { emitEvent } from '../common/emit-event';
@@ -79,6 +80,7 @@ import { getAccountingStrategy } from './inventory-accounting';
 import { WorkOrdersWriteService } from '../manufacturing/work-orders-write.service';
 import { BackordersService } from '../orders/backorders.service';
 import { ReturnsWriteService } from '../orders/returns-write.service';
+import { ProjectsInventoryService } from '../projects/projects-inventory.service';
 
 @Injectable()
 export class InventoryMovementService {
@@ -95,6 +97,8 @@ export class InventoryMovementService {
     private readonly backordersService: BackordersService,
     @Inject(forwardRef(() => ReturnsWriteService))
     private readonly returnsWriteService: ReturnsWriteService,
+    @Inject(forwardRef(() => ProjectsInventoryService))
+    private readonly projectsInventoryService: ProjectsInventoryService,
   ) {}
 
   // =========================================================================
@@ -115,6 +119,7 @@ export class InventoryMovementService {
       sourceId?: string;
       memo?: string;
       userId?: string;
+      allowNegativeInventory?: boolean;
       lines: {
         productId: string;
         binId: string;
@@ -159,14 +164,89 @@ export class InventoryMovementService {
 
     const binMap = new Map<
       string,
-      { binId: string; locationId: string | null; zoneId: string | null }
+      {
+        binId: string;
+        binNumber: string;
+        binType: BIN_TYPE;
+        locationId: string | null;
+        zoneId: string | null;
+      }
     >(
       resolvedBins.map((row) => {
         const b = row.bins;
         const z = row.zones;
-        return [b.binId, { ...b, locationId: z.locationId }];
+        return [
+          b.binId,
+          { ...b, locationId: z.locationId, binType: b.binType as BIN_TYPE },
+        ];
       }),
     );
+
+    // 1c. Enforce negative inventory restriction if not permitted in settings
+    if (
+      params.allowNegativeInventory !== true &&
+      this.appConfig?.allowNegativeInventory?.() !== true
+    ) {
+      const deductions = new Map<
+        string,
+        { binId: string; productId: string; totalDeduction: number }
+      >();
+      for (const line of processedLines) {
+        if (line.absoluteQuantity < 0) {
+          const b = binMap.get(line.binId);
+          // Virtual WIP, in-transit, and staging bins are exempt from pre-movement physical stock checks
+          if (
+            b?.binType === BIN_TYPE.WIP ||
+            b?.binType === BIN_TYPE.IN_TRANSIT ||
+            b?.binType === BIN_TYPE.STAGING
+          ) {
+            continue;
+          }
+          const key = `${line.binId}:${line.productId}`;
+          const existing = deductions.get(key);
+          const totalDeduction =
+            (existing?.totalDeduction || 0) + Math.abs(line.absoluteQuantity);
+          deductions.set(key, {
+            binId: line.binId,
+            productId: line.productId,
+            totalDeduction,
+          });
+        }
+      }
+
+      if (deductions.size > 0) {
+        const deductionBinIds = [
+          ...new Set([...deductions.values()].map((d) => d.binId)),
+        ];
+        const currentStocks = await tx
+          .select({
+            binId: binContents.binId,
+            productId: binContents.productId,
+            actualQuantity: binContents.actualQuantity,
+          })
+          .from(binContents)
+          .where(inArray(binContents.binId, deductionBinIds));
+
+        const stockMap = new Map<string, number>();
+        for (const s of currentStocks) {
+          stockMap.set(`${s.binId}:${s.productId}`, Number(s.actualQuantity));
+        }
+
+        for (const {
+          binId,
+          productId,
+          totalDeduction,
+        } of deductions.values()) {
+          const availableQty = stockMap.get(`${binId}:${productId}`) || 0;
+          if (availableQty < totalDeduction) {
+            const b = binMap.get(binId);
+            throw new BadRequestException(
+              `Insufficient stock in bin ${b?.binNumber || binId} for product ${productId}. Available: ${availableQty}, Requested: ${totalDeduction}`,
+            );
+          }
+        }
+      }
+    }
 
     // 2. Create Ledger Lines
     const ledgerPayload = processedLines.map((l) => {
@@ -311,6 +391,11 @@ export class InventoryMovementService {
       entityDisplayName: params.entryNumber,
       payload: { header: params, lines: ledgerPayload },
     });
+
+    return {
+      entryId: entry.entryId,
+      entryNumber: params.entryNumber,
+    };
   }
 
   // ── Putaway Queue (Polymorphic) ──────────────────────────────────────
@@ -327,6 +412,12 @@ export class InventoryMovementService {
         let recordSourceId: string;
         let linePrefix: string;
         let uomCode: string;
+
+        let transferProjectId: string | null = null;
+        let transferProjectTaskId: string | null = null;
+        let isProjectReturnTransfer = false;
+        let transferOrderNumber: string | null = null;
+        let transferProjectStagingBinId: string | null = null;
 
         if (lineDto.sourceType === 'goods_receipt') {
           const [grLine] = await tx
@@ -386,6 +477,11 @@ export class InventoryMovementService {
               locationId: transferOrders.destinationLocationId,
               receiptNumber: transferOrderReceipts.receiptNumber,
               baseUom: products.baseUom,
+              projectId: transferOrders.projectId,
+              projectTaskId: transferOrders.projectTaskId,
+              isProjectReturn: transferOrders.isProjectReturn,
+              orderNumber: transferOrders.orderNumber,
+              projectStagingBinId: projects.stagingBinId,
             })
             .from(transferOrderReceiptLines)
             .innerJoin(
@@ -406,6 +502,10 @@ export class InventoryMovementService {
               products,
               eq(transferOrderReceiptLines.productId, products.productId),
             )
+            .leftJoin(
+              projects,
+              eq(transferOrders.projectId, projects.projectId),
+            )
             .where(eq(transferOrderReceiptLines.receiptLineId, lineDto.lineId))
             .limit(1);
 
@@ -424,6 +524,11 @@ export class InventoryMovementService {
               ? 'QUARANTINE'
               : 'RECEIVING';
           uomCode = toLine.baseUom || 'EA';
+          transferProjectId = toLine.projectId;
+          transferProjectTaskId = toLine.projectTaskId;
+          isProjectReturnTransfer = Boolean(toLine.isProjectReturn);
+          transferOrderNumber = toLine.orderNumber;
+          transferProjectStagingBinId = toLine.projectStagingBinId;
         } else if (lineDto.sourceType === 'work_order') {
           const [woLine] = await tx
             .select({
@@ -517,22 +622,77 @@ export class InventoryMovementService {
           );
         }
 
-        const [sourceBin] = await tx
-          .select({ binId: bins.binId })
-          .from(bins)
-          .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-          .where(
-            and(
-              eq(zones.locationId, locationId),
-              eq(bins.binNumber, sourceBinCode),
-            ),
-          )
-          .limit(1);
+        const [[sourceBin], [destBin], [product]] = await Promise.all([
+          tx
+            .select({ binId: bins.binId })
+            .from(bins)
+            .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+            .where(
+              and(
+                eq(zones.locationId, locationId),
+                eq(bins.binNumber, sourceBinCode),
+              ),
+            )
+            .limit(1),
+          tx
+            .select({
+              binId: bins.binId,
+              binNumber: bins.binNumber,
+              binType: bins.binType,
+              locationId: zones.locationId,
+            })
+            .from(bins)
+            .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+            .where(eq(bins.binId, lineDto.destinationBinId))
+            .limit(1),
+          tx
+            .select({ name: products.name })
+            .from(products)
+            .where(eq(products.productId, productId)),
+        ]);
 
         if (!sourceBin) {
           throw new BadRequestException(
             `Source bin ${sourceBinCode} not found for line ${lineDto.lineId}`,
           );
+        }
+
+        if (!destBin) {
+          throw new NotFoundException(
+            `Destination bin ${lineDto.destinationBinId} not found`,
+          );
+        }
+
+        if (destBin.locationId !== locationId) {
+          throw new BadRequestException(
+            `Destination bin ${destBin.binNumber} does not belong to the target location`,
+          );
+        }
+
+        if (lineDto.sourceType === 'transfer_receipt') {
+          if (transferProjectId && !isProjectReturnTransfer) {
+            // Project stock transfer: must go into project staging bin (unless quarantined)
+            if (
+              destBin.binType !== (BIN_TYPE.QUARANTINE as string) &&
+              transferProjectStagingBinId
+            ) {
+              if (lineDto.destinationBinId !== transferProjectStagingBinId) {
+                throw new BadRequestException(
+                  'Project stock transfer must be putaway into the project staging bin.',
+                );
+              }
+            }
+          } else if (transferProjectId && isProjectReturnTransfer) {
+            // Project return transfer: must go into warehouse storage bin (cannot go back into project staging bin)
+            if (
+              transferProjectStagingBinId &&
+              lineDto.destinationBinId === transferProjectStagingBinId
+            ) {
+              throw new BadRequestException(
+                'Project return stock cannot be putaway back into the project staging bin.',
+              );
+            }
+          }
         }
 
         const qty = parseFloat(lineDto.quantity);
@@ -594,20 +754,8 @@ export class InventoryMovementService {
           lines: movements,
         });
 
-        const [[product], [destBin]] = await Promise.all([
-          tx
-            .select({ name: products.name })
-            .from(products)
-            .where(eq(products.productId, productId)),
-          tx
-            .select({ binNumber: bins.binNumber, binType: bins.binType })
-            .from(bins)
-            .where(eq(bins.binId, lineDto.destinationBinId)),
-        ]);
-
         const newStatus =
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison -- DB enum compared to TS enum
-          destBin?.binType === BIN_TYPE.QUARANTINE
+          destBin.binType === (BIN_TYPE.QUARANTINE as string)
             ? PUTAWAY_STATUS.QUARANTINED
             : PUTAWAY_STATUS.COMPLETED;
 
@@ -622,6 +770,40 @@ export class InventoryMovementService {
             .update(transferOrderReceiptLines)
             .set({ putawayStatus: newStatus })
             .where(eq(transferOrderReceiptLines.receiptLineId, lineDto.lineId));
+
+          if (newStatus === PUTAWAY_STATUS.COMPLETED && transferProjectId) {
+            if (isProjectReturnTransfer) {
+              await this.projectsInventoryService.recordProjectReturnCredit(
+                tx,
+                {
+                  projectId: transferProjectId,
+                  projectTaskId: transferProjectTaskId || undefined,
+                  productId,
+                  quantity: Number(lineDto.quantity),
+                  referenceNumber:
+                    referenceNumber ||
+                    transferOrderNumber ||
+                    'Transfer Return Putaway',
+                  actor: userId,
+                },
+              );
+            } else {
+              await this.projectsInventoryService.recordProjectStagingCharge(
+                tx,
+                {
+                  projectId: transferProjectId,
+                  projectTaskId: transferProjectTaskId || undefined,
+                  productId,
+                  quantity: Number(lineDto.quantity),
+                  referenceNumber:
+                    referenceNumber ||
+                    transferOrderNumber ||
+                    'Transfer Staging Putaway',
+                  actor: userId,
+                },
+              );
+            }
+          }
         } else if (lineDto.sourceType === 'work_order') {
           await this.workOrdersWriteService.updatePutawayStatus(
             tx,

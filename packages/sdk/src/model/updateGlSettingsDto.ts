@@ -5,11 +5,11 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
-import type { UpdateGlSettingsDtoAccountMetadataSchemaItem } from './updateGlSettingsDtoAccountMetadataSchemaItem';
+import type { UpdateGlSettingsDtoAccountMetadataSchema } from './updateGlSettingsDtoAccountMetadataSchema';
 
 export interface UpdateGlSettingsDto {
   /** @nullable */
-  accountMetadataSchema?: UpdateGlSettingsDtoAccountMetadataSchemaItem[] | null;
+  accountMetadataSchema?: UpdateGlSettingsDtoAccountMetadataSchema;
   fiscalYearStartMonth?: number;
   bankMatchDateToleranceDays?: number;
   /** @nullable */
@@ -44,6 +44,10 @@ export interface UpdateGlSettingsDto {
   defaultOtcCashAccountId?: string | null;
   /** @nullable */
   defaultOtcCardAccountId?: string | null;
+  /** @nullable */
+  defaultSuspenseAccountId?: string | null;
+  /** @nullable */
+  defaultRetainedEarningsAccountId?: string | null;
   /** @nullable */
   defaultCostCenterId?: string | null;
   /** @nullable */

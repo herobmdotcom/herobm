@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.1
  */
 import type { OrganizationResponseDtoOwner } from './organizationResponseDtoOwner';
+import type { OrganizationResponseDtoMetadata } from './organizationResponseDtoMetadata';
 import type { OrganizationNoteResponseDto } from './organizationNoteResponseDto';
 import type { OrganizationResponseDtoOrganizationContactLinksItem } from './organizationResponseDtoOrganizationContactLinksItem';
 import type { OrganizationResponseDtoEventsItem } from './organizationResponseDtoEventsItem';
@@ -19,6 +20,8 @@ export interface OrganizationResponseDto {
   owner?: OrganizationResponseDtoOwner;
   /** @nullable */
   ownerDisplayName?: string | null;
+  /** @nullable */
+  metadata?: OrganizationResponseDtoMetadata;
   organizationId: string;
   stateCode: string;
   name: string;

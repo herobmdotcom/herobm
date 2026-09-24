@@ -83,18 +83,16 @@ export default function BarcodeScannerCard<T = unknown>({
   // Hardware scanner auto-refocus listener
   useEffect(() => {
     if (disableAutoFocus) return;
-    inputRef.current?.focus();
+    inputRef.current?.focus({ preventScroll: true });
 
     const handleWindowClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName !== 'INPUT' &&
-        target.tagName !== 'SELECT' &&
-        target.tagName !== 'BUTTON' &&
-        target.tagName !== 'A' &&
-        !containerRef.current?.contains(target)
-      ) {
-        inputRef.current?.focus();
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      const interactiveEl = target.closest(
+        'input, select, textarea, button, a, [role="button"], [role="option"], [role="tab"], [role="dialog"]',
+      );
+      if (!interactiveEl && !containerRef.current?.contains(target)) {
+        inputRef.current?.focus({ preventScroll: true });
       }
     };
 
@@ -162,7 +160,7 @@ export default function BarcodeScannerCard<T = unknown>({
     if (onSelectResult) {
       onSelectResult(item);
     }
-    inputRef.current?.focus();
+    inputRef.current?.focus({ preventScroll: true });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

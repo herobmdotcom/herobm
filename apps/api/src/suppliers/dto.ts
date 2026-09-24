@@ -9,6 +9,7 @@ import {
   IsDateString,
   IsIn,
   IsNumber,
+  IsObject,
 } from 'class-validator';
 import { ApiPropertyOptional, PartialType, ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
@@ -144,6 +145,11 @@ export class BaseSupplierDto {
   @IsOptional()
   @IsString()
   stateCode?: string;
+
+  @ApiPropertyOptional({ type: Object, description: 'Custom metadata object' })
+  @IsOptional()
+  @IsObject()
+  metadata?: Record<string, unknown>;
 }
 
 export class CreateSupplierDto extends BaseSupplierDto {}
@@ -300,6 +306,7 @@ export class SupplierResponseDto {
   isTaxRegistered: boolean;
   taxPositionId: string | null;
   stateCode: string | null;
+  metadata?: Record<string, unknown> | null;
   tenantId: string;
   createdAt: Date;
   updatedAt: Date;

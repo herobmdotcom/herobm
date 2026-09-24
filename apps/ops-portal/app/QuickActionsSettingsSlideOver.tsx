@@ -108,6 +108,13 @@ export const PRESET_QUICK_ACTIONS: Omit<QuickActionItem, 'enabled'>[] = [
     icon: 'tune',
   },
   {
+    id: 'stocktake',
+    title: 'stocktake',
+    description: 'stocktakeDesc',
+    href: '/inventory/stocktakes',
+    icon: 'checklist_rtl',
+  },
+  {
     id: 'create_contact',
     title: 'createContact',
     description: 'createContactDesc',

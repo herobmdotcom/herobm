@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.1
  */
 import type { CreateContactDtoEntityType } from './createContactDtoEntityType';
+import type { CreateContactDtoMetadata } from './createContactDtoMetadata';
 
 export interface CreateContactDto {
   entityType?: CreateContactDtoEntityType;
@@ -22,4 +23,5 @@ export interface CreateContactDto {
   primaryFor?: string[];
   opportunityRoles?: string[];
   projectRoles?: string[];
+  metadata?: CreateContactDtoMetadata;
 }

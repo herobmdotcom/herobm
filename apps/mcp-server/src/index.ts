@@ -16,19 +16,49 @@ import postgres from 'postgres';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Resolve repository root and active profile
+const rootDir = path.resolve(__dirname, '../../../');
+let activeProfile = '';
+const profileFileCandidates = [
+  path.resolve(process.cwd(), '.active_profile'),
+  path.resolve(rootDir, '.active_profile'),
+];
+for (const p of profileFileCandidates) {
+  if (fs.existsSync(p)) {
+    activeProfile = fs.readFileSync(p, 'utf8').trim();
+    if (activeProfile) break;
+  }
+}
+
 // Try multiple locations for .env to ensure it loads when run by Antigravity or locally
 const envPaths = [
+  ...(process.env.ENV_FILE ? [process.env.ENV_FILE] : []),
+  ...(activeProfile
+    ? [
+        path.resolve(process.cwd(), `.env.${activeProfile}`),
+        path.resolve(rootDir, `.env.${activeProfile}`),
+      ]
+    : []),
   path.resolve(process.cwd(), '.env'),
   path.resolve(__dirname, '.env'),
-  path.resolve(__dirname, '../../../.env'),
-  ...(process.env.ENV_FILE ? [process.env.ENV_FILE] : []),
+  path.resolve(rootDir, '.env'),
 ];
 
 for (const p of envPaths) {
-  if (fs.existsSync(p)) {
+  if (p && fs.existsSync(p)) {
     dotenv.config({ path: p });
     console.error(`Loaded env from ${p}`);
   }
+}
+
+function getDbClient() {
+  return postgres({
+    host: process.env.POSTGRES_HOST || 'localhost',
+    port: parseInt(process.env.POSTGRES_PORT || '5432'),
+    user: process.env.POSTGRES_USER || 'postgres',
+    password: process.env.POSTGRES_PASSWORD || '',
+    database: process.env.POSTGRES_DB || 'postgres',
+  });
 }
 
 const apiPort = process.env.PORT || process.env.API_PORT || '3001';
@@ -274,7 +304,7 @@ async function main() {
   console.error(`Registered ${toolRegistry.size} operations across ${domains.length} domains`);
 
   const server = new Server(
-    { name: 'herobm-mcp-server', version: '1.1.5' },
+    { name: 'herobm-mcp-server', version: '1.2.0' },
     { capabilities: { tools: {} } }
   );
 
@@ -287,29 +317,58 @@ async function main() {
     
     if (name === 'get_table_schema') {
       try {
-        const tableName = args?.table_name;
-        if (!tableName) {
+        const rawTableName = args?.table_name;
+        if (!rawTableName) {
           return { isError: true, content: [{ type: 'text', text: 'table_name is required' }] };
         }
-        
-        const sql = postgres({
-          host: process.env.POSTGRES_HOST || 'localhost',
-          port: parseInt(process.env.POSTGRES_PORT || '5432'),
-          user: process.env.POSTGRES_USER || 'postgres',
-          password: process.env.POSTGRES_PASSWORD || '',
-          database: process.env.POSTGRES_DB || 'postgres'
-        });
 
-        const columns = await sql`
-          SELECT column_name, data_type, is_nullable, column_default
-          FROM information_schema.columns
-          WHERE table_schema IN ('public', 'herobm_core') AND table_name = ${tableName}
-          ORDER BY ordinal_position;
-        `;
+        let schemaName = '';
+        let tableName = rawTableName;
+        if (rawTableName.includes('.')) {
+          const parts = rawTableName.split('.');
+          schemaName = parts[0];
+          tableName = parts[1];
+        }
+
+        const sql = getDbClient();
+
+        let columns: any[] = [];
+        let resolvedSchema = schemaName;
+
+        if (resolvedSchema) {
+          columns = await sql`
+            SELECT column_name, data_type, is_nullable, column_default
+            FROM information_schema.columns
+            WHERE table_schema = ${resolvedSchema} AND table_name = ${tableName}
+            ORDER BY ordinal_position;
+          `;
+        } else {
+          // Check herobm_core first, then public fallback
+          columns = await sql`
+            SELECT column_name, data_type, is_nullable, column_default
+            FROM information_schema.columns
+            WHERE table_schema = 'herobm_core' AND table_name = ${tableName}
+            ORDER BY ordinal_position;
+          `;
+          if (columns.length > 0) {
+            resolvedSchema = 'herobm_core';
+          } else {
+            columns = await sql`
+              SELECT column_name, data_type, is_nullable, column_default
+              FROM information_schema.columns
+              WHERE table_schema = 'public' AND table_name = ${tableName}
+              ORDER BY ordinal_position;
+            `;
+            if (columns.length > 0) {
+              resolvedSchema = 'public';
+            }
+          }
+        }
 
         const foreignKeys = await sql`
           SELECT
               kcu.column_name,
+              ccu.table_schema AS foreign_table_schema,
               ccu.table_name AS foreign_table_name,
               ccu.column_name AS foreign_column_name
           FROM 
@@ -320,7 +379,9 @@ async function main() {
               JOIN information_schema.constraint_column_usage AS ccu
                 ON ccu.constraint_name = tc.constraint_name
                 AND ccu.table_schema = tc.table_schema
-          WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_name = ${tableName};
+          WHERE tc.constraint_type = 'FOREIGN KEY' 
+            AND tc.table_schema = ${resolvedSchema || 'herobm_core'} 
+            AND tc.table_name = ${tableName};
         `;
 
         await sql.end();
@@ -330,6 +391,7 @@ async function main() {
             {
               type: 'text',
               text: JSON.stringify({
+                schema: resolvedSchema || 'unknown',
                 table: tableName,
                 columns,
                 foreign_keys: foreignKeys
@@ -451,29 +513,35 @@ async function main() {
 
     if (name === 'list_database_tables') {
       try {
-        const sql = postgres({
-          host: process.env.POSTGRES_HOST || 'localhost',
-          port: parseInt(process.env.POSTGRES_PORT || '5432'),
-          user: process.env.POSTGRES_USER || 'postgres',
-          password: process.env.POSTGRES_PASSWORD || '',
-          database: process.env.POSTGRES_DB || 'postgres'
-        });
+        const sql = getDbClient();
 
-        const tables = await sql`
+        let tables = await sql`
           SELECT table_name 
           FROM information_schema.tables 
-          WHERE table_schema IN ('public', 'herobm_core') 
+          WHERE table_schema = 'herobm_core' 
             AND table_type = 'BASE TABLE'
           ORDER BY table_name;
         `;
         
+        let result = tables.map((t: any) => t.table_name);
+        if (result.length === 0) {
+          const publicTables = await sql`
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+              AND table_type = 'BASE TABLE'
+            ORDER BY table_name;
+          `;
+          result = publicTables.map((t: any) => t.table_name);
+        }
+
         await sql.end();
         
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(tables.map((t: any) => t.table_name), null, 2)
+              text: JSON.stringify(result, null, 2)
             }
           ]
         };
@@ -510,19 +578,24 @@ async function main() {
         else if (prefix === 'inventory') tableName = 'inventory'; // unpluralized
         else tableName = prefix + 's';
 
-        const sql = postgres({
-          host: process.env.POSTGRES_HOST || 'localhost',
-          port: parseInt(process.env.POSTGRES_PORT || '5432'),
-          user: process.env.POSTGRES_USER || 'postgres',
-          password: process.env.POSTGRES_PASSWORD || '',
-          database: process.env.POSTGRES_DB || 'postgres'
-        });
+        const sql = getDbClient();
 
-        const columns = await sql`
+        let columns = await sql`
           SELECT column_name, data_type, is_nullable
           FROM information_schema.columns
-          WHERE table_schema IN ('public', 'herobm_core') AND table_name = ${tableName}
+          WHERE table_schema = 'herobm_core' AND table_name = ${tableName}
+          ORDER BY ordinal_position
         `;
+        let resolvedSchema = 'herobm_core';
+        if (columns.length === 0) {
+          columns = await sql`
+            SELECT column_name, data_type, is_nullable
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = ${tableName}
+            ORDER BY ordinal_position
+          `;
+          if (columns.length > 0) resolvedSchema = 'public';
+        }
         await sql.end();
 
         const envelope = {
@@ -536,6 +609,7 @@ async function main() {
               type: 'text',
               text: JSON.stringify({
                 envelope,
+                assumedSchema: resolvedSchema,
                 assumedTable: tableName,
                 tableSchema: columns
               }, null, 2)

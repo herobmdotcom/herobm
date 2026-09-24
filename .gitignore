@@ -96,8 +96,8 @@ Makefile.test
 .test_single
 
 # PGlite Snapshots
-.pglite-snapshot.bin
-*.pglite-snapshot.bin
+.pglite-snapshot*.bin
+*.pglite-snapshot*.bin
 *.test-snapshot.bin
 
 # ABM State

@@ -14,11 +14,12 @@ export interface ContentPageHeaderProps {
   subtitle?: React.ReactNode;
   actions?: PageHeaderAction[];
   children?: React.ReactNode;
+  className?: string;
 }
 
-export function ContentPageHeader({ title, subtitle, actions, children }: ContentPageHeaderProps) {
+export function ContentPageHeader({ title, subtitle, actions, children, className = '' }: ContentPageHeaderProps) {
   return (
-    <div className="flex items-center justify-between mb-6 shrink-0 gap-4 flex-wrap">
+    <div className={`flex items-center justify-between mb-6 shrink-0 gap-4 flex-wrap ${className}`}>
       <div>
         <h1 className="text-2xl font-bold text-[var(--text-primary)]">{title}</h1>
         {subtitle && (

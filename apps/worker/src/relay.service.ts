@@ -2,7 +2,31 @@ import { Job, Queue } from 'bullmq';
 import { outbox, webhooks } from '@herobm/db-schema';
 import { eq, isNull, inArray, and, or, lt, sql } from 'drizzle-orm';
 import * as crypto from 'crypto';
+import { deriveEncryptionKey, decrypt } from '@herobm/shared/node';
 import { relayLogger, processingLogger } from './logger';
+
+/**
+ * Decrypts a webhook secret key if stored in encrypted format (iv:authTag:cipher),
+ * falling back to the raw secret for backwards compatibility.
+ */
+export function resolveWebhookSecretKey(storedSecret: string): string {
+  if (!storedSecret) return '';
+  if (storedSecret.includes(':')) {
+    try {
+      const rawKey = process.env.ENCRYPTION_KEY || process.env.JWT_SECRET;
+      if (rawKey) {
+        const encryptionKey = deriveEncryptionKey(rawKey);
+        return decrypt(storedSecret, encryptionKey);
+      }
+    } catch (err: any) {
+      processingLogger.warn(
+        { err: err?.message },
+        'Failed to decrypt webhook secret key; using raw value',
+      );
+    }
+  }
+  return storedSecret;
+}
 
 /** Event types that have active mappers in processEvent. */
 const HANDLED_EVENT_TYPES = [
@@ -111,7 +135,8 @@ export async function processEvent(job: Job, db: any) {
 
       for (const wh of activeWebhooks) {
         try {
-          const signature = crypto.createHmac('sha256', wh.secretKey).update(payloadString).digest('hex');
+          const signingKey = resolveWebhookSecretKey(wh.secretKey);
+          const signature = crypto.createHmac('sha256', signingKey).update(payloadString).digest('hex');
           
           const res = await fetch(wh.targetUrl, {
             method: 'POST',

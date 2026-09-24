@@ -9,4 +9,5 @@
 export interface OrderedSettingDto {
   value: string;
   order: number;
+  isSystem?: boolean;
 }

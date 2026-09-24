@@ -69,21 +69,27 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {asChild ? (
           children
         ) : loading ? (
-          <span
-            className="material-symbols-outlined animate-spin text-[16px] leading-none shrink-0"
-            aria-hidden="true"
-          >
-            progress_activity
-          </span>
-        ) : icon ? (
-          <span
-            className={cn('material-symbols-outlined text-[16px] leading-none shrink-0', iconClassName)}
-            aria-hidden="true"
-          >
-            {icon}
-          </span>
+          <>
+            <span
+              className="material-symbols-outlined animate-spin text-[16px] leading-none shrink-0"
+              aria-hidden="true"
+            >
+              progress_activity
+            </span>
+            {children}
+          </>
         ) : (
-          children
+          <>
+            {icon && (
+              <span
+                className={cn('material-symbols-outlined text-[16px] leading-none shrink-0', iconClassName)}
+                aria-hidden="true"
+              >
+                {icon}
+              </span>
+            )}
+            {children}
+          </>
         )}
       </Comp>
     );

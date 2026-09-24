@@ -67,16 +67,19 @@ describe('API E2E — Runtime Ledger Balancing', () => {
       leaves.find((l) => l.accountType === 'expense') || leaves[4];
     expenseAccountId = expenseAccount.glAccountId;
 
-    // Fetch Master Data
-    const customers = await request(app.getHttpServer())
-      .get('/api/customers?limit=10')
+    // Create dedicated customer to avoid credit hold conflicts with other test data
+    const custRes = await request(app.getHttpServer())
+      .post('/api/customers')
       .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-    const activeCustomer =
-      customers.body.data.find(
-        (c: any) => c.stateCode === CUSTOMER_STATE.ACTIVE,
-      ) || customers.body.data[0];
-    validCustomerId = activeCustomer.customerId;
+      .send({
+        billingAddressCountry: 'AU',
+        customerNumber: `CUST-GLB-${Date.now()}`,
+        name: 'GL Balancing Test Customer',
+        currencyCode: 'AUD',
+        creditLimit: '100000',
+      })
+      .expect(201);
+    validCustomerId = custRes.body.customerId;
 
     const vendors = await request(app.getHttpServer())
       .get('/api/suppliers?limit=1')
@@ -199,8 +202,7 @@ describe('API E2E — Runtime Ledger Balancing', () => {
           productNumber: `BAL-PROD-${rand}`,
           name: 'Balancing Product',
           productType: 'service',
-          baseUom: 'EA',
-          revenueAccountId: apAccountId, // or any valid account
+          baseUom: 'HR',
         })
         .expect(201);
       const testProductId = prodRes.body.productId;

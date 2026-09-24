@@ -4,6 +4,8 @@ import React, { useMemo } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/shared/Button';
 import DetailTabGrid from '@/components/shared/DetailTabGrid';
+import { SalesOrdersDetailGrid } from '@/components/shared/SalesOrdersDetailGrid';
+import { ProjectsDetailGrid } from '@/components/shared/ProjectsDetailGrid';
 import { formatAmount } from '@/lib/currency';
 import { formatLocalDate } from '@/lib/date';
 import { getBadgeColor } from '@/lib/utils';
@@ -13,16 +15,6 @@ import type { OrganizationResponseDto } from '@herobm/sdk';
 interface OrganizationCommercialTabProps {
   organizationId: string;
   organization: OrganizationResponseDto | null;
-}
-
-interface SalesOrderRow {
-  id: string;
-  orderNumber?: string;
-  name?: string;
-  stateCode?: string;
-  totalPrice?: string | number;
-  currencyCode?: string;
-  createdOn?: string | number | Date;
 }
 
 interface PurchaseOrderRow {
@@ -51,49 +43,6 @@ export function OrganizationCommercialTab({ organizationId, organization }: Orga
   const supplierNumber = supplier?.vendorNumber || '—';
   const purchasingDisplay = supplier?.isPurchasingBlocked ? 'Blocked' : 'Active';
   const supplierCurrency = supplier?.currencyCode || 'USD';
-
-  const salesOrderColumns: Record<string, unknown>[] = useMemo(
-    () => [
-      {
-        field: 'orderNumber',
-        headerName: 'Order No.',
-        width: 150,
-        pinned: 'left' as const,
-      },
-      {
-        field: 'name',
-        headerName: 'Title',
-        flex: 1,
-        minWidth: 160,
-      },
-      {
-        field: 'stateCode',
-        headerName: 'Status',
-        width: 120,
-        valueFormatter: (p: { value?: string }) => p.value || '',
-      },
-      {
-        field: 'totalPrice',
-        headerName: 'Total Price',
-        width: 130,
-        type: 'numericColumn',
-        valueGetter: (p: { data?: { totalPrice?: string | number } }) =>
-          p.data?.totalPrice ? parseFloat(String(p.data.totalPrice)) : null,
-        valueFormatter: (p: { value?: number; data?: { currencyCode?: string } }) =>
-          !p.value || p.value === 0
-            ? '—'
-            : formatAmount(p.value, p.data?.currencyCode || customer?.currencyCode || 'USD'),
-      },
-      {
-        field: 'createdOn',
-        headerName: 'Created Date',
-        width: 130,
-        valueFormatter: (p: { value?: string | number | Date }) =>
-          formatLocalDate(p.value),
-      },
-    ],
-    [customer?.currencyCode],
-  );
 
   const purchaseOrderColumns: Record<string, unknown>[] = useMemo(
     () => [
@@ -209,14 +158,21 @@ export function OrganizationCommercialTab({ organizationId, organization }: Orga
 
             {/* Embedded Sales Orders */}
             <div className="mt-2">
-              <DetailTabGrid<SalesOrderRow>
+              <SalesOrdersDetailGrid
                 title="Sales Orders"
-                endpoint={`/api/sales-orders?customerId=${encodeURIComponent(customer.customerId)}&limit=25`}
-                columns={salesOrderColumns}
+                customerId={customer.customerId}
                 gridKey={`organization-sales-orders-${customer.customerId}`}
-                fetchAll
-                rowIdField="id"
-                rowHref={(order: { id: string }) => `/sales-orders/${order.id}`}
+                limit={25}
+              />
+            </div>
+
+            {/* Embedded Delivery Projects */}
+            <div className="mt-2">
+              <ProjectsDetailGrid
+                title="Delivery Projects"
+                customerId={customer.customerId}
+                gridKey={`organization-projects-${customer.customerId}`}
+                limit={25}
               />
             </div>
           </div>

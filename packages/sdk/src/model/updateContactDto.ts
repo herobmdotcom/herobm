@@ -5,6 +5,7 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
+import type { UpdateContactDtoMetadata } from './updateContactDtoMetadata';
 
 export interface UpdateContactDto {
   firstName?: string;
@@ -19,4 +20,5 @@ export interface UpdateContactDto {
   primaryFor?: string[];
   opportunityRole?: string;
   projectRole?: string;
+  metadata?: UpdateContactDtoMetadata;
 }

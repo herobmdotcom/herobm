@@ -12,8 +12,10 @@ import {
   TransferOrderPickState,
   ShipmentState,
   PUTAWAY_STATUS,
+  StocktakeState,
 } from '@herobm/shared';
 import { products } from './products.schema';
+import { projects, projectTasks } from './projects.schema';
 
 // ---------------------------------------------------------------------------
 // locations  (Physical warehouses or regional centers)
@@ -69,6 +71,7 @@ export const binTypeEnum = herobmCore.enum('bin_type_enum', [
   'quarantine', // Restricted bins for quality inspection, damaged goods, or blocked inventory
   'in_transit', // Virtual bins representing inventory currently moving between physical locations
   'wip', // Work in progress bin for manufacturing component staging and build output
+  'project', // Dedicated project holding and staging bin
 ]);
 
 export const bins = herobmCore.table(
@@ -217,6 +220,11 @@ export const transferOrders = herobmCore.table(
     destinationLocationId: uuid('destination_location_id')
       .notNull()
       .references(() => locations.locationId),
+    projectId: uuid('project_id').references((): any => projects.projectId),
+    projectTaskId: uuid('project_task_id').references(
+      (): any => projectTasks.projectTaskId,
+    ),
+    isProjectReturn: boolean('is_project_return').notNull(),
     stateCode: text('state_code').notNull(),
     notes: text('notes'),
     shippingNotes: text('shipping_notes'),
@@ -231,6 +239,7 @@ export const transferOrders = herobmCore.table(
     destLocIdx: index('idx_transfer_orders_dest_location').on(
       t.destinationLocationId,
     ),
+    projectIdx: index('idx_transfer_orders_project_id').on(t.projectId),
   }),
 );
 
@@ -246,12 +255,18 @@ export const transferOrderLines = herobmCore.table(
     productId: uuid('product_id')
       .notNull()
       .references(() => products.productId),
+    projectTaskId: uuid('project_task_id').references(
+      (): any => projectTasks.projectTaskId,
+    ),
     quantity: numeric('quantity').notNull(),
     quantityShipped: numeric('quantity_shipped'),
     quantityReceived: numeric('quantity_received'),
   },
   (t) => ({
     productIdx: index('idx_transfer_order_lines_product').on(t.productId),
+    taskIdx: index('idx_transfer_order_lines_project_task_id').on(
+      t.projectTaskId,
+    ),
   }),
 );
 
@@ -374,6 +389,107 @@ export const transferOrderReceiptLines = herobmCore.table(
     receiptIdx: index('idx_transfer_order_receipt_lines_receipt').on(
       t.receiptId,
     ),
+  }),
+);
+
+export const stocktakes = herobmCore.table(
+  'stocktakes',
+  {
+    stocktakeId: uuid('stocktake_id').primaryKey().defaultRandom(),
+    stocktakeNumber: text('stocktake_number').unique().notNull(), // e.g. STK-20260911-0001
+    name: text('name').notNull(),
+    locationId: uuid('location_id')
+      .notNull()
+      .references(() => locations.locationId),
+    stateCode: text('state_code').$type<StocktakeState>().notNull(),
+    scopeType: text('scope_type').notNull(), // 'full', 'zone', 'bin_pattern', 'manual'
+    zoneFilter: text('zone_filter'),
+    binPattern: text('bin_pattern'),
+    isBlindCount: boolean('is_blind_count').notNull(),
+    notes: text('notes'),
+    inventoryEntryId: uuid('inventory_entry_id').references(
+      () => inventoryEntries.entryId,
+    ),
+    createdBy: text('created_by'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+    openedBy: text('opened_by'),
+    openedAt: timestamp('opened_at', { withTimezone: true }),
+    reviewedBy: text('reviewed_by'),
+    reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+    submittedBy: text('submitted_by'),
+    submittedOn: timestamp('submitted_on', { withTimezone: true }),
+    cancelledBy: text('cancelled_by'),
+    cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
+    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    locationIdx: index('idx_stocktakes_location_id').on(t.locationId),
+    stateIdx: index('idx_stocktakes_state_code').on(t.stateCode),
+    createdOnIdx: index('idx_stocktakes_created_on').on(t.createdOn),
+  }),
+);
+
+export const stocktakeLines = herobmCore.table(
+  'stocktake_lines',
+  {
+    stocktakeLineId: uuid('stocktake_line_id').primaryKey().defaultRandom(),
+    stocktakeId: uuid('stocktake_id')
+      .notNull()
+      .references(() => stocktakes.stocktakeId, { onDelete: 'cascade' }),
+    productId: uuid('product_id')
+      .notNull()
+      .references(() => products.productId),
+    binId: uuid('bin_id')
+      .notNull()
+      .references(() => bins.binId),
+    expectedQuantity: numeric('expected_quantity').notNull(),
+    countedQuantity: numeric('counted_quantity'),
+    isUnlisted: boolean('is_unlisted').notNull(),
+    notes: text('notes'),
+    lastCountedAt: timestamp('last_counted_at', { withTimezone: true }),
+    lastCountedBy: text('last_counted_by'),
+  },
+  (t) => ({
+    unq: unique('stocktake_lines_stocktake_prod_bin_unq').on(
+      t.stocktakeId,
+      t.productId,
+      t.binId,
+    ),
+    stocktakeIdx: index('idx_stocktake_lines_stocktake_id').on(t.stocktakeId),
+    productIdx: index('idx_stocktake_lines_product_id').on(t.productId),
+    binIdx: index('idx_stocktake_lines_bin_id').on(t.binId),
+  }),
+);
+
+export const stocktakeCounts = herobmCore.table(
+  'stocktake_counts',
+  {
+    stocktakeCountId: uuid('stocktake_count_id').primaryKey().defaultRandom(),
+    stocktakeId: uuid('stocktake_id')
+      .notNull()
+      .references(() => stocktakes.stocktakeId, { onDelete: 'cascade' }),
+    stocktakeLineId: uuid('stocktake_line_id').references(
+      () => stocktakeLines.stocktakeLineId,
+      { onDelete: 'cascade' },
+    ),
+    productId: uuid('product_id')
+      .notNull()
+      .references(() => products.productId),
+    binId: uuid('bin_id')
+      .notNull()
+      .references(() => bins.binId),
+    quantity: numeric('quantity').notNull(),
+    countMode: text('count_mode').notNull(), // 'set', 'increment'
+    countedBy: text('counted_by').notNull(),
+    countedAt: timestamp('counted_at', { withTimezone: true }).defaultNow(),
+    notes: text('notes'),
+  },
+  (t) => ({
+    stocktakeIdx: index('idx_stocktake_counts_stocktake_id').on(t.stocktakeId),
+    lineIdx: index('idx_stocktake_counts_line_id').on(t.stocktakeLineId),
+    productIdx: index('idx_stocktake_counts_product_id').on(t.productId),
+    binIdx: index('idx_stocktake_counts_bin_id').on(t.binId),
+    countedByIdx: index('idx_stocktake_counts_counted_by').on(t.countedBy),
   }),
 );
 

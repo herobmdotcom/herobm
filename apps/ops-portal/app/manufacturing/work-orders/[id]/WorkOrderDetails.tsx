@@ -23,10 +23,12 @@ import {
   workOrdersControllerCancel,
   workOrdersControllerUpdate,
   workOrdersControllerUpdateComponent,
+  workOrdersControllerGetSettings,
   inventoryControllerFindBinsByLocation,
   inventoryControllerFindByProductIdsBulk,
 } from '@herobm/sdk';
 import { WorkOrderAvailabilityTab, getComponentStockWarning, type InventoryItem } from '../components/WorkOrderAvailabilityTab';
+import { DynamicForm } from '@/components/DynamicForm';
 
 import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
 
@@ -59,6 +61,7 @@ interface WorkOrderDetail {
   assemblyCostPerUnit?: string | null;
   additionalCost?: string | null;
   totalCost?: string | null;
+  metadata?: Record<string, unknown> | null;
   createdBy?: string | null;
   createdOn?: string | Date | null;
   components: WorkOrderComponent[];
@@ -91,6 +94,8 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
   const [activeTab, setActiveTab] = useState<'lines' | 'availability'>('lines');
   const [inventoryLevels, setInventoryLevels] = useState<InventoryItem[]>([]);
   const [inventoryLoading, setInventoryLoading] = useState(false);
+  const [workOrderMetadataSchema, setWorkOrderMetadataSchema] = useState<Record<string, unknown> | null>(null);
+  const [localMetadata, setLocalMetadata] = useState<Record<string, unknown>>({});
 
   useDocumentTitle(
     data
@@ -118,6 +123,16 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
   }, [workOrderId]);
 
   useEffect(() => {
+    workOrdersControllerGetSettings()
+      .then((res) => {
+        if (res.data?.workOrderMetadataSchema) {
+          setWorkOrderMetadataSchema(res.data.workOrderMetadataSchema as Record<string, unknown>);
+        }
+      })
+      .catch((err) => reportError(err, 'WorkOrderDetails:getSettings'));
+  }, []);
+
+  useEffect(() => {
     if (workOrderId) {
       fetchWorkOrder();
     }
@@ -133,6 +148,9 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
         assemblyCostPerUnit: data.assemblyCostPerUnit || '',
         additionalCost: data.additionalCost || '',
       });
+      if (data.metadata) {
+        setLocalMetadata(data.metadata as Record<string, unknown>);
+      }
     }
   }, [data]);
 
@@ -254,6 +272,20 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
       setActionLoading(false);
     }
   }, [workOrderId, fetchWorkOrder]);
+
+  const saveMetadata = async (metadata: Record<string, unknown>) => {
+    if (!workOrderId) return;
+    try {
+      setActionLoading(true);
+      await workOrdersControllerUpdate(workOrderId, { metadata });
+      toast.success('Work Order metadata updated');
+      await fetchWorkOrder(false);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update metadata');
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const handleRelease = async () => {
     if (!data?.wipBinId || !data?.outputBinId) {
@@ -718,6 +750,31 @@ export default function WorkOrderDetails({ workOrderId }: { workOrderId: string 
             )}
           </div>
         </div>
+
+        {/* Custom Fields Card */}
+        {!!(
+          workOrderMetadataSchema?.properties &&
+          typeof workOrderMetadataSchema.properties === 'object' &&
+          Object.keys(workOrderMetadataSchema.properties).length > 0
+        ) && (
+          <div id="custom-fields-section" className="card">
+            <h3 className="section-heading mb-4">
+              <span className="material-symbols-outlined">tune</span>
+              {tWork('customFields')}
+            </h3>
+            <DynamicForm
+              schema={workOrderMetadataSchema}
+              data={localMetadata}
+              onChange={(newMetadata) => {
+                setLocalMetadata(newMetadata);
+              }}
+              onBlur={(newMetadata) => {
+                saveMetadata(newMetadata);
+              }}
+              readOnly={!isEditable}
+            />
+          </div>
+        )}
 
         {/* Bill of Materials / Components Section */}
         <div className="card">

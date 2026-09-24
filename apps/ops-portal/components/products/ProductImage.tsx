@@ -9,6 +9,7 @@ interface ProductImageProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
   className?: string;
   showPreviewOnClick?: boolean;
+  hideFallback?: boolean;
 }
 
 const sizeClasses: Record<string, string> = {
@@ -35,6 +36,7 @@ export default function ProductImage({
   size = 'md',
   className = '',
   showPreviewOnClick = false,
+  hideFallback = false,
 }: ProductImageProps) {
   const [hasError, setHasError] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -43,11 +45,26 @@ export default function ProductImage({
     setHasError(false);
   }, [imagePath]);
 
+  useEffect(() => {
+    if (!isPreviewOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsPreviewOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isPreviewOpen]);
+
   const imageUrl = imagePath ? `/api/products/images/${imagePath}` : null;
   const containerSize = sizeClasses[size] || sizeClasses.md;
   const iconSize = iconSizes[size] || iconSizes.md;
 
   if (!imageUrl || hasError) {
+    if (hideFallback) {
+      return null;
+    }
+
     return (
       <div
         className={`flex items-center justify-center bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-muted)] shrink-0 select-none overflow-hidden ${containerSize} ${className}`}
@@ -76,8 +93,9 @@ export default function ProductImage({
         className={`relative shrink-0 overflow-hidden bg-[var(--bg-card)] border border-[var(--border)] ${containerSize} ${
           showPreviewOnClick ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''
         } ${className}`}
-        onClick={() => {
+        onClick={(e) => {
           if (showPreviewOnClick) {
+            e.stopPropagation();
             setIsPreviewOpen(true);
           }
         }}
@@ -93,42 +111,41 @@ export default function ProductImage({
 
       {showPreviewOnClick && isPreviewOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs"
+          role="dialog"
+          aria-modal="true"
+          aria-label={alt}
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/85 backdrop-blur-md p-4 sm:p-6 select-none"
           onClick={() => setIsPreviewOpen(false)}
         >
+          {/* Top Bar with Title and Prominent X Close Button */}
           <div
-            className="relative max-w-3xl max-h-[85vh] bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl shadow-2xl p-3 flex flex-col items-center"
+            className="w-full max-w-5xl flex items-center justify-between gap-4 mb-3 text-white/90"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="absolute top-2 right-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="p-1 h-8 w-8 rounded-md"
-                onClick={() => setIsPreviewOpen(false)}
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </Button>
-            </div>
-            <div className="text-sm font-semibold mb-2 text-[var(--text-main)] max-w-md truncate">
+            <span className="text-sm sm:text-base font-semibold truncate max-w-xl">
               {alt}
-            </div>
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              icon="close"
+              iconClassName="text-[24px]"
+              onClick={() => setIsPreviewOpen(false)}
+              aria-label="Close fullscreen image"
+              className="text-white/80 hover:text-white hover:bg-white/20 w-10 h-10 rounded-full shrink-0"
+            />
+          </div>
+
+          {/* Fullscreen Image Container */}
+          <div
+            className="relative flex items-center justify-center max-w-5xl max-h-[85vh] w-full h-full"
+            onClick={(e) => e.stopPropagation()}
+          >
             <img
               src={imageUrl}
               alt={alt}
-              className="max-w-full max-h-[70vh] object-contain rounded-lg"
+              className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl border border-white/10 bg-black/40"
             />
           </div>
         </div>

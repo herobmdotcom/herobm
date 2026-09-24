@@ -26,6 +26,8 @@ import {
   EmptyBodyDto,
   PickWorkOrderComponentDto,
   WorkOrderPickingSummaryDto,
+  UpdateManufacturingSettingsDto,
+  ManufacturingSettingsResponseDto,
 } from './dto';
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { AuthUser } from '../auth/auth-user.decorator';
@@ -36,6 +38,29 @@ import type { JwtUser } from '../auth/auth-user.decorator';
 @ApiTags('Manufacturing / Work Orders')
 export class WorkOrdersController {
   constructor(private readonly workOrdersService: WorkOrdersService) {}
+
+  @Get('settings')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Manufacturing Settings',
+    description: 'Retrieve manufacturing domain settings and metadata schemas.',
+  })
+  @ApiOkResponse({ type: ManufacturingSettingsResponseDto })
+  async getSettings() {
+    return this.workOrdersService.getSettings();
+  }
+
+  @Patch('settings')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Manufacturing Settings',
+    description: 'Update manufacturing domain settings and metadata schemas.',
+  })
+  @ApiBody({ type: UpdateManufacturingSettingsDto })
+  @ApiOkResponse({ type: ManufacturingSettingsResponseDto })
+  async updateSettings(@Body() body: UpdateManufacturingSettingsDto) {
+    return this.workOrdersService.updateSettings(body);
+  }
 
   @Get()
   @CasbinAction('read')

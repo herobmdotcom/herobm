@@ -78,6 +78,7 @@ export async function seedTestLocations(db: SeedDB, dryRun = false) {
 
   await db.update(appSettings).set({
     defaultFulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
+    allowNegativeInventory: true,
   });
 
   console.log("  Seeded test 'MAIN' location, zone, and bins");

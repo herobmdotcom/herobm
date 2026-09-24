@@ -5,6 +5,7 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
+import type { ProductResponseDtoMetadata } from './productResponseDtoMetadata';
 
 export interface ProductResponseDto {
   productId: string;
@@ -45,6 +46,8 @@ export interface ProductResponseDto {
   defaultPurchaseUomId: string | null;
   /** @nullable */
   weight: string | null;
+  /** @nullable */
+  metadata?: ProductResponseDtoMetadata;
   tenantId: string;
   createdAt: string;
   updatedAt: string;

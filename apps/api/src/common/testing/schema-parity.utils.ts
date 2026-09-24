@@ -95,37 +95,38 @@ export function getFindOneProjectionFields(
   return fields;
 }
 
+import * as ts from 'typescript';
+
 /**
- * Extract property names from a NestJS DTO class.
- * This reads the source file and extracts properties defined in the class.
+ * Extract property names from a NestJS DTO class using TypeScript AST parser.
  */
 export function getDtoProperties(
   dtoFilePath: string,
   className: string,
 ): string[] {
   const src = fs.readFileSync(dtoFilePath, 'utf-8');
-
-  // Match the class body, stopping at the first `}` that is at the start of a line
-  // This avoids stopping at nested braces in decorators like `@Transform(({ value }) => ...)`
-  const classRegex = new RegExp(
-    `export class ${className}[^\\{]*\\{([\\s\\S]*?)^\\s*\\}`,
-    'sm',
+  const sourceFile = ts.createSourceFile(
+    dtoFilePath,
+    src,
+    ts.ScriptTarget.Latest,
+    true,
   );
-  const match = src.match(classRegex);
-  if (!match) {
-    throw new Error(`Could not find class '${className}' in ${dtoFilePath}`);
-  }
 
-  const body = match[1];
-
-  // Extract property names, skipping decorators.
-  // Match lines like: `propertyName!: string;` or `propertyName?: string;`
-  // We look for a valid identifier followed by !: or ?: or :
-  const propRegex = /^\s*(\w+)[!?]?\s*:/gm;
   const fields: string[] = [];
-  let m: RegExpExecArray | null;
-  while ((m = propRegex.exec(body)) !== null) {
-    fields.push(m[1]);
+
+  function visit(node: ts.Node) {
+    if (ts.isClassDeclaration(node) && node.name?.text === className) {
+      for (const member of node.members) {
+        if (ts.isPropertyDeclaration(member) && member.name) {
+          if (ts.isIdentifier(member.name)) {
+            fields.push(member.name.text);
+          }
+        }
+      }
+    }
+    ts.forEachChild(node, visit);
   }
+
+  visit(sourceFile);
   return fields;
 }

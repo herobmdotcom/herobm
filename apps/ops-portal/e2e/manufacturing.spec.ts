@@ -3,8 +3,12 @@ import { waitForGrid } from './helpers/grid';
 import { expectNoErrorBoundaries } from './helpers/forms';
 
 test.describe('Sidebar Section: Manufacturing', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.abort());
+  });
+
   test('Work Orders: list view loads ag-Grid and New Work Order button', async ({ page }) => {
-    await page.goto('/manufacturing/work-orders', { waitUntil: 'networkidle' });
+    await page.goto('/manufacturing/work-orders', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
     await waitForGrid(page);
 
@@ -13,7 +17,7 @@ test.describe('Sidebar Section: Manufacturing', () => {
   });
 
   test('Work Orders: create form loads BOM selection controls', async ({ page }) => {
-    await page.goto('/manufacturing/work-orders/new', { waitUntil: 'networkidle' });
+    await page.goto('/manufacturing/work-orders/new', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
 
     await expect(page.locator('main')).toBeVisible();

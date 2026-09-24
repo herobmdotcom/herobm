@@ -10,8 +10,11 @@ import {
   IsEnum,
   IsNumberString,
   IsArray,
+  IsObject,
+  IsBoolean,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { IsPercentage } from '../common/validators/is-percentage.decorator';
 
 export class AddSupplierDto {
   @IsUUID('4')
@@ -25,6 +28,25 @@ export class AddSupplierDto {
   @IsNumber()
   @Min(0)
   costPrice?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @IsPercentage()
+  discountPercent?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  minPurchaseQty?: number;
+
+  @IsOptional()
+  @IsString()
+  purchaseUnit?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isPreferred?: boolean;
 
   @IsOptional()
   @IsDateString()
@@ -115,6 +137,10 @@ export class BaseProductDto {
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultPurchaseUomId?: string;
+  @ApiPropertyOptional({ type: Object, description: 'Custom metadata' })
+  @IsOptional()
+  @IsObject()
+  metadata?: Record<string, unknown>;
 }
 
 export class CreateProductDto extends BaseProductDto {}
@@ -191,10 +217,18 @@ export class LinkBinDto {
   isPrimaryPerLocation?: boolean;
 
   @IsOptional()
+  @Transform(({ value, obj }) => {
+    const raw = value !== undefined ? value : obj?.minQty;
+    return raw === '' || raw === null || raw === undefined ? null : String(raw);
+  })
   @IsNumberString()
   minQuantity?: string;
 
   @IsOptional()
+  @Transform(({ value, obj }) => {
+    const raw = value !== undefined ? value : obj?.maxQty;
+    return raw === '' || raw === null || raw === undefined ? null : String(raw);
+  })
   @IsNumberString()
   maxQuantity?: string;
 }
@@ -223,9 +257,25 @@ export class ProductResponseDto {
   defaultSalesUomId: string | null;
   defaultPurchaseUomId: string | null;
   weight: string | null;
+  metadata?: Record<string, unknown> | null;
   tenantId: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export class ProductSettingsResponseDto {
+  @ApiPropertyOptional()
+  settingsId?: string;
+
+  @ApiPropertyOptional({ type: Object })
+  productMetadataSchema?: Record<string, unknown> | null;
+}
+
+export class UpdateProductSettingsDto {
+  @ApiPropertyOptional({ type: Object })
+  @IsOptional()
+  @IsObject()
+  productMetadataSchema?: Record<string, unknown> | null;
 }
 
 export class ProductImageResponseDto {
@@ -440,3 +490,56 @@ export class UpdateProductComponentDto {
 }
 
 export class EmptyBodyDto {}
+
+export class AddServiceMemberDto {
+  @ApiProperty({
+    description: 'Resource ID of the person to assign to the service product',
+  })
+  @IsUUID('4')
+  @IsNotEmpty()
+  resourceId!: string;
+}
+
+export class ServiceMemberResponseDto {
+  @ApiProperty()
+  memberId!: string;
+
+  @ApiProperty()
+  productId!: string;
+
+  @ApiProperty()
+  resourceId!: string;
+
+  @ApiPropertyOptional()
+  resourceNumber?: string;
+
+  @ApiPropertyOptional()
+  name?: string;
+
+  @ApiPropertyOptional()
+  resourceType?: string;
+
+  @ApiPropertyOptional()
+  directUnitCost?: string;
+
+  @ApiPropertyOptional()
+  unitPrice?: string;
+
+  @ApiPropertyOptional()
+  baseUom?: string;
+
+  @ApiPropertyOptional({ nullable: true })
+  userId?: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  username?: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  displayName?: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  email?: string | null;
+
+  @ApiPropertyOptional()
+  createdOn?: Date;
+}

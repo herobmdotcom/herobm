@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useState, useMemo, useEffect } from 'react';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import EntityHeader from '@/components/shared/EntityHeader';
@@ -16,8 +16,9 @@ import InheritedSelect from '@/components/shared/InheritedSelect';
 import { Button } from '@/components/shared/Button';
 import { useSettings } from '@/components/SettingsProvider';
 import { useAuth } from '@/components/shared/AuthGate';
-import { PRODUCT_STATE, SystemResource, hasPermission } from '@herobm/shared';
+import { PRODUCT_STATE, SystemResource, hasPermission, isServiceProductType } from '@herobm/shared';
 import { ProductKitComponentsTab } from './ProductKitComponentsTab';
+import { ProductPeopleTab } from './ProductPeopleTab';
 import { useGroup, useInheritance } from '@/hooks/useInheritance';
 import { useProduct } from './useProduct';
 import { ProductSuppliersTab } from './ProductSuppliersTab';
@@ -27,8 +28,12 @@ import { ProductSalesTab } from './ProductSalesTab';
 import { ProductCostSummary } from './ProductCostSummary';
 import ProductImageUploader from '@/components/products/ProductImageUploader';
 import CopyProductModal from '@/components/products/CopyProductModal';
+import { DynamicForm } from '@/components/DynamicForm';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
+
+const VALID_TABS = ['details', 'suppliers', 'inventory', 'people', 'kit', 'purchase-orders', 'sales'] as const;
+type TabType = (typeof VALID_TABS)[number];
 
 const formatMoney = (val: string | number | undefined | null) => {
   if (val === '' || val === null || val === undefined) return null;
@@ -42,12 +47,25 @@ export default function ProductDetailPage() {
   const t = useTranslations();
   const tCommon = useTranslations('common');
   const { id } = useParams();
+  const searchParams = useSearchParams();
   const { permissions } = useAuth();
   const canArchive = hasPermission(permissions, SystemResource.PRODUCTS, 'archive');
   const canWrite = hasPermission(permissions, SystemResource.PRODUCTS, 'write');
 
-  const [activeTab, setActiveTab] = useState<'details' | 'suppliers' | 'inventory' | 'kit' | 'purchase-orders' | 'sales'>('details');
+  const tabParam = searchParams.get('tab');
+  const initialTab: TabType = tabParam && VALID_TABS.includes(tabParam as TabType)
+    ? (tabParam as TabType)
+    : 'details';
+
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [isCopyModalOpen, setIsCopyModalOpen] = useState(false);
+
+  useEffect(() => {
+    const currentTab = searchParams.get('tab');
+    if (currentTab && VALID_TABS.includes(currentTab as TabType)) {
+      setActiveTab(currentTab as TabType);
+    }
+  }, [searchParams]);
 
   const {
     product,
@@ -60,6 +78,7 @@ export default function ProductDetailPage() {
     taxCategories,
     productGroups,
     uomDictionary,
+    productMetadataSchema,
     archiveProduct,
     unarchiveProduct
   } = useProduct(id as string);
@@ -77,6 +96,16 @@ export default function ProductDetailPage() {
     { value: selectedGroup?.salesTaxCategoryId, sourceLabel: `Group ${selectedGroup?.groupCode}` },
     { value: app?.defaultSalesTaxCategoryId, sourceLabel: 'System Default' }
   ]);
+
+  const currentProductType = dto?.productType ?? product?.productType ?? 'inventory';
+  const isService = isServiceProductType(currentProductType);
+
+  const filteredUoms = useMemo(() => {
+    return uomDictionary.filter((u) => {
+      const cat = u.category || 'goods';
+      return isService ? cat === 'service' : cat === 'goods';
+    });
+  }, [uomDictionary, isService]);
 
   if (loading) return <><div className="flex justify-center py-20"><span className="loading loading-spinner loading-lg" /></div></>;
   if (!product || !dto) return <><div className="text-center py-20">{t('common.noMatchingResults')}</div></>;
@@ -105,13 +134,25 @@ export default function ProductDetailPage() {
       isActive: activeTab === 'suppliers',
       onClick: () => setActiveTab('suppliers'),
     },
-    {
-      id: 'tab-inventory',
-      label: tCommon('tabs.inventory'),
-      isSubPage: true,
-      isActive: activeTab === 'inventory',
-      onClick: () => setActiveTab('inventory'),
-    },
+    ...(isService
+      ? [
+          {
+            id: 'tab-people',
+            label: t('products.tabs.people'),
+            isSubPage: true,
+            isActive: activeTab === 'people',
+            onClick: () => setActiveTab('people'),
+          },
+        ]
+      : [
+          {
+            id: 'tab-inventory',
+            label: tCommon('tabs.inventory'),
+            isSubPage: true,
+            isActive: activeTab === 'inventory',
+            onClick: () => setActiveTab('inventory'),
+          },
+        ]),
     {
       id: 'tab-purchase-orders',
       label: t('purchaseOrders.purchases'),
@@ -197,6 +238,15 @@ export default function ProductDetailPage() {
         />
       )}
 
+      {activeTab === 'people' && (
+        <ProductPeopleTab 
+          productId={id as string} 
+          productName={product.name || ''} 
+          productNumber={product.productNumber || ''} 
+          isEditable={isEditable} 
+        />
+      )}
+
       {activeTab === 'inventory' && (
         <ProductInventoryTab 
           productId={id as string} 
@@ -248,7 +298,7 @@ export default function ProductDetailPage() {
                     <input
                       className="input"
                       required
-                      disabled={!isEditable || saving}
+                      disabled={!isEditable}
                       value={dto.productNumber ?? ''}
                       onChange={(e) => updateField('productNumber', e.target.value)}
                       onBlur={(e) => saveField('productNumber', e.target.value)}
@@ -262,7 +312,7 @@ export default function ProductDetailPage() {
                     <input
                       className="input w-full"
                       required
-                      disabled={!isEditable || saving}
+                      disabled={!isEditable}
                       value={dto.name ?? ''}
                       onChange={(e) => updateField('name', e.target.value)}
                       onBlur={(e) => saveField('name', e.target.value)}
@@ -277,7 +327,7 @@ export default function ProductDetailPage() {
                     </label>
                     <input
                       className="input"
-                      disabled={!isEditable || saving}
+                      disabled={!isEditable}
                       value={dto.barcode ?? ''}
                       onChange={(e) => updateField('barcode', e.target.value)}
                       onBlur={(e) => saveField('barcode', e.target.value)}
@@ -290,7 +340,7 @@ export default function ProductDetailPage() {
                     </label>
                     <input
                       className="input"
-                      disabled={!isEditable || saving}
+                      disabled={!isEditable}
                       value={dto.alternateProductNumber ?? ''}
                       onChange={(e) => updateField('alternateProductNumber', e.target.value)}
                       onBlur={(e) => saveField('alternateProductNumber', e.target.value)}
@@ -326,10 +376,26 @@ export default function ProductDetailPage() {
                 </label>
                 <select
                   className="input w-full"
-                  value={product.productType || 'inventory'}
-                  onChange={(e) => {
-                    updateField('productType', e.target.value);
-                    saveField('productType', e.target.value);
+                  value={dto.productType ?? product.productType ?? 'inventory'}
+                  onChange={async (e) => {
+                    const newType = e.target.value;
+                    const isNewService = isServiceProductType(newType);
+                    const currentUomCode = dto.baseUom ?? product.baseUom;
+                    const currentUom = uomDictionary.find((u) => u.uomCode === currentUomCode);
+                    const currentCat = currentUom?.category || 'goods';
+
+                    updateField('productType', newType);
+                    if ((isNewService && currentCat !== 'service') || (!isNewService && currentCat === 'service')) {
+                      const validUom = uomDictionary.find((u) => {
+                        const cat = u.category || 'goods';
+                        return isNewService ? cat === 'service' : cat === 'goods';
+                      });
+                      if (validUom) {
+                        updateField('baseUom', validUom.uomCode);
+                        await saveField('baseUom', validUom.uomCode);
+                      }
+                    }
+                    await saveField('productType', newType);
                   }}
                   disabled={!isEditable}
                 >
@@ -367,7 +433,7 @@ export default function ProductDetailPage() {
                 </label>
                 <select
                   className="input"
-                  disabled={!isEditable || saving}
+                  disabled={!isEditable}
                   value={dto.stateCode ?? ''}
                   onChange={(e) => {
                     updateField('stateCode', e.target.value);
@@ -390,7 +456,7 @@ export default function ProductDetailPage() {
                     updateField('productGroupId', val);
                     saveField('productGroupId', val);
                   }}
-                  disabled={!isEditable || saving}
+                  disabled={!isEditable}
                   placeholder={t('products.placeholders.noProductGroup')}
                 />
               </div>
@@ -412,7 +478,7 @@ export default function ProductDetailPage() {
                   type="number"
                   step="0.01"
                   className="input"
-                  disabled={!isEditable || saving}
+                  disabled={!isEditable}
                   value={dto.listPrice ?? ''}
                   onChange={(e) => updateField('listPrice', e.target.value)}
                   onBlur={(e) => {
@@ -430,7 +496,7 @@ export default function ProductDetailPage() {
                   type="number"
                   step="0.01"
                   className="input"
-                  disabled={!isEditable || saving}
+                  disabled={!isEditable}
                   value={dto.tradePrice ?? ''}
                   onChange={(e) => updateField('tradePrice', e.target.value)}
                   onBlur={(e) => {
@@ -448,7 +514,7 @@ export default function ProductDetailPage() {
                   type="number"
                   step="0.01"
                   className="input"
-                  disabled={!isEditable || saving}
+                  disabled={!isEditable}
                   value={dto.priceLevel3 ?? ''}
                   onChange={(e) => updateField('priceLevel3', e.target.value)}
                   onBlur={(e) => {
@@ -466,7 +532,7 @@ export default function ProductDetailPage() {
                   type="number"
                   step="0.01"
                   className="input"
-                  disabled={!isEditable || saving}
+                  disabled={!isEditable}
                   value={dto.priceLevel4 ?? ''}
                   onChange={(e) => updateField('priceLevel4', e.target.value)}
                   onBlur={(e) => {
@@ -494,7 +560,7 @@ export default function ProductDetailPage() {
                   type="number"
                   step="0.01"
                   className="input"
-                  disabled={!isEditable || saving}
+                  disabled={!isEditable}
                   value={dto.standardCost ?? ''}
                   onChange={(e) => updateField('standardCost', e.target.value)}
                   onBlur={(e) => {
@@ -523,7 +589,7 @@ export default function ProductDetailPage() {
                 </label>
                 <InheritedSelect
                   className="input"
-                  disabled={!isEditable || saving}
+                  disabled={!isEditable}
                   value={dto.purchaseTaxCategoryId ?? ''}
                   onChange={(val) => {
                     updateField('purchaseTaxCategoryId', val);
@@ -549,7 +615,7 @@ export default function ProductDetailPage() {
                 </label>
                 <InheritedSelect
                   className="input"
-                  disabled={!isEditable || saving}
+                  disabled={!isEditable}
                   value={dto.salesTaxCategoryId ?? ''}
                   onChange={(val) => {
                     updateField('salesTaxCategoryId', val);
@@ -575,7 +641,7 @@ export default function ProductDetailPage() {
                 </label>
                 <input
                   className="input w-full"
-                  disabled={!isEditable || saving}
+                  disabled={!isEditable}
                   value={dto.externalTaxCode ?? ''}
                   onChange={(e) => updateField('externalTaxCode', e.target.value)}
                   onBlur={(e) => saveField('externalTaxCode', e.target.value)}
@@ -600,21 +666,21 @@ export default function ProductDetailPage() {
               </label>
               <select
                 className="input"
-                disabled={!isEditable || saving}
-                value={product.baseUom || 'EA'}
+                disabled={!isEditable}
+                value={dto.baseUom ?? product.baseUom ?? 'EA'}
                 onChange={(e) => {
                   updateField('baseUom', e.target.value);
                   saveField('baseUom', e.target.value);
                 }}
               >
-                {uomDictionary.map((u) => (
+                {filteredUoms.map((u) => (
                   <option key={u.uomCode} value={u.uomCode}>
                     {u.uomCode}{u.description ? ` — ${u.description}` : ''}
                   </option>
                 ))}
-                {/* Fallback if current value isn't in dictionary yet */}
-                {product.baseUom && !uomDictionary.find(u => u.uomCode === product.baseUom) && (
-                  <option value={product.baseUom}>{product.baseUom}</option>
+                {/* Fallback if current value isn't in filtered dictionary */}
+                {(dto.baseUom || product.baseUom) && !filteredUoms.find(u => u.uomCode === (dto.baseUom || product.baseUom)) && (
+                  <option value={dto.baseUom || product.baseUom}>{dto.baseUom || product.baseUom}</option>
                 )}
               </select>
             </div>
@@ -624,7 +690,7 @@ export default function ProductDetailPage() {
               </label>
               <select
                 className="input"
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
                 value={product.defaultSalesUomId || ''}
                 onChange={(e) => {
                   const val = e.target.value || null;
@@ -632,7 +698,7 @@ export default function ProductDetailPage() {
                   saveField('defaultSalesUomId', val);
                 }}
               >
-                <option value="">{t('products.baseUomLabel', { uom: product.baseUom || 'EA' })}</option>
+                <option value="">{t('products.baseUomLabel', { uom: dto.baseUom || product.baseUom || 'EA' })}</option>
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon */}
                 {((product as any).productUoms || []).map((u: any) => (
                   <option key={u.productUomId} value={u.productUomId}>
@@ -647,7 +713,7 @@ export default function ProductDetailPage() {
               </label>
               <select
                 className="input"
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
                 value={product.defaultPurchaseUomId || ''}
                 onChange={(e) => {
                   const val = e.target.value || null;
@@ -655,7 +721,7 @@ export default function ProductDetailPage() {
                   saveField('defaultPurchaseUomId', val);
                 }}
               >
-                <option value="">{t('products.baseUomLabel', { uom: product.baseUom || 'EA' })}</option>
+                <option value="">{t('products.baseUomLabel', { uom: dto.baseUom || product.baseUom || 'EA' })}</option>
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon */}
                 {((product as any).productUoms || []).map((u: any) => (
                   <option key={u.productUomId} value={u.productUomId}>
@@ -679,8 +745,8 @@ export default function ProductDetailPage() {
                   key: 'uomCode',
                   title: t('products.columns.uomCode'),
                   type: 'select',
-                  options: uomDictionary
-                    .filter(u => u.uomCode !== (product.baseUom || 'EA'))
+                  options: filteredUoms
+                    .filter(u => u.uomCode !== (dto.baseUom || product.baseUom || 'EA'))
                     .map(u => ({
                       value: u.uomCode,
                       label: u.uomCode + (u.description ? ` — ${u.description}` : '')
@@ -738,7 +804,7 @@ export default function ProductDetailPage() {
                 type="number"
                 step="0.0001"
                 className="input"
-                disabled={!isEditable || saving}
+                disabled={!isEditable}
                 value={dto.weight ?? ''}
                 onChange={(e) => updateField('weight', e.target.value)}
                 onBlur={(e) => saveField('weight', e.target.value)}
@@ -746,6 +812,27 @@ export default function ProductDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Custom Fields Card */}
+        {!!(productMetadataSchema?.properties && typeof productMetadataSchema.properties === 'object' && Object.keys(productMetadataSchema.properties).length > 0) && (
+          <div id="custom-fields-section" className="card">
+            <h3 className="section-heading">
+              <span className="material-symbols-outlined">tune</span>
+              {t('products.cards.customFields')}
+            </h3>
+            <DynamicForm
+              schema={productMetadataSchema}
+              data={(dto.metadata || product.metadata || {}) as Record<string, unknown>}
+              onChange={(newMetadata) => {
+                updateField('metadata', newMetadata);
+              }}
+              onBlur={(newMetadata) => {
+                saveField('metadata', newMetadata);
+              }}
+              readOnly={!isEditable}
+            />
+          </div>
+        )}
 
         {/* Notes Card - full width */}
         <div id="notes-section" className="card">
@@ -756,7 +843,7 @@ export default function ProductDetailPage() {
           </h3>
           <textarea
             className="input w-full h-[110px] pt-3"
-            disabled={!isEditable || saving}
+            disabled={!isEditable}
             value={dto.notes ?? ''}
             onChange={(e) => updateField('notes', e.target.value)}
             onBlur={(e) => saveField('notes', e.target.value)}

@@ -8,6 +8,7 @@ import { toast } from 'react-hot-toast';
 import * as api from '@herobm/sdk';
 import { getErrorMessage } from '@herobm/shared';
 import { Button } from '@/components/shared/Button';
+import { useGlBankAccounts } from '@/hooks/useReferenceData';
 
 interface PaymentRunGeneratorSlideOverProps {
   open: boolean;
@@ -29,7 +30,10 @@ export function PaymentRunGeneratorSlideOver({
   const [generating, setGenerating] = useState(false);
   const [fetching, setFetching] = useState(false);
 
-  const [bankAccounts, setBankAccounts] = useState<{ id: string; name: string }[]>([]);
+  const { bankAccounts: rawBankAccounts } = useGlBankAccounts();
+  const bankAccounts = useMemo(() => {
+    return rawBankAccounts.map((a) => ({ id: a.glAccountId, name: `${a.accountCode} - ${a.name}` }));
+  }, [rawBankAccounts]);
   const [candidates, setCandidates] = useState<api.PaymentRunCandidateResponseDto[]>([]);
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
 
@@ -43,19 +47,6 @@ export function PaymentRunGeneratorSlideOver({
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
-
-  useEffect(() => {
-    if (open) {
-      api.glControllerGetAccounts({ isBankAccount: 'true' })
-        .then((res) => {
-          const banks = res.data || [];
-          setBankAccounts(banks.map((a) => ({ id: a.glAccountId, name: `${a.accountCode} - ${a.name}` })));
-        })
-        .catch((err: unknown) => {
-          toast.error('Failed to load bank accounts: ' + getErrorMessage(err));
-        });
-    }
-  }, [open]);
 
   useEffect(() => {
     if (!open || !targetDate) return;

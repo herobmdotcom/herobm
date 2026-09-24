@@ -1,4 +1,4 @@
-import { spawnSync, execSync } from 'node:child_process';
+import { spawnSync, spawn as nodeSpawn, execSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { acquireLock } from '../infra/test-utils/mutex-lock.mjs';
@@ -47,15 +47,77 @@ function run(cmd, extraEnv = {}) {
     }
     
     try {
-        execSync(cmd, { 
+        const result = spawnSync(cmd, { 
             stdio: 'inherit', 
             env: { ...process.env, ...extraEnv },
-            cwd: rootDir
+            cwd: rootDir,
+            shell: true
         });
-        return true;
+        if (result.error) {
+            return false;
+        }
+        return result.status === 0;
     } catch (e) {
         return false;
     }
+}
+
+/**
+ * Runs a command using async spawn instead of spawnSync.
+ * 
+ * spawnSync with stdio:'inherit' hangs because Chrome helper/crashpad processes
+ * (spawned by system Chrome via channel:'chrome') inherit the parent's fds and
+ * keep them open after Playwright exits, so spawnSync never returns.
+ * 
+ * Even async spawn with shell:true hangs because /bin/sh waits for all its
+ * children (including Chrome helpers) before exiting itself.
+ * 
+ * Fix: spawn the executable directly (no shell wrapper) with piped stdio.
+ * Without /bin/sh, when npx exits, it's done — Chrome helper orphans are
+ * reparented to PID 1 and don't block us. We pipe stdout/stderr and forward
+ * them so test output still appears in the terminal.
+ */
+function runAsync(cmd, extraEnv = {}) {
+    console.log(`\x1b[36m> ${cmd}\x1b[0m`);
+
+    const isWindows = process.platform === 'win32';
+
+    return new Promise((resolve) => {
+        let child;
+        if (isWindows) {
+            child = nodeSpawn(cmd, {
+                stdio: ['inherit', 'pipe', 'pipe'],
+                env: { ...process.env, ...extraEnv },
+                cwd: rootDir,
+                shell: true,
+            });
+        } else {
+            // Split command into executable and args (no shell needed on POSIX)
+            const parts = cmd.split(/\s+/);
+            const executable = parts[0];
+            const args = parts.slice(1);
+
+            child = nodeSpawn(executable, args, {
+                stdio: ['inherit', 'pipe', 'pipe'],
+                env: { ...process.env, ...extraEnv },
+                cwd: rootDir,
+                shell: false,
+            });
+        }
+
+        // Forward child output to parent in real-time
+        if (child.stdout) child.stdout.pipe(process.stdout);
+        if (child.stderr) child.stderr.pipe(process.stderr);
+
+        child.on('close', (code) => {
+            resolve(code === 0);
+        });
+
+        child.on('error', (err) => {
+            console.error(`\x1b[31mFailed to spawn: ${err.message}\x1b[0m`);
+            resolve(false);
+        });
+    });
 }
 
 if (!reuseContainers) {
@@ -168,9 +230,9 @@ if (!uiOnly) {
 if (!skipUI) {
     console.log('\x1b[32mRunning UI Playwright tests...\x1b[0m');
     const e2eCmd = e2eFilter 
-        ? `npm run test:e2e -w apps/ops-portal -- ${e2eFilter}`
-        : 'npm run test:e2e -w apps/ops-portal';
-    if (!run(e2eCmd, { PORTAL_URL: "http://localhost:4305", ...(skipCrawl ? { SKIP_CRAWL: "1" } : {}) })) {
+        ? `npx playwright test --config=apps/ops-portal/playwright.config.ts ${e2eFilter}`
+        : 'npx playwright test --config=apps/ops-portal/playwright.config.ts';
+    if (!(await runAsync(e2eCmd, { PORTAL_URL: "http://localhost:4305", ...(skipCrawl ? { SKIP_CRAWL: "1" } : {}) }))) {
         failed = true;
     }
 }
@@ -180,11 +242,11 @@ if (failed) {
     releaseLock();
     process.exit(1);
 } else {
-    if (noTeardown) {
+    if (noTeardown || reuseContainers) {
         console.log('\x1b[33m[KEEP ALIVE] Keeping test containers alive for rapid iteration (use REUSE=1 on next run).\x1b[0m');
     } else {
         console.log('\x1b[33mTearing down test containers to preserve dev-local isolation...\x1b[0m');
-        run('podman compose -f docker-compose.test.yml -f docker-compose.ui.yml down -v');
+        run('podman compose -f docker-compose.test.yml -f docker-compose.ui.yml down -v -t 2');
     }
     console.log('\x1b[32mHeavy tests PASSED!\x1b[0m');
     releaseLock();

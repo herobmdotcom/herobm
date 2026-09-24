@@ -80,13 +80,27 @@ function handleRclone() {
     if (backupRcloneDest) {
         console.log(`\x1b[36mUploading to external storage via rclone (${backupRcloneDest})...\x1b[0m`);
         const rclone = spawn('rclone', ['copy', backupFile, backupRcloneDest], { shell: process.platform === 'win32' });
+        
+        let stderrData = '';
+        let stdoutData = '';
+        if (rclone.stdout) rclone.stdout.on('data', d => { stdoutData += d.toString(); });
+        if (rclone.stderr) rclone.stderr.on('data', d => { stderrData += d.toString(); });
+
         rclone.on('close', c => {
-            if (c === 0) console.log(`\x1b[32mUpload to external storage complete.\x1b[0m`);
-            else console.log(`\x1b[31mUpload failed.\x1b[0m`);
+            if (c === 0) {
+                console.log(`\x1b[32mUpload to external storage complete.\x1b[0m`);
+            } else {
+                console.error(`\x1b[31mUpload failed (Exit code: ${c}).\x1b[0m`);
+                if (stderrData.trim()) {
+                    console.error(`\x1b[31m${stderrData.trim()}\x1b[0m`);
+                } else if (stdoutData.trim()) {
+                    console.error(`\x1b[31m${stdoutData.trim()}\x1b[0m`);
+                }
+            }
             cleanup();
         });
-        rclone.on('error', () => {
-            console.log(`\x1b[33mWARNING: rclone is not installed or failed to run. Skipping external upload.\x1b[0m`);
+        rclone.on('error', (err) => {
+            console.error(`\x1b[33mWARNING: rclone failed to run: ${err.message}. Skipping external upload.\x1b[0m`);
             cleanup();
         });
     } else {

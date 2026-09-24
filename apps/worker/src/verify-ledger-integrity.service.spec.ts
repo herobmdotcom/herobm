@@ -472,5 +472,157 @@ describe('verify-ledger-integrity.service', () => {
       'Failed to execute Ledger Integrity verification job'
     );
   });
+
+  it('should detect trial_balance_unbalanced anomaly when global debits and credits do not match', async () => {
+    const invoices: any[] = [];
+    const journals: any[] = [];
+    const lines: any[] = [];
+
+    let selectCallCount = 0;
+    mockDb = {
+      select: vi.fn().mockReturnValue({
+        from: vi.fn().mockImplementation(() => {
+          selectCallCount++;
+          if (selectCallCount === 1) {
+            return {
+              orderBy: vi.fn().mockResolvedValue(invoices),
+            };
+          } else if (selectCallCount === 2) {
+            return Promise.resolve(journals);
+          } else if (selectCallCount === 3) {
+            return Promise.resolve(lines);
+          } else {
+            return {
+              limit: vi.fn().mockResolvedValue([]),
+              where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) }),
+            };
+          }
+        }),
+      }),
+      insert: vi.fn().mockReturnValue({
+        values: vi.fn().mockResolvedValue(true),
+      }),
+      execute: vi.fn().mockImplementation((query: any) => {
+        const text = JSON.stringify(query);
+        // Mock global debit = 1000, credit = 850 -> drift = 150
+        if (text.includes('SUM(debit)')) {
+          return Promise.resolve([{ sum: 1000 }]);
+        }
+        if (text.includes('SUM(credit)')) {
+          return Promise.resolve([{ sum: 850 }]);
+        }
+        return Promise.resolve([{ val: 0 }]);
+      }),
+    };
+
+    const res = await verifyLedgerIntegrity(mockJob, mockDb);
+
+    expect(res.anomaliesCount).toBe(1);
+    expect(res.anomalies[0].type).toBe('trial_balance_unbalanced');
+    expect(res.anomalies[0].details.drift).toBe(150);
+    expect(res.anomalies[0].details.totalDebit).toBe(1000);
+    expect(res.anomalies[0].details.totalCredit).toBe(850);
+    expect(mockDb.insert).toHaveBeenCalledTimes(3);
+  });
+
+  it('should detect subledger_drift anomalies across AR, AP, GRNI, and Perpetual Inventory', async () => {
+    const invoices: any[] = [];
+    const journals: any[] = [];
+    const lines: any[] = [];
+
+    const mockSettings = {
+      defaultArAccountId: 'ar-uuid',
+      defaultApAccountId: 'ap-uuid',
+      defaultGrniAccountId: 'grni-uuid',
+      defaultInventoryAccountId: 'inv-uuid',
+    };
+
+    let selectCallCount = 0;
+    mockDb = {
+      select: vi.fn().mockReturnValue({
+        from: vi.fn().mockImplementation(() => {
+          selectCallCount++;
+          if (selectCallCount === 1) {
+            return {
+              orderBy: vi.fn().mockResolvedValue(invoices),
+            };
+          } else if (selectCallCount === 2) {
+            return Promise.resolve(journals);
+          } else if (selectCallCount === 3) {
+            return Promise.resolve(lines);
+          } else if (selectCallCount === 4) {
+            // glSettings query
+            return {
+              limit: vi.fn().mockResolvedValue([mockSettings]),
+            };
+          } else {
+            // glAccounts queries
+            return {
+              where: vi.fn().mockReturnValue({
+                limit: vi.fn().mockResolvedValue([{ accountCode: 'TEST', name: 'Test Account' }]),
+              }),
+            };
+          }
+        }),
+      }),
+      insert: vi.fn().mockReturnValue({
+        values: vi.fn().mockResolvedValue(true),
+      }),
+      execute: vi.fn().mockImplementation((query: any) => {
+        const text = JSON.stringify(query);
+        // 1. TB zero sum
+        if (text.includes('SUM(debit)') || text.includes('SUM(credit)')) {
+          return Promise.resolve([{ sum: 5000 }]);
+        }
+        // 2. AR Subledger = 1000, GL = 800 -> drift = 200
+        if (text.includes('sales_invoices')) {
+          return Promise.resolve([{ subledger: 1000 }]);
+        }
+        if (text.includes('jl.debit - jl.credit') && text.includes('ar-uuid')) {
+          return Promise.resolve([{ gl: 800 }]);
+        }
+        // 3. AP Subledger = 500, GL = 500 -> matched (drift = 0)
+        if (text.includes('purchase_invoices')) {
+          return Promise.resolve([{ subledger: 500 }]);
+        }
+        if (text.includes('jl.credit - jl.debit') && text.includes('ap-uuid')) {
+          return Promise.resolve([{ gl: 500 }]);
+        }
+        // 4. GRNI Subledger = 300, GL = 250 -> drift = 50
+        if (text.includes('goods_received_lines')) {
+          return Promise.resolve([{ subledger: 300 }]);
+        }
+        if (text.includes('jl.credit - jl.debit') && text.includes('grni-uuid')) {
+          return Promise.resolve([{ gl: 250 }]);
+        }
+        // 5. Perpetual Inventory Subledger = 4000, GL = 4000 -> matched
+        if (text.includes('bin_contents')) {
+          return Promise.resolve([{ subledger: 4000 }]);
+        }
+        if (text.includes('jl.debit - jl.credit') && text.includes('inv-uuid')) {
+          return Promise.resolve([{ gl: 4000 }]);
+        }
+        return Promise.resolve([{ sum: 0 }]);
+      }),
+    };
+
+    const res = await verifyLedgerIntegrity(mockJob, mockDb);
+
+    expect(res.anomaliesCount).toBe(2);
+    const subledgersWithDrift = res.anomalies.map((a) => a.details.subledger);
+    expect(subledgersWithDrift).toContain('accounts_receivable');
+    expect(subledgersWithDrift).toContain('goods_received_not_invoiced');
+
+    const arAnomaly = res.anomalies.find((a) => a.details.subledger === 'accounts_receivable');
+    expect(arAnomaly?.details.drift).toBe(200);
+    expect(arAnomaly?.details.subledgerBalance).toBe(1000);
+    expect(arAnomaly?.details.glBalance).toBe(800);
+
+    const grniAnomaly = res.anomalies.find((a) => a.details.subledger === 'goods_received_not_invoiced');
+    expect(grniAnomaly?.details.drift).toBe(50);
+    expect(grniAnomaly?.details.subledgerBalance).toBe(300);
+    expect(grniAnomaly?.details.glBalance).toBe(250);
+  });
 });
+
 

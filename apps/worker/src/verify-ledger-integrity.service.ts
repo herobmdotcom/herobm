@@ -4,6 +4,8 @@ import {
   salesInvoices,
   glJournalEntries,
   glJournalLines,
+  glSettings,
+  glAccounts,
   systemEvents,
   emailOutbox,
   outbox,
@@ -19,7 +21,9 @@ export interface LedgerAnomaly {
     | 'missing_gl_journal'
     | 'missing_cancellation_reversal'
     | 'unbalanced_journal_entry'
-    | 'hash_chain_violation';
+    | 'hash_chain_violation'
+    | 'subledger_drift'
+    | 'trial_balance_unbalanced';
   invoiceNumber?: string;
   invoiceId?: string;
   journalEntryId?: string;
@@ -330,6 +334,226 @@ export async function verifyLedgerIntegrity(
           details: {
             brokenSequenceNumber: chainResult.brokenSequenceNumber,
             error: chainResult.error,
+          },
+        });
+      }
+    }
+
+    // E. Subledger-to-GL Continuous Reconciliation & Global Trial Balance Zero-Sum
+    if (typeof db.execute === 'function') {
+      const execScalar = async (query: import('drizzle-orm').SQL): Promise<number> => {
+        try {
+          const res = await db.execute(query);
+          const row = Array.isArray(res)
+            ? (res[0] as Record<string, string | number | null> | undefined)
+            : (res as { rows: Record<string, string | number | null>[] })?.rows?.[0];
+          if (!row) return 0;
+          const firstVal = Object.values(row)[0];
+          if (typeof firstVal === 'number') return firstVal;
+          if (typeof firstVal === 'string') return parseFloat(firstVal) || 0;
+          return 0;
+        } catch {
+          return 0;
+        }
+      };
+
+      // 1. Global Trial Balance Zero-Sum: sum(debit) - sum(credit) = 0.00 across all journal lines
+      const tbDebit = await execScalar(
+        sql`SELECT COALESCE(SUM(debit), 0)::numeric FROM herobm_core.gl_journal_lines`,
+      );
+      const tbCredit = await execScalar(
+        sql`SELECT COALESCE(SUM(credit), 0)::numeric FROM herobm_core.gl_journal_lines`,
+      );
+      const tbDrift = Math.round((tbDebit - tbCredit) * 100) / 100;
+      if (Math.abs(tbDrift) > 0.005) {
+        anomalies.push({
+          type: 'trial_balance_unbalanced',
+          details: {
+            totalDebit: tbDebit,
+            totalCredit: tbCredit,
+            drift: tbDrift,
+          },
+        });
+      }
+
+      // 2. Fetch Control Account Configuration
+      let settings: any = null;
+      try {
+        const rows = await db
+          .select({
+            defaultArAccountId: glSettings.defaultArAccountId,
+            defaultApAccountId: glSettings.defaultApAccountId,
+            defaultGrniAccountId: glSettings.defaultGrniAccountId,
+            defaultInventoryAccountId: glSettings.defaultInventoryAccountId,
+          })
+          .from(glSettings)
+          .limit(1);
+        settings = rows[0];
+      } catch {
+        // Fallback for isolated environments or unmigrated tests
+      }
+
+      const arId = settings?.defaultArAccountId;
+      const apId = settings?.defaultApAccountId;
+      const grniId = settings?.defaultGrniAccountId;
+      const invId = settings?.defaultInventoryAccountId;
+
+      let arAcct: any = null;
+      let apAcct: any = null;
+      let grniAcct: any = null;
+      let invAcct: any = null;
+
+      try {
+        if (arId) {
+          const rows = await db
+            .select({ accountCode: glAccounts.accountCode, name: glAccounts.name })
+            .from(glAccounts)
+            .where(eq(glAccounts.glAccountId, arId))
+            .limit(1);
+          arAcct = rows[0];
+        }
+        if (apId) {
+          const rows = await db
+            .select({ accountCode: glAccounts.accountCode, name: glAccounts.name })
+            .from(glAccounts)
+            .where(eq(glAccounts.glAccountId, apId))
+            .limit(1);
+          apAcct = rows[0];
+        }
+        if (grniId) {
+          const rows = await db
+            .select({ accountCode: glAccounts.accountCode, name: glAccounts.name })
+            .from(glAccounts)
+            .where(eq(glAccounts.glAccountId, grniId))
+            .limit(1);
+          grniAcct = rows[0];
+        }
+        if (invId) {
+          const rows = await db
+            .select({ accountCode: glAccounts.accountCode, name: glAccounts.name })
+            .from(glAccounts)
+            .where(eq(glAccounts.glAccountId, invId))
+            .limit(1);
+          invAcct = rows[0];
+        }
+      } catch {
+        // Fallback if glAccounts query fails
+      }
+
+      // 3. Accounts Receivable (AR) Parity
+      const arSubledger = await execScalar(sql`
+        SELECT ((SELECT COALESCE(SUM(COALESCE(base_outstanding_amount, outstanding_amount)), 0)::numeric FROM herobm_core.sales_invoices WHERE state_code NOT IN ('draft', 'cancelled'))
+              - (SELECT COALESCE(SUM(COALESCE(base_outstanding_amount, outstanding_amount)), 0)::numeric FROM herobm_core.sales_credit_notes WHERE state_code NOT IN ('draft', 'cancelled'))
+              - (SELECT COALESCE(SUM(COALESCE(base_unallocated_amount, unallocated_amount)), 0)::numeric FROM herobm_core.payment_entries WHERE payment_type = 'customer_receipt' AND state_code NOT IN ('draft', 'cancelled')))::numeric
+      `);
+      const arGl = arId
+        ? await execScalar(sql`
+            SELECT COALESCE(SUM(jl.debit - jl.credit), 0)::numeric
+            FROM herobm_core.gl_journal_lines jl
+            WHERE jl.gl_account_id = ${arId}::uuid
+          `)
+        : 0;
+      const arDrift = Math.round((arSubledger - arGl) * 100) / 100;
+      if (Math.abs(arDrift) > 0.005) {
+        anomalies.push({
+          type: 'subledger_drift',
+          details: {
+            subledger: 'accounts_receivable',
+            subledgerName: 'Accounts Receivable (AR)',
+            controlAccountCode: arAcct?.accountCode || '1200',
+            controlAccountName: arAcct?.name || 'Accounts Receivable',
+            subledgerBalance: arSubledger,
+            glBalance: arGl,
+            drift: arDrift,
+          },
+        });
+      }
+
+      // 4. Accounts Payable (AP) Parity
+      const apSubledger = await execScalar(sql`
+        SELECT ((SELECT COALESCE(SUM(COALESCE(base_outstanding_amount, outstanding_amount)), 0)::numeric FROM herobm_core.purchase_invoices WHERE state_code NOT IN ('draft', 'cancelled'))
+              - (SELECT COALESCE(SUM(COALESCE(base_outstanding_amount, outstanding_amount)), 0)::numeric FROM herobm_core.purchase_debit_notes WHERE state_code NOT IN ('draft', 'cancelled'))
+              - (SELECT COALESCE(SUM(COALESCE(base_unallocated_amount, unallocated_amount)), 0)::numeric FROM herobm_core.payment_entries WHERE payment_type = 'supplier_payment' AND state_code NOT IN ('draft', 'cancelled')))::numeric
+      `);
+      const apGl = apId
+        ? await execScalar(sql`
+            SELECT COALESCE(SUM(jl.credit - jl.debit), 0)::numeric
+            FROM herobm_core.gl_journal_lines jl
+            WHERE jl.gl_account_id = ${apId}::uuid
+          `)
+        : 0;
+      const apDrift = Math.round((apSubledger - apGl) * 100) / 100;
+      if (Math.abs(apDrift) > 0.005) {
+        anomalies.push({
+          type: 'subledger_drift',
+          details: {
+            subledger: 'accounts_payable',
+            subledgerName: 'Accounts Payable (AP)',
+            controlAccountCode: apAcct?.accountCode || '2000',
+            controlAccountName: apAcct?.name || 'Accounts Payable',
+            subledgerBalance: apSubledger,
+            glBalance: apGl,
+            drift: apDrift,
+          },
+        });
+      }
+
+      // 5. Goods Received Not Invoiced (GRNI) Parity
+      const grniSubledger = await execScalar(sql`
+        SELECT COALESCE(SUM(CASE WHEN gr.state_code = 'received' THEN grl.quantity_received * COALESCE(grl.unit_cost, p.standard_cost, p.weighted_average_cost, 0) ELSE 0 END), 0)::numeric
+        FROM herobm_core.goods_received_lines grl
+        JOIN herobm_core.goods_received gr ON gr.goods_received_id = grl.goods_received_id
+        JOIN herobm_core.products p ON p.product_id = grl.product_id
+        WHERE gr.state_code = 'received'
+      `);
+      const grniGl = grniId
+        ? await execScalar(sql`
+            SELECT COALESCE(SUM(jl.credit - jl.debit), 0)::numeric
+            FROM herobm_core.gl_journal_lines jl
+            WHERE jl.gl_account_id = ${grniId}::uuid
+          `)
+        : 0;
+      const grniDrift = Math.round((grniSubledger - grniGl) * 100) / 100;
+      if (Math.abs(grniDrift) > 0.005) {
+        anomalies.push({
+          type: 'subledger_drift',
+          details: {
+            subledger: 'goods_received_not_invoiced',
+            subledgerName: 'Goods Received Not Invoiced (GRNI)',
+            controlAccountCode: grniAcct?.accountCode || '2150',
+            controlAccountName: grniAcct?.name || 'GRNI Clearing',
+            subledgerBalance: grniSubledger,
+            glBalance: grniGl,
+            drift: grniDrift,
+          },
+        });
+      }
+
+      // 6. Perpetual Inventory Parity
+      const invSubledger = await execScalar(sql`
+        SELECT COALESCE(SUM(bc.actual_quantity * COALESCE(p.standard_cost, p.weighted_average_cost, 0)), 0)::numeric
+        FROM herobm_core.bin_contents bc
+        JOIN herobm_core.products p ON p.product_id = bc.product_id
+      `);
+      const invGl = invId
+        ? await execScalar(sql`
+            SELECT COALESCE(SUM(jl.debit - jl.credit), 0)::numeric
+            FROM herobm_core.gl_journal_lines jl
+            WHERE jl.gl_account_id = ${invId}::uuid
+          `)
+        : 0;
+      const invDrift = Math.round((invSubledger - invGl) * 100) / 100;
+      if (Math.abs(invDrift) > 0.005) {
+        anomalies.push({
+          type: 'subledger_drift',
+          details: {
+            subledger: 'perpetual_inventory',
+            subledgerName: 'Perpetual Inventory Valuation',
+            controlAccountCode: invAcct?.accountCode || '1300',
+            controlAccountName: invAcct?.name || 'Inventory on Hand',
+            subledgerBalance: invSubledger,
+            glBalance: invGl,
+            drift: invDrift,
           },
         });
       }

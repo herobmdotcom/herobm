@@ -23,6 +23,7 @@ import {
   paymentEntries as corePayments,
   salesOrderLineItems as coreSalesOrderLines,
   organizations as coreOrganizations,
+  projects as coreProjects,
 } from '@herobm/db-schema';
 
 export type SearchEntityType =
@@ -333,14 +334,24 @@ export class DashboardService {
           .select({
             id: coreSalesInvoices.invoiceId,
             label: coreSalesInvoices.invoiceNumber,
-            subtitle: sql<string>`COALESCE(${coreSalesInvoices.customerNameDisplay}, ${coreSalesInvoices.customerOrderNumber}, '')`,
+            subtitle: sql<string>`COALESCE(${coreSalesInvoices.customerNameDisplay}, ${coreProjects.projectNumber}, ${coreSalesOrders.orderNumber}, ${coreSalesInvoices.customerOrderNumber}, '')`,
           })
           .from(coreSalesInvoices)
+          .leftJoin(
+            coreSalesOrders,
+            eq(coreSalesInvoices.salesOrderId, coreSalesOrders.salesOrderId),
+          )
+          .leftJoin(
+            coreProjects,
+            eq(coreSalesInvoices.projectId, coreProjects.projectId),
+          )
           .where(
             or(
               ilike(coreSalesInvoices.invoiceNumber, term),
               ilike(coreSalesInvoices.customerOrderNumber, term),
               ilike(coreSalesInvoices.customerNameDisplay, term),
+              ilike(coreSalesOrders.orderNumber, term),
+              ilike(coreProjects.projectNumber, term),
             ),
           )
           .limit(5)
@@ -567,7 +578,7 @@ export class DashboardService {
     }
 
     // 17. Opportunities
-    if (selectedTypes.has('opportunity') || selectedTypes.has('project')) {
+    if (selectedTypes.has('opportunity')) {
       searchQueries.push(
         this.db
           .select({
@@ -585,6 +596,35 @@ export class DashboardService {
               label: r.label,
               subtitle: r.subtitle,
               href: `/crm/opportunities/${r.id}`,
+            })),
+          ),
+      );
+    }
+
+    // 18. Projects
+    if (selectedTypes.has('project')) {
+      searchQueries.push(
+        this.db
+          .select({
+            id: coreProjects.projectId,
+            label: coreProjects.projectNumber,
+            subtitle: coreProjects.name,
+          })
+          .from(coreProjects)
+          .where(
+            or(
+              ilike(coreProjects.projectNumber, term),
+              ilike(coreProjects.name, term),
+            ),
+          )
+          .limit(5)
+          .then((rows) =>
+            rows.map((r) => ({
+              id: r.id,
+              type: 'project' as const,
+              label: r.label,
+              subtitle: r.subtitle ?? '',
+              href: `/projects/${r.id}`,
             })),
           ),
       );

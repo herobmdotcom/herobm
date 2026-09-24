@@ -102,6 +102,37 @@ describe('OpportunitiesService', () => {
       });
       expect(dbRecord).toBeDefined();
     });
+
+    it('should create an opportunity with organization link when organizationId is provided', async () => {
+      const [org] = await pg.db
+        .insert(organizations)
+        .values({
+          name: 'Acme Corp',
+          stateCode: ORGANIZATION_STATE.ACTIVE,
+          isTaxRegistered: false,
+        })
+        .returning();
+
+      const result = await service.createOpportunity(
+        {
+          name: 'Deal with Org',
+          status: 'qualification',
+          type: 'commercial',
+          organizationId: org.organizationId,
+        },
+        mockUserId,
+      );
+
+      expect(result.opportunityId).toBeDefined();
+      expect(result.organizationId).toBe(org.organizationId);
+
+      const dbOrgLink = await pg.db.query.opportunityOrganizations.findFirst({
+        where: eq(opportunityOrganizations.opportunityId, result.opportunityId),
+      });
+      expect(dbOrgLink).toBeDefined();
+      expect(dbOrgLink?.organizationId).toBe(org.organizationId);
+      expect(dbOrgLink?.roles).toContain('Customer');
+    });
   });
 
   describe('updateOpportunity', () => {
@@ -131,6 +162,75 @@ describe('OpportunitiesService', () => {
       expect(result.status).toBe('proposal');
       expect(result.probability).toBe(80);
       expect(emitEvent).toHaveBeenCalled();
+    });
+
+    it('should update and remove primary organization link via organizationId', async () => {
+      const [opp] = await pg.db
+        .insert(opportunities)
+        .values({
+          stateCode: OPPORTUNITY_STATE.ACTIVE,
+          name: 'Org Update Deal',
+          type: 'commercial',
+          status: 'prospect',
+        })
+        .returning();
+
+      const [org1] = await pg.db
+        .insert(organizations)
+        .values({
+          name: 'First Org',
+          stateCode: ORGANIZATION_STATE.ACTIVE,
+          isTaxRegistered: false,
+        })
+        .returning();
+
+      const [org2] = await pg.db
+        .insert(organizations)
+        .values({
+          name: 'Second Org',
+          stateCode: ORGANIZATION_STATE.ACTIVE,
+          isTaxRegistered: false,
+        })
+        .returning();
+
+      // 1. Assign first organization
+      const updated1 = await service.updateOpportunity(
+        opp.opportunityId,
+        { organizationId: org1.organizationId },
+        mockUserId,
+      );
+      expect(updated1.organizationId).toBe(org1.organizationId);
+
+      let orgLink = await pg.db.query.opportunityOrganizations.findFirst({
+        where: eq(opportunityOrganizations.opportunityId, opp.opportunityId),
+      });
+      expect(orgLink?.organizationId).toBe(org1.organizationId);
+
+      // 2. Switch to second organization
+      const updated2 = await service.updateOpportunity(
+        opp.opportunityId,
+        { organizationId: org2.organizationId },
+        mockUserId,
+      );
+      expect(updated2.organizationId).toBe(org2.organizationId);
+
+      orgLink = await pg.db.query.opportunityOrganizations.findFirst({
+        where: eq(opportunityOrganizations.opportunityId, opp.opportunityId),
+      });
+      expect(orgLink?.organizationId).toBe(org2.organizationId);
+
+      // 3. Remove organization (pass empty string or null)
+      const updated3 = await service.updateOpportunity(
+        opp.opportunityId,
+        { organizationId: '' },
+        mockUserId,
+      );
+      expect(updated3.organizationId).toBeNull();
+
+      orgLink = await pg.db.query.opportunityOrganizations.findFirst({
+        where: eq(opportunityOrganizations.opportunityId, opp.opportunityId),
+      });
+      expect(orgLink).toBeUndefined();
     });
 
     it('should throw NotFoundException if opportunity does not exist', async () => {
@@ -191,6 +291,18 @@ describe('OpportunitiesService', () => {
         })
         .returning();
 
+      const [cust] = await pg.db
+        .insert(customers)
+        .values({
+          organizationId: org.organizationId,
+          customerNumber: 'CUST-002',
+          currencyCode: 'USD',
+          stateCode: CUSTOMER_STATE.ACTIVE,
+          source: 'app',
+          createdBy: 'system',
+        })
+        .returning();
+
       await service.addOpportunityOrganization(
         opp.opportunityId,
         { organizationId: org.organizationId, roles: ['client'] },
@@ -207,6 +319,8 @@ describe('OpportunitiesService', () => {
       expect(fetched.name).toBe('Full Opp');
       expect(fetched.opportunityOrganizations?.length).toBe(1);
       expect(fetched.notes?.length).toBe(1);
+      expect(fetched.organizationId).toBe(org.organizationId);
+      expect(fetched.customerId).toBe(cust.customerId);
     });
   });
 
@@ -232,9 +346,38 @@ describe('OpportunitiesService', () => {
         })
         .returning();
 
+      const [org] = await pg.db
+        .insert(organizations)
+        .values({
+          name: 'Won Corp',
+          stateCode: ORGANIZATION_STATE.ACTIVE,
+          isTaxRegistered: false,
+        })
+        .returning();
+
+      const [cust] = await pg.db
+        .insert(customers)
+        .values({
+          organizationId: org.organizationId,
+          customerNumber: 'CUST-WON',
+          currencyCode: 'USD',
+          stateCode: CUSTOMER_STATE.ACTIVE,
+          source: 'app',
+          createdBy: 'system',
+        })
+        .returning();
+
+      await service.addOpportunityOrganization(
+        opp2.opportunityId,
+        { organizationId: org.organizationId, roles: ['client'] },
+        mockUserId,
+      );
+
       const res = await service.getOpportunities({ status: 'won' });
       expect(res.data.length).toBe(1);
       expect(res.data[0].name).toBe('Opp Stage 2');
+      expect(res.data[0].organizationId).toBe(org.organizationId);
+      expect(res.data[0].customerId).toBe(cust.customerId);
     });
   });
 

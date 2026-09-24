@@ -7,6 +7,7 @@ import {
   IsUUID,
   IsArray,
   IsIn,
+  IsObject,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiProperty as SwaggerApiProperty } from '@nestjs/swagger';
@@ -99,6 +100,15 @@ export class CreateOrganizationDto {
   @IsOptional()
   @IsUUID()
   ownerId?: string;
+
+  @SwaggerApiProperty({
+    required: false,
+    type: Object,
+    description: 'Custom metadata',
+  })
+  @IsOptional()
+  @IsObject()
+  metadata?: Record<string, unknown>;
 }
 
 export class UpdateOrganizationDto {
@@ -195,6 +205,15 @@ export class UpdateOrganizationDto {
   )
   @IsUUID()
   ownerId?: string | null;
+
+  @SwaggerApiProperty({
+    required: false,
+    type: Object,
+    description: 'Custom metadata',
+  })
+  @IsOptional()
+  @IsObject()
+  metadata?: Record<string, unknown>;
 }
 
 export class CreateOrganizationNoteDto {
@@ -304,6 +323,10 @@ export class OrganizationResponseDto {
 
   @IsString()
   modifiedOn!: Date;
+
+  @SwaggerApiProperty({ required: false, type: Object })
+  @IsOptional()
+  metadata?: Record<string, unknown> | null;
 
   @IsOptional()
   @IsArray()
@@ -426,6 +449,53 @@ export class OrganizationQueryDto extends PaginationQuery {
   @IsOptional()
   @IsString()
   ownerId?: string;
+}
+
+export class CrmSettingsResponseDto {
+  @SwaggerApiProperty({ required: false })
+  settingsId?: string;
+
+  @SwaggerApiProperty({ required: false, type: Object })
+  organizationMetadataSchema?: Record<string, unknown> | null;
+
+  @SwaggerApiProperty({ required: false, type: Object })
+  opportunityMetadataSchema?: Record<string, unknown> | null;
+
+  @SwaggerApiProperty({ required: false, type: Object })
+  contactMetadataSchema?: Record<string, unknown> | null;
+
+  @SwaggerApiProperty({ required: false, type: Object })
+  customerMetadataSchema?: Record<string, unknown> | null;
+
+  @SwaggerApiProperty({ required: false, type: Object })
+  supplierMetadataSchema?: Record<string, unknown> | null;
+}
+
+export class UpdateCrmSettingsDto {
+  @SwaggerApiProperty({ required: false, type: Object })
+  @IsOptional()
+  @IsObject()
+  organizationMetadataSchema?: Record<string, unknown> | null;
+
+  @SwaggerApiProperty({ required: false, type: Object })
+  @IsOptional()
+  @IsObject()
+  opportunityMetadataSchema?: Record<string, unknown> | null;
+
+  @SwaggerApiProperty({ required: false, type: Object })
+  @IsOptional()
+  @IsObject()
+  contactMetadataSchema?: Record<string, unknown> | null;
+
+  @SwaggerApiProperty({ required: false, type: Object })
+  @IsOptional()
+  @IsObject()
+  customerMetadataSchema?: Record<string, unknown> | null;
+
+  @SwaggerApiProperty({ required: false, type: Object })
+  @IsOptional()
+  @IsObject()
+  supplierMetadataSchema?: Record<string, unknown> | null;
 }
 
 // Aliases for transition

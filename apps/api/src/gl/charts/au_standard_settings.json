@@ -9,6 +9,8 @@
     "tax_account_code": "2200",
     "expense_account_code": "6900",
     "inventory_account_code": "1300",
+    "retained_earnings_account_code": "3200",
+    "suspense_account_code": "3300",
     "grni_account_code": "2150",
     "shrinkage_account_code": "5300",
     "ppv_account_code": "5400",

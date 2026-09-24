@@ -56,7 +56,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 
 ---
 
-## Core Endpoint Catalog (498 Endpoints Across 26 Domains)
+## Core Endpoint Catalog (568 Endpoints Across 28 Domains)
 
 ### CRM Activities
 
@@ -142,6 +142,8 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `GET` | `/gl/journal-entries/{id}` | Get Journal Entry |
 | `GET` | `/gl/journal-entries/source/{type}/{id}` | Get Source Entry |
 | `GET` | `/gl/trial-balance` | Get Trial Balance |
+| `GET` | `/gl/profit-and-loss` | Get Profit and Loss Statement |
+| `GET` | `/gl/balance-sheet` | Get Balance Sheet |
 | `GET` | `/gl/cash-flow` | Get Statement of Cash Flows |
 | `GET` | `/gl/cash-flow/drilldown` | Get Statement of Cash Flows Line Drilldown |
 | `GET` | `/gl/general-ledger` | Get General Ledger |
@@ -208,6 +210,8 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
+| `GET` | `/manufacturing/work-orders/settings` | Get Manufacturing Settings |
+| `PATCH` | `/manufacturing/work-orders/settings` | Update Manufacturing Settings |
 | `GET` | `/manufacturing/work-orders` | List Work Orders |
 | `POST` | `/manufacturing/work-orders` | Create Work Order |
 | `GET` | `/manufacturing/work-orders/{id}` | Get Work Order by ID |
@@ -245,6 +249,8 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
+| `GET` | `/organizations/settings` | Get CRM Settings |
+| `PATCH` | `/organizations/settings` | Update CRM Settings |
 | `POST` | `/organizations` | Create Organization |
 | `GET` | `/organizations` | Get all Organizations (paginated) |
 | `GET` | `/organizations/{id}` | Get Organization by ID |
@@ -284,6 +290,8 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
+| `GET` | `/products/settings` | Get Product Settings |
+| `PATCH` | `/products/settings` | Update Product Settings |
 | `GET` | `/products/images/{path}` | Stream Product Image |
 | `GET` | `/products` | List Products |
 | `POST` | `/products` | Create Product |
@@ -305,11 +313,57 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `DELETE` | `/products/{id}/components/{componentId}` | Remove Component |
 | `POST` | `/products/{id}/image` | Upload Product Image |
 | `DELETE` | `/products/{id}/image` | Remove Product Image |
+| `GET` | `/products/{id}/members` | Get Service Product Members |
+| `POST` | `/products/{id}/members` | Add Service Product Member |
+| `DELETE` | `/products/{id}/members/{resourceId}` | Remove Service Product Member |
 | `GET` | `/product-groups` | List Product Groups |
 | `POST` | `/product-groups` | Create Product Group |
 | `GET` | `/product-groups/{id}` | Get Product Group |
 | `PATCH` | `/product-groups/{id}` | Update Product Group |
 | `DELETE` | `/product-groups/{id}` | Delete Product Group |
+
+### Projects
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/projects/settings` | Get Project Settings |
+| `PATCH` | `/projects/settings` | Update Project Settings |
+| `POST` | `/projects` | Create Project |
+| `GET` | `/projects` | Get all Projects |
+| `GET` | `/projects/resources` | Get all Project Resources |
+| `POST` | `/projects/resources` | Create Project Resource |
+| `GET` | `/projects/resources/{id}` | Get Project Resource by ID |
+| `PATCH` | `/projects/resources/{id}` | Update Project Resource |
+| `DELETE` | `/projects/resources/{id}` | Delete Project Resource |
+| `POST` | `/projects/resources/{id}/archive` | Archive Project Resource |
+| `POST` | `/projects/resources/{id}/unarchive` | Unarchive Project Resource |
+| `GET` | `/projects/{id}` | Get Project Details |
+| `PATCH` | `/projects/{id}` | Update Project |
+| `POST` | `/projects/{id}/state` | Transition Project State |
+| `POST` | `/projects/{id}/tasks` | Create Project Task |
+| `PATCH` | `/projects/{id}/tasks/{taskId}` | Update Project Task |
+| `DELETE` | `/projects/{id}/tasks/{taskId}` | Delete Project Task |
+| `POST` | `/projects/{id}/budget-lines` | Create Budget Line |
+| `PATCH` | `/projects/{id}/budget-lines/{lineId}` | Update Budget Line |
+| `DELETE` | `/projects/{id}/budget-lines/{lineId}` | Delete Budget Line |
+| `POST` | `/projects/{id}/issue-inventory` | Issue Inventory to Project |
+| `POST` | `/projects/{id}/return-inventory` | Return Inventory from Project |
+| `POST` | `/projects/{id}/consume-resource` | Consume Resource on Project |
+| `GET` | `/projects/{id}/resources/assigned` | Get Assigned Resources on Project |
+| `POST` | `/projects/{id}/resources/assigned` | Assign Resource to Project |
+| `DELETE` | `/projects/{id}/resources/assigned/{resourceId}` | Remove Resource Assignment from Project |
+| `POST` | `/projects/{id}/expenses` | Record Direct Expense on Project |
+| `POST` | `/projects/{id}/consume-expense` | Consume Expense on Project (Alias) |
+| `GET` | `/projects/{id}/ledger-entries` | Get Project Ledger Entries |
+| `PATCH` | `/projects/{id}/ledger-entries/{ledgerId}` | Update Project Ledger Entry |
+| `DELETE` | `/projects/{id}/ledger-entries/{ledgerId}` | Delete Project Ledger Entry |
+| `PATCH` | `/projects/{id}/ledger-entries/{ledgerId}/billable` | Set Project Ledger Entry Billable Status |
+| `GET` | `/projects/{id}/profitability` | Get Project Profitability |
+| `POST` | `/projects/{id}/bill` | Bill Project (Generate Sales Invoice) |
+| `GET` | `/projects/{id}/invoices` | Get Project Invoices |
+| `POST` | `/projects/{id}/notes` | Add Project Note |
+| `GET` | `/projects/{id}/notes` | Get Project Notes |
+| `DELETE` | `/projects/{id}/notes/{noteId}` | Delete Project Note |
 
 ### Purchase Invoices
 
@@ -326,6 +380,8 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
+| `GET` | `/purchase-orders/settings` | Get Purchasing Settings |
+| `PATCH` | `/purchase-orders/settings` | Update Purchasing Settings |
 | `POST` | `/purchase-orders` | Create Purchase Order |
 | `GET` | `/purchase-orders` | List Purchase Orders |
 | `GET` | `/purchase-orders/pending-lines` | List Pending Lines |
@@ -385,6 +441,8 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
+| `GET` | `/sales-orders/settings` | Get Sales Settings |
+| `PATCH` | `/sales-orders/settings` | Update Sales Settings |
 | `GET` | `/sales-orders` | Find All Orders |
 | `POST` | `/sales-orders` | Create Order |
 | `POST` | `/sales-orders/{id}/tax` | Calculate Taxes |
@@ -420,6 +478,26 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `POST` | `/sales-credit-notes` | Create Credit Note |
 | `GET` | `/sales-credit-notes/{id}` | Get Credit Note |
 | `POST` | `/sales-credit-notes/{id}/post` | Post Credit Note |
+
+### Stocktakes
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/inventory/stocktakes` | Create Stocktake |
+| `GET` | `/inventory/stocktakes` | List Stocktakes |
+| `GET` | `/inventory/stocktakes/{id}` | Get Stocktake by ID |
+| `PATCH` | `/inventory/stocktakes/{id}` | Update Stocktake Header |
+| `DELETE` | `/inventory/stocktakes/{id}` | Delete Stocktake |
+| `POST` | `/inventory/stocktakes/{id}/state` | Change Stocktake State |
+| `GET` | `/inventory/stocktakes/{id}/lines` | List Stocktake Lines |
+| `POST` | `/inventory/stocktakes/{id}/lines` | Add Unlisted Product to Stocktake |
+| `PATCH` | `/inventory/stocktakes/{id}/lines/{lineId}` | Update Stocktake Line |
+| `DELETE` | `/inventory/stocktakes/{id}/lines/{lineId}` | Delete Stocktake Line |
+| `GET` | `/inventory/stocktakes/{id}/counts` | List Stocktake Counts |
+| `POST` | `/inventory/stocktakes/{id}/counts` | Record Single Stocktake Count |
+| `POST` | `/inventory/stocktakes/{id}/counts/batch` | Record Batch Stocktake Counts |
+| `POST` | `/inventory/stocktakes/{id}/bins/{binId}/mark-empty` | Mark Bin Empty |
+| `POST` | `/inventory/stocktakes/{id}/submit` | Submit Stocktake Reconciliation |
 
 ### Storage
 
@@ -628,13 +706,15 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `POST` | `/inventory/by-products-bulk` | Bulk Get By Products |
 | `GET` | `/inventory/bins` | List Inventory Bins |
 | `POST` | `/inventory/bins` | Create Bin |
-| `GET` | `/inventory/putaway-context` | Get Putaway Context |
+| `GET` | `/inventory/putaway/context` | Get Putaway Context |
 | `GET` | `/inventory/locations` | List Locations |
 | `POST` | `/inventory/locations` | Create Location |
 | `GET` | `/inventory/locations/{id}/bins` | Get Location Bins |
 | `GET` | `/inventory/topography` | Get Warehouse Topography |
 | `GET` | `/inventory/ledger` | List Ledger Entries |
 | `GET` | `/inventory/entries/{id}` | Get Entry Details |
+| `GET` | `/inventory/restock` | List Restock Needs |
+| `GET` | `/inventory/movement` | Stock Movement Report |
 | `GET` | `/inventory/pending-putaway` | List Pending Putaways |
 | `POST` | `/inventory/putaway` | Process Putaways |
 | `POST` | `/inventory/quarantine/move` | Move to/from Quarantine |

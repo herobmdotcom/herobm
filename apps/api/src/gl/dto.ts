@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
   IsString,
   IsNotEmpty,
@@ -8,7 +9,15 @@ import {
   IsBoolean,
   IsObject,
   Min,
+  ValidateNested,
+  IsUUID,
+  IsArray,
+  IsIn,
 } from 'class-validator';
+import {
+  USER_SELECTABLE_JOURNAL_SOURCE_TYPES,
+  type JournalEntrySourceType,
+} from '@herobm/shared';
 
 export * from './dto/reconciliation.dto';
 export class JournalLineDto {
@@ -31,6 +40,16 @@ export class JournalLineDto {
   @IsOptional()
   @IsString()
   activityId?: string;
+
+  /** Operational dimension: Project ID */
+  @IsOptional()
+  @IsUUID()
+  projectId?: string;
+
+  /** Operational dimension: Project Task ID */
+  @IsOptional()
+  @IsUUID()
+  projectTaskId?: string;
 
   @IsOptional()
   @IsEnum(['customer', 'supplier'])
@@ -71,13 +90,6 @@ export class JournalLineDto {
   memo?: string;
 }
 
-import { Type } from 'class-transformer';
-import { ValidateNested, IsUUID, IsArray, IsIn } from 'class-validator';
-import {
-  USER_SELECTABLE_JOURNAL_SOURCE_TYPES,
-  type JournalEntrySourceType,
-} from '@herobm/shared';
-
 export class CreateJournalEntryDto {
   @ApiPropertyOptional()
   @IsUUID()
@@ -117,6 +129,7 @@ export class GlAccountResponseDto {
   accountCode: string;
   name: string;
   accountType: string;
+  reportCategory?: string | null;
   isGroup: boolean;
   isActive: boolean;
   parentAccountId?: string | null;
@@ -187,6 +200,12 @@ export class GlEntryResponseDto {
 
   @ApiPropertyOptional()
   runningBalance?: number | null;
+
+  @ApiPropertyOptional()
+  projectId?: string | null;
+
+  @ApiPropertyOptional()
+  projectTaskId?: string | null;
 }
 
 export class GlAccountSummaryDto {
@@ -235,8 +254,8 @@ export class SettingsResponseDto {
   @ApiPropertyOptional()
   settingsId?: string;
 
-  @ApiPropertyOptional({ type: [Object] })
-  accountMetadataSchema?: unknown[] | null;
+  @ApiPropertyOptional({ type: 'object', additionalProperties: true })
+  accountMetadataSchema?: Record<string, unknown> | null;
 
   @ApiPropertyOptional()
   fiscalYearStartMonth?: number;
@@ -291,6 +310,12 @@ export class SettingsResponseDto {
 
   @ApiPropertyOptional()
   defaultOtcCardAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  defaultSuspenseAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  defaultRetainedEarningsAccountId?: string | null;
 
   @ApiPropertyOptional()
   defaultCostCenterId?: string | null;
@@ -324,9 +349,9 @@ export class SettingsResponseDto {
 }
 
 export class UpdateGlSettingsDto {
-  @ApiPropertyOptional({ type: [Object] })
+  @ApiPropertyOptional({ type: 'object', additionalProperties: true })
   @IsOptional()
-  accountMetadataSchema?: unknown[] | null;
+  accountMetadataSchema?: Record<string, unknown> | null;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -417,6 +442,16 @@ export class UpdateGlSettingsDto {
   @IsOptional()
   @IsString()
   defaultOtcCardAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  defaultSuspenseAccountId?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  defaultRetainedEarningsAccountId?: string | null;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -499,6 +534,10 @@ export class CreateAccountRequestDto {
 
   @IsString()
   @IsOptional()
+  reportCategory?: string;
+
+  @IsString()
+  @IsOptional()
   parentAccountId?: string;
 
   @IsBoolean()
@@ -521,6 +560,10 @@ export class UpdateAccountRequestDto {
   @IsString()
   @IsOptional()
   name?: string;
+
+  @IsString()
+  @IsOptional()
+  reportCategory?: string;
 
   @IsBoolean()
   @IsOptional()
@@ -806,4 +849,117 @@ export class RunIntegrityAuditDto {
   @IsOptional()
   @IsString()
   reason?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Profit & Loss (Income Statement) DTOs
+// ---------------------------------------------------------------------------
+
+export class FinancialStatementLineDto {
+  @ApiProperty() accountCode!: string;
+  @ApiProperty() accountName!: string;
+  @ApiProperty() amount!: number;
+  @ApiPropertyOptional() ytdAmount?: number;
+}
+
+export class ProfitAndLossSectionDto {
+  @ApiProperty() title!: string;
+  @ApiProperty({ type: [FinancialStatementLineDto] })
+  lines!: FinancialStatementLineDto[];
+  @ApiProperty() total!: number;
+  @ApiPropertyOptional() ytdTotal?: number;
+}
+
+export class ProfitAndLossPeriodDto {
+  @ApiProperty() startDate!: string;
+  @ApiProperty() endDate!: string;
+  @ApiPropertyOptional() periodName?: string;
+  @ApiPropertyOptional() fiscalYear?: number;
+  @ApiPropertyOptional() periodNumber?: number;
+}
+
+export class ProfitAndLossSummaryDto {
+  @ApiProperty() totalRevenue!: number;
+  @ApiProperty() totalCogs!: number;
+  @ApiProperty() grossProfit!: number;
+  @ApiProperty() grossMarginPercentage!: number;
+  @ApiProperty() totalOperatingExpenses!: number;
+  @ApiProperty() operatingIncome!: number;
+  @ApiProperty() totalOtherIncomeExpense!: number;
+  @ApiProperty() netIncome!: number;
+  @ApiProperty() netMarginPercentage!: number;
+}
+
+export class ProfitAndLossResponseDto {
+  @ApiProperty({ type: ProfitAndLossPeriodDto })
+  period!: ProfitAndLossPeriodDto;
+  @ApiProperty({ type: ProfitAndLossSectionDto })
+  revenue!: ProfitAndLossSectionDto;
+  @ApiProperty({ type: ProfitAndLossSectionDto })
+  costOfGoodsSold!: ProfitAndLossSectionDto;
+  @ApiProperty({ type: ProfitAndLossSectionDto })
+  operatingExpenses!: ProfitAndLossSectionDto;
+  @ApiProperty({ type: ProfitAndLossSectionDto })
+  otherIncomeExpense!: ProfitAndLossSectionDto;
+  @ApiProperty({ type: ProfitAndLossSummaryDto })
+  summary!: ProfitAndLossSummaryDto;
+}
+
+// ---------------------------------------------------------------------------
+// Balance Sheet DTOs
+// ---------------------------------------------------------------------------
+
+export class BalanceSheetLineDto {
+  @ApiProperty() accountCode!: string;
+  @ApiProperty() accountName!: string;
+  @ApiProperty() balance!: number;
+  @ApiPropertyOptional() movementMtd?: number;
+  @ApiPropertyOptional() movementYtd?: number;
+  @ApiPropertyOptional() movementLastYtd?: number;
+}
+
+export class BalanceSheetSectionDto {
+  @ApiProperty() title!: string;
+  @ApiProperty({ type: [BalanceSheetLineDto] }) lines!: BalanceSheetLineDto[];
+  @ApiProperty() total!: number;
+  @ApiPropertyOptional() totalMovementMtd?: number;
+  @ApiPropertyOptional() totalMovementYtd?: number;
+  @ApiPropertyOptional() totalMovementLastYtd?: number;
+}
+
+export class BalanceSheetPeriodDto {
+  @ApiProperty() asOfDate!: string;
+  @ApiPropertyOptional() periodName?: string;
+  @ApiPropertyOptional() fiscalYear?: number;
+}
+
+export class BalanceSheetValidationDto {
+  @ApiProperty() totalAssets!: number;
+  @ApiProperty() totalLiabilities!: number;
+  @ApiProperty() totalEquity!: number;
+  @ApiProperty() totalLiabilitiesAndEquity!: number;
+  @ApiProperty() drift!: number;
+  @ApiProperty() isBalanced!: boolean;
+  @ApiPropertyOptional() totalAssetsMovementMtd?: number;
+  @ApiPropertyOptional() totalLiabilitiesAndEquityMovementMtd?: number;
+  @ApiPropertyOptional() totalAssetsMovementYtd?: number;
+  @ApiPropertyOptional() totalLiabilitiesAndEquityMovementYtd?: number;
+  @ApiPropertyOptional() totalAssetsMovementLastYtd?: number;
+  @ApiPropertyOptional() totalLiabilitiesAndEquityMovementLastYtd?: number;
+}
+
+export class BalanceSheetResponseDto {
+  @ApiProperty({ type: BalanceSheetPeriodDto }) period!: BalanceSheetPeriodDto;
+  @ApiProperty({ type: BalanceSheetSectionDto })
+  currentAssets!: BalanceSheetSectionDto;
+  @ApiProperty({ type: BalanceSheetSectionDto })
+  nonCurrentAssets!: BalanceSheetSectionDto;
+  @ApiProperty({ type: BalanceSheetSectionDto })
+  currentLiabilities!: BalanceSheetSectionDto;
+  @ApiProperty({ type: BalanceSheetSectionDto })
+  nonCurrentLiabilities!: BalanceSheetSectionDto;
+  @ApiProperty({ type: BalanceSheetSectionDto })
+  equity!: BalanceSheetSectionDto;
+  @ApiProperty({ type: BalanceSheetValidationDto })
+  validation!: BalanceSheetValidationDto;
 }

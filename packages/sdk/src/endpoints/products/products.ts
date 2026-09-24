@@ -8,6 +8,7 @@
 import type {
   AddProductComponentDto,
   AddProductUomDto,
+  AddServiceMemberDto,
   AddSupplierDto,
   CopyProductDto,
   CreateProductDto,
@@ -20,18 +21,95 @@ import type {
   ProductGroupsControllerFindAllParams,
   ProductGroupsControllerFindOneParams,
   ProductResponseDto,
+  ProductSettingsResponseDto,
   ProductsControllerFindAll200,
   ProductsControllerFindAllParams,
   ProductsControllerFindOneParams,
   ProductsControllerGetComponents200,
   ProductsControllerGetCostSummaryParams,
+  ProductsControllerRemoveServiceMember200,
   ProductsControllerUploadImageBody,
+  ServiceMemberResponseDto,
   UpdateProductComponentDto,
   UpdateProductDto,
-  UpdateProductGroupDto
+  UpdateProductGroupDto,
+  UpdateProductSettingsDto
 } from '../../model';
 
 import { customFetch } from '../../mutator';
+
+/**
+ * Retrieve the product domain settings and metadata schema.
+ * @summary Get Product Settings
+ */
+export type productsControllerGetSettingsResponse200 = {
+  data: ProductSettingsResponseDto
+  status: 200
+}
+    
+export type productsControllerGetSettingsResponseSuccess = (productsControllerGetSettingsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type productsControllerGetSettingsResponse = (productsControllerGetSettingsResponseSuccess)
+
+export const getProductsControllerGetSettingsUrl = () => {
+
+
+  
+
+  return `/products/settings`
+}
+
+export const productsControllerGetSettings = async ( options?: RequestInit): Promise<productsControllerGetSettingsResponse> => {
+  
+  return customFetch<productsControllerGetSettingsResponse>(getProductsControllerGetSettingsUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * Update the product domain settings and metadata schema.
+ * @summary Update Product Settings
+ */
+export type productsControllerUpdateSettingsResponse200 = {
+  data: ProductSettingsResponseDto
+  status: 200
+}
+    
+export type productsControllerUpdateSettingsResponseSuccess = (productsControllerUpdateSettingsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type productsControllerUpdateSettingsResponse = (productsControllerUpdateSettingsResponseSuccess)
+
+export const getProductsControllerUpdateSettingsUrl = () => {
+
+
+  
+
+  return `/products/settings`
+}
+
+export const productsControllerUpdateSettings = async (updateProductSettingsDto: UpdateProductSettingsDto, options?: RequestInit): Promise<productsControllerUpdateSettingsResponse> => {
+  
+  return customFetch<productsControllerUpdateSettingsResponse>(getProductsControllerUpdateSettingsUrl(),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateProductSettingsDto,)
+  }
+);}
+
 
 /**
  * Publicly stream a product image with caching headers.
@@ -838,6 +916,118 @@ export const getProductsControllerRemoveImageUrl = (id: string,) => {
 export const productsControllerRemoveImage = async (id: string, options?: RequestInit): Promise<productsControllerRemoveImageResponse> => {
   
   return customFetch<productsControllerRemoveImageResponse>(getProductsControllerRemoveImageUrl(id),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+
+
+/**
+ * List assigned people (resources) for a service product.
+ * @summary Get Service Product Members
+ */
+export type productsControllerGetServiceMembersResponse200 = {
+  data: ServiceMemberResponseDto[]
+  status: 200
+}
+    
+export type productsControllerGetServiceMembersResponseSuccess = (productsControllerGetServiceMembersResponse200) & {
+  headers: Headers;
+};
+;
+
+export type productsControllerGetServiceMembersResponse = (productsControllerGetServiceMembersResponseSuccess)
+
+export const getProductsControllerGetServiceMembersUrl = (id: string,) => {
+
+
+  
+
+  return `/products/${id}/members`
+}
+
+export const productsControllerGetServiceMembers = async (id: string, options?: RequestInit): Promise<productsControllerGetServiceMembersResponse> => {
+  
+  return customFetch<productsControllerGetServiceMembersResponse>(getProductsControllerGetServiceMembersUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * Assign a person resource to a service product.
+ * @summary Add Service Product Member
+ */
+export type productsControllerAddServiceMemberResponse201 = {
+  data: ServiceMemberResponseDto
+  status: 201
+}
+    
+export type productsControllerAddServiceMemberResponseSuccess = (productsControllerAddServiceMemberResponse201) & {
+  headers: Headers;
+};
+;
+
+export type productsControllerAddServiceMemberResponse = (productsControllerAddServiceMemberResponseSuccess)
+
+export const getProductsControllerAddServiceMemberUrl = (id: string,) => {
+
+
+  
+
+  return `/products/${id}/members`
+}
+
+export const productsControllerAddServiceMember = async (id: string,
+    addServiceMemberDto: AddServiceMemberDto, options?: RequestInit): Promise<productsControllerAddServiceMemberResponse> => {
+  
+  return customFetch<productsControllerAddServiceMemberResponse>(getProductsControllerAddServiceMemberUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      addServiceMemberDto,)
+  }
+);}
+
+
+/**
+ * Remove a person resource from a service product.
+ * @summary Remove Service Product Member
+ */
+export type productsControllerRemoveServiceMemberResponse200 = {
+  data: ProductsControllerRemoveServiceMember200
+  status: 200
+}
+    
+export type productsControllerRemoveServiceMemberResponseSuccess = (productsControllerRemoveServiceMemberResponse200) & {
+  headers: Headers;
+};
+;
+
+export type productsControllerRemoveServiceMemberResponse = (productsControllerRemoveServiceMemberResponseSuccess)
+
+export const getProductsControllerRemoveServiceMemberUrl = (id: string,
+    resourceId: string,) => {
+
+
+  
+
+  return `/products/${id}/members/${resourceId}`
+}
+
+export const productsControllerRemoveServiceMember = async (id: string,
+    resourceId: string, options?: RequestInit): Promise<productsControllerRemoveServiceMemberResponse> => {
+  
+  return customFetch<productsControllerRemoveServiceMemberResponse>(getProductsControllerRemoveServiceMemberUrl(id,resourceId),
   {      
     ...options,
     method: 'DELETE'

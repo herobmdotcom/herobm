@@ -13,6 +13,7 @@ import {
   purchaseOrderLineItems,
   suppliers as coreSuppliers,
   products,
+  productSuppliers,
   locations,
   taxCategories,
   organizations,
@@ -41,6 +42,13 @@ import { TaxResolutionEngine } from '../tax/tax-resolution.engine';
 import { PurchaseOrdersQueryService } from './purchase-orders-query.service';
 import { BackordersService } from '../orders/backorders.service';
 import { resolvePurchaseTaxForLine } from './purchase-orders-tax.utils';
+import {
+  resolveSupplierLinePricingAndMoq,
+  calculateUpdatedLinePricing,
+  calculateNextPoReceiptState,
+  buildRequisitionLineRecords,
+  buildCreatePoLineRecord,
+} from './purchase-orders-helpers.utils';
 
 @Injectable()
 export class PurchaseOrdersWriteService {
@@ -158,6 +166,7 @@ export class PurchaseOrdersWriteService {
               ? new Date(createDto.expectedDate)
               : null,
             baseTotalAmount: '0',
+            metadata: createDto.metadata ?? null,
           })
           .returning();
         order = inserted;
@@ -197,31 +206,10 @@ export class PurchaseOrdersWriteService {
         let index = 0;
         for (const line of createDto.lines) {
           const isComment = line.lineType === LineType.COMMENT;
-          if (isComment) {
-            lineValues.push({
-              purchaseOrderId: order.purchaseOrderId,
-              lineNumber: index + 1,
-              lineType: LineType.COMMENT,
-              productId: null,
-              productDescription: line.productDescription,
-              quantity: '0',
-              pricePerUnit: '0',
-              discountPercentage: '0',
-              unitOfMeasure: null,
-              amount: '0',
-              tax: '0',
-              totalAmount: '0',
-              taxCategoryId: null,
-            });
-            index++;
-            continue;
-          }
-
           const isCustom =
             line.productId === '00000000-0000-4000-8000-000000000000';
-          if (!isCustom && line.productId) {
+          if (!isComment && !isCustom && line.productId) {
             const product = productMap.get(line.productId);
-
             if (!product) {
               throw new BadRequestException(
                 `Product '${line.productId}' not found.`,
@@ -234,40 +222,34 @@ export class PurchaseOrdersWriteService {
             }
           }
 
-          const { taxCategoryId, rate } = await this.resolveTaxForLine(
-            tx,
-            createDto.vendorId,
-            line.productId,
-            line.taxCategoryId,
-          );
-          const disc = parseFloat(line.discountPercentage || '0');
-          if (isNaN(disc) || disc < 0 || disc > 100) {
-            throw new BadRequestException(
-              `Line ${index + 1}: Discount percentage must be between 0 and 100`,
+          let taxCategoryId: string | null = null;
+          let rate = 0;
+          if (!isComment) {
+            const resolved = await this.resolveTaxForLine(
+              tx,
+              createDto.vendorId,
+              line.productId,
+              line.taxCategoryId,
             );
+            taxCategoryId = resolved.taxCategoryId;
+            rate = resolved.rate;
+            const disc = parseFloat(line.discountPercentage || '0');
+            if (isNaN(disc) || disc < 0 || disc > 100) {
+              throw new BadRequestException(
+                `Line ${index + 1}: Discount percentage must be between 0 and 100`,
+              );
+            }
           }
-          const pricing = computeLinePriceForStorage({
-            quantity: parseFloat(line.quantity || '0'),
-            pricePerUnit: parseFloat(line.pricePerUnit || '0'),
-            discountPercentage: disc,
-            taxRate: rate,
-          });
 
-          lineValues.push({
-            purchaseOrderId: order.purchaseOrderId,
-            lineNumber: index + 1,
-            lineType: LineType.PRODUCT,
-            productId: line.productId,
-            productDescription: line.productDescription,
-            quantity: line.quantity.toString(),
-            pricePerUnit: line.pricePerUnit.toString(),
-            discountPercentage: line.discountPercentage?.toString() || '0',
-            unitOfMeasure: normalizeUomCode(line.unitOfMeasure),
-            amount: pricing.amount,
-            tax: pricing.tax,
-            totalAmount: pricing.totalAmount,
-            taxCategoryId,
-          });
+          lineValues.push(
+            buildCreatePoLineRecord(
+              order.purchaseOrderId,
+              index,
+              line,
+              rate,
+              taxCategoryId,
+            ),
+          );
           index++;
         }
 
@@ -338,6 +320,14 @@ export class PurchaseOrdersWriteService {
       };
 
       let product: { name: string; stateCode: string } | undefined;
+      let supplierInfo:
+        | {
+            costPrice: string | null;
+            minPurchaseQty: string | null;
+            purchaseUnit: string | null;
+            discountPercent: string | null;
+          }
+        | undefined;
 
       if (!isComment) {
         const result = await tx
@@ -358,9 +348,31 @@ export class PurchaseOrdersWriteService {
           );
         }
 
-        qty = parseFloat(lineDto.quantity || '1');
-        price = parseFloat(lineDto.pricePerUnit || '0');
-        disc = parseFloat(lineDto.discountPercentage || '0');
+        const supplierResults = await tx
+          .select({
+            costPrice: productSuppliers.costPrice,
+            minPurchaseQty: productSuppliers.minPurchaseQty,
+            purchaseUnit: productSuppliers.purchaseUnit,
+            discountPercent: productSuppliers.discountPercent,
+          })
+          .from(productSuppliers)
+          .where(
+            and(
+              eq(productSuppliers.productId, lineDto.productId),
+              eq(productSuppliers.vendorId, existing.vendorId),
+            ),
+          )
+          .limit(1);
+        supplierInfo = supplierResults[0];
+
+        const supplierDefaults = resolveSupplierLinePricingAndMoq(
+          lineDto,
+          supplierInfo,
+        );
+        qty = supplierDefaults.qty;
+        price = supplierDefaults.price;
+        disc = supplierDefaults.disc;
+
         if (isNaN(disc) || disc < 0 || disc > 100) {
           throw new BadRequestException(
             'Discount percentage must be between 0 and 100',
@@ -383,20 +395,22 @@ export class PurchaseOrdersWriteService {
         });
       }
 
+      const effectiveUom = isComment
+        ? null
+        : normalizeUomCode(
+            lineDto.unitOfMeasure || supplierInfo?.purchaseUnit || 'EA',
+          );
+
       await tx.insert(purchaseOrderLineItems).values({
         purchaseOrderId: orderId,
         lineNumber: maxLine + 1,
         lineType: isComment ? LineType.COMMENT : LineType.PRODUCT,
         productId: isComment ? null : lineDto.productId,
         productDescription: lineDto.productDescription,
-        quantity: isComment ? '0' : lineDto.quantity?.toString() || '1',
-        pricePerUnit: isComment ? '0' : lineDto.pricePerUnit?.toString() || '0',
-        discountPercentage: isComment
-          ? '0'
-          : lineDto.discountPercentage?.toString() || '0',
-        unitOfMeasure: isComment
-          ? null
-          : normalizeUomCode(lineDto.unitOfMeasure),
+        quantity: isComment ? '0' : qty.toString(),
+        pricePerUnit: isComment ? '0' : price.toString(),
+        discountPercentage: isComment ? '0' : disc.toString(),
+        unitOfMeasure: effectiveUom,
         amount: pricing.amount,
         tax: pricing.tax,
         totalAmount: pricing.totalAmount,
@@ -474,22 +488,6 @@ export class PurchaseOrdersWriteService {
         const isComment =
           (lineDto.lineType ?? line?.lineType) === (LineType.COMMENT as string);
 
-        const qty = isComment
-          ? 0
-          : parseFloat(lineDto.quantity?.toString() || line?.quantity || '0');
-        const price = isComment
-          ? 0
-          : parseFloat(
-              lineDto.pricePerUnit?.toString() || line?.pricePerUnit || '0',
-            );
-        const disc = isComment
-          ? 0
-          : parseFloat(
-              lineDto.discountPercentage?.toString() ||
-                line?.discountPercentage ||
-                '0',
-            );
-
         let targetGst = line?.taxCategoryId;
         if (lineDto.taxCategoryId !== undefined) {
           targetGst = lineDto.taxCategoryId;
@@ -509,14 +507,7 @@ export class PurchaseOrdersWriteService {
           updateFields.taxCategoryId = null;
         }
 
-        const pricing = isComment
-          ? { amount: '0', tax: '0', totalAmount: '0' }
-          : computeLinePriceForStorage({
-              quantity: qty,
-              pricePerUnit: price,
-              discountPercentage: disc,
-              taxRate: rate,
-            });
+        const pricing = calculateUpdatedLinePricing(lineDto, line, rate);
         updateFields.amount = pricing.amount;
         updateFields.tax = pricing.tax;
         updateFields.totalAmount = pricing.totalAmount;
@@ -618,6 +609,10 @@ export class PurchaseOrdersWriteService {
           expectedDate: updateDto.expectedDate
             ? new Date(updateDto.expectedDate)
             : null,
+          metadata:
+            updateDto.metadata !== undefined
+              ? updateDto.metadata
+              : existing.metadata,
           modifiedOn: new Date(),
         })
         .where(eq(purchaseOrders.purchaseOrderId, id));
@@ -695,27 +690,26 @@ export class PurchaseOrdersWriteService {
     receipts: { purchaseOrderLineId: string; quantity: number }[],
     actor: string = 'system',
   ) {
-    if (!receipts || receipts.length === 0) return;
+    const validReceipts = receipts?.filter((r) => r && r.quantity > 0) || [];
+    if (validReceipts.length === 0) return;
+
+    const lineIds = validReceipts.map((r) => r.purchaseOrderLineId);
+    const poLines = await tx
+      .select({
+        purchaseOrderLineId: purchaseOrderLineItems.purchaseOrderLineId,
+        purchaseOrderId: purchaseOrderLineItems.purchaseOrderId,
+        quantity: purchaseOrderLineItems.quantity,
+        quantityReceived: purchaseOrderLineItems.quantityReceived,
+      })
+      .from(purchaseOrderLineItems)
+      .where(inArray(purchaseOrderLineItems.purchaseOrderLineId, lineIds));
+
+    const lineMap = new Map(poLines.map((l) => [l.purchaseOrderLineId, l]));
 
     const touchedPoIds = new Set<string>();
 
-    for (const receipt of receipts) {
-      if (receipt.quantity <= 0) continue;
-
-      const [poLine] = await tx
-        .select({
-          purchaseOrderId: purchaseOrderLineItems.purchaseOrderId,
-          quantity: purchaseOrderLineItems.quantity,
-          quantityReceived: purchaseOrderLineItems.quantityReceived,
-        })
-        .from(purchaseOrderLineItems)
-        .where(
-          eq(
-            purchaseOrderLineItems.purchaseOrderLineId,
-            receipt.purchaseOrderLineId,
-          ),
-        );
-
+    for (const receipt of validReceipts) {
+      const poLine = lineMap.get(receipt.purchaseOrderLineId);
       if (!poLine) {
         throw new NotFoundException(
           `Purchase Order Line ${receipt.purchaseOrderLineId} not found`,
@@ -768,23 +762,11 @@ export class PurchaseOrdersWriteService {
       .from(purchaseOrderLineItems)
       .where(eq(purchaseOrderLineItems.purchaseOrderId, poId));
 
-    const isFullyReceived =
-      allLines.length > 0 &&
-      allLines.every(
-        (l) => parseFloat(l.quantityReceived || '0') >= parseFloat(l.quantity),
-      );
-
-    const hasPartialReceipt = allLines.some(
-      (l) => parseFloat(l.quantityReceived || '0') > 0,
+    const newState = calculateNextPoReceiptState(
+      allLines,
+      po.stateCode,
+      fallbackToOrdered,
     );
-
-    const newState = isFullyReceived
-      ? PURCHASE_ORDER_STATE.RECEIVED
-      : hasPartialReceipt
-        ? PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED
-        : fallbackToOrdered
-          ? PURCHASE_ORDER_STATE.ORDERED
-          : po.stateCode;
 
     if (newState !== po.stateCode) {
       await this.changePurchaseOrderState(tx, poId, newState, actor, reason);
@@ -849,25 +831,24 @@ export class PurchaseOrdersWriteService {
     reversals: { purchaseOrderLineId: string; quantity: number }[],
     actor: string = 'system',
   ) {
-    if (!reversals || reversals.length === 0) return;
+    const validReversals = reversals?.filter((r) => r && r.quantity > 0) || [];
+    if (validReversals.length === 0) return;
+
+    const lineIds = validReversals.map((r) => r.purchaseOrderLineId);
+    const poLines = await tx
+      .select({
+        purchaseOrderLineId: purchaseOrderLineItems.purchaseOrderLineId,
+        purchaseOrderId: purchaseOrderLineItems.purchaseOrderId,
+      })
+      .from(purchaseOrderLineItems)
+      .where(inArray(purchaseOrderLineItems.purchaseOrderLineId, lineIds));
+
+    const lineMap = new Map(poLines.map((l) => [l.purchaseOrderLineId, l]));
 
     const touchedPoIds = new Set<string>();
 
-    for (const reversal of reversals) {
-      if (reversal.quantity <= 0) continue;
-
-      const [poLine] = await tx
-        .select({
-          purchaseOrderId: purchaseOrderLineItems.purchaseOrderId,
-        })
-        .from(purchaseOrderLineItems)
-        .where(
-          eq(
-            purchaseOrderLineItems.purchaseOrderLineId,
-            reversal.purchaseOrderLineId,
-          ),
-        );
-
+    for (const reversal of validReversals) {
+      const poLine = lineMap.get(reversal.purchaseOrderLineId);
       if (!poLine) continue;
 
       await tx
@@ -939,19 +920,10 @@ export class PurchaseOrdersWriteService {
       payload: { reason: 'manual_requisition' },
     });
 
-    const createdLines = params.lines.map((line, idx) => ({
-      purchaseOrderId: po.purchaseOrderId,
-      lineNumber: idx + 1,
-      productId: line.productId,
-      productDescription: line.productDescription,
-      quantity: line.quantity,
-      pricePerUnit: line.pricePerUnit,
-      taxCategoryId: line.taxCategoryId,
-      discountPercentage: '0',
-      amount: '0',
-      tax: '0',
-      quantityReceived: '0',
-    }));
+    const createdLines = buildRequisitionLineRecords(
+      po.purchaseOrderId,
+      params.lines,
+    );
 
     const poLines =
       createdLines.length > 0

@@ -308,6 +308,7 @@ export class HelpService implements OnModuleInit {
     'Inventory',
     'Purchasing',
     'Manufacturing',
+    'Projects',
     'CRM',
     'Finance',
     'Reporting',

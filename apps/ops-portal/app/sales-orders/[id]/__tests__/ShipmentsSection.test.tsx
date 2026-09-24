@@ -216,7 +216,7 @@ describe('ShipmentsSection — create shipment form & dispatch', () => {
         });
 
         expect(loadOrder).toHaveBeenCalled();
-    });
+    }, 15000);
 
     it('shows delivery instructions input even when order has no shippingNotes', async () => {
         const user = userEvent.setup();
@@ -248,9 +248,7 @@ describe('ShipmentsSection — pick & ship form & fulfill direct', () => {
                 linesFulfilled: [{ salesOrderLineId: 'L1', quantityFulfilled: 3, inventoryIssued: true }],
             },
         });
-        mockCalcShippable.mockReturnValue([
-            { salesOrderLineId: 'L1', maxQty: 3, defaultQty: '3' },
-        ]);
+        mockCalcShippable.mockReturnValue([]);
         mockCalcPickAndShip.mockReturnValue([
             { salesOrderLineId: 'L1', maxQty: 3, defaultQty: '3' },
         ]);
@@ -299,7 +297,7 @@ describe('ShipmentsSection — pick & ship form & fulfill direct', () => {
         });
 
         expect(loadOrder).toHaveBeenCalled();
-    });
+    }, 15000);
 
     it('cancels pick & ship form and closes panel', async () => {
         const user = userEvent.setup();

@@ -1,0 +1,55 @@
+{
+  "actions": {
+    "proceedToReview": "Proceed to Review"
+  },
+  "createNew": "Create Stocktake",
+  "createSlideOver": {
+    "binPatternLabel": "Bin Prefix / Pattern",
+    "binPatternPlaceholder": "e.g. A-01-*",
+    "blindCountDesc": "Hide expected quantities from counters to prevent counting bias.",
+    "blindCountLabel": "Blind Count",
+    "createButton": "Create Stocktake",
+    "creating": "Creating...",
+    "locationLabel": "Location",
+    "nameLabel": "Stocktake Name",
+    "namePlaceholder": "e.g. Q1 Main Warehouse Audit",
+    "notesLabel": "Notes / Instructions",
+    "notesPlaceholder": "Optional instructions for counters...",
+    "scopeLabel": "Count Scope",
+    "title": "Create New Stocktake",
+    "zoneLabel": "Zone / Aisle",
+    "zonePlaceholder": "e.g. Zone A"
+  },
+  "detail": {
+    "title": "Stocktake Details"
+  },
+  "helpGuide": "Workflow Guide",
+  "scopes": {
+    "bin_pattern": "Bin Pattern",
+    "full": "Full Warehouse",
+    "manual": "Manual Selection",
+    "zone": "Specific Zone"
+  },
+  "states": {
+    "cancelled": "Cancelled",
+    "completed": "Completed",
+    "counting": "Counting",
+    "draft": "Draft",
+    "open": "Open",
+    "review": "In Review",
+    "submitted": "Submitted"
+  },
+  "table": {
+    "blind": "Blind",
+    "created": "Created",
+    "createdBy": "Created By",
+    "discrepancies": "Discrepancies",
+    "location": "Location",
+    "name": "Name",
+    "progress": "Progress",
+    "scope": "Scope",
+    "status": "Status",
+    "stocktakeNumber": "Stocktake #"
+  },
+  "title": "Stocktakes"
+}

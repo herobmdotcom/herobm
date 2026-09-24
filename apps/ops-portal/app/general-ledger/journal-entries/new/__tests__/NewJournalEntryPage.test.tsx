@@ -16,6 +16,8 @@ const translations: Record<string, string> = {
   'sourceTypes.payroll': 'Manual Payroll',
   'sourceTypes.tax_settlement': 'Tax Settlement',
   lines: 'Lines',
+  totals: 'Totals',
+  unbalancedWarning: 'Entry is unbalanced by {amount}',
   postEntry: 'Post Journal Entry',
   cancel: 'Cancel',
   saving: 'Saving...',
@@ -53,6 +55,7 @@ jest.mock('@herobm/sdk', () => ({
   glControllerGetAccounts: jest.fn(),
   costCentersControllerFindAll: jest.fn(),
   activitiesControllerFindAll: jest.fn(),
+  projectsControllerFindAll: jest.fn(),
   glControllerCreateManualJournalEntry: jest.fn(),
 }));
 
@@ -61,12 +64,25 @@ const mockAccounts = [
   { accountCode: '0010', name: 'Sales', isGroup: false, isActive: true, accountType: 'revenue' },
 ];
 
+const mockProjects = [
+  {
+    projectId: 'proj-1',
+    projectNumber: 'PRJ-1001',
+    name: 'Office Upgrade',
+    tasks: [
+      { projectTaskId: 'task-1', taskCode: 'T-01', name: 'Planning' },
+      { projectTaskId: 'task-2', taskCode: 'T-02', name: 'Execution' },
+    ],
+  },
+];
+
 describe('NewJournalEntryPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (api.glControllerGetAccounts as jest.Mock).mockResolvedValue({ data: mockAccounts });
     (api.costCentersControllerFindAll as jest.Mock).mockResolvedValue({ data: [] });
     (api.activitiesControllerFindAll as jest.Mock).mockResolvedValue({ data: [] });
+    (api.projectsControllerFindAll as jest.Mock).mockResolvedValue({ data: { data: mockProjects } });
     (api.glControllerCreateManualJournalEntry as jest.Mock).mockResolvedValue({ data: { entryNumber: 'JE-001' } });
   });
 
@@ -95,5 +111,25 @@ describe('NewJournalEntryPage', () => {
     fireEvent.change(select, { target: { value: 'opening_balance' } });
 
     expect(select).toHaveValue('opening_balance');
+  });
+
+  it('fetches projects on mount and renders project select options', async () => {
+    render(<NewJournalEntryPage />);
+
+    expect(api.projectsControllerFindAll).toHaveBeenCalledWith({ limit: 200 });
+    const projectOptions = await screen.findAllByRole('option', { name: 'PRJ-1001 - Office Upgrade' });
+    expect(projectOptions.length).toBeGreaterThan(0);
+  });
+
+  it('renders aligned debit and credit totals in the table footer', async () => {
+    render(<NewJournalEntryPage />);
+
+    expect(screen.getByText('Totals')).toBeInTheDocument();
+
+    const debitInputs = screen.getAllByPlaceholderText('0.00');
+    // First debit input
+    fireEvent.change(debitInputs[0], { target: { value: '150.00' } });
+
+    expect(screen.getByText('A$150.00')).toBeInTheDocument();
   });
 });

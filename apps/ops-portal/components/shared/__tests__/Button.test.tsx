@@ -17,10 +17,10 @@ describe('Button Component', () => {
     expect(button).toHaveClass('w-8'); // defaults to size="icon"
   });
 
-  it('renders either text or icon, not both (icon takes precedence when provided)', () => {
+  it('renders both text and icon when both are provided', () => {
     render(<Button icon="delete">Delete Item</Button>);
     expect(screen.getByText('delete')).toBeInTheDocument();
-    expect(screen.queryByText('Delete Item')).not.toBeInTheDocument();
+    expect(screen.getByText('Delete Item')).toBeInTheDocument();
   });
 
   it('renders progress_activity spinner and disables button when loading={true}', () => {

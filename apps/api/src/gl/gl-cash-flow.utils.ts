@@ -103,6 +103,8 @@ export function classifyCashFlowCounterpart(
       accountCode?: string | null;
       name?: string | null;
       accountType?: string | null;
+      reportCategory?: string | null;
+      parentGroupName?: string | null;
     };
     partyType?: string | null;
   },
@@ -111,9 +113,7 @@ export function classifyCashFlowCounterpart(
   glSettings?: CalculateCashFlowOptions['glSettings'],
 ): CashFlowCounterpartClassification {
   const type = (nl.acc.accountType || '').toLowerCase();
-  const rawName = (nl.acc.name || '').toLowerCase();
-  // Remove diacritics / accents for universal language matching (e.g. matériel -> materiel)
-  const name = rawName.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const cat = (nl.acc.reportCategory || '').toLowerCase();
   const party = (nl.partyType || '').toLowerCase();
   const source = entrySourceType.toLowerCase();
 
@@ -133,6 +133,10 @@ export function classifyCashFlowCounterpart(
   if (
     isArAccount ||
     isRevenueAccount ||
+    cat === 'accounts_receivable' ||
+    cat === 'operating_revenue' ||
+    cat === 'other_revenue' ||
+    cat === 'sales_discount' ||
     party === 'customer' ||
     source === 'sales_invoice' ||
     source === 'customer_receipt' ||
@@ -141,15 +145,7 @@ export function classifyCashFlowCounterpart(
       (allocatedCash > 0 || party === 'customer')) ||
     type === 'receivable' ||
     type === 'revenue' ||
-    type === 'income' ||
-    name.includes('customer') ||
-    name.includes('client') ||
-    name.includes('receivable') ||
-    name.includes('forder') ||
-    name.includes('creance') ||
-    name.includes('sales') ||
-    name.includes('erlos') ||
-    name.includes('vente')
+    type === 'income'
   ) {
     return {
       lineId: 'op-customers',
@@ -161,13 +157,9 @@ export function classifyCashFlowCounterpart(
   // 2. Operating Activities: Tax & GST Payments
   if (
     isTaxAccount ||
-    type === 'tax' ||
-    name.includes('tax') ||
-    name.includes('gst') ||
-    name.includes('vat') ||
-    name.includes('steuer') ||
-    name.includes('tva') ||
-    name.includes('clearing')
+    cat === 'tax_liability' ||
+    cat === 'tax_expense' ||
+    type === 'tax'
   ) {
     return {
       lineId: 'op-tax',
@@ -177,16 +169,7 @@ export function classifyCashFlowCounterpart(
   }
 
   // 3. Operating Activities: Employee Wages & Payroll
-  if (
-    name.includes('wage') ||
-    name.includes('payroll') ||
-    name.includes('salary') ||
-    name.includes('gehalt') ||
-    name.includes('lohn') ||
-    name.includes('salaire') ||
-    name.includes('superannuation') ||
-    name.includes('pension')
-  ) {
+  if (cat === 'payroll_liability' || cat === 'payroll_expense') {
     return {
       lineId: 'op-employees',
       lineName: 'Cash Paid to Employees & Payroll',
@@ -195,13 +178,7 @@ export function classifyCashFlowCounterpart(
   }
 
   // 4. Operating Activities: Interest & Finance Costs
-  if (
-    name.includes('interest') ||
-    name.includes('zins') ||
-    name.includes('interet') ||
-    name.includes('finance charge') ||
-    name.includes('bank fee')
-  ) {
+  if (cat === 'interest_expense') {
     return {
       lineId: 'op-interest',
       lineName: 'Interest & Finance Charges Paid',
@@ -213,6 +190,12 @@ export function classifyCashFlowCounterpart(
   if (
     isApAccount ||
     isCogsOrInvAccount ||
+    cat === 'accounts_payable' ||
+    cat === 'inventory' ||
+    cat === 'cost_of_goods_sold' ||
+    cat === 'operating_expense' ||
+    cat === 'other_expense' ||
+    cat === 'current_liability' ||
     party === 'supplier' ||
     party === 'vendor' ||
     source === 'purchase_invoice' ||
@@ -220,18 +203,7 @@ export function classifyCashFlowCounterpart(
     type === 'payable' ||
     type === 'stock' ||
     type === 'cogs' ||
-    type === 'expense' ||
-    name.includes('supplier') ||
-    name.includes('vendor') ||
-    name.includes('fournisseur') ||
-    name.includes('verbindlich') ||
-    name.includes('payable') ||
-    name.includes('inventory') ||
-    name.includes('stock') ||
-    name.includes('wareneingang') ||
-    name.includes('cogs') ||
-    name.includes('material') ||
-    name.includes('direct cost')
+    type === 'expense'
   ) {
     return {
       lineId: 'op-suppliers',
@@ -242,23 +214,10 @@ export function classifyCashFlowCounterpart(
 
   // 6. Investing Activities: Capex & Fixed Asset Movements
   if (
-    type.includes('depreciation') ||
-    (type === 'asset' &&
-      !isArAccount &&
-      !isCogsOrInvAccount &&
-      !name.includes('receivable') &&
-      !name.includes('inventory') &&
-      !name.includes('prepaid') &&
-      !name.includes('deposit')) ||
-    name.includes('machinery') ||
-    name.includes('equipment') ||
-    name.includes('property') ||
-    name.includes('plant') ||
-    name.includes('sachanlage') ||
-    name.includes('materiel') ||
-    name.includes('immobilis') ||
-    name.includes('vehicle') ||
-    name.includes('capex')
+    cat === 'fixed_asset' ||
+    cat === 'accumulated_depreciation' ||
+    cat === 'non_current_asset' ||
+    cat === 'intangible_asset'
   ) {
     if (allocatedCash < 0) {
       return {
@@ -275,22 +234,7 @@ export function classifyCashFlowCounterpart(
   }
 
   // 7. Financing Activities: Loans & Borrowings
-  if (
-    (type === 'liability' &&
-      !isApAccount &&
-      !isTaxAccount &&
-      !name.includes('payable') &&
-      !name.includes('tax') &&
-      !name.includes('gst') &&
-      !name.includes('accru')) ||
-    name.includes('loan') ||
-    name.includes('borrowing') ||
-    name.includes('darlehen') ||
-    name.includes('kredit') ||
-    name.includes('emprunt') ||
-    name.includes('debt') ||
-    name.includes('facility')
-  ) {
+  if (cat === 'long_term_debt' || cat === 'non_current_liability') {
     if (allocatedCash > 0) {
       return {
         lineId: 'fin-loans',
@@ -307,13 +251,13 @@ export function classifyCashFlowCounterpart(
 
   // 8. Financing Activities: Equity & Distributions
   if (
-    type === 'equity' ||
-    name.includes('capital') ||
-    name.includes('equity') ||
-    name.includes('drawing') ||
-    name.includes('dividend') ||
-    name.includes('stammkapital') ||
-    name.includes('eigenkapital')
+    cat === 'share_capital' ||
+    cat === 'other_equity' ||
+    cat === 'retained_earnings' ||
+    cat === 'drawings' ||
+    cat === 'suspense' ||
+    cat === 'current_earnings' ||
+    type === 'equity'
   ) {
     if (allocatedCash > 0) {
       return {
@@ -323,8 +267,8 @@ export function classifyCashFlowCounterpart(
       };
     }
     return {
-      lineId: 'fin-dividends',
-      lineName: 'Dividends & Capital Distributions Paid',
+      lineId: 'fin-drawings',
+      lineName: 'Dividends & Drawings Paid to Owners',
       category: 'financing',
     };
   }
@@ -349,23 +293,28 @@ export async function calculateCashFlowStatement(
   // 1. Fetch all active GL accounts to determine Cash/Bank control accounts
   const accountsQuery = sql`
     SELECT
-      gl_account_id AS "glAccountId",
-      account_code AS "accountCode",
-      name,
-      account_type AS "accountType",
-      is_group AS "isGroup",
-      is_bank_account AS "isBankAccount"
-    FROM herobm_core.gl_accounts
-    WHERE is_group = false
-    ORDER BY account_code ASC
+      a.gl_account_id AS "glAccountId",
+      a.account_code AS "accountCode",
+      a.name,
+      a.account_type AS "accountType",
+      a.report_category AS "reportCategory",
+      a.is_group AS "isGroup",
+      a.is_bank_account AS "isBankAccount",
+      parent_acc.name AS "parentGroupName"
+    FROM herobm_core.gl_accounts a
+    LEFT JOIN herobm_core.gl_accounts parent_acc ON parent_acc.gl_account_id = a.parent_account_id
+    WHERE a.is_group = false
+    ORDER BY a.account_code ASC
   `;
   const rawAccounts = (await db.execute(accountsQuery)) as unknown as Array<{
     glAccountId: string;
     accountCode: string;
     name: string;
     accountType: string;
+    reportCategory?: string | null;
     isGroup: boolean;
     isBankAccount?: boolean;
+    parentGroupName?: string;
   }>;
 
   const accountsList = Array.isArray(rawAccounts)
@@ -377,21 +326,7 @@ export async function calculateCashFlowStatement(
 
   for (const acc of accountsList) {
     accountMap.set(acc.glAccountId, acc);
-    const typeLower = (acc.accountType || '').toLowerCase();
-    const nameLower = (acc.name || '').toLowerCase();
-    const isLoanOrMortgage =
-      nameLower.includes('loan') ||
-      nameLower.includes('borrowing') ||
-      nameLower.includes('mortgage') ||
-      nameLower.includes('darlehen') ||
-      nameLower.includes('kredit');
-
-    if (
-      !isLoanOrMortgage &&
-      (acc.isBankAccount === true ||
-        typeLower === 'cash' ||
-        typeLower === 'bank')
-    ) {
+    if (acc.isBankAccount === true || acc.reportCategory === 'cash_and_bank') {
       cashAccountIds.add(acc.glAccountId);
     }
   }
@@ -814,14 +749,17 @@ export async function calculateCashFlowLineDrilldown(
   // 1. Fetch active accounts to map cash accounts and opposing details
   const accountsQuery = sql`
     SELECT
-      gl_account_id AS "glAccountId",
-      account_code AS "accountCode",
-      name,
-      account_type AS "accountType",
-      is_group AS "isGroup",
-      is_bank_account AS "isBankAccount"
-    FROM herobm_core.gl_accounts
-    WHERE is_group = false
+      a.gl_account_id AS "glAccountId",
+      a.account_code AS "accountCode",
+      a.name,
+      a.account_type AS "accountType",
+      a.report_category AS "reportCategory",
+      a.is_group AS "isGroup",
+      a.is_bank_account AS "isBankAccount",
+      parent_acc.name AS "parentGroupName"
+    FROM herobm_core.gl_accounts a
+    LEFT JOIN herobm_core.gl_accounts parent_acc ON parent_acc.gl_account_id = a.parent_account_id
+    WHERE a.is_group = false
   `;
 
   const rawAccounts = await db.execute(accountsQuery);
@@ -834,8 +772,10 @@ export async function calculateCashFlowLineDrilldown(
     accountCode: string;
     name: string;
     accountType: string;
+    reportCategory?: string | null;
     isGroup: boolean;
     isBankAccount: boolean;
+    parentGroupName?: string;
   }>;
 
   const cashAccountIds = new Set<string>();
@@ -843,21 +783,7 @@ export async function calculateCashFlowLineDrilldown(
 
   for (const acc of accountRows) {
     accountMap.set(acc.glAccountId, acc);
-    const typeLower = (acc.accountType || '').toLowerCase();
-    const nameLower = (acc.name || '').toLowerCase();
-    const isLoanOrMortgage =
-      nameLower.includes('loan') ||
-      nameLower.includes('borrowing') ||
-      nameLower.includes('mortgage') ||
-      nameLower.includes('darlehen') ||
-      nameLower.includes('kredit');
-
-    if (
-      !isLoanOrMortgage &&
-      (acc.isBankAccount === true ||
-        typeLower === 'cash' ||
-        typeLower === 'bank')
-    ) {
+    if (acc.isBankAccount === true || acc.reportCategory === 'cash_and_bank') {
       cashAccountIds.add(acc.glAccountId);
     }
   }

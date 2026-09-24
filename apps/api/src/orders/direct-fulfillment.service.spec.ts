@@ -10,6 +10,7 @@ import { InventoryMovementService } from '../inventory/inventory-movement.servic
 import { WorkOrdersWriteService } from '../manufacturing/work-orders-write.service';
 import { BackordersService } from './backorders.service';
 import { ReturnsWriteService } from './returns-write.service';
+import { ProjectsInventoryService } from '../projects/projects-inventory.service';
 import { UomService } from '../inventory/uom.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { BadRequestException } from '@nestjs/common';
@@ -151,6 +152,13 @@ describe('DirectFulfillmentService', () => {
               .mockResolvedValue(undefined),
           },
         },
+        {
+          provide: ProjectsInventoryService,
+          useValue: {
+            recordProjectReturnCredit: jest.fn().mockResolvedValue(undefined),
+            recordProjectStagingCharge: jest.fn().mockResolvedValue(undefined),
+          },
+        },
       ],
     }).compile();
 
@@ -216,6 +224,7 @@ describe('DirectFulfillmentService', () => {
     await pg.db.insert(uomDictionary).values({
       uomCode: 'EA',
       description: 'Each',
+      category: 'goods',
     });
 
     await pg.db.insert(taxCategories).values({

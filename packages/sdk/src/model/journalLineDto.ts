@@ -12,6 +12,8 @@ export interface JournalLineDto {
   accountId?: string;
   costCenterId?: string;
   activityId?: string;
+  projectId?: string;
+  projectTaskId?: string;
   partyType?: JournalLineDtoPartyType;
   /** @nullable */
   partyId?: string | null;

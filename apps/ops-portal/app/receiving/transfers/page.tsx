@@ -79,7 +79,7 @@ export default function ReceivingTransfersPage() {
 
     const triggerRefresh = useCallback(() => setRefreshKey(k => k + 1), []);
 
-    const gridEndpoint = locReady ? `/api/transfers?state=${TRANSFER_ORDER_STATE.SHIPPED}${selectedLocationId && selectedLocationId !== 'UNSET' ? `&destinationLocationId=${selectedLocationId}` : ''}` : undefined;
+    const gridEndpoint = locReady ? `/api/transfers?hasPendingReceipt=true${selectedLocationId && selectedLocationId !== 'UNSET' ? `&destinationLocationId=${selectedLocationId}` : ''}` : undefined;
 
     const gridColumns: Record<string, unknown>[] = useMemo(() => [
         { field: 'orderNumber', headerName: 'Order No', width: 140 },

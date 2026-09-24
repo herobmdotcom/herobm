@@ -32,4 +32,8 @@ export interface GlEntryResponseDto {
   createdOn?: GlEntryResponseDtoCreatedOn;
   /** @nullable */
   runningBalance?: number | null;
+  /** @nullable */
+  projectId?: string | null;
+  /** @nullable */
+  projectTaskId?: string | null;
 }

@@ -1,6 +1,10 @@
 import React, { Suspense } from 'react';
-import MapContent from './MapContent';
+import dynamic from 'next/dynamic';
 import { Metadata } from 'next';
+
+const MapContent = dynamic(() => import('./MapContent'), {
+  loading: () => <div className="p-4 text-sm text-[var(--text-muted)]">Loading map...</div>,
+});
 
 export const metadata: Metadata = {
   title: 'Map',

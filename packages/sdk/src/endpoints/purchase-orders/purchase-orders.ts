@@ -18,11 +18,86 @@ import type {
   PurchaseOrdersControllerFindAllParams,
   PurchaseOrdersControllerFindPendingLinesParams,
   PurchaseOrdersControllerFindReturnableLinesParams,
+  PurchasingSettingsResponseDto,
   UpdatePurchaseOrderDto,
-  UpdatePurchaseOrderLineDto
+  UpdatePurchaseOrderLineDto,
+  UpdatePurchasingSettingsDto
 } from '../../model';
 
 import { customFetch } from '../../mutator';
+
+/**
+ * Retrieve purchasing domain settings and metadata schemas.
+ * @summary Get Purchasing Settings
+ */
+export type purchaseOrdersControllerGetSettingsResponse200 = {
+  data: PurchasingSettingsResponseDto
+  status: 200
+}
+    
+export type purchaseOrdersControllerGetSettingsResponseSuccess = (purchaseOrdersControllerGetSettingsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type purchaseOrdersControllerGetSettingsResponse = (purchaseOrdersControllerGetSettingsResponseSuccess)
+
+export const getPurchaseOrdersControllerGetSettingsUrl = () => {
+
+
+  
+
+  return `/purchase-orders/settings`
+}
+
+export const purchaseOrdersControllerGetSettings = async ( options?: RequestInit): Promise<purchaseOrdersControllerGetSettingsResponse> => {
+  
+  return customFetch<purchaseOrdersControllerGetSettingsResponse>(getPurchaseOrdersControllerGetSettingsUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+/**
+ * Update purchasing domain settings and metadata schemas.
+ * @summary Update Purchasing Settings
+ */
+export type purchaseOrdersControllerUpdateSettingsResponse200 = {
+  data: PurchasingSettingsResponseDto
+  status: 200
+}
+    
+export type purchaseOrdersControllerUpdateSettingsResponseSuccess = (purchaseOrdersControllerUpdateSettingsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type purchaseOrdersControllerUpdateSettingsResponse = (purchaseOrdersControllerUpdateSettingsResponseSuccess)
+
+export const getPurchaseOrdersControllerUpdateSettingsUrl = () => {
+
+
+  
+
+  return `/purchase-orders/settings`
+}
+
+export const purchaseOrdersControllerUpdateSettings = async (updatePurchasingSettingsDto: UpdatePurchasingSettingsDto, options?: RequestInit): Promise<purchaseOrdersControllerUpdateSettingsResponse> => {
+  
+  return customFetch<purchaseOrdersControllerUpdateSettingsResponse>(getPurchaseOrdersControllerUpdateSettingsUrl(),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updatePurchasingSettingsDto,)
+  }
+);}
+
 
 /**
  * Create a new purchase order.

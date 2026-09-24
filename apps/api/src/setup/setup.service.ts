@@ -927,10 +927,10 @@ export class SetupService {
 
   async runEltCore(dto: ExecuteEltDto, jobId?: string) {
     try {
-      this.log(jobId, '--- Initializing ABM ELT Pipeline ---');
+      await this.log(jobId, '--- Initializing ABM ELT Pipeline ---');
 
       if (dto.baseCurrency) {
-        this.log(jobId, `Setting base currency to ${dto.baseCurrency}`);
+        await this.log(jobId, `Setting base currency to ${dto.baseCurrency}`);
         const [updatedGl] = await this.db
           .update(glSettings)
           .set({ baseCurrency: dto.baseCurrency })
@@ -979,6 +979,13 @@ export class SetupService {
         INVENTORY_VALUATION_METHOD: inventoryValuationMethod,
       };
 
+      if (process.env.PROFILE) {
+        envOverride.PROFILE = process.env.PROFILE;
+      }
+      if (process.env.ENV_FILE) {
+        envOverride.ENV_FILE = process.env.ENV_FILE;
+      }
+
       if (dto.defaultTaxCategoryCode) {
         envOverride.DEFAULT_TAX_CATEGORY_CODE = dto.defaultTaxCategoryCode;
       }
@@ -1002,14 +1009,14 @@ export class SetupService {
       envOverride['SOURCE_RESUME'] = dto.resumeExtraction ? 'true' : 'false';
 
       if (!dto.skipExtraction) {
-        this.log(jobId, `Running ${source.toUpperCase()} Extraction...`);
+        await this.log(jobId, `Running ${source.toUpperCase()} Extraction...`);
         await this.runCommandStream(
           jobId,
           { source, stage: 'extract' },
           envOverride,
         );
       } else {
-        this.log(jobId, `Skipping ${source.toUpperCase()} Extraction...`);
+        await this.log(jobId, `Skipping ${source.toUpperCase()} Extraction...`);
       }
 
       if (jobId) {
@@ -1026,7 +1033,7 @@ export class SetupService {
         }
       }
 
-      this.log(jobId, 'Running Transformations & Report...');
+      await this.log(jobId, 'Running Transformations & Report...');
 
       const extraDbtVars = jobId ? `{"job_id": "${jobId}"}` : undefined;
       await this.runCommandStream(
@@ -1073,7 +1080,7 @@ export class SetupService {
       try {
         await this.appConfig.reload();
       } catch (e: unknown) {
-        this.log(
+        await this.log(
           jobId,
           `Warning: Failed to reload app config cache: ${getErrorMessage(e)}`,
           'error',
@@ -1308,13 +1315,13 @@ export class SetupService {
     });
   }
 
-  public handleWebhook(payload: {
+  public async handleWebhook(payload: {
     jobId: string;
     logLine?: string;
     status: string;
   }) {
     if (payload.logLine) {
-      this.log(payload.jobId, payload.logLine);
+      await this.log(payload.jobId, payload.logLine);
     }
 
     if (payload.status === 'done') {
@@ -1333,7 +1340,7 @@ export class SetupService {
   }
 
   private async inferAndSaveGlMetadataSchema(jobId?: string) {
-    this.log(
+    await this.log(
       jobId,
       'Dynamically inferring GL metadata schema from imported accounts...',
     );
@@ -1385,7 +1392,7 @@ export class SetupService {
               accountMetadataSchema: {
                 type: 'object',
                 properties: mergedProperties,
-              } as unknown as unknown[],
+              },
             })
             .where(eq(glSettings.settingsId, existingGl.settingsId))
             .returning();

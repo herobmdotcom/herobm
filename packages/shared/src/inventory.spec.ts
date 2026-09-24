@@ -294,17 +294,49 @@ describe('Inventory Logic (Shared)', () => {
           totalAvailableQuantity: 2,
         }),
       ).toBe('shortage');
+    });
+
+    it('should return shortage when localAvailableQuantity is 0 and total is 0 even if hasGap is false or undefined', () => {
+      expect(
+        resolveSalesLineAvailabilityStatus({
+          isPreConfirmation: true,
+          orderedQuantity: 1,
+          hasGap: false,
+          localAvailableQuantity: 0,
+          totalAvailableQuantity: 0,
+        }),
+      ).toBe('shortage');
 
       expect(
         resolveSalesLineAvailabilityStatus({
           isPreConfirmation: true,
-          orderedQuantity: 10,
-          hasGap: true,
-          gapOrderedQuantity: 10,
+          orderedQuantity: 1,
           localAvailableQuantity: 0,
-          totalAvailableQuantity: 2,
+          totalAvailableQuantity: 0,
         }),
       ).toBe('shortage');
+    });
+
+    it('should return others when localAvailableQuantity is 0 but total available covers quantity', () => {
+      expect(
+        resolveSalesLineAvailabilityStatus({
+          isPreConfirmation: true,
+          orderedQuantity: 1,
+          localAvailableQuantity: 0,
+          totalAvailableQuantity: 5,
+        }),
+      ).toBe('others');
+    });
+
+    it('should return local when localAvailableQuantity is sufficient without gapMap', () => {
+      expect(
+        resolveSalesLineAvailabilityStatus({
+          isPreConfirmation: true,
+          orderedQuantity: 1,
+          localAvailableQuantity: 5,
+          totalAvailableQuantity: 5,
+        }),
+      ).toBe('local');
     });
   });
 });

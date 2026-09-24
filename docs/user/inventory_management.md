@@ -11,6 +11,8 @@ routes:
   - "/inventory/locations"
   - "/inventory/bins"
   - "/inventory/ledger"
+  - "/demand/restock"
+  - "/demand/movement"
 tags: ["inventory", "stock", "bins", "valuation", "wac", "warehouse"]
 fields:
   location_id:
@@ -33,6 +35,7 @@ related:
   - "putaway"
   - "picking"
   - "transfers-quarantine"
+  - "stocktakes"
   - "balances"
 ---
 
@@ -89,11 +92,64 @@ On-Order Quantity = SUM(max(0, PO Line Ordered Qty - PO Line Received Qty))
 * **Procurement State Scope**: Only Purchase Orders in active incoming states (`ordered`, `partially_received`) contribute to On Order. Orders in `draft`, `received` (fully received), `invoiced`, `cancelled`, `closed_short`, or `archived` states are excluded.
 * **Non-Negative Guarantee**: Over-receipts (where delivered quantity exceeds ordered quantity) clamp at `0` remaining incoming units, guaranteeing that On Order balances never become negative.
 
+### 4. Inventory Replenishment & Restock Calculation (`/demand/restock`)
+The restock engine identifies products whose inventory position has breached minimum buffer thresholds and calculates optimal order quantities:
+
+```
+Projected Inventory Position = On-Hand Stock + On-Order Stock
+```
+
+* **Replenishment Trigger**: An item is flagged for restock if:
+  ```
+  Projected Inventory Position < Min Quantity
+  ```
+* **Suggested Restock Quantity Formula**:
+  ```
+  Target Maximum = Max Quantity > Min Quantity ? Max Quantity : Min Quantity
+  Suggested Restock Quantity = max(0, Target Maximum - Projected Inventory Position)
+  ```
+* **Suggested Quantity vs. Restock Quantity**:
+  * **Suggested Quantity (`suggestedRestockQty`)**: The algorithmically computed baseline quantity required to restore inventory to target levels without overstocking.
+  * **Restock Quantity (`orderQty` / Slide-Over Input)**: The user-editable order quantity in the **Generate Purchase Orders** slide-over drawer, allowing purchasing agents to adjust for supplier minimum order quantities (MOQs), carton/pallet pack multiples, or seasonal demand shifts.
+* **Auto-Resolution**: When draft Purchase Orders are generated, the ordered items shift to `onOrder` status (`Projected Position >= Min Quantity`), bringing the suggested restock quantity to `0` and clearing the items from the restock requisition list.
+
+### 5. Stock Movement Reporting & Detailed Movements (`/demand/movement`)
+The movement report tracks product velocity and physical stock changes across selected date ranges and facilities:
+
+```
+Net Stock Movement = Total Stock In (+) - Total Stock Out (-)
+Closing Stock = Opening Stock + Net Stock Movement
+```
+
+* **Stock In (+)**: Comprises Goods Receipts (`PO_RECEIPT`), Customer Sales Returns (`SO_RETURN`), Inbound Transfers (`TO_RECEIPT`), Manufacturing Output (`WO_RECEIPT`), and Positive Stock Adjustments (`ADJUSTMENT_IN`).
+* **Stock Out (-)**: Comprises Sales Order Shipments (`SO_SHIPMENT`), Supplier Returns (`PURCHASE_RETURN`), Outbound Transfers (`TO_DISPATCH`), Work Order Component Issues (`WO_ISSUE`), and Negative Stock Adjustments (`ADJUSTMENT_OUT`).
+* **Detailed Movement Ledger Slide-Over**: Clicking any row in the Stock Movement table opens a detailed slide-over displaying the product's metric summary cards, categorized activity breakdown, and full itemized ledger transactions with links to source documents.
+
 ---
 
 ## Step-by-Step Workflows
 
-### 1. Performing an Ad-Hoc Stock Adjustment
+### 1. Generating Restock Purchase Orders
+1. Go to **Demand** → **Restock** (`/demand/restock`).
+2. Review the read-only requisition table showing current `On Hand`, `On Order`, `Min Qty`, `Max Qty`, and `Suggested Qty`.
+3. Filter by warehouse facility or product group if needed.
+4. Select the checkboxes for the items you want to order, or click **Generate POs** to review all flagged items.
+5. In the slide-over drawer:
+   - Items are automatically grouped into draft orders by **Preferred Supplier** and **Deliver-To Warehouse**.
+   - Review stock metrics (`On Hand`, `On Order`, `Min`, `Max`), adjust **Restock Qty** or **Unit Cost**, or assign suppliers to unassigned items.
+   - Delete any lines not needed for the current order run.
+6. Click **Generate POs**. Draft Purchase Orders are created in `/purchase-orders`, and the ordered items are cleared from the restock requisition list.
+
+### 2. Inspecting Product Stock Movements
+1. Go to **Demand** → **Movement** (`/demand/movement`).
+2. Select the **Product Group**, **Location**, and date range.
+3. Click on any product row in the table.
+4. The **Detailed Movements** slide-over opens, displaying:
+   - Summary cards: Opening Stock, Total Stock In, Total Stock Out, Net Movement, and Current On Hand.
+   - Categorized activity breakdown by source type (PO Receipts, SO Shipments, Transfers, Work Orders, Adjustments).
+   - Interactive transaction ledger with clickable links to related documents and trading parties.
+
+### 3. Performing an Ad-Hoc Stock Adjustment
 1. Go to **Inventory** (`/inventory`).
 2. Search for the product SKU.
 3. Click **Adjust Stock**.
@@ -101,7 +157,7 @@ On-Order Quantity = SUM(max(0, PO Line Ordered Qty - PO Line Received Qty))
 5. Enter the **Quantity Change** (+/-) and select a reason code (e.g. Found Stock, Breakage).
 6. Click **Confirm Adjustment**. The inventory ledger updates immediately, and the balancing expense posts to the General Ledger.
 
-### 2. Auditing the Perpetual Inventory Ledger
+### 4. Auditing the Perpetual Inventory Ledger
 1. Go to **Inventory** → **Ledger** (`/inventory/ledger`).
 2. Filter transactions by date range, warehouse location, or transaction type (`receipt`, `dispatch`, `adjustment`, `transfer`).
 3. Inspect the audit trail of perpetual stock movements, unit cost valuations, and linked General Ledger journal entry IDs.
@@ -113,10 +169,15 @@ On-Order Quantity = SUM(max(0, PO Line Ordered Qty - PO Line Received Qty))
 | Field | Description |
 | :--- | :--- |
 | **Product SKU** | Unique catalog identifier. |
-| **Warehouse** | Physical facility location. |
+| **Warehouse / Location** | Physical facility location. |
 | **Bin Location** | Shelf/rack address (`storage`, `pick`, `bulk`, `staging`, `quarantine`). |
-| **On Hand** | Total physical count present in bins. |
+| **On Hand** | Total physical count present in pickable storage bins. |
 | **Committed / Allocated** | Units reserved for confirmed customer orders. |
 | **Available** | Net sellable stock (`On Hand - Committed - Quarantine`). |
 | **On Order** | Pending incoming units from open Purchase Orders (`ordered`, `partially_received`). |
+| **Min Qty** | Minimum inventory threshold triggering replenishment when On Hand + On Order < Min Qty. |
+| **Max Qty** | Target inventory ceiling for replenishment calculations. |
+| **Suggested Qty** | System-calculated optimal replenishment quantity: `max(0, Target Max - (On Hand + On Order))`. |
+| **Restock Qty** | Editable order volume specified in the draft PO slide-over drawer. |
 | **WAC Unit Cost** | Current Moving Weighted Average Cost valuation. |
+

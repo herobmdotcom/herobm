@@ -10,6 +10,7 @@ Usage:
     python tools/migrate.py --dry-run                # show what would be applied
     python tools/migrate.py --mark-applied <file>    # explicitly mark a single migration as applied without executing DDL
     python tools/migrate.py --mark-all-applied       # mark all pending migrations as applied without executing DDL
+    python tools/migrate.py --reapply <file>         # re-run a specific migration and update tracking
 """
 from __future__ import annotations
 
@@ -176,6 +177,28 @@ def main() -> None:
         else:
             print("ERROR: --mark-applied requires a migration filename argument (e.g. python tools/migrate.py --mark-applied 0004_gl_journal_entries_immutability.sql)", file=sys.stderr)
             sys.exit(1)
+
+    if "--reapply" in sys.argv:
+        idx = sys.argv.index("--reapply")
+        if idx + 1 < len(sys.argv):
+            reapply_target = os.path.basename(sys.argv[idx + 1])
+        else:
+            print("ERROR: --reapply requires a migration filename argument (e.g. python tools/migrate.py --reapply 0004_gl_journal_entries_immutability.sql)", file=sys.stderr)
+            sys.exit(1)
+        target_path = os.path.join(MIGRATIONS_DIR, reapply_target)
+        if not os.path.exists(target_path):
+            print(f"ERROR: Migration file '{reapply_target}' does not exist in {MIGRATIONS_DIR}.", file=sys.stderr)
+            sys.exit(1)
+        print(f"Re-applying migration '{reapply_target}'...", end=" ", flush=True)
+        psql(f"DELETE FROM herobm_core.schema_migrations WHERE filename = '{reapply_target}';")
+        success = psql_file(target_path, record_migration=reapply_target)
+        if success:
+            print("OK")
+            apply_extensions(dry_run)
+        else:
+            print(f"\nFATAL: Migration {reapply_target} failed.", file=sys.stderr)
+            sys.exit(1)
+        return
 
     if mark_applied_target:
         target_path = os.path.join(MIGRATIONS_DIR, mark_applied_target)

@@ -34,6 +34,12 @@ import {
 } from "./datagrid/DataGridStateHelpers";
 import { numericFormatter } from "./datagrid/DataGridFormatters";
 import { GenericMobileCard } from "./datagrid/GenericMobileCard";
+import { exportDataToExcel } from "./datagrid/DataGridExportHelpers";
+import {
+  useEntityCustomFields,
+  type CustomFieldEntityType,
+  type CustomFieldColumnOptions,
+} from "@/hooks/useCustomFieldColumns";
 
 /* ── Component ────────────────────────────────────────────────────── */
 
@@ -44,6 +50,10 @@ export interface DataGridProps<T> {
   rowData?: T[];
   /** AG Grid column definitions */
   columns: ColDef<T>[];
+  /** Automatically fetch and inject dynamic custom field columns for this entity type */
+  customFieldEntityType?: CustomFieldEntityType;
+  /** Custom options for dynamic custom field columns (e.g. rootField, defaultHide) */
+  customFieldOptions?: CustomFieldColumnOptions;
   /** Stable key for persisting column layout to localStorage (e.g. "ops-products") */
   gridKey?: string;
   /** Placeholder text for the search input */
@@ -115,6 +125,8 @@ export default function DataGrid<T>({
   endpoint,
   rowData,
   columns,
+  customFieldEntityType,
+  customFieldOptions,
   gridKey: providedGridKey,
   searchPlaceholder,
   exportFileName = "export",
@@ -145,7 +157,12 @@ export default function DataGrid<T>({
   hideSearch,
   hideSecondaryHeaderOnMobile = false,
 }: DataGridProps<T>) {
-  const tGrid = useTranslations('common.grid' as never) as unknown as (key: string, values?: Record<string, string>) => string;
+  const { columns: customFieldColumns, isLoading: isCustomFieldsLoading } = useEntityCustomFields(
+    customFieldEntityType,
+    customFieldOptions,
+  );
+
+  const tGrid = useTranslations('common.grid');
   const gridRef = useRef<AgGridReact<T>>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -518,23 +535,28 @@ export default function DataGrid<T>({
     if (search) params.set("q", search);
     if (includeArchived) params.set("includeArchived", "true");
     
-    if (refreshTrigger || internalRefresh) {
-      params.set("_refresh", String((refreshTrigger || 0) + (internalRefresh || 0)));
-    }
-    
     const separator = endpoint.includes('?') ? '&' : '?';
     return `${endpoint.replace('/api', '')}${separator}${params}`;
-  }, [rowData, endpoint, isRestored, cursor, direction, limit, search, includeArchived, refreshTrigger, internalRefresh]);
+  }, [rowData, endpoint, isRestored, cursor, direction, limit, search, includeArchived]);
 
-  const { data: swrResponse, error: swrError, isLoading: swrIsLoading } = useSWR(
+  const { data: swrResponse, error: swrError, isLoading: swrIsLoading, mutate } = useSWR(
     swrKey,
-    (url: string) => {
-      const cleanUrl = url.replace(/([&?])_refresh=\d+&?/, '$1').replace(/&$/, '').replace(/\?$/, '');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-      return api.customFetch(cleanUrl, { method: 'GET' }).then((res: any) => res.data);
-    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+    (url: string) => api.customFetch(url, { method: 'GET' }).then((res: any) => res.data),
     { revalidateOnFocus: false, keepPreviousData: true }
   );
+
+  // Trigger SWR revalidation on external or internal refresh triggers
+  const isFirstMountRef = useRef(true);
+  useEffect(() => {
+    if (isFirstMountRef.current) {
+      isFirstMountRef.current = false;
+      return;
+    }
+    if (swrKey) {
+      mutate();
+    }
+  }, [refreshTrigger, internalRefresh, mutate, swrKey]);
 
   const effectiveData = useMemo(() => {
     if (rowData) return rowData;
@@ -546,10 +568,21 @@ export default function DataGrid<T>({
     return data;
   }, [rowData, swrResponse, data]);
 
+  const mergedColumns = useMemo<ColDef<T>[]>(() => {
+    if (!customFieldColumns.length) return columns;
+    const existingIds = new Set(
+      columns.map((c) => (c.colId || c.field || '') as string).filter(Boolean),
+    );
+    const uniqueCustomCols = customFieldColumns.filter(
+      (c) => !existingIds.has((c.colId || c.field || '') as string),
+    ) as ColDef<T>[];
+    return [...columns, ...uniqueCustomCols];
+  }, [columns, customFieldColumns]);
+
   /** Enhance columns: add header tooltips, cell tooltips, and numeric parsing */
   const enhancedColumns = useMemo(
     () =>
-      columns.map((col, colIndex) => {
+      mergedColumns.map((col, colIndex) => {
         const isNumeric = col.type === "numericColumn";
         const base: ColDef<T> = {
           ...col,
@@ -605,7 +638,7 @@ export default function DataGrid<T>({
           filter: "agNumberColumnFilter",
         } as ColDef<T>;
       }),
-    [columns],
+    [mergedColumns],
   );
 
   // Client-side search and filtering (crucial for fetchAll, rowData, and mobile rendering)
@@ -665,7 +698,7 @@ export default function DataGrid<T>({
 
   const loading = externalLoading !== undefined 
     ? externalLoading 
-    : (swrResponse ? false : internalLoading);
+    : (swrResponse ? false : (internalLoading || isCustomFieldsLoading));
 
   useEffect(() => {
     if (!isRestored) return;
@@ -842,7 +875,7 @@ export default function DataGrid<T>({
       const safeData = Array.isArray(data) ? data : (data?.data || []);
       
       const visibleCols = enhancedColumns.filter(c => !c.hide);
-      const headers = visibleCols.map(c => c.headerName || c.field).join(',');
+      const headers = visibleCols.map(c => c.headerName || c.colId || c.field).join(',');
       const rows = safeData.map((row: Record<string, unknown>) => {
         return visibleCols.map(col => {
           let val = getExportValue(col, row);
@@ -868,6 +901,66 @@ export default function DataGrid<T>({
       setIsExporting(false);
     }
   }, [exportFileName, isClientData, effectiveFetchAll, endpoint, search, includeArchived, enhancedColumns]);
+
+  /** Excel export handler */
+  const handleExportExcel = useCallback(async () => {
+    try {
+      setIsExporting(true);
+      const visibleCols = enhancedColumns.filter((c) => !c.hide);
+      const fileName = `${exportFileName ?? "export"}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+      if (isClientData || effectiveFetchAll) {
+        const rowDataList: Record<string, unknown>[] = [];
+        if (gridRef.current?.api) {
+          gridRef.current.api.forEachNodeAfterFilterAndSort((node) => {
+            if (node.data) {
+              rowDataList.push(node.data as Record<string, unknown>);
+            }
+          });
+        }
+        const finalData = rowDataList.length > 0 ? rowDataList : ((clientFilteredData || effectiveData || []) as Record<string, unknown>[]);
+        await exportDataToExcel({
+          fileName,
+          columns: visibleCols,
+          data: finalData,
+          getExportValue,
+        });
+        return;
+      }
+
+      if (!endpoint) return;
+
+      const params = new URLSearchParams();
+      if (search) params.set("q", search);
+      if (includeArchived) params.set("includeArchived", "true");
+      
+      const [baseEndpoint, queryString] = endpoint.split('?');
+      if (queryString) {
+         const existingParams = new URLSearchParams(queryString);
+         for (const [k, v] of existingParams.entries()) {
+           params.append(k, v);
+         }
+      }
+      params.set("limit", "999999");
+      
+      const url = `${baseEndpoint}?${params.toString()}`;
+      
+      const data = await apiFetch<{ data?: Record<string, unknown>[] } | Record<string, unknown>[]>(url);
+      const safeData = Array.isArray(data) ? data : (data?.data || []);
+
+      await exportDataToExcel({
+        fileName,
+        columns: visibleCols,
+        data: safeData as Record<string, unknown>[],
+        getExportValue,
+      });
+    } catch (e) {
+      reportError(e, 'DataGrid.exportExcel');
+      toast.error('Excel export failed: ' + getErrorMessage(e));
+    } finally {
+      setIsExporting(false);
+    }
+  }, [exportFileName, isClientData, effectiveFetchAll, endpoint, search, includeArchived, enhancedColumns, clientFilteredData, effectiveData]);
 
   /** Reset columns to default layout */
   const handleResetColumns = useCallback(() => {
@@ -956,77 +1049,109 @@ export default function DataGrid<T>({
     <div ref={colPickerRef} className="relative">
       <Button
         onClick={() => setColPickerOpen((v) => !v)}
-        className={`px-3 py-1.5 rounded text-xs cursor-pointer transition-colors text-[var(--text-secondary)] border border-[var(--border)] ${
-          colPickerOpen ? 'bg-[var(--bg-card-hover)]' : 'bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)]'
+        variant="secondary"
+        size="sm"
+        className={`px-2.5 py-1.5 rounded-lg text-xs font-normal cursor-pointer transition-colors shadow-none ${
+          colPickerOpen ? 'bg-[var(--bg-card-hover)] text-[var(--text-primary)] border-[var(--accent)]' : ''
         }`}
         title={tGrid('options')}
       >
-        {tGrid('options')}
+        <span>{tGrid('options')}</span>
       </Button>
       {colPickerOpen && (
         <div
-          className={`absolute top-full mt-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg py-1.5 z-50 min-w-[200px] max-h-[400px] overflow-y-auto shadow-2xl ${
+          className={`absolute top-full mt-1.5 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-1.5 z-50 min-w-[210px] max-h-[400px] overflow-y-auto shadow-2xl ${
             isMobile ? 'left-1/2 -translate-x-1/2' : 'left-0'
           }`}
         >
           {/* 1. Export Section */}
           {canExport && (
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                setColPickerOpen(false);
-                handleExport();
-              }}
-              className="flex items-center gap-2 w-full px-3 py-1.5 bg-transparent border-0 cursor-pointer text-[13px] text-[var(--text-primary)] text-left hover:bg-[var(--bg-card-hover)]"
-            >
-              <span aria-hidden>⬇</span>{' '}{tGrid('exportCsv')}
-            </Button>
+            <div className="flex flex-col gap-0.5">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                icon="description"
+                iconClassName="text-[var(--text-muted)] text-[12px]"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setColPickerOpen(false);
+                  handleExport();
+                }}
+                disabled={isExporting}
+                className="w-full justify-start font-normal text-xs text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] px-2.5 py-1.5 h-auto rounded-md shadow-none border-0"
+              >
+                <span>{tGrid('exportCsv')}</span>
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                icon="table_view"
+                iconClassName="text-[var(--text-muted)] text-[12px]"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setColPickerOpen(false);
+                  handleExportExcel();
+                }}
+                disabled={isExporting}
+                className="w-full justify-start font-normal text-xs text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] px-2.5 py-1.5 h-auto rounded-md shadow-none border-0"
+              >
+                <span>{tGrid('exportExcel')}</span>
+              </Button>
+            </div>
           )}
 
           {/* 2. Columns Section */}
           {gridKey && (
             <>
-              <div className="h-px bg-[var(--border)] my-1.5" />
-              <div className="px-3 pt-0.5 pb-1 text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-[0.05em]">
+              {canExport && <div className="h-px bg-[var(--border)] my-1.5" />}
+              <div className="px-2.5 pt-0.5 pb-1 text-[11px] text-[var(--text-muted)] font-medium uppercase tracking-[0.05em]">
                 {tGrid('columns')}
               </div>
-              {columns.map((col) => {
-                const colId = (col.field ??
-                  col.colId ??
-                  col.headerName ??
-                  "") as string;
-                if (!colId) return null;
-                const gridCol = gridRef.current?.api?.getColumn(colId);
-                const visible = gridCol ? gridCol.isVisible() : true;
-                return (
-                  <label
-                    key={colId}
-                    className={`flex items-center gap-2 px-3 py-1 cursor-pointer text-[13px] hover:bg-[var(--bg-card-hover)] ${
-                      visible ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={visible}
-                      onChange={(e) =>
-                        toggleColumnVisible(colId, e.target.checked)
-                      }
-                      className="accent-[var(--accent)]"
-                    />
-                    {col.headerName ?? colId}
-                  </label>
-                );
-              })}
-              <Button
-                onClick={() => {
-                  handleResetColumns();
-                  setColPickerOpen(false);
-                }}
-                className="flex items-center gap-2 w-full px-3 py-1.5 bg-transparent border-0 cursor-pointer text-[13px] text-[var(--text-primary)] text-left hover:bg-[var(--bg-card-hover)]"
-              >
-                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
-                <span aria-hidden>↻</span>{' '}{tGrid('resetColumns')}
-              </Button>
+              <div className="flex flex-col gap-0.5">
+                {mergedColumns.map((col) => {
+                  const colId = (col.colId ??
+                    col.field ??
+                    col.headerName ??
+                    "") as string;
+                  if (!colId) return null;
+                  const gridCol = gridRef.current?.api?.getColumn(colId);
+                  const visible = gridCol ? gridCol.isVisible() : !col.hide;
+                  return (
+                    <label
+                      key={colId}
+                      className={`flex items-center gap-2.5 px-2.5 py-1 cursor-pointer text-xs font-normal rounded-md transition-colors hover:bg-[var(--bg-card-hover)] ${
+                        visible ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={visible}
+                        onChange={(e) =>
+                          toggleColumnVisible(colId, e.target.checked)
+                        }
+                        className="accent-[var(--accent)] rounded"
+                      />
+                      <span className="truncate">{col.headerName ?? colId}</span>
+                    </label>
+                  );
+                })}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  icon="restart_alt"
+                  iconClassName="text-[var(--text-muted)] text-[12px]"
+                  onClick={() => {
+                    handleResetColumns();
+                    setColPickerOpen(false);
+                  }}
+                  className="w-full justify-start font-normal text-xs text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] px-2.5 py-1.5 h-auto rounded-md shadow-none border-0 mt-0.5"
+                >
+                  <span>{tGrid('resetColumns')}</span>
+                </Button>
+              </div>
             </>
           )}
 
@@ -1034,11 +1159,11 @@ export default function DataGrid<T>({
           {showArchivedToggle && (
             <>
               <div className="h-px bg-[var(--border)] my-1.5" />
-              <div className="px-3 pt-0.5 pb-1 text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-[0.05em]">
+              <div className="px-2.5 pt-0.5 pb-1 text-[11px] text-[var(--text-muted)] font-medium uppercase tracking-[0.05em]">
                 {tGrid('rowCountLabel')}
               </div>
               <label
-                className="flex items-center gap-2 w-full px-3 py-1.5 cursor-pointer text-[13px] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]"
+                className="flex items-center gap-2.5 w-full px-2.5 py-1 cursor-pointer text-xs font-normal text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] rounded-md transition-colors"
               >
                 <input
                   type="checkbox"
@@ -1047,49 +1172,51 @@ export default function DataGrid<T>({
                     setIncludeArchived(e.target.checked);
                     setCursor(null);
                   }}
-                  className="accent-[var(--accent)]"
+                  className="accent-[var(--accent)] rounded"
                 />
-                {tGrid('includeArchived')}
+                <span>{tGrid('includeArchived')}</span>
               </label>
             </>
           )}
 
           {/* 4. Pagination Section */}
           <div className="h-px bg-[var(--border)] my-1.5" />
-          <div className="px-3 pt-0.5 pb-1 text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-[0.05em]">
+          <div className="px-2.5 pt-0.5 pb-1 text-[11px] text-[var(--text-muted)] font-medium uppercase tracking-[0.05em]">
             {tGrid('pageSize')}
           </div>
-          {[10, 25, 50, 100, 200, 99999].map((size) => (
-            <label
-              key={size}
-              className={`flex items-center gap-2 w-full px-3 py-1.5 cursor-pointer text-[13px] hover:bg-[var(--bg-card-hover)] ${
-                limit === size ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'
-              }`}
-            >
-              <input
-                type="radio"
-                name={`${gridKey}-pageSize`}
-                checked={limit === size}
-                onChange={() => {
-                  setLimit(size);
-                  if (size === 99999) {
-                    setIsCustomView(false);
-                  }
-                  if (isClientData) {
-                    setClientPage(0);
-                    if (gridRef.current?.api && size !== 99999) {
-                      gridRef.current.api.paginationGoToPage(0);
+          <div className="flex flex-col gap-0.5">
+            {[10, 25, 50, 100, 200, 99999].map((size) => (
+              <label
+                key={size}
+                className={`flex items-center gap-2.5 w-full px-2.5 py-1 cursor-pointer text-xs font-normal rounded-md transition-colors hover:bg-[var(--bg-card-hover)] ${
+                  limit === size ? 'text-[var(--text-primary)] font-medium' : 'text-[var(--text-muted)]'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name={`${gridKey}-pageSize`}
+                  checked={limit === size}
+                  onChange={() => {
+                    setLimit(size);
+                    if (size === 99999) {
+                      setIsCustomView(false);
                     }
-                  }
-                  setCursor(null);
-                  setColPickerOpen(false);
-                  resetScroll();
-                }}
-                className="accent-[var(--accent)]"
-              />
-              {size === 99999 ? tGrid('all') : size}
-            </label>
-          ))}
+                    if (isClientData) {
+                      setClientPage(0);
+                      if (gridRef.current?.api && size !== 99999) {
+                        gridRef.current.api.paginationGoToPage(0);
+                      }
+                    }
+                    setCursor(null);
+                    setColPickerOpen(false);
+                    resetScroll();
+                  }}
+                  className="accent-[var(--accent)]"
+                />
+                <span>{size === 99999 ? tGrid('all') : size}</span>
+              </label>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -1193,7 +1320,7 @@ export default function DataGrid<T>({
             <>
               <div className="h-4 w-px bg-[var(--border)]" />
               <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
-                <span>{tGrid('customViewMessage', { fallback: 'All records' })}</span>
+                <span>{tGrid('customViewMessage')}</span>
                 <Button 
                   onClick={() => {
                     const api = gridRef.current?.api;
@@ -1212,7 +1339,7 @@ export default function DataGrid<T>({
                   }}
                   className="hover:text-slate-800 focus:outline-none flex items-center justify-center rounded hover:bg-slate-100 px-1 py-0.5 transition-colors"
                 >
-                  {tGrid('clearCustomView', { fallback: 'x' })}
+                  {tGrid('clearCustomView')}
                 </Button>
               </div>
             </>
@@ -1334,7 +1461,7 @@ export default function DataGrid<T>({
           const api = gridRef.current?.api;
           const mobileVisibleCols = api
             ? enhancedColumns.filter(col => {
-                const colId = (col.field || col.colId || col.headerName) as string;
+                const colId = (col.colId || col.field || col.headerName) as string;
                 if (!colId) return !col.hide;
                 const gridCol = api.getColumn(colId);
                 return gridCol ? gridCol.isVisible() : !col.hide;
@@ -1351,8 +1478,8 @@ export default function DataGrid<T>({
             return (
               <div className="text-center py-12 text-[var(--text-muted)] text-sm bg-[var(--bg-card)] rounded-xl border border-[var(--border)]">
                 {search
-                  ? tGrid('noSearchResults', { fallback: 'No records matching search criteria.' })
-                  : tGrid('noRowsToShow', { fallback: 'No records found' })}
+                  ? tGrid('noSearchResults')
+                  : tGrid('noRowsToShow')}
               </div>
             );
           }

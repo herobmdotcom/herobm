@@ -14,6 +14,8 @@ import { useTranslations } from 'next-intl';
 import { formatLocalDate } from '@/lib/date';
 import { useSettings } from '@/components/SettingsProvider';
 
+import { OPEN_SALES_ORDER_STATES } from '@herobm/shared';
+
 interface UnifiedOrder {
   id: string;
   orderNumber: string;
@@ -34,7 +36,21 @@ export default function SalesOrdersContent() {
   const tCommon = useTranslations('common');
   const tSales = useTranslations('salesOrders');
   const tStates = useTranslations('common.states');
-  const [days, setDays, isReady] = usePersistedFilter('sales-orders-days', '90');
+  const [days, setDays, isDaysReady] = usePersistedFilter('sales-orders-days', '90');
+  const [statusFilter, setStatusFilter, isStatusReady] = usePersistedFilter('sales-orders-status', 'open');
+
+  const isReady = isDaysReady && isStatusReady;
+
+  const endpoint = useMemo(() => {
+    if (!isReady) return undefined;
+    const params = new URLSearchParams();
+    if (days) params.set('days', days);
+    if (statusFilter === 'open') {
+      params.set('state', OPEN_SALES_ORDER_STATES.join(','));
+    }
+    const qs = params.toString();
+    return `/api/sales-orders${qs ? `?${qs}` : ''}`;
+  }, [isReady, days, statusFilter]);
 
   const columns = useMemo<ColDef<UnifiedOrder>[]>(() => [
     { field: 'orderNumber', headerName: tCommon('columns.orderNumber'), width: 150, pinned: 'left' },
@@ -91,8 +107,9 @@ export default function SalesOrdersContent() {
 
   return (
     <DataGrid<UnifiedOrder>
-      endpoint={isReady ? `/api/sales-orders?days=${days}` : undefined}
+      endpoint={endpoint}
       columns={columns}
+      customFieldEntityType="salesOrders"
       gridKey="ops-orders"
       searchPlaceholder={tSales('placeholders.searchOrders')}
       exportFileName="orders"
@@ -102,17 +119,29 @@ export default function SalesOrdersContent() {
       pageTitle={tSales('title')}
       defaultSortModel={[{ colId: 'createdOn', sort: 'desc' }]}
       headerFilters={
-        <select
+        <div className="flex items-center gap-2">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="input text-sm min-w-[130px]"
+            aria-label="Order Status Filter"
+          >
+            <option value="open">{tCommon('filters.openOrders')}</option>
+            <option value="all">{tCommon('filters.allOrders')}</option>
+          </select>
+          <select
             value={days}
             onChange={(e) => setDays(e.target.value)}
             className="input text-sm min-w-[120px]"
-        >
+            aria-label="Date Range Filter"
+          >
             <option value="mtd">{tCommon('filters.monthToDate')}</option>
             <option value="30">{tCommon('filters.last30Days')}</option>
             <option value="90">{tCommon('filters.last90Days')}</option>
             <option value="365">{tCommon('filters.last1Year')}</option>
             <option value="0">{tCommon('filters.allTime')}</option>
-        </select>
+          </select>
+        </div>
       }
       headerActions={
         <div className="flex items-center gap-2">

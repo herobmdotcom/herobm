@@ -1,11 +1,12 @@
 import { getRequestConfig } from 'next-intl/server';
 import type { IntlErrorCode } from 'next-intl';
+import en from '../messages/en/index';
 
 export default getRequestConfig(async () => {
   const locale = 'en';
   return {
     locale,
-    messages: (await import(`../messages/${locale}.json`)).default,
+    messages: en,
 
     onError(error: { code: IntlErrorCode; message: string }) {
       if (error.code === 'MISSING_MESSAGE') {

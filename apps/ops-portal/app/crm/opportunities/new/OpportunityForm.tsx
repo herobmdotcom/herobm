@@ -10,6 +10,7 @@ import DetailsLayout from '@/components/shared/DetailsLayout';
 import { useSettings } from '@/components/SettingsProvider';
 import { toast } from 'react-hot-toast';
 import { getErrorMessage } from '@herobm/shared';
+import OrganizationSelect from '@/components/shared/OrganizationSelect';
 
 export default function OpportunityForm() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function OpportunityForm() {
 
   const [dto, setDto] = useState({
     name: '',
+    organizationId: '',
     type: '',
     status: '',
     estimatedValue: '',
@@ -70,6 +72,7 @@ export default function OpportunityForm() {
     try {
       const payload: api.CreateOpportunityDto = {
         name: dto.name,
+        organizationId: dto.organizationId ? dto.organizationId : undefined,
         type: dto.type,
         status: dto.status,
         estimatedValue: dto.estimatedValue ? dto.estimatedValue : undefined,
@@ -80,8 +83,8 @@ export default function OpportunityForm() {
       };
 
       const res = await api.opportunitiesControllerCreate(payload);
-      toast.success('Opportunity created successfully');
       const oppId = res.data?.opportunityId || '';
+      toast.success('Opportunity created successfully');
       router.push(`/crm/opportunities/${oppId}`);
     } catch (err) {
       toast.error(getErrorMessage(err) || 'Failed to create opportunity');
@@ -146,6 +149,18 @@ export default function OpportunityForm() {
                 onChange={(e) => updateField('name', e.target.value)}
                 placeholder="e.g. Acme Corp - Enterprise ERP Rollout"
                 disabled={loading}
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                Primary Customer / Organization
+              </label>
+              <OrganizationSelect
+                value={dto.organizationId || null}
+                onChange={(org) => updateField('organizationId', org?.organizationId || '')}
+                disabled={loading}
+                placeholder="Search and select customer organization (optional)..."
               />
             </div>
 

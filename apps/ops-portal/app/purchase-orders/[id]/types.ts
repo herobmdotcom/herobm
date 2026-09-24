@@ -19,6 +19,9 @@ export interface OrderLine {
   unitOfMeasure: string;
   baseUom?: string;
   productUoms?: ProductUom[];
+  minPurchaseQty?: string | null;
+  purchaseUnit?: string | null;
+  supplierPartNumber?: string | null;
 }
 
 export interface Allocation {
@@ -69,6 +72,7 @@ export interface OrderDetail {
   createdOn: string;
   modifiedOn: string;
   expectedDate?: string | null;
+  metadata?: Record<string, unknown> | null;
 
   lines: OrderLine[];
   events: OrderEvent[];

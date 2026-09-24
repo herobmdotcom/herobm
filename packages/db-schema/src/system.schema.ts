@@ -158,6 +158,7 @@ export const appSettings = herobmCore.table('app_settings', {
   ),
   inventoryValuationMethod: text('inventory_valuation_method').notNull(), // 'weighted_average' | 'fifo' | 'standard'
   inventoryAccountingMode: text('inventory_accounting_mode').notNull(), // 'periodic' | 'perpetual'
+  allowNegativeInventory: boolean('allow_negative_inventory').notNull(),
   creditLimitBehavior: text('credit_limit_behavior').notNull(), // 'hard' (block creation) | 'soft' (allow draft, block dispatch)
   smtpHost: text('smtp_host'),
   smtpPort: integer('smtp_port'),
@@ -178,6 +179,8 @@ export const appSettings = herobmCore.table('app_settings', {
     jsonb('opportunity_stages').$type<{ value: string; order: number }[]>(),
   opportunityTypes:
     jsonb('opportunity_types').$type<{ value: string; order: number }[]>(),
+  projectStages:
+    jsonb('project_stages').$type<{ value: string; order: number }[]>(),
   referralModes:
     jsonb('referral_modes').$type<{ value: string; order: number }[]>(),
   activityTypes:

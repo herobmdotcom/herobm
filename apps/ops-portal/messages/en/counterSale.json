@@ -1,0 +1,67 @@
+{
+  "accountCustomer": "Account Customer",
+  "autoFocusOn": "Auto-focus on",
+  "barcodeBeep": "Barcode audio signal",
+  "cashSaleAccount": "Cash Sale Account",
+  "customer": "Customer",
+  "fulfillmentLocation": "Counter Location",
+  "linesCount": "{count, plural, =0 {No items scanned} one {# item} other {# items}}",
+  "noCashAccount": "No designated cash account found. Please select an account.",
+  "notes": "Notes",
+  "notesPlaceholder": "Add transaction notes (optional)...",
+  "processingScan": "Processing scan...",
+  "receiptModal": {
+    "amountPaid": "Total Paid",
+    "changeReturned": "Change Returned",
+    "emailReceipt": "Email Receipt",
+    "invoiceNumber": "Tax Invoice",
+    "newSale": "New Counter Sale",
+    "orderNumber": "Sales Order",
+    "paymentReference": "Payment Receipt",
+    "printReceipt": "Print Tax Invoice / Receipt",
+    "title": "Counter Sale Completed",
+    "viewInvoice": "View Invoice"
+  },
+  "scanOrSearch": "Scan / Search",
+  "scanPlaceholder": "Scan barcode or enter product SKU / name (Press Enter)...",
+  "scannerActive": "Scanner Active",
+  "searchCustomerPlaceholder": "Search customer account (or type Walk-In)...",
+  "selectCustomer": "Select customer account...",
+  "subtitle": "High-velocity point-of-sale order creation, stock handover, and invoicing.",
+  "summary": {
+    "discount": "Discount Savings",
+    "grandTotal": "Grand Total",
+    "subtotal": "Subtotal",
+    "tax": "Tax (GST)"
+  },
+  "table": {
+    "actions": "Actions",
+    "discount": "Disc %",
+    "item": "Item",
+    "qty": "Qty",
+    "stockOnHand": "Avail OH",
+    "tax": "Tax",
+    "total": "Total",
+    "unitPrice": "Price",
+    "uom": "UoM"
+  },
+  "tender": {
+    "amountTendered": "Amount Tendered",
+    "card": "Card / EFTPOS",
+    "cash": "Cash",
+    "changeDue": "Change Due",
+    "chargeToAccount": "Charge to Account",
+    "completeSale": "Complete Counter Sale",
+    "directDeposit": "Direct Deposit",
+    "exactAmount": "Exact",
+    "paymentMethod": "Payment Method",
+    "processing": "Processing Sale...",
+    "title": "Tender & Checkout"
+  },
+  "title": "Over-The-Counter Sales",
+  "walkInCustomer": "Walk-In Customer",
+  "warnings": {
+    "insufficientStock": "{shortage} short (only {available} on hand)",
+    "setAvailable": "Set to Available"
+  }
+}

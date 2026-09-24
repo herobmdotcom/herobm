@@ -65,16 +65,19 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
     expect(viewerLogin.status).toBe(201);
     viewerToken = viewerLogin.body.access_token;
 
-    // Fetch real IDs from mart data
-    const customers = await request(app.getHttpServer())
-      .get('/api/customers?limit=10')
+    // Create dedicated customer to avoid credit hold conflicts with other test data
+    const custRes = await request(app.getHttpServer())
+      .post('/api/customers')
       .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-    const activeCustomer =
-      customers.body.data.find(
-        (c: any) => c.stateCode === CUSTOMER_STATE.ACTIVE,
-      ) || customers.body.data[0];
-    validCustomerId = activeCustomer.customerId;
+      .send({
+        billingAddressCountry: 'AU',
+        customerNumber: `CUST-OW-${Date.now()}`,
+        name: 'Orders Write Test Customer',
+        currencyCode: 'AUD',
+        creditLimit: '100000',
+      })
+      .expect(201);
+    validCustomerId = custRes.body.customerId;
 
     const products = await request(app.getHttpServer())
       .get('/api/products?limit=1')

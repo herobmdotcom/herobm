@@ -366,7 +366,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
     it('fetches putaway context', async () => {
       const res = await request(app.getHttpServer())
         .get(
-          `/api/inventory/putaway-context?locationId=${validLocationId}&productId=${appProductId}`,
+          `/api/inventory/putaway/context?locationId=${validLocationId}&productId=${appProductId}`,
         )
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);

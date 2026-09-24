@@ -92,6 +92,7 @@ export class TransfersWriteService {
         orderNumber,
         sourceLocationId,
         destinationLocationId: destLocationId,
+        isProjectReturn: false,
         stateCode: TRANSFER_ORDER_STATE.CONFIRMED,
         createdBy: actor,
       });
@@ -155,6 +156,9 @@ export class TransfersWriteService {
         orderNumber,
         sourceLocationId: dto.sourceLocationId,
         destinationLocationId: dto.destinationLocationId,
+        projectId: dto.projectId || null,
+        projectTaskId: dto.projectTaskId || null,
+        isProjectReturn: dto.isProjectReturn ?? false,
         notes: dto.notes,
         shippingNotes: dto.shippingNotes,
         stateCode: TRANSFER_ORDER_STATE.CONFIRMED,
@@ -166,6 +170,7 @@ export class TransfersWriteService {
           transferOrderLineId: uuidv4(),
           transferOrderId,
           productId: l.productId,
+          projectTaskId: l.projectTaskId || dto.projectTaskId || null,
           quantity: l.quantity,
         }));
         await tx.insert(transferOrderLines).values(linesInsert);
@@ -207,6 +212,11 @@ export class TransfersWriteService {
     if (dto.sourceLocationId) updates.sourceLocationId = dto.sourceLocationId;
     if (dto.destinationLocationId)
       updates.destinationLocationId = dto.destinationLocationId;
+    if (dto.projectId !== undefined) updates.projectId = dto.projectId || null;
+    if (dto.projectTaskId !== undefined)
+      updates.projectTaskId = dto.projectTaskId || null;
+    if (dto.isProjectReturn !== undefined)
+      updates.isProjectReturn = dto.isProjectReturn;
     if (dto.notes !== undefined) updates.notes = dto.notes;
     if (dto.shippingNotes !== undefined)
       updates.shippingNotes = dto.shippingNotes;
@@ -254,6 +264,7 @@ export class TransfersWriteService {
       transferOrderLineId: lineId,
       transferOrderId: id,
       productId: dto.productId,
+      projectTaskId: dto.projectTaskId || null,
       quantity: dto.quantity,
     });
 
@@ -290,10 +301,15 @@ export class TransfersWriteService {
       );
     }
 
-    if (dto.quantity !== undefined) {
+    const lineUpdates: Record<string, unknown> = {};
+    if (dto.quantity !== undefined) lineUpdates.quantity = dto.quantity;
+    if (dto.projectTaskId !== undefined)
+      lineUpdates.projectTaskId = dto.projectTaskId || null;
+
+    if (Object.keys(lineUpdates).length > 0) {
       await this.db
         .update(transferOrderLines)
-        .set({ quantity: dto.quantity })
+        .set(lineUpdates)
         .where(eq(transferOrderLines.transferOrderLineId, lineId));
 
       await emitEvent(this.db, {
@@ -301,7 +317,7 @@ export class TransfersWriteService {
         entityId: id,
         eventType: EventType.LINE_UPDATED,
         entityDisplayName: existing.orderNumber,
-        payload: { action: 'updateLine', lineId },
+        payload: { action: 'updateLine', lineId, changes: lineUpdates },
         actor,
       });
     }

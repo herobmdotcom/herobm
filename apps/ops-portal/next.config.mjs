@@ -29,6 +29,19 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 const nextConfig = {
   output: 'standalone',
   transpilePackages: ['@herobm/shared'],
+  typescript: {
+    // Quality gate: types are validated ahead of build via prebuild / make verify-portal
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    // Quality gate: linting is validated ahead of build via make check-lint / make verify-portal
+    ignoreDuringBuilds: true,
+  },
+  experimental: {
+    webpackMemoryOptimizations: true,
+    optimizePackageImports: ['@herobm/shared', '@herobm/sdk', 'ag-grid-community', 'ag-grid-react', 'recharts', '@xyflow/react'],
+    ...(process.env.NEXT_CPU_COUNT ? { cpus: parseInt(process.env.NEXT_CPU_COUNT, 10) } : {}),
+  },
   async rewrites() {
     const apiPort = process.env.API_PORT || '3001';
     const apiUrl = process.env.API_URL || `http://localhost:${apiPort}`;

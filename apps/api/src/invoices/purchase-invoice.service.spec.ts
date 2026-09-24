@@ -122,6 +122,7 @@ describe('PurchaseInvoiceService', () => {
     await pg.db.insert(uomDictionary).values({
       uomCode: 'EA',
       description: 'Each',
+      category: 'goods',
     });
 
     await pg.db.insert(taxCategories).values({

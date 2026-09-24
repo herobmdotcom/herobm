@@ -1,0 +1,25 @@
+{
+  "addField": "Add Field",
+  "cancel": "Cancel",
+  "dataType": "Data Type",
+  "dropdownOptions": "Dropdown Options (Comma separated)",
+  "editField": "Edit Field",
+  "editFieldTitle": "Edit: {title}",
+  "fieldTitle": "Field Title (UI Label)",
+  "internalKey": "Internal Key (JSON property)",
+  "newField": "New Field",
+  "noFields": "No extra fields defined yet.",
+  "removeField": "Remove Field",
+  "requiredField": "Required Field",
+  "save": "Save",
+  "saveField": "Save Field",
+  "types": {
+    "boolean": "Toggle (Boolean)",
+    "date": "Date Picker",
+    "enum": "Dropdown (Single Choice)",
+    "number": "Number",
+    "string": "Short Text",
+    "textarea": "Long Text (Multiline)"
+  },
+  "untitledField": "Untitled Field"
+}

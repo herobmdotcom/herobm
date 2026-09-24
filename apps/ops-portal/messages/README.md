@@ -1,15 +1,18 @@
-# ops-portal Translations (`en.json`)
+# ops-portal Modular Translations (`messages/en/*.json`)
 
-This document describes the structure and conventions for the i18n translation file.
+This document describes the structure, domain modularity, and conventions for the ops-portal i18n translation system.
 
 ## Architecture
 
-The app uses [next-intl](https://next-intl.dev/) with **strict type checking** enabled. This means every key referenced via `t('key')` or `useTranslations('namespace')` must exist in `en.json` — otherwise TypeScript will reject it at build time.
+The app uses [next-intl](https://next-intl.dev/) with **strict type checking** and **domain-scoped modularity**. Translations are maintained in domain JSON files under `messages/en/` (e.g., `admin.json`, `salesOrders.json`, `common.json`) and aggregated through `messages/en/index.ts`.
 
-### Validation Command
+Every key referenced via `t('key')` or `useTranslations('namespace')` is verified at compile-time by TypeScript against the aggregated message types.
+
+### Validation Commands
 
 ```bash
-npm run typecheck -w apps/ops-portal
+make verify-i18n          # Runs missing key checks, duplicate key checks, and linting
+make typecheck-portal     # Full TypeScript validation of translation keys
 ```
 
 If this fails with `TS2345` errors referencing `NamespacedMessageKeys`, it means the translation key is missing from `en.json`.

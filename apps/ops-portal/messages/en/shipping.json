@@ -1,0 +1,71 @@
+{
+  "allowPartialFulfillment": "Allow Partial Pick & Ship",
+  "buttons": {
+    "createShipment": "Create Shipment",
+    "markAsDelivered": "Mark as Delivered",
+    "pickAndShip": "Pick & Ship"
+  },
+  "columns": {
+    "available": "Available",
+    "deliveryInstructions": "Delivery Instructions (External)",
+    "description": "Description",
+    "notes": "Shipment Notes (Internal)",
+    "ordered": "Ordered",
+    "picked": "Picked",
+    "product": "Product",
+    "qtyToPickAndShip": "Pick & Ship",
+    "qtyToShip": "Qty to Ship",
+    "shipmentNotes": "Shipment Notes (Internal)",
+    "shipped": "Shipped",
+    "trackingNumber": "Tracking #"
+  },
+  "creditBlockedMessage": "Shipping is blocked due to a credit hold.",
+  "creditBlockedTitle": "Credit Hold",
+  "deliveryInstructions": "Delivery Instructions (External)",
+  "docketPdf": "Print Docket",
+  "errors": {
+    "atLeastOneLineError": "At least one line with a quantity is required",
+    "failedToCreateError": "Failed to create shipment",
+    "failedToGenerateDocketError": "Failed to generate shipping docket.",
+    "failedToGenerateLabelError": "Failed to generate shipping label.",
+    "failedToLoadContextError": "Failed to load order context",
+    "failedToLoadOrdersError": "Failed to load shipping queue",
+    "fulfillDirectFailed": "Failed to pick & ship order"
+  },
+  "existingShipments": "Existing Shipments",
+  "fullyShipped": "Fully Shipped",
+  "labelPdf": "Print Label",
+  "labels": {
+    "deliveryInstructions": "Delivery Instructions (External)",
+    "shipmentNotes": "Shipment Notes (Internal)",
+    "trackingNumber": "Tracking #"
+  },
+  "loadingOrder": "Loading order context...",
+  "noName": "No Name",
+  "noOrders": "No {tab} orders pending.",
+  "noPhysicalLines": "No physical lines on this order.",
+  "noShipmentsFound": "No shipments found.",
+  "noShipmentsYet": "No shipments created yet.",
+  "pickAndShipTitle": "Pick & Ship",
+  "placeholders": {
+    "carrier": "Carrier / Delivery Company",
+    "deliveryInstructions": "Delivery instructions...",
+    "fulfillmentNotes": "Pick & ship notes",
+    "notes": "Internal shipment notes...",
+    "shipmentNotes": "Internal shipment notes...",
+    "tracking": "Tracking #"
+  },
+  "selectOrder": "Select an order to create a shipment.",
+  "shipmentLines": "{count} lines",
+  "shipmentNotes": "Shipment Notes (Internal)",
+  "shipmentsTitle": "Shipments",
+  "tabs": {
+    "partial": "Partial",
+    "ready": "Ready"
+  },
+  "title": "Shipping",
+  "toasts": {
+    "orderFulfilled": "Order picked & shipped successfully!",
+    "shipmentCreated": "Shipment created successfully!"
+  }
+}

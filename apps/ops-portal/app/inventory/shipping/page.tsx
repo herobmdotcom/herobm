@@ -35,6 +35,9 @@ interface ShippingOrder {
     totalShippableLines: number;
     totalLines: number;
     type?: 'sales_order' | 'transfer_order';
+    sourceLocationId?: string;
+    destinationLocationId?: string;
+    isSameSite?: boolean;
 }
 
 interface ShippingLine {
@@ -251,6 +254,13 @@ export default function ShippingPage() {
     const totalShippable = shippableLines.length;
     const totalLines = activePhysicalLines.length;
 
+    const isSameSiteTO = Boolean(
+        (selectedOrder?.type === 'transfer_order' || context?.order?.type === 'transfer_order') &&
+        (context?.order?.isSameSite ??
+         (context?.order?.sourceLocationId && context?.order?.sourceLocationId === context?.order?.destinationLocationId) ??
+         (selectedOrder?.isSameSite ?? (selectedOrder?.sourceLocationId && selectedOrder?.sourceLocationId === selectedOrder?.destinationLocationId)))
+    );
+
     const actionFormContent = (
         <>
             {!selectedOrder ? (
@@ -322,31 +332,35 @@ export default function ShippingPage() {
                                 )}
 
                                 {/* Ship Form Header Fields */}
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                    <div>
-                                        <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                                            {t('deliveryInstructions')}
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={deliveryInstructions}
-                                            onChange={e => setDeliveryInstructions(e.target.value)}
-                                            placeholder={t('deliveryInstructions')}
-                                            className="input w-full"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                                            {t('columns.trackingNumber')}
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={trackingNumber}
-                                            onChange={e => setTrackingNumber(e.target.value)}
-                                            placeholder={t('placeholders.tracking')}
-                                            className="input w-full"
-                                        />
-                                    </div>
+                                <div className={isSameSiteTO ? "grid grid-cols-1 gap-4" : "grid grid-cols-1 sm:grid-cols-3 gap-4"}>
+                                    {!isSameSiteTO && (
+                                        <div>
+                                            <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                                                {t('deliveryInstructions')}
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={deliveryInstructions}
+                                                onChange={e => setDeliveryInstructions(e.target.value)}
+                                                placeholder={t('deliveryInstructions')}
+                                                className="input w-full"
+                                            />
+                                        </div>
+                                    )}
+                                    {!isSameSiteTO && (
+                                        <div>
+                                            <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                                                {t('columns.trackingNumber')}
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={trackingNumber}
+                                                onChange={e => setTrackingNumber(e.target.value)}
+                                                placeholder={t('placeholders.tracking')}
+                                                className="input w-full"
+                                            />
+                                        </div>
+                                    )}
                                     <div>
                                         <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                                             {t('columns.shipmentNotes')}
@@ -512,7 +526,7 @@ export default function ShippingPage() {
                                         disabled={isSubmitting || shippableLines.length === 0}
                                         variant="primary"
                                     >
-                                        {t('buttons.createShipment')}
+                                        {isSameSiteTO ? t('buttons.markAsDelivered') : t('buttons.createShipment')}
                                     </Button>
                                 </div>
 

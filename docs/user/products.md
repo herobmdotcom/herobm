@@ -19,7 +19,7 @@ fields:
     summary: "Item description displayed across orders, invoices, and pick slips."
   product_type:
     title: "Product Type"
-    summary: "Stock classification: Inventory (Tracked) (`inventory`), Non-Stock (`non-stock`), Service (`service`), or Freight (`freight`)."
+    summary: "Classification: Stock Goods (`inventory`), Non-Stock Goods (`non-stock`), Service (`service`), or Freight (`freight`)."
   structure_type:
     title: "Structure / Kit"
     summary: "Standard product or Kit/Bundle with component decomposition."
@@ -68,30 +68,37 @@ The **Products** module manages master catalog items, barcode tracking, 4-tier p
 ## Product Types & Pricing Tiers
 
 ### 1. Product Types
-- **Inventory (Tracked)** (`inventory`): Physical stock tracked in warehouse bins with on-hand counts and perpetual ledger valuation.
-- **Non-Stock** (`non-stock`): Purchased on demand or drop-shipped directly without bin tracking.
-- **Service** (`service`): Non-physical labor or maintenance charges.
-- **Freight** (`freight`): Transport and delivery charges.
+- **Stock Goods** (`inventory`): Physical stock tracked in warehouse bins with on-hand counts and perpetual ledger valuation.
+- **Non-Stock Goods** (`non-stock`): Physical goods purchased on demand or drop-shipped directly without bin tracking.
+- **Service** (`service`): Non-physical labor, consulting, rate cards, or maintenance charges. Service products support defining standard costs (`standardCost`), list bill rates (`listPrice`), and assigning multiple team members (`Assigned Team Members`) to serve as unified rate cards across projects.
+- **Freight** (`freight`): Transport, shipping, and delivery charges.
 
-### 2. The 4 Price Scales
+### 2. Units of Measure (UoM) Categorization
+Every Unit of Measure in the system belongs strictly to one category:
+- **Goods UoMs** (e.g. `EA`, `BOX`, `KG`, `SET`, `KIT`, `PALLET`): Associated exclusively with physical goods (**Stock Goods**, **Non-Stock Goods**, and **Freight**).
+- **Service UoMs** (e.g. `HR`, `HOUR`, `DAY`, `JOB`): Associated exclusively with **Service** items.
+
+The system enforces strict categorization at both the API and UI layers: Goods items cannot use Service UoMs (e.g., you cannot sell Stock Goods by the Hour), and Service items cannot use Goods UoMs (e.g., you cannot bill a Service in Each or Pallets).
+
+### 3. The 4 Price Scales
 Every product carries up to four predefined price tiers in the company base currency:
 1. **List Price**: Standard retail rate.
 2. **Trade Price**: Reseller / commercial rate.
 3. **Tier 3 Price**: High-volume wholesale rate.
 4. **Tier 4 Price**: Contracted partner rate.
 
-### 3. Kits & Bundles (BOM)
+### 4. Kits & Bundles (BOM)
 A product can be configured as a **Kit**:
 - Sold under a single SKU at a bundle price.
 - Contains child component items with specified quantities per kit.
 - When sold, component quantities are allocated and picked from stock, while the customer invoice shows the bundle SKU.
 
 #### Kit Inventory Tracking: "Built" vs "Kit Components" Views
-For tracked kit products (Structure Type = `Kit` and Product Type = `Inventory (Tracked)`), the **Inventory Levels** tab provides two dedicated views:
+For tracked kit products (Structure Type = `Kit` and Product Type = `Stock Goods`), the **Inventory Levels** tab provides two dedicated views:
 * **Built Tab**: Shows the quantity of pre-assembled, fully built kits physically residing in warehouse bins, assigned default bins, customer commitments, and pending work orders. Child component inventory and child bins are strictly isolated and do not appear in this view.
 * **Kit Components Tab**: Displays real-time stock levels for each child component in the kit's Bill of Materials across each warehouse facility. Features the **Available to Assemble** badge, dynamically calculated by identifying the bottleneck component (`min(Floor(Component Available / Ratio))`) to show how many kits can currently be assembled from available parts.
 
-For **Non-Stock Kits** (Product Type = `Non-Stock`), stock is fulfilled purely by assembling on demand, and inventory availability is displayed directly via the component breakdown.
+For **Non-Stock Kits** (Product Type = `Non-Stock Goods`), stock is fulfilled purely by assembling on demand, and inventory availability is displayed directly via the component breakdown.
 
 ---
 
@@ -128,7 +135,7 @@ HeroBM tracks four complementary cost metrics to provide complete visibility int
 1. Go to **Inventory** → **Products** (`/products`).
 2. Click **New Product**.
 3. Enter the **Product Code / SKU**, **Name**, and **Product Group**.
-4. Select the **Product Type** (e.g. Inventory (Tracked)) and **Base Unit of Measure** (e.g. EA, BOX).
+4. Select the **Product Type** (e.g. Stock Goods) and **Base Unit of Measure** (e.g. EA, BOX for goods, or HR, DAY for services).
 5. Enter the **Standard Cost** and the four selling price levels (**List Price**, **Trade Price**, etc.).
 6. Select the default **Purchase Tax Category** and **Sales Tax Category**.
 7. Click **Save Product**.
@@ -162,7 +169,7 @@ Images should be uploaded via the Ops Portal UI on the Product detail page, or v
 | :--- | :--- |
 | **Product Code / SKU** | Unique catalog code. |
 | **Product Name** | Full commercial description. |
-| **Product Type** | `Inventory (Tracked)` (`inventory`), `Non-Stock` (`non-stock`), `Service` (`service`), or `Freight` (`freight`). |
+| **Product Type** | `Stock Goods` (`inventory`), `Non-Stock Goods` (`non-stock`), `Service` (`service`), or `Freight` (`freight`). |
 | **Standard Cost** | Current unit cost benchmark for GL valuation and budgeting. |
 | **Weighted Average Cost (WAC)** | Rolling inventory valuation unit cost basis calculated from stock receipts. |
 | **Preferred Supplier Cost** | Contracted purchase price from the primary vendor, including discount. |
@@ -170,4 +177,4 @@ Images should be uploaded via the Ops Portal UI on the Product detail page, or v
 | **Price Scales (1–4)** | 4-tier pricing matrix. |
 | **Purchase Tax Category** | Default tax rate classification for purchasing. |
 | **Sales Tax Category** | Default tax rate classification for sales. |
-| **Base UOM** | Primary stocking unit (e.g. EA, KG, LTR). |
+| **Base UOM** | Primary stocking unit (e.g. EA, BOX for goods; HR, DAY for services). |

@@ -66,7 +66,7 @@ describe('ShippingDocketService', () => {
     // Seed UOM
     await pg.db
       .insert(uomDictionary)
-      .values({ uomCode: 'EA', description: 'Each' });
+      .values({ uomCode: 'EA', description: 'Each', category: 'goods' });
 
     // Seed Tax Category
     await pg.db.insert(taxCategories).values({
@@ -245,6 +245,7 @@ describe('ShippingDocketService', () => {
       orderNumber: 'TO-100',
       sourceLocationId: LOCATION_ID,
       destinationLocationId: LOCATION_DEST_ID,
+      isProjectReturn: false,
       stateCode: TRANSFER_ORDER_STATE.CONFIRMED,
       shippingNotes: 'Urgent branch transfer',
       createdBy: 'system',

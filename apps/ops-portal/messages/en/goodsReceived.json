@@ -1,0 +1,139 @@
+{
+  "allocation": {
+    "allocating": "...",
+    "destination": "Destination:",
+    "eligiblePOs": "Eligible POs",
+    "loadingEligible": "Loading eligible POs...",
+    "locationMismatch": "Location Mismatch",
+    "match": "Match",
+    "matchError": "Failed to match receipt",
+    "noPendingPOs": "No pending purchase orders found for this product.",
+    "qty": "Qty:",
+    "quantityValidationError": "Please enter a valid quantity between 0.01 and {max}",
+    "receivedAt": "Received at:",
+    "unknown": "Unknown"
+  },
+  "buttons": {
+    "allLocations": "All locations",
+    "backToReceiving": "Back to Receiving",
+    "cancel": "Cancel",
+    "cancelReceiptTooltip": "Cancel the entire receipt for the selected lines",
+    "match": "Match",
+    "matchCount": "Match ({count})",
+    "newReception": "Receive Goods",
+    "quarantine": "Quarantine",
+    "unquarantine": "Unquarantine",
+    "viewQuarantine": "View Quarantine"
+  },
+  "columns": {
+    "allocate": "Allocate",
+    "matchStatus": "PO Match",
+    "matched": "matched",
+    "ordered": "Ordered",
+    "packingSlip": "Packing Slip",
+    "product": "Product",
+    "receiptNo": "Receipt No.",
+    "received": "Received",
+    "receivedQty": "Received Qty",
+    "remaining": "Remaining",
+    "return": {
+      "description": "Description",
+      "expectedQty": "Expected Qty",
+      "order": "Order",
+      "product": "Product",
+      "receiveNow": "Receive Now",
+      "received": "Received"
+    },
+    "status": "Status",
+    "supplier": "Supplier"
+  },
+  "completed": {
+    "backToList": "Back to Receiving",
+    "newReception": "New Reception",
+    "title": "Goods Receipt Confirmed"
+  },
+  "flow": {
+    "confirmReception": "Confirm Reception",
+    "itemsReceived": "Items Received",
+    "noItems": "No items scanned yet.",
+    "scanProduct": "Scan Product",
+    "selectedProduct": "Selected Product",
+    "subtitle": "Record items received from a supplier packing slip",
+    "title": "Receive Goods"
+  },
+  "labels": {
+    "location": "Receiving Location",
+    "packingSlip": "Packing Slip",
+    "supplier": "Supplier"
+  },
+  "matchStatus": {
+    "ambiguous": "Multiple POs",
+    "matched": "Matched",
+    "unmatched": "Unmatched"
+  },
+  "messages": {
+    "saveFailed": "Failed to update receipt",
+    "saved": "Receipt updated successfully"
+  },
+  "placeholders": {
+    "notes": "Reception notes",
+    "packingSlip": "Packing slip number",
+    "searchProduct": "Search or scan product...",
+    "selectLocation": "Select Receiving Location...",
+    "selectSupplier": "Select Supplier..."
+  },
+  "quarantine": {
+    "cancel": "Cancel",
+    "destinationBin": "Destination Bin",
+    "noAvailableBins": "No available destination bins found in this location. Please create a receiving or storage bin first.",
+    "noBinsFound": "No quarantine bins found in this location. The system will auto-resolve if possible, or fail.",
+    "reasonOptional": "Reason (Optional)",
+    "selectBin": "Select a destination bin",
+    "title": "Quarantine Items",
+    "unquarantineTitle": "Unquarantine Items"
+  },
+  "return": {
+    "description": "Description",
+    "expectedQty": "Expected Qty",
+    "order": "Order:",
+    "product": "Product",
+    "receiveNow": "Receive Now",
+    "received": "Received"
+  },
+  "returns": {
+    "confirmDebitNote": "Confirm & Record Debit Note",
+    "confirmReceipt": "Confirm Receipt",
+    "createReturn": "Create Return",
+    "creating": "Creating...",
+    "creditPricePerUnit": "Credit Price Per Unit",
+    "lineHash": "Line #",
+    "lineItems": "Line Items",
+    "lineTotal": "Line Total",
+    "maxReturn": "{received} (Max {maxReturn})",
+    "noReturnableLines": "No returnable lines available.",
+    "qtyReturned": "Qty Returned",
+    "qtyToReturn": "Qty to Return",
+    "reason": "Reason",
+    "reasons": {
+      "defective": "Defective",
+      "incorrectItem": "Incorrect Item",
+      "other": "Other",
+      "overShipment": "Over-shipment"
+    },
+    "receiving": "Receiving...",
+    "recording": "Recording...",
+    "selectLinesMsg": "Select the items and quantities you wish to return. Only items that have been received can be returned."
+  },
+  "status": {
+    "allocated": "Allocated",
+    "pending": "Pending"
+  },
+  "title": "Goods Received",
+  "toast": {
+    "confirmed": "Goods receipt confirmed!",
+    "failed": "Failed to commit goods receipt",
+    "qtyReq": "Quantity must be greater than 0",
+    "selectLocation": "Please select a receiving location.",
+    "selectSupplier": "Please select a supplier."
+  }
+}

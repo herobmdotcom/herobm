@@ -8,8 +8,8 @@ export interface Product {
   productId: string;
   productNumber: string;
   name: string;
-  listPrice: string;
-  tradePrice: string;
+  listPrice?: string | null;
+  tradePrice?: string | null;
   standardCost?: string | null;
   baseUom?: string | null;
   structureType?: 'standard' | 'kit';
@@ -26,6 +26,7 @@ interface ProductSearchInputProps {
   style?: React.CSSProperties;
   fulfillmentLocationId?: string;
   structureType?: 'standard' | 'kit';
+  productType?: string;
   disabled?: boolean;
 }
 
@@ -36,6 +37,7 @@ export default function ProductSearchInput({
   style,
   fulfillmentLocationId,
   structureType,
+  productType,
   disabled,
 }: ProductSearchInputProps) {
   const t = useTranslations('common.productSearch');
@@ -49,7 +51,7 @@ export default function ProductSearchInput({
       clearOnSelect
       onSearch={async (term) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type structure bypass
-        const res = await api.productsControllerFindAll({ q: term, limit: 20 } as any);
+        const res = await api.productsControllerFindAll({ q: term, limit: 20, productType } as any);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type structure bypass
         const list: Product[] = ((res.data as any)?.data || res.data || []);
         if (structureType) {

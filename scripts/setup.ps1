@@ -162,8 +162,8 @@ memory=8GB
 
     $machineList = podman machine list --format "{{.Name}}" 2>$null
     if (-not $machineList) {
-        Write-Host "  No Podman machine found. Initialising..." -ForegroundColor Yellow
-        podman machine init
+        Write-Host "  No Podman machine found. Initialising with 4GB RAM..." -ForegroundColor Yellow
+        podman machine init --cpus 4 --memory 4096
         if ($LASTEXITCODE -eq 0) {
             Write-Host "  [OK] Podman machine initialised" -ForegroundColor Green
         }

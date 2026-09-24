@@ -8,7 +8,7 @@ export interface SchemaBuilderProps {
   onChange: (value: Record<string, unknown>) => void;
 }
 
-type FieldType = 'string' | 'number' | 'boolean' | 'enum';
+type FieldType = 'string' | 'number' | 'boolean' | 'enum' | 'date' | 'textarea';
 
 interface FieldDef {
   id: string; // internal id for React key mapping
@@ -17,6 +17,32 @@ interface FieldDef {
   type: FieldType;
   options?: string; // Comma separated list for enums
   required: boolean;
+}
+
+/**
+ * Converts a human-readable field title into a JSON-friendly camelCase property key.
+ * E.g., "BSB Number" -> "bsbNumber", "Tax ID (VAT)" -> "taxIdVat", "delivery_notes" -> "deliveryNotes"
+ */
+export function titleToInternalKey(title: string): string {
+  if (!title) return '';
+
+  return title
+    // Insert a space before capital letters in camelCase/PascalCase strings (e.g., "myField" -> "my Field")
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    // Remove characters that aren't alphanumeric, whitespace, hyphens, or underscores
+    .replace(/[^a-zA-Z0-9\s_-]/g, '')
+    // Split on whitespace, hyphens, and underscores
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    // Convert words to camelCase
+    .map((word, index) => {
+      const lower = word.toLowerCase();
+      if (index === 0) {
+        return lower;
+      }
+      return lower.charAt(0).toUpperCase() + lower.slice(1);
+    })
+    .join('');
 }
 
 export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange }) => {
@@ -46,9 +72,17 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const newFields: FieldDef[] = Object.entries(properties).map(([k, schema]: [string, any]) => {
       let type: FieldDef['type'] = 'string';
-      if (schema.enum) type = 'enum';
-      else if (schema.type === 'number' || schema.type === 'integer') type = 'number';
-      else if (schema.type === 'boolean') type = 'boolean';
+      if (schema.enum) {
+        type = 'enum';
+      } else if (schema.format === 'date') {
+        type = 'date';
+      } else if (schema.format === 'textarea' || schema.format === 'multiline') {
+        type = 'textarea';
+      } else if (schema.type === 'number' || schema.type === 'integer') {
+        type = 'number';
+      } else if (schema.type === 'boolean') {
+        type = 'boolean';
+      }
 
       return {
         id: Math.random().toString(36).substring(2, 9),
@@ -76,13 +110,29 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
       const key = f.key.trim();
       if (f.required) required.push(key);
 
-      properties[key] = {
-        title: f.title.trim(),
-        type: f.type === 'enum' ? 'string' : f.type,
-      };
-
       if (f.type === 'enum') {
-        properties[key].enum = f.options ? f.options.split(',').map(s => s.trim()).filter(Boolean) : [];
+        properties[key] = {
+          title: f.title.trim(),
+          type: 'string',
+          enum: f.options ? f.options.split(',').map(s => s.trim()).filter(Boolean) : [],
+        };
+      } else if (f.type === 'date') {
+        properties[key] = {
+          title: f.title.trim(),
+          type: 'string',
+          format: 'date',
+        };
+      } else if (f.type === 'textarea') {
+        properties[key] = {
+          title: f.title.trim(),
+          type: 'string',
+          format: 'textarea',
+        };
+      } else {
+        properties[key] = {
+          title: f.title.trim(),
+          type: f.type,
+        };
       }
     });
 
@@ -101,7 +151,7 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
     const newField: FieldDef = {
       id: newId,
       key: '',
-      title: 'New Field',
+      title: '',
       type: 'string',
       required: false,
     };
@@ -115,7 +165,7 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
 
   const handleCancel = () => {
     if (editingSnapshot) {
-      if (editingSnapshot.key === '' && editingSnapshot.title === 'New Field') {
+      if (editingSnapshot.key === '' && (editingSnapshot.title === '' || editingSnapshot.title === 'New Field')) {
         // It was a newly added field, remove it
         const newFields = fields.filter(f => f.id !== editingFieldId);
         setFields(newFields);
@@ -146,13 +196,9 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
     const newFields = fields.map(f => {
       if (f.id === id) {
         const updated = { ...f, ...updates };
-        // Auto-generate key from title if key is empty and we're editing title
-        if (updates.title !== undefined && !f.key) {
-          updated.key = updates.title
-            .replace(/[^a-zA-Z0-9 ]/g, '')
-            .split(' ')
-            .map((word, index) => index === 0 ? word.toLowerCase() : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-            .join('');
+        // Auto-generate JSON-friendly key from title when editing title
+        if (updates.title !== undefined) {
+          updated.key = titleToInternalKey(updates.title);
         }
         return updated;
       }
@@ -213,7 +259,9 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
                         onChange={e => handleChange(field.id, { type: e.target.value as FieldType })}
                       >
                         <option value="string">{t('types.string')}</option>
+                        <option value="textarea">{t('types.textarea')}</option>
                         <option value="number">{t('types.number')}</option>
+                        <option value="date">{t('types.date')}</option>
                         <option value="boolean">{t('types.boolean')}</option>
                         <option value="enum">{t('types.enum')}</option>
                       </select>

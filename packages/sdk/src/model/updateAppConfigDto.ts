@@ -12,6 +12,7 @@ import type { OrderedSettingDto } from './orderedSettingDto';
 
 export interface UpdateAppConfigDto {
   defaultFulfillmentLocationId?: string;
+  allowNegativeInventory?: boolean;
   creditLimitBehavior?: UpdateAppConfigDtoCreditLimitBehavior;
   defaultCustomerTermsId?: string;
   defaultSupplierTermsId?: string;
@@ -33,6 +34,7 @@ export interface UpdateAppConfigDto {
   opportunityOrganizationRoles?: OrderedSettingDto[];
   opportunityStages?: OrderedSettingDto[];
   opportunityTypes?: OrderedSettingDto[];
+  projectStages?: OrderedSettingDto[];
   activityTypes?: OrderedSettingDto[];
   referralModes?: OrderedSettingDto[];
   salesAnalysisCodes?: OrderedSettingDto[];

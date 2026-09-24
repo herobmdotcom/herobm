@@ -197,5 +197,31 @@ describe('PageNav Component', () => {
     expect(subtargetsRow.className).toContain('lg:right-0');
     expect(subtargetsRow.className).toContain('lg:left-auto');
   });
+
+  it('renders only the second level (subtargets) when there is only one top level tab with subtargets', () => {
+    const singleSectionWithSubtargets: PageSection[] = [
+      {
+        id: 'tab-overview',
+        label: 'Overview',
+        isSubPage: true,
+        isActive: true,
+        subtargets: [
+          { id: 'info-section', label: 'Info' },
+          { id: 'pricing-section', label: 'Pricing' },
+          { id: 'activity-section', label: 'Activity' },
+        ],
+      },
+    ];
+
+    render(<PageNav sections={singleSectionWithSubtargets} />);
+
+    // Top-level tab 'Overview' should NOT be rendered
+    expect(screen.queryByText('Overview')).not.toBeInTheDocument();
+
+    // Subtargets should be rendered directly
+    expect(screen.getByText('Info')).toBeInTheDocument();
+    expect(screen.getByText('Pricing')).toBeInTheDocument();
+    expect(screen.getByText('Activity')).toBeInTheDocument();
+  });
 });
 

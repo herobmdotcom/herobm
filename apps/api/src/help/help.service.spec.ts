@@ -256,6 +256,63 @@ Admin only doc.
         expect(searchResults.some((r) => r.id === 'inventory-shipping')).toBe(
           true,
         );
+
+        const stocktakeContext = await service.getContextHelp(
+          '/inventory/stocktakes',
+          'admin',
+        );
+        expect(stocktakeContext.topic).toBeDefined();
+        expect(stocktakeContext.topic?.id).toBe('stocktakes');
+        expect(stocktakeContext.topic?.category).toBe('Inventory');
+        expect(stocktakeContext.matchedRoute).toBe('/inventory/stocktakes');
+
+        const stocktakeParamContext = await service.getContextHelp(
+          '/inventory/stocktakes/550e8400-e29b-41d4-a716-446655440000',
+          'admin',
+        );
+        expect(stocktakeParamContext.topic?.id).toBe('stocktakes');
+
+        const stocktakeCountContext = await service.getContextHelp(
+          '/inventory/stocktakes/550e8400-e29b-41d4-a716-446655440000/count',
+          'admin',
+        );
+        expect(stocktakeCountContext.topic?.id).toBe('stocktakes');
+
+        const stocktakeSearch = await service.search('blind count', 'admin');
+        expect(stocktakeSearch.length).toBeGreaterThan(0);
+        expect(stocktakeSearch.some((r) => r.id === 'stocktakes')).toBe(true);
+
+        const restockContext = await service.getContextHelp(
+          '/demand/restock',
+          'admin',
+        );
+        expect(restockContext.topic).toBeDefined();
+        expect(restockContext.topic?.id).toBe('demand-restock');
+        expect(restockContext.topic?.category).toBe('Purchasing');
+        expect(restockContext.matchedRoute).toBe('/demand/restock');
+
+        const movementContext = await service.getContextHelp(
+          '/demand/movement',
+          'admin',
+        );
+        expect(movementContext.topic).toBeDefined();
+        expect(movementContext.topic?.id).toBe('demand-movement');
+        expect(movementContext.topic?.category).toBe('Purchasing');
+        expect(movementContext.matchedRoute).toBe('/demand/movement');
+
+        const balanceSheetContext = await service.getContextHelp(
+          '/general-ledger/balance-sheet',
+          'admin',
+        );
+        expect(balanceSheetContext.topic).toBeDefined();
+        expect(balanceSheetContext.topic?.id).toBe('balance-sheet');
+        expect(balanceSheetContext.topic?.title).toBe(
+          'Balance Sheet & Financial Position',
+        );
+        expect(balanceSheetContext.topic?.category).toBe('Finance');
+        expect(balanceSheetContext.matchedRoute).toBe(
+          '/general-ledger/balance-sheet',
+        );
       }
     });
 
@@ -292,7 +349,14 @@ Admin only doc.
     });
 
     it('should ensure all user documentation files are free of raw LaTeX/KaTeX math noise', () => {
-      const realDocsDir = path.resolve(__dirname, '../../../../docs/user');
+      const realDocsDir =
+        [
+          path.resolve(__dirname, '../../../docs/user'),
+          path.resolve(__dirname, '../../../../docs/user'),
+          path.resolve(process.cwd(), 'docs/user'),
+          path.resolve(process.cwd(), '../../docs/user'),
+        ].find((d) => fs.existsSync(d)) ||
+        path.resolve(process.cwd(), 'docs/user');
       if (!fs.existsSync(realDocsDir)) return;
 
       const files = fs

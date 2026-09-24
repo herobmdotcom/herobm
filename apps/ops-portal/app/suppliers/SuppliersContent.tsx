@@ -96,6 +96,7 @@ export default function SuppliersContent() {
     <DataGrid<UnifiedSupplierRow>
       endpoint="/api/suppliers"
       columns={columns}
+      customFieldEntityType="suppliers"
       gridKey="suppliers"
       searchPlaceholder={tSuppliers('placeholders.searchSuppliers')}
       exportFileName="suppliers"

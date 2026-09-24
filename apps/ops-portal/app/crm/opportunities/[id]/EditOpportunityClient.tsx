@@ -17,10 +17,13 @@ import { OrganizationCard } from '@/components/shared/OrganizationCard';
 import { OrganizationSlideOver } from '@/components/shared/OrganizationSlideOver';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import CrmActivitiesSection from '@/components/shared/CrmActivitiesSection';
+import NotesSection from '@/components/shared/NotesSection';
 import { useSettings } from '@/components/SettingsProvider';
 import { OPPORTUNITY_STATE, SystemResource, hasPermission, getErrorMessage } from '@herobm/shared';
 import { useAutoSaveEntity } from '@/hooks/useAutoSaveEntity';
+import { DynamicForm } from '@/components/DynamicForm';
 import OpportunityCommercialTab from './components/OpportunityCommercialTab';
+import OrganizationSelect from '@/components/shared/OrganizationSelect';
 
 interface OpportunityFormDto {
   name: string;
@@ -35,6 +38,7 @@ interface OpportunityFormDto {
   description?: string | null;
   createdOn: string;
   modifiedOn: string;
+  metadata?: Record<string, unknown>;
 }
 
 function GeneralInfoTab({
@@ -46,6 +50,8 @@ function GeneralInfoTab({
   appSettings,
   baseCurrency,
   dealRevenue,
+  opportunity,
+  onOrganizationChanged,
   onSelectTab,
 }: {
   dto: OpportunityFormDto;
@@ -56,8 +62,32 @@ function GeneralInfoTab({
   appSettings: api.AppConfigResponseDto | null;
   baseCurrency?: string;
   dealRevenue?: number | null;
+  opportunity?: api.OpportunityResponseDto | null;
+  onOrganizationChanged?: () => void;
   onSelectTab?: (tab: 'overview' | 'commercial' | 'contacts' | 'actors') => void;
 }) {
+  type PrimaryOrg = {
+    opportunityOrganizationId?: string;
+    organizationId?: string;
+    roles?: string[];
+    organization?: {
+      organizationId?: string;
+      name?: string;
+      industry?: string;
+      email?: string;
+      customers?: Array<{
+        customerId?: string;
+        customerNumber?: string;
+        name?: string;
+      }>;
+    };
+  };
+
+  const primaryOrg = (opportunity?.opportunityOrganizations || opportunity?.opportunityActors)?.[0] as PrimaryOrg | undefined;
+  const primaryCustomer = primaryOrg?.organization?.customers?.[0];
+  const orgName = primaryOrg?.organization?.name;
+  const orgId = primaryOrg?.organization?.organizationId || primaryOrg?.organizationId;
+
   return (
     <div className="max-w-5xl flex flex-col gap-6">
       {/* General Information Card */}
@@ -148,6 +178,61 @@ function GeneralInfoTab({
                   </option>
                 ))}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+              Primary Customer / Organization
+            </label>
+            <OrganizationSelect
+              value={orgId || null}
+              initialSearchTerm={orgName || ''}
+              onChange={async (selectedOrg) => {
+                if (!opportunity?.opportunityId) return;
+                try {
+                  if (selectedOrg?.organizationId) {
+                    if (orgId && orgId !== selectedOrg.organizationId) {
+                      await api.opportunitiesControllerDeleteOrganization(opportunity.opportunityId, orgId);
+                    }
+                    await api.opportunitiesControllerAddOrganization(opportunity.opportunityId, {
+                      organizationId: selectedOrg.organizationId,
+                      roles: ['Customer'],
+                    });
+                    toast.success('Primary customer updated');
+                  } else if (orgId) {
+                    await api.opportunitiesControllerDeleteOrganization(opportunity.opportunityId, orgId);
+                    toast.success('Customer unlinked');
+                  }
+                  onOrganizationChanged?.();
+                } catch (e) {
+                  toast.error(getErrorMessage(e) || 'Failed to update organization');
+                }
+              }}
+              disabled={loading}
+              placeholder="Search or assign customer..."
+            />
+            {orgId && (
+              <div className="mt-1.5 flex items-center gap-3 flex-wrap text-xs text-[var(--text-muted)]">
+                <Link
+                  href={`/crm/organizations/${orgId}`}
+                  className="text-[var(--accent)] hover:underline font-normal"
+                >
+                  View Organization
+                </Link>
+                {primaryCustomer?.customerId && (
+                  <>
+                    <span className="text-[var(--border)]">•</span>
+                    <Link
+                      href={`/customers/${primaryCustomer.customerId}`}
+                      className="text-[var(--accent)] hover:underline font-normal"
+                      title="Linked ERP Customer Account"
+                    >
+                      View Customer
+                    </Link>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           <div>
@@ -344,90 +429,7 @@ function GeneralInfoTab({
   );
 }
 
-function NotesTab({
-  opportunityId,
-  notes,
-  onNoteAdded,
-}: {
-  opportunityId: string;
-  notes: api.OpportunityNoteResponseDto[];
-  onNoteAdded: () => void;
-}) {
-  const [content, setContent] = useState('');
-  const [submitting, setSubmitting] = useState(false);
 
-  const handleAddNote = async () => {
-    if (!content.trim()) return;
-    setSubmitting(true);
-    try {
-      await api.opportunitiesControllerAddNote(opportunityId, { content });
-      toast.success('Note added');
-      setContent('');
-      onNoteAdded();
-    } catch (e) {
-      toast.error(getErrorMessage(e) || 'Failed to add note');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="max-w-5xl flex flex-col gap-4">
-      <div className="card p-6 flex flex-col gap-4 border border-[var(--border)] bg-[var(--surface)] rounded-xl shadow-none">
-        <h3 className="section-heading mb-0">
-          <span className="material-symbols-outlined">edit_note</span>
-          Notes
-        </h3>
-        <textarea
-          className="input w-full min-h-[100px]"
-          rows={3}
-          placeholder="Type an internal note about this opportunity..."
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-        />
-        <div className="flex justify-end">
-          <Button
-            size="sm"
-            onClick={handleAddNote}
-            disabled={submitting || !content.trim()}
-          >
-            Add Note
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        {notes.map((n) => (
-          <div
-            key={n.noteId}
-            className="p-4 flex flex-col gap-1 border border-[var(--border)] bg-[var(--surface)] rounded-xl shadow-none"
-          >
-            <div className="text-sm text-[var(--text-primary)] whitespace-pre-wrap">
-              {n.content}
-            </div>
-            <div className="text-xs text-[var(--text-muted)] flex justify-between mt-2 pt-2 border-t border-[var(--border)]">
-              <span>
-                By:{' '}
-                {String(
-                  (n.createdBy as Record<string, unknown> | undefined)?.displayName ||
-                    (n.createdBy as Record<string, unknown> | undefined)?.username ||
-                    n.createdById ||
-                    '—',
-                )}
-              </span>
-              <span>{new Date(n.createdOn).toLocaleString()}</span>
-            </div>
-          </div>
-        ))}
-        {notes.length === 0 && (
-          <div className="text-sm text-[var(--text-muted)] italic text-center p-8 border border-dashed border-[var(--border)] rounded-xl bg-[var(--surface-muted)]/50">
-            No notes logged for this opportunity yet.
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 function OrganizationsTab({
   opportunityId,
@@ -536,6 +538,7 @@ export default function EditOpportunityClient({ id }: { id: string }) {
 
   const [activeTab, setActiveTab] = useState<'overview' | 'commercial' | 'contacts' | 'actors'>('overview');
   const [users, setUsers] = useState<api.UserResponseDto[]>([]);
+  const [opportunityMetadataSchema, setOpportunityMetadataSchema] = useState<Record<string, unknown> | null>(null);
 
   const {
     entity: opportunity,
@@ -562,6 +565,7 @@ export default function EditOpportunityClient({ id }: { id: string }) {
       description: data.description ?? null,
       createdOn: (data.createdOn as unknown as string) || '',
       modifiedOn: (data.modifiedOn as unknown as string) || '',
+      metadata: (data.metadata as Record<string, unknown>) || {},
     }),
   });
 
@@ -577,6 +581,16 @@ export default function EditOpportunityClient({ id }: { id: string }) {
       .catch((e) => {
         reportError(e, 'EditOpportunityClient - fetch users');
         toast.error('Failed to load users: ' + getErrorMessage(e));
+      });
+
+    api.organizationsControllerGetSettings()
+      .then((res) => {
+        if (res.data?.opportunityMetadataSchema) {
+          setOpportunityMetadataSchema(res.data.opportunityMetadataSchema as Record<string, unknown>);
+        }
+      })
+      .catch((e) => {
+        reportError(e, 'EditOpportunityClient - loadSettings');
       });
   }, []);
 
@@ -610,6 +624,12 @@ export default function EditOpportunityClient({ id }: { id: string }) {
     }
     await saveField(field as keyof OpportunityFormDto, value);
   };
+
+  const hasCustomFields = !!(
+    opportunityMetadataSchema?.properties &&
+    typeof opportunityMetadataSchema.properties === 'object' &&
+    Object.keys(opportunityMetadataSchema.properties).length > 0
+  );
 
   const navItems = [
     {
@@ -661,6 +681,24 @@ export default function EditOpportunityClient({ id }: { id: string }) {
             );
           },
         },
+        ...(hasCustomFields
+          ? [
+              {
+                id: 'custom-fields-section',
+                label: 'Custom Fields',
+                onClick: () => {
+                  setActiveTab('overview');
+                  setTimeout(
+                    () =>
+                      document
+                        .getElementById('custom-fields-section')
+                        ?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+                    50,
+                  );
+                },
+              },
+            ]
+          : []),
         {
           id: 'activities-section',
           label: 'Activities',
@@ -728,11 +766,56 @@ export default function EditOpportunityClient({ id }: { id: string }) {
     },
   ];
 
+  type PrimaryOrg = {
+    opportunityOrganizationId?: string;
+    organizationId?: string;
+    roles?: string[];
+    organization?: {
+      organizationId?: string;
+      name?: string;
+      industry?: string;
+      email?: string;
+      customers?: Array<{
+        customerId?: string;
+        customerNumber?: string;
+        name?: string;
+      }>;
+    };
+  };
+
+  const primaryOrg = (opportunity?.opportunityOrganizations || opportunity?.opportunityActors)?.[0] as PrimaryOrg | undefined;
+  const primaryCustomer = primaryOrg?.organization?.customers?.[0];
+  const orgId = primaryOrg?.organization?.organizationId || primaryOrg?.organizationId;
+
   return (
     <DetailsLayout
       header={
         <EntityHeader
           title={dto?.name || 'Loading...'}
+          subtitle={
+            primaryOrg?.organization?.name ? (
+              <span className="inline-flex items-center gap-2 flex-wrap">
+                <Link
+                  href={`/crm/organizations/${orgId}`}
+                  className="font-medium text-[var(--accent)] hover:underline inline-flex items-center gap-1"
+                >
+                  {/* eslint-disable-next-line i18next/no-literal-string -- Material symbol icon glyph */}
+                  <span className="material-symbols-outlined text-[16px]">business</span>
+                  {primaryOrg.organization.name}
+                </Link>
+                {primaryCustomer?.customerId && (
+                  <Link
+                    href={`/customers/${primaryCustomer.customerId}`}
+                    className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:underline border border-emerald-500/20 inline-flex items-center gap-1"
+                    title="Linked ERP Customer Account"
+                  >
+                    <span className="material-symbols-outlined text-[13px]">account_balance_wallet</span>
+                    {primaryCustomer.customerNumber}
+                  </Link>
+                )}
+              </span>
+            ) : undefined
+          }
           badges={
             dto?.status ? (
               <span className="badge bg-[var(--surface-muted)] text-[var(--text-secondary)] font-semibold border border-[var(--border)] px-2.5 py-1 rounded-full text-xs uppercase">
@@ -782,9 +865,30 @@ export default function EditOpportunityClient({ id }: { id: string }) {
                 appSettings={appSettings as unknown as api.AppConfigResponseDto | null}
                 baseCurrency={baseCurrency}
                 dealRevenue={opportunity?.dealRevenue}
+                opportunity={opportunity}
+                onOrganizationChanged={loadOpportunity}
                 onSelectTab={setActiveTab}
               />
             </div>
+            {hasCustomFields && (
+              <div id="custom-fields-section" className="card">
+                <h3 className="section-heading">
+                  <span className="material-symbols-outlined">tune</span>
+                  <span>Custom Fields</span>
+                </h3>
+                <DynamicForm
+                  schema={opportunityMetadataSchema!}
+                  data={(dto.metadata || opportunity?.metadata || {}) as Record<string, unknown>}
+                  onChange={(newMetadata) => {
+                    updateField('metadata', newMetadata);
+                  }}
+                  onBlur={(newMetadata) => {
+                    saveField('metadata', newMetadata);
+                  }}
+                  readOnly={loading}
+                />
+              </div>
+            )}
             <div id="activities-section">
               <CrmActivitiesSection
                 entityType="opportunity"
@@ -798,13 +902,20 @@ export default function EditOpportunityClient({ id }: { id: string }) {
                 onActivityLogged={loadOpportunity}
               />
             </div>
-            <div id="notes-section">
-              <NotesTab
-                opportunityId={id}
-                notes={opportunity?.notes || []}
-                onNoteAdded={loadOpportunity}
-              />
-            </div>
+            <NotesSection
+              id="notes-section"
+              placeholder="Type an internal note about this opportunity..."
+              notes={opportunity?.notes || []}
+              onAddNote={async (content) => {
+                try {
+                  await api.opportunitiesControllerAddNote(id, { content: content.trim() });
+                  toast.success('Note added');
+                  loadOpportunity();
+                } catch (e) {
+                  toast.error(getErrorMessage(e) || 'Failed to add note');
+                }
+              }}
+            />
             <div id="activity-section">
               <ActivityTimeline
                 events={((opportunity as unknown as { events?: unknown[] })?.events || []) as unknown as []}
@@ -817,9 +928,11 @@ export default function EditOpportunityClient({ id }: { id: string }) {
           <OpportunityCommercialTab
             opportunityId={id}
             opportunityName={opportunity?.name}
+            customerId={primaryCustomer?.customerId}
             currencyCode={opportunity?.currencyCode}
             dealRevenue={opportunity?.dealRevenue}
             quoteCount={opportunity?.quoteCount}
+            projectCount={opportunity?.projectCount}
           />
         )}
 

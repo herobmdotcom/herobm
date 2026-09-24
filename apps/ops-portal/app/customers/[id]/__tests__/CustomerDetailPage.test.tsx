@@ -100,6 +100,7 @@ jest.mock('@herobm/sdk', () => ({
     },
   }),
   customersControllerEmailDocument: jest.fn().mockResolvedValue({ data: { success: true } }),
+  organizationsControllerGetSettings: jest.fn().mockResolvedValue({ data: {} }),
 }));
 
 describe('AccountDetailPage', () => {

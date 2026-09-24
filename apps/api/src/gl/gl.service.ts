@@ -34,6 +34,9 @@ import {
   financialEvents,
   systemEvents,
   salesInvoices,
+  projectLedgerEntries,
+  projects,
+  projectTasks,
 } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -42,6 +45,8 @@ import {
   EXPENSE_ROUTING_PRECEDENCE,
   GL_ACCOUNT_TYPE,
   GLAccountType,
+  GL_REPORT_CATEGORY,
+  GLReportCategory,
   DATA_SOURCE_CONTEXT,
   type JournalEntrySourceType,
   GENESIS_HASH,
@@ -49,6 +54,9 @@ import {
   computeEntryHash,
   verifyJournalChain,
   SALES_INVOICE_STATE,
+  PROJECT_LEDGER_ENTRY_TYPE,
+  PROJECT_LINE_TYPE,
+  PROJECT_SOURCE_TYPE,
 } from '@herobm/shared';
 import {
   JournalLineDto,
@@ -66,6 +74,12 @@ import {
   executeLedgerIntegrityAudit,
   fetchIntegrityAuditReport,
 } from './gl-integrity-audit.utils';
+import {
+  fetchProfitAndLoss,
+  fetchBalanceSheet,
+  type ProfitAndLossParams,
+  type BalanceSheetParams,
+} from './gl-financial-statements.utils';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -264,6 +278,7 @@ export class GlService implements OnModuleInit {
       .select({
         glAccountId: glAccounts.glAccountId,
         accountCode: glAccounts.accountCode,
+        accountType: glAccounts.accountType,
         isGroup: glAccounts.isGroup,
         isActive: glAccounts.isActive,
         name: glAccounts.name,
@@ -334,6 +349,8 @@ export class GlService implements OnModuleInit {
         glAccountId: l.accountId!,
         costCenterId: l.costCenterId || defaults.costCenterId,
         activityId: l.activityId || defaults.activityId,
+        projectId: l.projectId || null,
+        projectTaskId: l.projectTaskId || null,
         partyType: l.partyType || null,
         partyId: l.partyId || null,
         debit: String(l.debit),
@@ -377,6 +394,75 @@ export class GlService implements OnModuleInit {
       await db
         .insert(glJournalLines)
         .values(lineValues.map((line) => ({ isReconciled: false, ...line })));
+
+      // Synchronize project subledger entries for lines tagging a project and task
+      for (const l of lines) {
+        if (l.projectId && l.projectTaskId) {
+          const acct = l.accountId
+            ? idMap.get(l.accountId)
+            : codeMap.get(l.accountCode!);
+          const isRevenue = acct?.accountType === 'revenue';
+          const isExpense = acct?.accountType === 'expense';
+
+          // Only Income Statement accounts (revenue and expense) impact project performance in the subledger.
+          // Balance sheet accounts (asset, liability, equity) like Bank, Accounts Payable, Accruals do not create project cost/revenue entries.
+          if (!isRevenue && !isExpense) {
+            continue;
+          }
+
+          const isDebit = Number(l.debit) > 0;
+          const amount = isDebit ? Number(l.debit) : Number(l.credit);
+
+          if (isRevenue) {
+            // Revenue account:
+            // Credit increases project revenue (SALE)
+            // Debit decreases project revenue (SALE reversal / discount)
+            const isSaleCredit = !isDebit;
+            const revenueAmount = isSaleCredit ? amount : -amount;
+            await db.insert(projectLedgerEntries).values({
+              projectId: l.projectId,
+              projectTaskId: l.projectTaskId,
+              entryType: PROJECT_LEDGER_ENTRY_TYPE.SALE,
+              lineType: PROJECT_LINE_TYPE.EXPENSE,
+              sourceType: PROJECT_SOURCE_TYPE.MANUAL_JOURNAL,
+              sourceId: entry.journalEntryId,
+              description: l.memo || meta.memo || `GL Journal: ${entryNumber}`,
+              quantity: isSaleCredit ? '1' : '-1',
+              unitCostBase: '0',
+              totalCostBase: '0',
+              unitPriceBase: String(amount),
+              totalPriceBase: String(revenueAmount),
+              isBillable: true,
+              isBilled: false,
+              postingDate: new Date(entryDate),
+              createdBy: actorStr,
+            });
+          } else if (isExpense) {
+            // Expense account:
+            // Debit increases project cost (USAGE)
+            // Credit decreases project cost (USAGE reversal / reimbursement)
+            const costAmount = isDebit ? amount : -amount;
+            await db.insert(projectLedgerEntries).values({
+              projectId: l.projectId,
+              projectTaskId: l.projectTaskId,
+              entryType: PROJECT_LEDGER_ENTRY_TYPE.USAGE,
+              lineType: PROJECT_LINE_TYPE.EXPENSE,
+              sourceType: PROJECT_SOURCE_TYPE.MANUAL_JOURNAL,
+              sourceId: entry.journalEntryId,
+              description: l.memo || meta.memo || `GL Journal: ${entryNumber}`,
+              quantity: isDebit ? '1' : '-1',
+              unitCostBase: String(amount),
+              totalCostBase: String(costAmount),
+              unitPriceBase: '0',
+              totalPriceBase: '0',
+              isBillable: true,
+              isBilled: false,
+              postingDate: new Date(entryDate),
+              createdBy: actorStr,
+            });
+          }
+        }
+      }
 
       // Write 'gl_posted' event for sync routing + audit trail
       await emitEvent(db, {
@@ -468,6 +554,7 @@ export class GlService implements OnModuleInit {
         accountCode: glAccounts.accountCode,
         name: glAccounts.name,
         accountType: glAccounts.accountType,
+        reportCategory: glAccounts.reportCategory,
         isGroup: glAccounts.isGroup,
         isBankAccount: glAccounts.isBankAccount,
         currencyCode: glAccounts.currencyCode,
@@ -485,6 +572,7 @@ export class GlService implements OnModuleInit {
       accountCode: string;
       name: string;
       accountType: GLAccountType;
+      reportCategory?: string;
       parentAccountId?: string;
       isGroup?: boolean;
       isBankAccount?: boolean;
@@ -531,6 +619,7 @@ export class GlService implements OnModuleInit {
           accountCode: data.accountCode,
           name: data.name,
           accountType: data.accountType,
+          reportCategory: (data.reportCategory as GLReportCategory) || null,
           parentAccountId: data.parentAccountId,
           isGroup: data.isGroup ?? false,
           isBankAccount: data.isBankAccount ?? false,
@@ -558,6 +647,7 @@ export class GlService implements OnModuleInit {
     glAccountId: string,
     data: {
       name?: string;
+      reportCategory?: string;
       isActive?: boolean;
       isBankAccount?: boolean;
       metadata?: Record<string, unknown>;
@@ -582,9 +672,21 @@ export class GlService implements OnModuleInit {
         );
       }
 
+      const updateData: Partial<typeof glAccounts.$inferInsert> = {};
+      if (data.name !== undefined) updateData.name = data.name;
+      if (data.isActive !== undefined) updateData.isActive = data.isActive;
+      if (data.isBankAccount !== undefined)
+        updateData.isBankAccount = data.isBankAccount;
+      if (data.metadata !== undefined) updateData.metadata = data.metadata;
+      if (data.reportCategory !== undefined) {
+        updateData.reportCategory = data.reportCategory
+          ? (data.reportCategory as GLReportCategory)
+          : null;
+      }
+
       const [updated] = await tx
         .update(glAccounts)
-        .set(data)
+        .set(updateData)
         .where(eq(glAccounts.glAccountId, glAccountId))
         .returning();
 
@@ -609,6 +711,14 @@ export class GlService implements OnModuleInit {
     return fetchTrialBalance(this.db, asOfDate, periodStart);
   }
 
+  async getProfitAndLoss(params: ProfitAndLossParams) {
+    return fetchProfitAndLoss(this.db, params);
+  }
+
+  async getBalanceSheet(params: BalanceSheetParams) {
+    return fetchBalanceSheet(this.db, params);
+  }
+
   async getGeneralLedger(filters: GeneralLedgerFilters) {
     return fetchGeneralLedger(this.db, filters);
   }
@@ -618,6 +728,7 @@ export class GlService implements OnModuleInit {
     toDate?: string;
     sourceType?: string;
     sourceId?: string;
+    projectId?: string;
     entryNumber?: string;
     limit?: number;
     page?: number;
@@ -635,6 +746,15 @@ export class GlService implements OnModuleInit {
     }
     if (filters.sourceId) {
       conditions.push(sql`je.source_id = ${filters.sourceId}`);
+    }
+    if (filters.projectId) {
+      conditions.push(
+        sql`EXISTS (
+          SELECT 1 FROM herobm_core.gl_journal_lines jl
+          WHERE jl.journal_entry_id = je.journal_entry_id
+            AND jl.project_id = ${filters.projectId}::uuid
+        )`,
+      );
     }
     if (filters.entryNumber) {
       conditions.push(
@@ -788,6 +908,12 @@ export class GlService implements OnModuleInit {
         costCenterCode: costCenters.code,
         activityId: glJournalLines.activityId,
         activityCode: activities.code,
+        projectId: glJournalLines.projectId,
+        projectNumber: projects.projectNumber,
+        projectName: projects.name,
+        projectTaskId: glJournalLines.projectTaskId,
+        taskCode: projectTasks.taskCode,
+        taskName: projectTasks.name,
       })
       .from(glJournalLines)
       .innerJoin(
@@ -828,6 +954,11 @@ export class GlService implements OnModuleInit {
       .leftJoin(
         activities,
         eq(glJournalLines.activityId, activities.activityId),
+      )
+      .leftJoin(projects, eq(glJournalLines.projectId, projects.projectId))
+      .leftJoin(
+        projectTasks,
+        eq(glJournalLines.projectTaskId, projectTasks.projectTaskId),
       )
       .where(eq(glJournalLines.journalEntryId, journalEntryId));
 

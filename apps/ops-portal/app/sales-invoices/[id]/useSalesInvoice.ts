@@ -5,9 +5,11 @@ import * as api from '@herobm/sdk';
 export interface SalesInvoiceDetails {
   invoiceId: string;
   invoiceNumber: string;
-  salesOrderId: string;
-  salesOrderNumber: string;
-  orderNumber: string;
+  salesOrderId?: string;
+  salesOrderNumber?: string;
+  orderNumber?: string;
+  projectId?: string;
+  projectNumber?: string;
   customerId: string;
   customerName: string;
   customerOrderNumber?: string;
@@ -23,14 +25,17 @@ export interface SalesInvoiceDetails {
   termsDescription?: string;
   earlyPaymentDiscount?: string | null;
   earlyPaymentDiscountDays?: number | null;
+  metadata?: Record<string, unknown>;
   events?: { eventId: string; eventType: string; payload: Record<string, unknown>; actor: string; createdOn: string }[];
   lines: Array<{
     lineId: string;
-    productId: string;
-    productNumber: string;
+    productId?: string | null;
+    productNumber?: string | null;
     description: string;
     quantityInvoiced: string;
     pricePerUnit: string;
+    discountPercentage?: string | number;
+    taxAmount?: string | number;
     amount: string;
   }>;
   allocations?: {

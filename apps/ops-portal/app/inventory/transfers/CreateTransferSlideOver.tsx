@@ -21,9 +21,19 @@ interface CreateTransferSlideOverProps {
   open: boolean;
   onClose: () => void;
   onCreated: () => void;
+  projectId?: string;
+  defaultDestinationLocationId?: string;
+  defaultSourceLocationId?: string;
 }
 
-export default function CreateTransferSlideOver({ open, onClose, onCreated }: CreateTransferSlideOverProps) {
+export default function CreateTransferSlideOver({
+  open,
+  onClose,
+  onCreated,
+  projectId,
+  defaultDestinationLocationId,
+  defaultSourceLocationId,
+}: CreateTransferSlideOverProps) {
   const t = useTranslations('transfers');
   const tCommon = useTranslations('common');
   
@@ -36,12 +46,12 @@ export default function CreateTransferSlideOver({ open, onClose, onCreated }: Cr
   useEffect(() => {
     if (open) {
       // Reset state
-      setSourceLocationId('');
-      setDestinationLocationId('');
+      setSourceLocationId(defaultSourceLocationId || '');
+      setDestinationLocationId(defaultDestinationLocationId || '');
       setNotes('');
       setLines([]);
     }
-  }, [open]);
+  }, [open, defaultSourceLocationId, defaultDestinationLocationId]);
 
   const handleAddProduct = (product: { productId: string; productNumber: string; name: string }) => {
     // Check if product already exists
@@ -91,6 +101,7 @@ export default function CreateTransferSlideOver({ open, onClose, onCreated }: Cr
       await api.transfersControllerCreate({
         sourceLocationId,
         destinationLocationId,
+        projectId: projectId || undefined,
         notes,
         lines: validLines
       });

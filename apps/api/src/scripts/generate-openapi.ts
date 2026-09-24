@@ -64,6 +64,7 @@ async function generateDocs() {
       'Manufacturing work orders and assembly',
     )
     .addTag('Warehouse', 'Inventory, receiving, and fulfillment')
+    .addTag('Stocktakes', 'Physical inventory audits and count reconciliations')
     .addTag('Payments', 'Payment processing and reconciliation')
     .addTag('General Ledger', 'Accounting, charts, and journals')
     .addTag('Tax', 'Tax configuration and mappings')

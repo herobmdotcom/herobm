@@ -35,6 +35,7 @@ import { customers, suppliers, opportunities } from './crm.schema';
 import { glAccounts } from './gl.schema';
 import { purchaseOrders, purchaseOrderLineItems } from './purchasing.schema';
 import { transferOrders, transferOrderLines } from './inventory.schema';
+import { projects } from './projects.schema';
 
 
 // ---------------------------------------------------------------------------
@@ -72,6 +73,7 @@ export const salesOrders = herobmCore.table(
     deliveryPostalCode: text('delivery_postal_code'),
     deliveryCountry: text('delivery_country'),
     customFields: jsonb('custom_fields'),
+    metadata: jsonb('metadata').$type<Record<string, unknown>>(),
     discrepanciesAcknowledged: boolean('discrepancies_acknowledged').notNull(),
     sourceId: text('source_id').unique(),
     source: text('source').notNull(),
@@ -280,8 +282,8 @@ export const salesInvoices = herobmCore.table(
     invoiceId: uuid('invoice_id').primaryKey().defaultRandom(),
     invoiceNumber: text('invoice_number').unique().notNull(),
     salesOrderId: uuid('sales_order_id')
-      .notNull()
       .references(() => salesOrders.salesOrderId),
+    projectId: uuid('project_id').references(() => projects.projectId),
     customerId: uuid('customer_id').references(() => customers.customerId),
     customerNameDisplay: text('customer_name_display'),
     customerOrderNumber: text('customer_order_number'),
@@ -297,6 +299,7 @@ export const salesInvoices = herobmCore.table(
     dueDate: timestamp('due_date', { withTimezone: true }),
     termsDescription: text('terms_description'),
     notes: text('notes'),
+    metadata: jsonb('metadata').$type<Record<string, unknown>>(),
     earlyPaymentDiscount: numeric('early_payment_discount'),
     earlyPaymentDiscountDays: integer('early_payment_discount_days'),
     createdBy: text('created_by'),
@@ -305,6 +308,9 @@ export const salesInvoices = herobmCore.table(
   },
   (t) => ({
     currencyCheck: validCurrencyCheck('sales_invoices'),
+    projectIdx: index('idx_sales_invoices_project_id').on(t.projectId),
+    customerIdx: index('idx_sales_invoices_customer_id').on(t.customerId),
+    orderIdx: index('idx_sales_invoices_order_id').on(t.salesOrderId),
   }),
 );
 
@@ -319,14 +325,28 @@ export const salesInvoiceLines = herobmCore.table(
       .notNull()
       .references(() => salesInvoices.invoiceId),
     salesOrderLineId: uuid('sales_order_line_id')
-      .notNull()
       .references(() => salesOrderLineItems.salesOrderLineId),
+    description: text('description'),
+    productId: uuid('product_id').references(() => products.productId),
+    glAccountId: uuid('gl_account_id').references(() => glAccounts.glAccountId),
+    projectLedgerEntryId: uuid('project_ledger_entry_id'),
     quantityInvoiced: numeric('quantity_invoiced').notNull(),
     pricePerUnit: numeric('price_per_unit').notNull(),
+    discountPercentage: numeric('discount_percentage').notNull(),
     amount: numeric('amount').notNull(),
+    taxAmount: numeric('tax_amount').notNull(),
+    taxCategoryId: uuid('tax_category_id').references(
+      () => taxCategories.taxCategoryId,
+    ),
   },
   (t) => ({
     soLineIdx: index('idx_sales_invoice_lines_so_line').on(t.salesOrderLineId),
+    projLedgerIdx: index('idx_sales_invoice_lines_ledger_id').on(
+      t.projectLedgerEntryId,
+    ),
+    taxCategoryIdx: index('idx_sales_invoice_lines_tax_category').on(
+      t.taxCategoryId,
+    ),
   }),
 );
 
@@ -356,6 +376,7 @@ export const salesCreditNotes = herobmCore.table(
     exchangeRate: numeric('exchange_rate').notNull(),
     stateCode: text('state_code').notNull(),
     notes: text('notes'),
+    metadata: jsonb('metadata').$type<Record<string, unknown>>(),
     createdBy: text('created_by'),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
     modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
@@ -523,3 +544,15 @@ export const backorders = herobmCore.table(
     productIdx: index('idx_backorders_product').on(t.productId),
   }),
 );
+
+// ---------------------------------------------------------------------------
+// sales_settings (Singleton table for sales metadata schema configurations)
+// ---------------------------------------------------------------------------
+export const salesSettings = herobmCore.table('sales_settings', {
+  salesSettingsId: uuid('sales_settings_id').primaryKey().defaultRandom(),
+  salesOrderMetadataSchema: jsonb('sales_order_metadata_schema').$type<Record<string, unknown>>(),
+  salesInvoiceMetadataSchema: jsonb('sales_invoice_metadata_schema').$type<Record<string, unknown>>(),
+  creditNoteMetadataSchema: jsonb('credit_note_metadata_schema').$type<Record<string, unknown>>(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+

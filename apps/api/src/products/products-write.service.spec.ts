@@ -12,6 +12,10 @@ import {
   productComponents,
   suppliers,
   organizations,
+  locations,
+  zones,
+  bins,
+  productDefaultBins,
 } from '@herobm/db-schema';
 import { eq, sql, and } from 'drizzle-orm';
 import {
@@ -32,8 +36,9 @@ describe('ProductsWriteService', () => {
     await pg.db
       .insert(uomDictionary)
       .values([
-        { uomCode: 'EA', description: 'Each' },
-        { uomCode: 'BOX', description: 'Box' },
+        { uomCode: 'EA', description: 'Each', category: 'goods' },
+        { uomCode: 'BOX', description: 'Box', category: 'goods' },
+        { uomCode: 'HR', description: 'Hour', category: 'service' },
       ])
       .onConflictDoNothing();
   });
@@ -92,6 +97,43 @@ describe('ProductsWriteService', () => {
       expect(result).toBeDefined();
       expect(result.productType).toBe('inventory');
       expect(result.structureType).toBe('kit');
+    });
+
+    it('should reject goods UOM for a service product', async () => {
+      const dto = {
+        productNumber: 'PROD-SVC-FAIL-' + Math.random(),
+        name: 'Service Fail',
+        productType: 'service' as const,
+        baseUom: 'EA',
+      };
+      await expect(service.create(dto, 'admin')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should reject service UOM for a goods product', async () => {
+      const dto = {
+        productNumber: 'PROD-GOODS-FAIL-' + Math.random(),
+        name: 'Goods Fail',
+        productType: 'inventory' as const,
+        baseUom: 'HR',
+      };
+      await expect(service.create(dto, 'admin')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should allow valid service UOM for a service product', async () => {
+      const dto = {
+        productNumber: 'PROD-SVC-OK-' + Math.random(),
+        name: 'Consulting Service',
+        productType: 'service' as const,
+        baseUom: 'HR',
+      };
+      const result = await service.create(dto, 'admin');
+      expect(result).toBeDefined();
+      expect(result.productType).toBe('service');
+      expect(result.baseUom).toBe('HR');
     });
   });
 
@@ -455,6 +497,324 @@ describe('ProductsWriteService', () => {
       expect(copiedComponents).toHaveLength(1);
       expect(copiedComponents[0].childProductId).toBe(child.productId);
       expect(copiedComponents[0].quantity).toBe('3.0000');
+    });
+  });
+
+  describe('linkDefaultBin', () => {
+    let productId: string;
+    let locationId: string;
+    let binId: string;
+
+    beforeEach(async () => {
+      const [p] = await pg.db
+        .insert(products)
+        .values({
+          productNumber: 'PROD-BIN-' + Math.random(),
+          name: 'Bin Test Product',
+          stateCode: PRODUCT_STATE.ACTIVE,
+          productType: 'inventory',
+          structureType: 'standard',
+          baseUom: 'EA',
+          source: 'app',
+          createdBy: 'admin',
+        })
+        .returning();
+      productId = p.productId;
+
+      const [loc] = await pg.db
+        .insert(locations)
+        .values({
+          code: 'WH-MAIN-' + Math.floor(Math.random() * 10000),
+          name: 'Main Warehouse',
+          source: 'app',
+          createdBy: 'admin',
+        })
+        .returning();
+      locationId = loc.locationId;
+
+      const [zone] = await pg.db
+        .insert(zones)
+        .values({
+          locationId,
+          code: 'ZONE-A',
+          name: 'Zone A',
+          source: 'app',
+          createdBy: 'admin',
+        })
+        .returning();
+
+      const [b] = await pg.db
+        .insert(bins)
+        .values({
+          binNumber: 'A-01-01',
+          zoneId: zone.zoneId,
+          binType: 'storage',
+          source: 'app',
+          createdBy: 'admin',
+        })
+        .returning();
+      binId = b.binId;
+    });
+
+    it('should persist minQuantity and maxQuantity correctly when linking a default bin', async () => {
+      const result = await service.linkDefaultBin(
+        productId,
+        {
+          locationId,
+          binId,
+          isPrimaryPerLocation: true,
+          minQuantity: '5',
+          maxQuantity: '10',
+        },
+        'admin',
+      );
+
+      expect(result).toBeDefined();
+      expect(result.productId).toBe(productId);
+      expect(result.locationId).toBe(locationId);
+      expect(result.binId).toBe(binId);
+      expect(result.isPrimaryPerLocation).toBe(true);
+      expect(result.minQuantity).toBe('5');
+      expect(result.maxQuantity).toBe('10');
+
+      const saved = await pg.db
+        .select()
+        .from(productDefaultBins)
+        .where(
+          and(
+            eq(productDefaultBins.productId, productId),
+            eq(productDefaultBins.binId, binId),
+          ),
+        );
+
+      expect(saved).toHaveLength(1);
+      expect(saved[0].minQuantity).toBe('5');
+      expect(saved[0].maxQuantity).toBe('10');
+    });
+
+    it('should update minQuantity and maxQuantity on existing bin link', async () => {
+      await service.linkDefaultBin(
+        productId,
+        {
+          locationId,
+          binId,
+          isPrimaryPerLocation: true,
+          minQuantity: '5',
+          maxQuantity: '10',
+        },
+        'admin',
+      );
+
+      const updated = await service.linkDefaultBin(
+        productId,
+        {
+          locationId,
+          binId,
+          isPrimaryPerLocation: true,
+          minQuantity: '15',
+          maxQuantity: '50',
+        },
+        'admin',
+      );
+
+      expect(updated.minQuantity).toBe('15');
+      expect(updated.maxQuantity).toBe('50');
+
+      const saved = await pg.db
+        .select()
+        .from(productDefaultBins)
+        .where(
+          and(
+            eq(productDefaultBins.productId, productId),
+            eq(productDefaultBins.binId, binId),
+          ),
+        );
+
+      expect(saved).toHaveLength(1);
+      expect(saved[0].minQuantity).toBe('15');
+      expect(saved[0].maxQuantity).toBe('50');
+    });
+
+    it('should remove default bin mapping', async () => {
+      const link = await service.linkDefaultBin(
+        productId,
+        {
+          locationId,
+          binId,
+          isPrimaryPerLocation: true,
+          minQuantity: '5',
+          maxQuantity: '10',
+        },
+        'admin',
+      );
+
+      const removeResult = await service.removeDefaultBin(
+        link.productDefaultBinId,
+        'admin',
+      );
+      expect(removeResult).toEqual({ deleted: true });
+
+      const remaining = await pg.db
+        .select()
+        .from(productDefaultBins)
+        .where(
+          eq(productDefaultBins.productDefaultBinId, link.productDefaultBinId),
+        );
+      expect(remaining).toHaveLength(0);
+    });
+  });
+
+  describe('suppliers and uoms management', () => {
+    let productId: string;
+    let vendorId: string;
+
+    beforeEach(async () => {
+      const [p] = await pg.db
+        .insert(products)
+        .values({
+          productNumber: 'PROD-SUP-UOM-' + Math.random(),
+          name: 'Supplier & UOM Test Product',
+          stateCode: PRODUCT_STATE.ACTIVE,
+          productType: 'inventory',
+          structureType: 'standard',
+          baseUom: 'EA',
+          source: 'app',
+          createdBy: 'admin',
+        })
+        .returning();
+      productId = p.productId;
+
+      const [org] = await pg.db
+        .insert(organizations)
+        .values({
+          name: 'Direct Supplier Inc',
+          stateCode: ORGANIZATION_STATE.ACTIVE,
+          headquartersAddressLine1: '123 Supply Rd',
+          isTaxRegistered: false,
+        })
+        .returning();
+
+      const [v] = await pg.db
+        .insert(suppliers)
+        .values({
+          organizationId: org.organizationId,
+          vendorNumber: 'V-SUP-' + Math.floor(Math.random() * 10000),
+          currencyCode: 'USD',
+          stateCode: SUPPLIER_STATE.ACTIVE,
+          source: 'app',
+          isPurchasingBlocked: false,
+          createdBy: 'admin',
+        })
+        .returning();
+      vendorId = v.vendorId;
+    });
+
+    it('should add and remove a supplier from a product', async () => {
+      const added = await service.addSupplier(
+        productId,
+        {
+          vendorId,
+          supplierPartNumber: 'PART-XYZ',
+          costPrice: 42.5,
+        },
+        'admin',
+      );
+
+      expect(added.productId).toBe(productId);
+      expect(added.vendorId).toBe(vendorId);
+      expect(added.supplierPartNumber).toBe('PART-XYZ');
+
+      const removed = await service.removeSupplier(
+        productId,
+        vendorId,
+        'admin',
+      );
+      expect(removed.stateCode).toBe(PRODUCT_STATE.ARCHIVED);
+    });
+
+    it('should add and remove a UoM conversion on a product', async () => {
+      const addedUom = await service.addUom(
+        productId,
+        { uomCode: 'BOX', ratio: '10' },
+        'admin',
+      );
+      expect(addedUom.uomCode).toBe('BOX');
+      expect(parseFloat(addedUom.ratio)).toBe(10);
+
+      const removeResult = await service.removeUom(
+        productId,
+        addedUom.productUomId,
+        'admin',
+      );
+      expect(removeResult).toEqual({ deleted: true });
+    });
+  });
+
+  describe('kit components management', () => {
+    let parentProductId: string;
+    let childProductId: string;
+
+    beforeEach(async () => {
+      const [parent] = await pg.db
+        .insert(products)
+        .values({
+          productNumber: 'KIT-PARENT-' + Math.random(),
+          name: 'Parent Kit',
+          stateCode: PRODUCT_STATE.ACTIVE,
+          productType: 'non-stock',
+          structureType: 'kit',
+          baseUom: 'EA',
+          source: 'app',
+          createdBy: 'admin',
+        })
+        .returning();
+      parentProductId = parent.productId;
+
+      const [child] = await pg.db
+        .insert(products)
+        .values({
+          productNumber: 'KIT-CHILD-' + Math.random(),
+          name: 'Child Part',
+          stateCode: PRODUCT_STATE.ACTIVE,
+          productType: 'inventory',
+          structureType: 'standard',
+          baseUom: 'EA',
+          source: 'app',
+          createdBy: 'admin',
+        })
+        .returning();
+      childProductId = child.productId;
+    });
+
+    it('should add, update, and remove a kit component', async () => {
+      const component = await service.addComponent(
+        parentProductId,
+        {
+          childProductId,
+          parentQuantity: '1',
+          quantity: '4',
+        },
+        'admin',
+      );
+
+      expect(component.parentProductId).toBe(parentProductId);
+      expect(component.childProductId).toBe(childProductId);
+      expect(parseFloat(component.quantity)).toBe(4);
+
+      const updated = await service.updateComponent(
+        parentProductId,
+        component.componentId,
+        { quantity: '8' },
+        'admin',
+      );
+      expect(parseFloat(updated.quantity)).toBe(8);
+
+      const removed = await service.removeComponent(
+        parentProductId,
+        component.componentId,
+        'admin',
+      );
+      expect(removed).toEqual({ deleted: true });
     });
   });
 });

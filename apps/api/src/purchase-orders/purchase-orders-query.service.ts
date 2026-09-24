@@ -13,6 +13,7 @@ import {
   suppliers as coreSuppliers,
   products,
   productUoms,
+  productSuppliers,
   locations,
   purchaseInvoiceLines,
   organizations,
@@ -421,19 +422,37 @@ export class PurchaseOrdersQueryService {
       ),
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    let allUoms: any[] = [];
+    let allUoms: (typeof productUoms.$inferSelect)[] = [];
+    let allProductSuppliers: (typeof productSuppliers.$inferSelect)[] = [];
     if (productIds.length > 0) {
       allUoms = await tx
         .select()
         .from(productUoms)
         .where(inArray(productUoms.productId, productIds));
+
+      if (order.vendorId) {
+        allProductSuppliers = await tx
+          .select()
+          .from(productSuppliers)
+          .where(
+            and(
+              inArray(productSuppliers.productId, productIds),
+              eq(productSuppliers.vendorId, order.vendorId),
+            ),
+          );
+      }
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const linesWithUoms = lines.map((line: any) => {
+      const supp = allProductSuppliers.find(
+        (s) => s.productId === line.productId,
+      );
       return {
         ...line,
+        minPurchaseQty: supp?.minPurchaseQty ?? null,
+        purchaseUnit: supp?.purchaseUnit ?? null,
+        supplierPartNumber: supp?.supplierPartNumber ?? null,
         productUoms: allUoms.filter((u) => u.productId === line.productId),
       };
     });

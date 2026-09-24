@@ -8,6 +8,19 @@
 import type { ShipmentLineResponseDto } from './shipmentLineResponseDto';
 
 export interface ShipmentResponseDto {
+  stagingBinId?: string;
+  stagingBinNumber?: string;
+  sourceBinId?: string;
+  sourceBinNumber?: string;
+  destinationBinId?: string;
+  destinationBinNumber?: string;
+  projectId?: string;
+  projectNumber?: string;
+  projectName?: string;
+  isProjectReturn?: boolean;
+  sourceLocationId?: string;
+  destinationLocationId?: string;
+  isSameSite?: boolean;
   lines?: ShipmentLineResponseDto[];
   shipmentId: string;
   shipmentNumber: string;

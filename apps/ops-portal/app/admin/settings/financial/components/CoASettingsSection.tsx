@@ -6,11 +6,44 @@ import SlideOver from '@/components/shared/SlideOver';
 import ImportCoaModal from '../ImportCoaModal';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
-import { getErrorMessage, CURRENCIES, GL_ACCOUNT_TYPE } from '@herobm/shared';
+import { getErrorMessage, CURRENCIES, GL_ACCOUNT_TYPE, GL_REPORT_CATEGORY, GLReportCategory } from '@herobm/shared';
 import { useTranslations } from 'next-intl';
 
+const REPORT_CATEGORY_LABELS: Record<string, string> = {
+  cash_and_bank: 'Cash & Bank',
+  accounts_receivable: 'Accounts Receivable',
+  inventory: 'Inventory',
+  current_asset: 'Current Asset (Other)',
+  fixed_asset: 'Fixed Asset (PPE)',
+  accumulated_depreciation: 'Accumulated Depreciation',
+  non_current_asset: 'Non-Current Asset',
+  intangible_asset: 'Intangible Asset',
+  accounts_payable: 'Accounts Payable',
+  tax_liability: 'Tax & GST Liability',
+  payroll_liability: 'Payroll Liability',
+  current_liability: 'Current Liability (Other)',
+  long_term_debt: 'Long-Term Debt / Borrowings',
+  non_current_liability: 'Non-Current Liability',
+  share_capital: 'Share Capital',
+  retained_earnings: 'Retained Earnings',
+  current_earnings: 'Current Period Earnings',
+  drawings: 'Drawings / Dividends',
+  suspense: 'Suspense Account',
+  other_equity: 'Other Equity',
+  operating_revenue: 'Operating Revenue',
+  other_revenue: 'Other Revenue / Gain',
+  sales_discount: 'Sales Discount',
+  cost_of_goods_sold: 'Cost of Goods Sold (COGS)',
+  operating_expense: 'Operating Expense (OPEX)',
+  payroll_expense: 'Payroll Expense',
+  depreciation_expense: 'Depreciation Expense',
+  tax_expense: 'Income Tax Expense',
+  interest_expense: 'Interest & Finance Cost',
+  other_expense: 'Other Expense / Loss',
+};
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for dynamic typing
-type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<string, any>; isSystem?: boolean; isBankAccount?: boolean; currencyCode?: string; isActive?: boolean; accountType?: string };
+type CoaData = Omit<api.GlAccountResponseDto, 'reportCategory'> & { depth?: number; metadata?: Record<string, any>; isSystem?: boolean; isBankAccount?: boolean; currencyCode?: string; isActive?: boolean; accountType?: string; reportCategory?: GLReportCategory | string | null };
 
 interface CoASettingsSectionProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for dynamic typing
@@ -71,8 +104,26 @@ export function CoASettingsSection({ glSettings, updateGlSetting, glAccounts, lo
     setSchemaEditorOpen(true);
   };
 
-  const coaEdit = (acct: unknown) => { setCoaEditingId((acct as { glAccountId: string }).glAccountId); setCoaForm({ ...(acct as object) }); setCoaCreating(false); };
-  const coaCreate = (parentId?: string, parentAccountType?: string, isGroupDefault: boolean = false) => { setCoaCreating(true); setCoaEditingId(null); setCoaForm({ accountCode: '', name: '', accountType: parentAccountType || GL_ACCOUNT_TYPE.EXPENSE, parentAccountId: parentId || null, isGroup: isGroupDefault, isBankAccount: false, currencyCode: 'AUD', isActive: true }); };
+  const coaEdit = (acct: unknown) => { 
+    setCoaEditingId((acct as { glAccountId: string }).glAccountId); 
+    setCoaForm({ ...(acct as object) }); 
+    setCoaCreating(false); 
+  };
+  const coaCreate = (parentId?: string, parentAccountType?: string, isGroupDefault: boolean = false) => { 
+    setCoaCreating(true); 
+    setCoaEditingId(null); 
+    setCoaForm({ 
+      accountCode: '', 
+      name: '', 
+      accountType: parentAccountType || GL_ACCOUNT_TYPE.EXPENSE, 
+      reportCategory: '',
+      parentAccountId: parentId || null, 
+      isGroup: isGroupDefault, 
+      isBankAccount: false, 
+      currencyCode: 'AUD', 
+      isActive: true 
+    }); 
+  };
   const coaCancel = () => { setCoaEditingId(null); setCoaCreating(false); };
 
   const coaSave = async () => {
@@ -93,6 +144,8 @@ export function CoASettingsSection({ glSettings, updateGlSetting, glAccounts, lo
   const renderCoaRow = (isEdit: boolean, data: Partial<CoaData>, key: string) => {
     const defaultLabels: string[] = [];
     if (glSettings && data.glAccountId) {
+      if (glSettings.defaultSuspenseAccountId === data.glAccountId) defaultLabels.push(tSettings('labels.defaultSuspense'));
+      if (glSettings.defaultRetainedEarningsAccountId === data.glAccountId) defaultLabels.push(tSettings('labels.defaultRetainedEarnings'));
       if (glSettings.defaultArAccountId === data.glAccountId) defaultLabels.push(tSettings('labels.defaultAr'));
       if (glSettings.defaultRevenueAccountId === data.glAccountId) defaultLabels.push(tSettings('labels.defaultRevenue'));
       if (glSettings.defaultApAccountId === data.glAccountId) defaultLabels.push(tSettings('labels.defaultAp'));
@@ -153,6 +206,30 @@ export function CoASettingsSection({ glSettings, updateGlSetting, glAccounts, lo
               {Object.values(GL_ACCOUNT_TYPE).map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
             </select>
           ) : data.accountType}
+        </td>
+        <td>
+          {isEdit ? (
+            <select
+              className="input text-xs"
+              value={coaForm.reportCategory || ''}
+              onChange={e => setCoaForm({ ...coaForm, reportCategory: e.target.value || null })}
+            >
+              <option value="">— None —</option>
+              {Object.values(GL_REPORT_CATEGORY).map(cat => (
+                <option key={cat} value={cat}>
+                  {REPORT_CATEGORY_LABELS[cat] || cat}
+                </option>
+              ))}
+            </select>
+          ) : (
+            data.reportCategory ? (
+              <span className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-[var(--bg-subtle)] text-[var(--text-muted)] border border-[var(--border)]">
+                {REPORT_CATEGORY_LABELS[data.reportCategory] || data.reportCategory}
+              </span>
+            ) : (
+              <span className="text-xs text-muted">-</span>
+            )
+          )}
         </td>
         <td className="text-center">
           {isEdit && coaCreating ? (
@@ -232,7 +309,7 @@ export function CoASettingsSection({ glSettings, updateGlSetting, glAccounts, lo
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon */}
       {isEdit && (glSettings?.accountMetadataSchema as Record<string, any>)?.type === 'object' && (
         <tr className="bg-[var(--bg-secondary)]">
-          <td colSpan={6} className="px-6 py-4 border-t-0">
+          <td colSpan={9} className="px-6 py-4 border-t-0">
             <div className="card bg-[var(--bg-primary)] p-4 border border-[var(--border)]">
               <DynamicForm 
                 schema={glSettings!.accountMetadataSchema as Record<string, unknown>} 
@@ -268,14 +345,15 @@ export function CoASettingsSection({ glSettings, updateGlSetting, glAccounts, lo
         <table className="table-lines w-full">
           <thead>
             <tr>
-              <th className="w-[180px]">{tSettings('labels.code')}</th>
+              <th className="w-[140px]">{tSettings('labels.code')}</th>
               <th>{tSettings('labels.name')}</th>
-              <th className="w-[140px]">{tSettings('labels.type')}</th>
+              <th className="w-[110px]">{tSettings('labels.type')}</th>
+              <th className="w-[180px]">{tSettings('labels.reportCategory')}</th>
               <th className="w-[60px] text-center">{tSettings('labels.group')}</th>
               <th className="w-[60px] text-center">{tSettings('labels.bank')}</th>
-              <th className="w-[90px] text-center">{tSettings('labels.currency')}</th>
-              <th className="w-[100px] text-center">{tSettings('labels.status')}</th>
-              <th className="w-[260px] text-right">{tSettings('actions.actions')}</th>
+              <th className="w-[80px] text-center">{tSettings('labels.currency')}</th>
+              <th className="w-[80px] text-center">{tSettings('labels.status')}</th>
+              <th className="w-[240px] text-right">{tSettings('actions.actions')}</th>
             </tr>
           </thead>
           <tbody>

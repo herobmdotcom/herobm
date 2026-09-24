@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useMemo, useState } from 'react';
+import { use, useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { calculateAvailableQuantity, PURCHASE_ORDER_STATE, DATA_SOURCE_CONTEXT, calculateUomPriceAdjustment, CUSTOM_LINE_ID, LineType } from '@herobm/shared';
@@ -33,13 +33,13 @@ import ReceptionsSection from './ReceptionsSection';
 import ReturnsSection from './ReturnsSection';
 import { usePurchaseOrder } from './usePurchaseOrder';
 import PurchaseOrderLinesTab from './PurchaseOrderLinesTab';
+import { DynamicForm } from '@/components/DynamicForm';
 
 import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 
 function TaxLabel({ category }: { category: TaxCategory }) {
-  if (!category) return null;
-  return <>{getTaxLabel(category)}</>;
+  return <span>{category.title}</span>;
 }
 
 interface CustomLineColumn extends DataTableColumn<OrderLine> {
@@ -78,6 +78,13 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
     contextSlug: ''
   });
 
+  const [localMetadata, setLocalMetadata] = useState<Record<string, unknown>>({});
+  useEffect(() => {
+    if (o.order?.metadata) {
+      setLocalMetadata(o.order.metadata as Record<string, unknown>);
+    }
+  }, [o.order?.metadata]);
+
   const { order, loading, error, saving, copying, latestAutoTransition,
     isHeaderEditable, isLinesEditable, visibleTransitions, subtotal, totalTax,
     editName, setEditName, editReferenceNumber, setEditReferenceNumber,
@@ -89,6 +96,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
     clearError, setError, saveHeader, changeState, archivePurchaseOrder, unarchivePurchaseOrder, copyOrder,
     updateLine, updateLineFields, removeLine, addLineFromProduct, addBlankLine, addCommentLine,
     loadOrder, loadInvoices, loadAllocations, allocations, allocationsLoading,
+    purchaseOrderMetadataSchema,
   } = o;
 
   useDocumentTitle(order ? (order.name ? `${order.orderNumber} - ${order.name}` : order.orderNumber) : null);
@@ -538,7 +546,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                     className="input"
                     value={editReferenceNumber}
                     onChange={(e) => setEditReferenceNumber(e.target.value)}
-                    onBlur={saveHeader}
+                    onBlur={() => saveHeader()}
                     disabled={!isHeaderEditable}
                     placeholder={tPurchase('placeholders.referenceNumber')}
                   />
@@ -553,7 +561,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                       className="input"
                       value={editExpectedDate}
                       onChange={(e) => setEditExpectedDate(e.target.value)}
-                      onBlur={saveHeader}
+                      onBlur={() => saveHeader()}
                       disabled={!isHeaderEditable}
                     />
                   ) : (
@@ -570,7 +578,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                     className="input"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    onBlur={saveHeader}
+                    onBlur={() => saveHeader()}
                     disabled={!isHeaderEditable}
                     placeholder={tPurchase('placeholders.orderName')}
                   />
@@ -609,7 +617,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                       className="input"
                       value={editCurrencyCode}
                       onChange={(e) => setEditCurrencyCode(e.target.value)}
-                      onBlur={saveHeader}
+                      onBlur={() => saveHeader()}
                     >
                       {CURRENCIES.map((c) => (
                         <option key={c.code} value={c.code}>
@@ -634,13 +642,38 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                     className="input w-full"
                     value={editNotes}
                     onChange={(e) => setEditNotes(e.target.value)}
-                    onBlur={saveHeader}
+                    onBlur={() => saveHeader()}
                     disabled={!isHeaderEditable}
                     placeholder={tCommon('notesCardPlaceholder')}
                   />
                 </div>
               </div>
             </div>
+
+            {!!(
+              purchaseOrderMetadataSchema?.properties &&
+              typeof purchaseOrderMetadataSchema.properties === 'object' &&
+              Object.keys(purchaseOrderMetadataSchema.properties).length > 0
+            ) && (
+              <div id="custom-fields-section" className="card mt-3">
+                <h3 className="section-heading">
+                  <span className="material-symbols-outlined">tune</span>
+                  {tPurchase('customFields')}
+                </h3>
+                <DynamicForm
+                  schema={purchaseOrderMetadataSchema}
+                  data={localMetadata}
+                  onChange={(newMetadata) => {
+                    setLocalMetadata(newMetadata);
+                  }}
+                  onBlur={(newMetadata) => {
+                    saveHeader({ metadata: newMetadata });
+                  }}
+                  readOnly={!isHeaderEditable}
+                />
+              </div>
+            )}
+
               <PurchaseOrderLinesTab
                 order={order}
                 inventoryData={inventoryData}

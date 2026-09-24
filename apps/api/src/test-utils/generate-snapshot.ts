@@ -12,10 +12,12 @@ async function generateSnapshot() {
     return;
   }
 
-  console.log('[PGlite Cache] Generating global snapshot...');
-  const snapshotPath = fs.existsSync(path.join(process.cwd(), 'apps/api'))
-    ? path.join(process.cwd(), 'apps/api/.pglite-snapshot.bin')
-    : path.resolve(__dirname, '../../.pglite-snapshot.bin');
+  console.log('[PGlite Cache] Generating global snapshots...');
+  const apiDir = fs.existsSync(path.join(process.cwd(), 'apps/api'))
+    ? path.join(process.cwd(), 'apps/api')
+    : path.resolve(__dirname, '../..');
+  const snapshotPath = path.join(apiDir, '.pglite-snapshot.bin');
+  const snapshotNoSeedPath = path.join(apiDir, '.pglite-snapshot-noseed.bin');
 
   const t0 = performance.now();
   const memory = await createMemoryDb();
@@ -23,10 +25,17 @@ async function generateSnapshot() {
   const buffer = Buffer.from(await dump.arrayBuffer());
   fs.writeFileSync(snapshotPath, buffer);
   await memory.client.close();
+
+  const memoryNoSeed = await createMemoryDb({ skipSeeds: true });
+  const dumpNoSeed = await memoryNoSeed.client.dumpDataDir();
+  const bufferNoSeed = Buffer.from(await dumpNoSeed.arrayBuffer());
+  fs.writeFileSync(snapshotNoSeedPath, bufferNoSeed);
+  await memoryNoSeed.client.close();
+
   const t1 = performance.now();
 
   console.log(
-    `[PGlite Cache] Global snapshot generated to ${snapshotPath} in ${Math.round(t1 - t0)}ms`,
+    `[PGlite Cache] Global snapshots generated to ${apiDir} in ${Math.round(t1 - t0)}ms`,
   );
 }
 

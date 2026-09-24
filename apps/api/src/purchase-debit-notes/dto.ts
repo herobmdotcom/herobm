@@ -118,6 +118,7 @@ export class PurchaseDebitNoteResponseDto {
   vendorName?: string | null;
   createdOn?: Date | null;
   modifiedOn?: Date | null;
+  metadata?: Record<string, unknown> | null;
   lines?: PurchaseDebitNoteLineResponseDto[];
 }
 

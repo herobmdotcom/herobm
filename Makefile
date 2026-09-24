@@ -1,4 +1,4 @@
-.PHONY: help help-install fast-install check-postgres-logs up-db down-db up-portal-api down-portal-api up-portal-api-nginx down-portal-api-nginx up-nginx down-nginx build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke clean-legacy-containers clean-db rebuild-db-keep-raw clean-db-keep-extract init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract elt-report report import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-docs-webhooks dev-docs-all dev-docs-audit check-docs dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-packages-unit test-api-cov test-api-e2e test-portal-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint lint-portal verify-i18n clean-build install-prereqs setup-python install-npm bootstrap verify-db verify-all verify-fast verify-api verify-portal verify-pipeline test-pipeline test-abm test-odoo check-all test-deps test-unit test-single test-changed test-structural query-drizzle query-postgres test-heavy test-data test-all build-all clean-dev demo-help demo-auth demo-sales-order demo-crm bump-version release
+.PHONY: help help-install fast-install check-postgres-logs up-db down-db up-portal-api down-portal-api up-portal-api-nginx down-portal-api-nginx up-nginx down-nginx build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke clean-legacy-containers clean-db rebuild-db-keep-raw clean-db-keep-extract init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract elt-report report import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-docs-webhooks dev-docs-all dev-docs-audit check-docs dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-packages-unit test-api-cov test-api-e2e test-portal-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init backup-destination backup-setup backup-run backup-now backup-restore typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint lint-portal verify-i18n clean-build install-prereqs setup-python install-npm bootstrap verify-db verify-all verify-fast verify-api verify-portal verify-pipeline test-pipeline test-abm test-odoo check-all test-deps test-unit test-single test-changed test-structural query-drizzle query-postgres test-heavy test-data test-all build-all clean-dev demo-help demo-auth demo-sales-order demo-crm bump-version release
 
 
 define HELP_TEXT
@@ -27,6 +27,12 @@ Database & Migrations:
   make seed           - Seed database with application data
   make init           - Full DB initialization (schema, migrate, seed, ELT)
   make rebuild-db-keep-raw - Alias for clean-db
+
+Backup & Recovery:
+  make backup-destination [DEST=...] - Configure cloud storage destination (rclone)
+  make backup-setup [CRON=...] [EMAIL=...] - Configure automated recurring backup schedule
+  make backup-run                    - Trigger an immediate database backup
+  make backup-restore FILE=<path>   - Restore database from a backup file
 
 Code Generation:
   make dev-generate-sdk - Regenerate OpenAPI spec and TypeScript SDK client
@@ -138,6 +144,9 @@ ifeq ($(OS),Windows_NT)
   CLEAN_BUILD_CMD = node scripts/clean-build.mjs
   TEST_PIPELINE_CMD = node scripts/test-pipeline.mjs
   TEST_HEAVY_CMD = node scripts/run-heavy.mjs $(if $(SKIP_UI),--skip-ui) $(if $(UI_ONLY),--ui-only) $(if $(SKIP_BACKEND),--skip-backend) $(if $(TEST),--test "$(TEST)") $(if $(E2E),--e2e "$(E2E)") $(if $(NO_TEARDOWN),--no-teardown) $(if $(REUSE),--reuse) $(if $(SKIP_CRAWL),--skip-crawl)
+  SETUP_BACKUP_CMD = node scripts/setup-backup.mjs
+  BACKUP_DB_CMD = node scripts/backup-db.mjs
+  RESTORE_DB_CMD = node scripts/restore-db.mjs
   COMPOSE_CMD = podman compose -f docker-compose.yml $(COMPOSE_OVERRIDE)
   BIND_IP ?= 127.0.0.1
   NODE ?= node
@@ -161,6 +170,9 @@ else
   CLEAN_BUILD_CMD = $(NODE) scripts/clean-build.mjs
   TEST_PIPELINE_CMD = $(NODE) scripts/test-pipeline.mjs
   TEST_HEAVY_CMD = $(NODE) scripts/run-heavy.mjs $(if $(SKIP_UI),--skip-ui) $(if $(UI_ONLY),--ui-only) $(if $(SKIP_BACKEND),--skip-backend) $(if $(TEST),--test "$(TEST)") $(if $(E2E),--e2e "$(E2E)") $(if $(NO_TEARDOWN),--no-teardown) $(if $(REUSE),--reuse) $(if $(SKIP_CRAWL),--skip-crawl)
+  SETUP_BACKUP_CMD = $(NODE) scripts/setup-backup.mjs
+  BACKUP_DB_CMD = $(NODE) scripts/backup-db.mjs
+  RESTORE_DB_CMD = $(NODE) scripts/restore-db.mjs
   COMPOSE_CMD := $(shell if command -v podman-compose >/dev/null 2>&1; then echo "podman-compose"; elif [ -x ~/.local/bin/podman-compose ]; then echo "~/.local/bin/podman-compose"; else echo "podman compose"; fi) -f docker-compose.yml $(COMPOSE_OVERRIDE)
   BIND_IP ?= 0.0.0.0
   GIT_VERSION := $(shell git log -1 --format="%cd.%h" --date=format:%Y%m%d 2>/dev/null || true)
@@ -584,8 +596,8 @@ rebuild-worker:
 	$(COMPOSE_CMD) ps
 
 build-images:
-	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v1.1.5-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_custom-api:latest -f Dockerfile.api .
-	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v1.1.5-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
+	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v1.2.0-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_custom-api:latest -f Dockerfile.api .
+	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v1.2.0-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
 	$(if $(wildcard Dockerfile.pipeline),podman build -t localhost/herobm_pipeline-runner:latest -f Dockerfile.pipeline .,)
 	podman build -t localhost/outbox-worker:latest -f Dockerfile.worker .
 
@@ -645,7 +657,7 @@ dev-portal:
 migrate: check-schema-drift
 	$(PYTHON_CMD) tools/migrate.py
 
-check-schema-drift: build-shared
+check-schema-drift: build-shared build-db-schema
 	$(NPX) tsx tools/check_schema_drift.ts
 
 migrate-status:
@@ -662,6 +674,23 @@ seed-demo: build-shared build-db-schema
 	npm run seed:demo -w apps/api
 
 init: init-db migrate seed
+
+# --- Backup & Recovery ---
+
+backup-destination:
+	$(SETUP_BACKUP_CMD) --destination $(if $(DEST),--dest "$(DEST)") $(if $(EFFECTIVE_PROFILE),--profile $(EFFECTIVE_PROFILE)) $(if $(DRY_RUN),--dry-run) $(if $(TEST),--test)
+
+backup-setup:
+	$(SETUP_BACKUP_CMD) --backup $(if $(CRON),--cron "$(CRON)") $(if $(DAILY),--daily) $(if $(WEEKLY),--weekly) $(if $(EMAIL),--email "$(EMAIL)") $(if $(EFFECTIVE_PROFILE),--profile $(EFFECTIVE_PROFILE)) $(if $(DRY_RUN),--dry-run) $(if $(RUN_NOW),--run-now)
+
+backup-run:
+	$(BACKUP_DB_CMD) $(if $(EFFECTIVE_PROFILE),--profile $(EFFECTIVE_PROFILE))
+
+backup-now: backup-run
+
+backup-restore:
+	$(if $(FILE),,$(error Error: FILE is required. Usage: make backup-restore FILE=/path/to/backup.sql.gz))
+	$(RESTORE_DB_CMD) $(FILE) $(if $(EFFECTIVE_PROFILE),--profile $(EFFECTIVE_PROFILE))
 
 # --- Typechecks & Builds ---
 
@@ -820,7 +849,7 @@ test-odoo:
 	@$(NPX) tsx pipelines/odoo_transform/test/run-odoo-tests.ts
 
 test-data:
-	"$(VENV_PYTHON)" infra/tests/test_data_counts.py
+	"$(VENV_PYTHON)" tools/test_data_counts.py
 
 check-all: check-types check-lint
 
@@ -838,11 +867,7 @@ test-structural:
 ifeq ($(INFRA_EXIST),0)
 	@echo "Structural tests require the herobm-pro repository. See documentation."
 else
-	@$(MAKE) build-shared
-	@$(MAKE) build-db-schema
-	@"$(PYTHON_CMD)" infra/tests/test_docker_env_alignment.py
-	@$(NPX) tsx infra/test-utils/run-structural.ts
-	@$(NPX) knip
+	@$(NPX) turbo run //#test:structural
 endif
 
 query-drizzle:

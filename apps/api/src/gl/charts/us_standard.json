@@ -5,54 +5,66 @@
     "Assets": {
       "root_type": "Asset",
       "is_group": 1,
+      "report_category": "current_asset",
       "children": {
         "Current Assets": {
           "is_group": 1,
           "account_number": "1000",
+          "report_category": "current_asset",
           "children": {
             "Cash and Cash Equivalents": {
               "account_number": "1010",
-              "account_type": "Cash"
+              "account_type": "Cash",
+              "report_category": "cash_and_bank"
             },
             "Bank Accounts": {
               "account_number": "1020",
               "account_type": "Bank",
+              "report_category": "cash_and_bank",
               "is_group": 1,
               "children": {
                 "Operating Account": {
                   "account_number": "1021",
-                  "account_type": "Bank"
+                  "account_type": "Bank",
+                  "report_category": "cash_and_bank"
                 }
               }
             },
             "Accounts Receivable": {
               "account_number": "1100",
-              "account_type": "Receivable"
+              "account_type": "Receivable",
+              "report_category": "accounts_receivable"
             },
             "Sales Tax Receivable": {
               "account_number": "1200",
               "account_type": "Tax",
-              "description": "Input Sales Tax credits"
+              "description": "Input Sales Tax credits",
+              "report_category": "current_asset"
             },
             "Inventory": {
               "account_number": "1300",
-              "account_type": "Stock"
+              "account_type": "Stock",
+              "report_category": "inventory"
             },
             "Prepaid Expenses": {
-              "account_number": "1400"
+              "account_number": "1400",
+              "report_category": "current_asset"
             }
           }
         },
         "Non-Current Assets": {
           "is_group": 1,
           "account_number": "1500",
+          "report_category": "non_current_asset",
           "children": {
             "Property, Plant and Equipment": {
-              "account_number": "1510"
+              "account_number": "1510",
+              "report_category": "fixed_asset"
             },
             "Accumulated Depreciation": {
               "account_number": "1520",
-              "account_type": "Depreciation"
+              "account_type": "Depreciation",
+              "report_category": "accumulated_depreciation"
             }
           }
         }
@@ -61,40 +73,50 @@
     "Liabilities": {
       "root_type": "Liability",
       "is_group": 1,
+      "report_category": "current_liability",
       "children": {
         "Current Liabilities": {
           "is_group": 1,
           "account_number": "2000",
+          "report_category": "current_liability",
           "children": {
             "Accounts Payable": {
               "account_number": "2100",
-              "account_type": "Payable"
+              "account_type": "Payable",
+              "report_category": "accounts_payable"
             },
             "Sales Tax Payable": {
               "account_number": "2200",
               "account_type": "Tax",
-              "description": "Output Sales Tax collected"
+              "description": "Output Sales Tax collected",
+              "report_category": "tax_liability"
             },
             "Payroll Tax Payable": {
-              "account_number": "2300"
+              "account_number": "2300",
+              "report_category": "payroll_liability"
             },
             "401(k) Payable": {
-              "account_number": "2310"
+              "account_number": "2310",
+              "report_category": "payroll_liability"
             },
             "Wages Payable": {
-              "account_number": "2400"
+              "account_number": "2400",
+              "report_category": "payroll_liability"
             },
             "Other Current Liabilities": {
-              "account_number": "2500"
+              "account_number": "2500",
+              "report_category": "current_liability"
             }
           }
         },
         "Non-Current Liabilities": {
           "is_group": 1,
           "account_number": "2600",
+          "report_category": "non_current_liability",
           "children": {
             "Long-Term Loans": {
-              "account_number": "2610"
+              "account_number": "2610",
+              "report_category": "long_term_debt"
             }
           }
         }
@@ -103,19 +125,24 @@
     "Equity": {
       "root_type": "Equity",
       "is_group": 1,
+      "report_category": "other_equity",
       "children": {
         "Owner's Equity": {
           "is_group": 1,
           "account_number": "3000",
+          "report_category": "other_equity",
           "children": {
             "Share Capital": {
-              "account_number": "3100"
+              "account_number": "3100",
+              "report_category": "share_capital"
             },
             "Retained Earnings": {
-              "account_number": "3200"
+              "account_number": "3200",
+              "report_category": "retained_earnings"
             },
             "Current Year Earnings": {
-              "account_number": "3300"
+              "account_number": "3300",
+              "report_category": "current_earnings"
             }
           }
         }
@@ -124,19 +151,24 @@
     "Revenue": {
       "root_type": "Income",
       "is_group": 1,
+      "report_category": "operating_revenue",
       "children": {
         "Operating Revenue": {
           "is_group": 1,
           "account_number": "4000",
+          "report_category": "operating_revenue",
           "children": {
             "Sales Revenue": {
-              "account_number": "4100"
+              "account_number": "4100",
+              "report_category": "operating_revenue"
             },
             "Service Revenue": {
-              "account_number": "4200"
+              "account_number": "4200",
+              "report_category": "operating_revenue"
             },
             "Other Revenue": {
-              "account_number": "4900"
+              "account_number": "4900",
+              "report_category": "other_revenue"
             }
           }
         }
@@ -145,54 +177,69 @@
     "Expenses": {
       "root_type": "Expense",
       "is_group": 1,
+      "report_category": "operating_expense",
       "children": {
         "Cost of Goods Sold": {
           "is_group": 1,
           "account_number": "5000",
+          "report_category": "cost_of_goods_sold",
           "children": {
             "COGS - Materials": {
               "account_number": "5100",
-              "account_type": "Cost of Goods Sold"
+              "account_type": "Cost of Goods Sold",
+              "report_category": "cost_of_goods_sold"
             },
             "COGS - Freight": {
-              "account_number": "5200"
+              "account_number": "5200",
+              "report_category": "cost_of_goods_sold"
             }
           }
         },
         "Operating Expenses": {
           "is_group": 1,
           "account_number": "6000",
+          "report_category": "operating_expense",
           "children": {
             "Wages and Salaries": {
-              "account_number": "6100"
+              "account_number": "6100",
+              "report_category": "payroll_expense"
             },
             "401(k) Expense": {
-              "account_number": "6110"
+              "account_number": "6110",
+              "report_category": "payroll_expense"
             },
             "Rent": {
-              "account_number": "6200"
+              "account_number": "6200",
+              "report_category": "operating_expense"
             },
             "Utilities": {
-              "account_number": "6300"
+              "account_number": "6300",
+              "report_category": "operating_expense"
             },
             "Insurance": {
-              "account_number": "6400"
+              "account_number": "6400",
+              "report_category": "operating_expense"
             },
             "Depreciation Expense": {
               "account_number": "6500",
-              "account_type": "Depreciation"
+              "account_type": "Depreciation",
+              "report_category": "depreciation_expense"
             },
             "Office Supplies": {
-              "account_number": "6600"
+              "account_number": "6600",
+              "report_category": "operating_expense"
             },
             "Professional Fees": {
-              "account_number": "6700"
+              "account_number": "6700",
+              "report_category": "operating_expense"
             },
             "Bank Charges": {
-              "account_number": "6800"
+              "account_number": "6800",
+              "report_category": "operating_expense"
             },
             "General Expenses": {
-              "account_number": "6900"
+              "account_number": "6900",
+              "report_category": "operating_expense"
             }
           }
         }

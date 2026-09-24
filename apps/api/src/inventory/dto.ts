@@ -9,7 +9,7 @@ import {
   IsUUID,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class PutawayLineDto {
   @IsString()
@@ -257,6 +257,18 @@ export class PendingPutawayResponseDto {
   sourceBinCode!: string;
   @ApiProperty({ required: false })
   returnReason?: string;
+  @ApiPropertyOptional({ required: false, nullable: true })
+  projectId?: string | null;
+  @ApiPropertyOptional({ required: false, nullable: true })
+  projectNumber?: string | null;
+  @ApiPropertyOptional({ required: false, nullable: true })
+  projectName?: string | null;
+  @ApiPropertyOptional({ required: false, nullable: true })
+  projectStagingBinId?: string | null;
+  @ApiPropertyOptional({ required: false, nullable: true })
+  projectStagingBinNumber?: string | null;
+  @ApiPropertyOptional({ required: false, nullable: true })
+  isProjectReturn?: boolean | null;
 }
 
 export class InventorySuccessResponseDto {
@@ -289,4 +301,279 @@ export class AdjustStockDto {
   @IsOptional()
   @IsString()
   reason?: string;
+}
+
+// ── Restock DTOs ──
+
+export class RestockItemDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  productId!: string;
+
+  @ApiProperty()
+  productNumber!: string;
+
+  @ApiProperty()
+  productName!: string;
+
+  @ApiPropertyOptional()
+  productDescription?: string | null;
+
+  @ApiPropertyOptional()
+  productGroupId?: string | null;
+
+  @ApiPropertyOptional()
+  productGroupName?: string | null;
+
+  @ApiPropertyOptional()
+  productGroupCode?: string | null;
+
+  @ApiProperty()
+  productType!: string;
+
+  @ApiProperty()
+  baseUom!: string;
+
+  @ApiProperty()
+  locationId!: string;
+
+  @ApiProperty()
+  locationName!: string;
+
+  @ApiProperty()
+  locationCode!: string;
+
+  @ApiProperty()
+  binId!: string;
+
+  @ApiProperty()
+  binNumber!: string;
+
+  @ApiProperty()
+  binType!: string;
+
+  @ApiProperty()
+  quantityOnHand!: number;
+
+  @ApiProperty()
+  quantityCommitted!: number;
+
+  @ApiProperty()
+  quantityOnOrder!: number;
+
+  @ApiProperty()
+  availableQuantity!: number;
+
+  @ApiProperty()
+  minQuantity!: number;
+
+  @ApiPropertyOptional()
+  maxQuantity?: number | null;
+
+  @ApiProperty()
+  suggestedRestockQty!: number;
+
+  @ApiPropertyOptional()
+  vendorId?: string | null;
+
+  @ApiPropertyOptional()
+  vendorName?: string | null;
+
+  @ApiPropertyOptional()
+  costPrice?: number | null;
+
+  @ApiPropertyOptional()
+  currencyCode?: string | null;
+
+  @ApiPropertyOptional()
+  minPurchaseQty?: number | null;
+
+  @ApiPropertyOptional()
+  purchaseUnit?: string | null;
+}
+
+export class RestockSummaryDto {
+  @ApiProperty()
+  totalItems!: number;
+
+  @ApiProperty()
+  totalSuggestedUnits!: number;
+
+  @ApiProperty()
+  totalEstimatedCost!: number;
+}
+
+export class RestockResponseDto {
+  @ApiProperty({ type: () => [RestockItemDto] })
+  data!: RestockItemDto[];
+
+  @ApiProperty({ type: () => RestockSummaryDto })
+  summary!: RestockSummaryDto;
+}
+
+// ── Movement DTOs ──
+
+export class MovementBreakdownDto {
+  @ApiProperty()
+  poReceipts!: number;
+
+  @ApiProperty()
+  soShipments!: number;
+
+  @ApiProperty()
+  customerReturns!: number;
+
+  @ApiProperty()
+  supplierReturns!: number;
+
+  @ApiProperty()
+  adjustments!: number;
+
+  @ApiProperty()
+  transfersIn!: number;
+
+  @ApiProperty()
+  transfersOut!: number;
+
+  @ApiProperty()
+  workOrders!: number;
+}
+
+export class MovementItemDto {
+  @ApiProperty()
+  productId!: string;
+
+  @ApiProperty()
+  productNumber!: string;
+
+  @ApiProperty()
+  productName!: string;
+
+  @ApiPropertyOptional()
+  productGroupId?: string | null;
+
+  @ApiPropertyOptional()
+  productGroupName?: string | null;
+
+  @ApiProperty()
+  baseUom!: string;
+
+  @ApiPropertyOptional()
+  locationId?: string | null;
+
+  @ApiPropertyOptional()
+  locationName?: string | null;
+
+  @ApiPropertyOptional()
+  locationCode?: string | null;
+
+  @ApiProperty()
+  openingQuantity!: number;
+
+  @ApiProperty()
+  stockIn!: number;
+
+  @ApiProperty()
+  stockOut!: number;
+
+  @ApiProperty()
+  netMovement!: number;
+
+  @ApiProperty()
+  closingQuantity!: number;
+
+  @ApiProperty()
+  currentOnHand!: number;
+
+  @ApiProperty({ type: () => MovementBreakdownDto })
+  breakdown!: MovementBreakdownDto;
+}
+
+export class MovementLedgerLineDto {
+  @ApiProperty()
+  ledgerId!: string;
+
+  @ApiProperty()
+  entryId!: string;
+
+  @ApiProperty()
+  entryNumber!: string;
+
+  @ApiProperty()
+  entryDate!: string;
+
+  @ApiProperty()
+  sourceType!: string;
+
+  @ApiProperty()
+  productId!: string;
+
+  @ApiProperty()
+  productNumber!: string;
+
+  @ApiProperty()
+  productName!: string;
+
+  @ApiPropertyOptional()
+  productGroupId?: string | null;
+
+  @ApiPropertyOptional()
+  productGroupName?: string | null;
+
+  @ApiProperty()
+  locationId!: string;
+
+  @ApiProperty()
+  locationName!: string;
+
+  @ApiProperty()
+  locationCode!: string;
+
+  @ApiProperty()
+  binId!: string;
+
+  @ApiProperty()
+  binNumber!: string;
+
+  @ApiProperty()
+  quantity!: number;
+
+  @ApiPropertyOptional()
+  memo?: string | null;
+
+  @ApiPropertyOptional()
+  createdBy?: string | null;
+}
+
+export class MovementSummaryDto {
+  @ApiProperty()
+  totalProducts!: number;
+
+  @ApiProperty()
+  totalOpening!: number;
+
+  @ApiProperty()
+  totalIn!: number;
+
+  @ApiProperty()
+  totalOut!: number;
+
+  @ApiProperty()
+  totalNet!: number;
+
+  @ApiProperty()
+  totalClosing!: number;
+}
+
+export class MovementReportResponseDto {
+  @ApiProperty({ type: () => [MovementItemDto] })
+  data!: MovementItemDto[];
+
+  @ApiProperty({ type: () => [MovementLedgerLineDto] })
+  movements!: MovementLedgerLineDto[];
+
+  @ApiProperty({ type: () => MovementSummaryDto })
+  summary!: MovementSummaryDto;
 }

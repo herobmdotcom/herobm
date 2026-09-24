@@ -9,6 +9,9 @@
 export interface UpdateTransferOrderDto {
   sourceLocationId?: string;
   destinationLocationId?: string;
+  projectId?: string;
+  projectTaskId?: string;
+  isProjectReturn?: boolean;
   notes?: string;
   shippingNotes?: string;
 }

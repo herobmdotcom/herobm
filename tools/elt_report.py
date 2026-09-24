@@ -25,8 +25,8 @@ def load_env(profile=None):
                         os.environ[k.strip()] = v.strip().strip('"').strip("'")
     return profile or "default"
 
-# To import test_data_counts we need to add infra/tests to path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'infra', 'tests')))
+# To import test_data_counts from same directory
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 try:
     import test_data_counts
 except ImportError:

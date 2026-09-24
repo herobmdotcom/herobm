@@ -9,6 +9,9 @@ import {
   organizationContactLinks,
   opportunityOrganizations,
   opportunityContacts,
+  salesOrders,
+  projects,
+  customers,
 } from '@herobm/db-schema';
 
 @Injectable()
@@ -21,11 +24,49 @@ export class CrmMapService {
     const allOrganizations = await this.db.select().from(organizations);
     const allContacts = await this.db.select().from(contacts);
     const allOpportunities = await this.db.select().from(opportunities);
+    const allCustomers = await this.db.select().from(customers);
+    const allSalesOrders = await this.db.select().from(salesOrders);
+    const allProjects = await this.db.select().from(projects);
 
     const oOLinks = await this.db.select().from(organizationOrganizationLinks);
     const oCLinks = await this.db.select().from(organizationContactLinks);
     const oppOLinks = await this.db.select().from(opportunityOrganizations);
     const oppCLinks = await this.db.select().from(opportunityContacts);
+
+    const customerToOrgMap = new Map<string, string>();
+    allCustomers.forEach((c) => {
+      if (c.customerId && c.organizationId) {
+        customerToOrgMap.set(c.customerId, c.organizationId);
+      }
+    });
+
+    const orgSOLinks = allSalesOrders
+      .filter((so) => so.customerId && customerToOrgMap.has(so.customerId))
+      .map((so) => ({
+        organizationId: customerToOrgMap.get(so.customerId!)!,
+        salesOrderId: so.salesOrderId,
+      }));
+
+    const oppSOLinks = allSalesOrders
+      .filter((so) => so.opportunityId)
+      .map((so) => ({
+        opportunityId: so.opportunityId!,
+        salesOrderId: so.salesOrderId,
+      }));
+
+    const orgProjLinks = allProjects
+      .filter((p) => p.customerId && customerToOrgMap.has(p.customerId))
+      .map((p) => ({
+        organizationId: customerToOrgMap.get(p.customerId)!,
+        projectId: p.projectId,
+      }));
+
+    const oppProjLinks = allProjects
+      .filter((p) => p.opportunityId)
+      .map((p) => ({
+        opportunityId: p.opportunityId!,
+        projectId: p.projectId,
+      }));
 
     if (!focalNodeId) {
       const referralOrganizationOrganization = allOrganizations
@@ -46,6 +87,23 @@ export class CrmMapService {
           organizations: allOrganizations,
           contacts: allContacts,
           opportunities: allOpportunities,
+          salesOrders: allSalesOrders.map((so) => ({
+            salesOrderId: so.salesOrderId,
+            orderNumber: so.orderNumber,
+            stateCode: so.stateCode,
+            baseTotalAmount: so.baseTotalAmount,
+            currencyCode: so.currencyCode,
+            name: so.name,
+            createdOn: so.createdOn,
+          })),
+          projects: allProjects.map((p) => ({
+            projectId: p.projectId,
+            projectNumber: p.projectNumber,
+            name: p.name,
+            stateCode: p.stateCode,
+            stage: p.stage,
+            billingType: p.billingType,
+          })),
         },
         edges: {
           organizationOrganization: oOLinks,
@@ -54,6 +112,10 @@ export class CrmMapService {
           opportunityContact: oppCLinks,
           referralOrganizationOrganization,
           referralContactOrganization,
+          organizationSalesOrder: orgSOLinks,
+          opportunitySalesOrder: oppSOLinks,
+          organizationProject: orgProjLinks,
+          opportunityProject: oppProjLinks,
         },
       };
     }
@@ -79,6 +141,10 @@ export class CrmMapService {
     oCLinks.forEach((e) => addEdge(e.organizationId, e.contactId));
     oppOLinks.forEach((e) => addEdge(e.opportunityId, e.organizationId));
     oppCLinks.forEach((e) => addEdge(e.opportunityId, e.contactId));
+    orgSOLinks.forEach((e) => addEdge(e.organizationId, e.salesOrderId));
+    oppSOLinks.forEach((e) => addEdge(e.opportunityId, e.salesOrderId));
+    orgProjLinks.forEach((e) => addEdge(e.organizationId, e.projectId));
+    oppProjLinks.forEach((e) => addEdge(e.opportunityId, e.projectId));
 
     allOrganizations.forEach((a) => {
       if (a.referredByOrganizationId)
@@ -113,6 +179,27 @@ export class CrmMapService {
     const filteredOpportunities = allOpportunities.filter((n) =>
       visitedNodes.has(n.opportunityId),
     );
+    const filteredSalesOrders = allSalesOrders
+      .filter((so) => visitedNodes.has(so.salesOrderId))
+      .map((so) => ({
+        salesOrderId: so.salesOrderId,
+        orderNumber: so.orderNumber,
+        stateCode: so.stateCode,
+        baseTotalAmount: so.baseTotalAmount,
+        currencyCode: so.currencyCode,
+        name: so.name,
+        createdOn: so.createdOn,
+      }));
+    const filteredProjects = allProjects
+      .filter((p) => visitedNodes.has(p.projectId))
+      .map((p) => ({
+        projectId: p.projectId,
+        projectNumber: p.projectNumber,
+        name: p.name,
+        stateCode: p.stateCode,
+        stage: p.stage,
+        billingType: p.billingType,
+      }));
 
     // Filter edges (only keep edges where BOTH source and target are in visitedNodes)
     const filteredOOLinks = oOLinks.filter(
@@ -130,6 +217,21 @@ export class CrmMapService {
     );
     const filteredOppCLinks = oppCLinks.filter(
       (e) => visitedNodes.has(e.opportunityId) && visitedNodes.has(e.contactId),
+    );
+    const filteredOrgSOLinks = orgSOLinks.filter(
+      (e) =>
+        visitedNodes.has(e.organizationId) && visitedNodes.has(e.salesOrderId),
+    );
+    const filteredOppSOLinks = oppSOLinks.filter(
+      (e) =>
+        visitedNodes.has(e.opportunityId) && visitedNodes.has(e.salesOrderId),
+    );
+    const filteredOrgProjLinks = orgProjLinks.filter(
+      (e) =>
+        visitedNodes.has(e.organizationId) && visitedNodes.has(e.projectId),
+    );
+    const filteredOppProjLinks = oppProjLinks.filter(
+      (e) => visitedNodes.has(e.opportunityId) && visitedNodes.has(e.projectId),
     );
 
     const referralOrganizationOrganization = filteredOrganizations
@@ -157,6 +259,8 @@ export class CrmMapService {
         organizations: filteredOrganizations,
         contacts: filteredContacts,
         opportunities: filteredOpportunities,
+        salesOrders: filteredSalesOrders,
+        projects: filteredProjects,
       },
       edges: {
         organizationOrganization: filteredOOLinks,
@@ -165,6 +269,10 @@ export class CrmMapService {
         opportunityContact: filteredOppCLinks,
         referralOrganizationOrganization,
         referralContactOrganization,
+        organizationSalesOrder: filteredOrgSOLinks,
+        opportunitySalesOrder: filteredOppSOLinks,
+        organizationProject: filteredOrgProjLinks,
+        opportunityProject: filteredOppProjLinks,
       },
     };
   }

@@ -66,7 +66,7 @@ export default function SlideOver({
       />
       
       {/* Slide-over panel */}
-      <div className="absolute inset-y-0 right-0 flex w-full justify-end pointer-events-none sm:pl-10">
+      <div className="absolute inset-y-0 right-0 flex w-full lg:max-w-[calc(100vw-15rem)] justify-end pointer-events-none sm:pl-10 lg:pl-0">
         <div 
           ref={panelRef}
           className={`pointer-events-auto w-full ${width} bg-[var(--bg-card)] text-[var(--text-primary)] border-l border-[var(--border)] shadow-2xl flex flex-col animate-in slide-in-from-right duration-200 ease-out`}

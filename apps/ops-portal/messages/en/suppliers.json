@@ -1,0 +1,135 @@
+{
+  "balancesSearchPlaceholder": "Search supplier no. or name...",
+  "buttons": {
+    "createSupplier": "Create Supplier",
+    "editSupplier": "Edit Supplier",
+    "save": "Save Supplier",
+    "unlinkSupplier": "Unlink Supplier"
+  },
+  "city": "City",
+  "columns": {
+    "name": "Name",
+    "paymentTerms": "Payment Terms",
+    "productCount": "Products",
+    "vendorNumber": "Vendor #"
+  },
+  "compliance": {
+    "blockNotes": "Block Notes",
+    "blocked": "Blocked",
+    "groupInherited": "Group Inherited ({reason})",
+    "noBlock": "No block",
+    "notesPlaceholder": "Internal notes regarding blocking...",
+    "paymentBlock": "Payment Block",
+    "purchasingBlock": "Purchasing Block",
+    "reason": "Reason",
+    "reasons": {
+      "compliance_breach": "Compliance Breach",
+      "contractual_breach": "Contractual Breach",
+      "dispute": "Dispute",
+      "financial_risk": "Financial Risk",
+      "invoice_dispute": "Invoice Dispute",
+      "missing_goods": "Missing Goods",
+      "other": "Other",
+      "quality_issues": "Quality Issues"
+    },
+    "title": "Compliance Status"
+  },
+  "confirmUnlink": "Are you sure you want to unlink {name} from this product?",
+  "contactLocation": "Contact & Location",
+  "country": "Country",
+  "customFields": "Custom Fields",
+  "earlyPaymentDiscount": "Early Payment Discount %",
+  "email": "Email",
+  "expiries": {
+    "addExpiry": "Add Expiry",
+    "columns": {
+      "actions": "Actions",
+      "expiryDate": "Expiry Date",
+      "notes": "Notes",
+      "type": "Type"
+    },
+    "empty": "No expiries defined for this supplier.",
+    "expired": "Expired",
+    "noNotes": "No notes",
+    "title": "Expiries",
+    "types": {
+      "insurance": "Insurance",
+      "other": "Other",
+      "select": "-- Select Type --",
+      "tax_certificate": "Tax Certificate",
+      "trial_period": "Trial Period"
+    }
+  },
+  "fields": {
+    "accountNumber": "Account Number",
+    "bankAccountName": "Bank Account Name",
+    "businessNumber": "Business Number",
+    "selectCurrency": "Select Currency",
+    "taxRegistered": "Tax Registered"
+  },
+  "financials": "Financials",
+  "generalInfo": "General Information",
+  "labels": {
+    "email": "Email Address",
+    "phone": "Phone Number",
+    "vendorName": "Vendor Name"
+  },
+  "management": "Vendor Management",
+  "new": {
+    "documentTitle": "New Supplier"
+  },
+  "paymentTerms": "Payment Terms",
+  "phone": "Phone",
+  "placeholders": {
+    "address": "123 Main St",
+    "city": "City",
+    "country": "Country",
+    "email": "vendor@example.com",
+    "name": "e.g. ACME Corp",
+    "noGroup": "No Supplier Group",
+    "notes": "Key relationship details, preferred delivery methods, etc.",
+    "paymentTerms": "e.g. NET30",
+    "phone": "+1 234 567 890",
+    "searchSuppliers": "Search suppliers...",
+    "vendorNumber": "e.g. VEND-001"
+  },
+  "products": {
+    "columns": {
+      "costPrice": "Cost Price",
+      "discount": "Discount %",
+      "name": "Name",
+      "partNo": "Supplier Part No.",
+      "productNo": "Product No.",
+      "status": "Status"
+    },
+    "title": "Products"
+  },
+  "statusBadges": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "paymentBlocked": "Payment Blocked",
+    "purchaseBlocked": "Purchase Blocked",
+    "status": "Status"
+  },
+  "subtitle": "Manage supplier records",
+  "supplierGroup": "Supplier Group",
+  "tabs": {
+    "activity": "Activity",
+    "compliance": "Compliance",
+    "contact": "Contact",
+    "financials": "Financials",
+    "info": "Info",
+    "notes": "Notes",
+    "overview": "Overview",
+    "products": "Products"
+  },
+  "title": "Suppliers",
+  "toast": {
+    "unlinked": "Supplier successfully unlinked"
+  },
+  "tooltips": {
+    "currentlyActive": "Currently Active",
+    "currentlyBlocked": "Currently Blocked"
+  },
+  "tradingTerms": "Trading Terms"
+}

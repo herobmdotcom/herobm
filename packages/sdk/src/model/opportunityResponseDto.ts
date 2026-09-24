@@ -5,6 +5,7 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
+import type { OpportunityResponseDtoMetadata } from './opportunityResponseDtoMetadata';
 import type { OpportunityResponseDtoOwner } from './opportunityResponseDtoOwner';
 import type { OpportunityNoteResponseDto } from './opportunityNoteResponseDto';
 import type { OpportunityResponseDtoOpportunityOrganizationsItem } from './opportunityResponseDtoOpportunityOrganizationsItem';
@@ -33,11 +34,17 @@ export interface OpportunityResponseDto {
   createdOn: string;
   modifiedOn: string;
   /** @nullable */
+  metadata?: OpportunityResponseDtoMetadata;
+  /** @nullable */
   ownerId?: string | null;
   owner?: OpportunityResponseDtoOwner;
   notes?: OpportunityNoteResponseDto[];
   opportunityOrganizations?: OpportunityResponseDtoOpportunityOrganizationsItem[];
   opportunityActors?: OpportunityResponseDtoOpportunityActorsItem[];
+  /** @nullable */
+  organizationId?: string | null;
+  /** @nullable */
+  customerId?: string | null;
   opportunityContacts?: OpportunityResponseDtoOpportunityContactsItem[];
   /**
    * Total deal revenue calculated live from linked sales quote line items
@@ -49,5 +56,10 @@ export interface OpportunityResponseDto {
    * @nullable
    */
   quoteCount?: number | null;
+  /**
+   * Total number of linked projects
+   * @nullable
+   */
+  projectCount?: number | null;
   events?: OpportunityResponseDtoEventsItem[];
 }

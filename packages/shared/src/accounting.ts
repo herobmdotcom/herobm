@@ -8,6 +8,50 @@ export const GL_ACCOUNT_TYPE = {
 
 export type GLAccountType = typeof GL_ACCOUNT_TYPE[keyof typeof GL_ACCOUNT_TYPE];
 
+export const GL_REPORT_CATEGORY = {
+  // Assets
+  CASH_AND_BANK: 'cash_and_bank',
+  ACCOUNTS_RECEIVABLE: 'accounts_receivable',
+  INVENTORY: 'inventory',
+  CURRENT_ASSET: 'current_asset',
+  FIXED_ASSET: 'fixed_asset',
+  ACCUMULATED_DEPRECIATION: 'accumulated_depreciation',
+  NON_CURRENT_ASSET: 'non_current_asset',
+  INTANGIBLE_ASSET: 'intangible_asset',
+
+  // Liabilities
+  ACCOUNTS_PAYABLE: 'accounts_payable',
+  TAX_LIABILITY: 'tax_liability',
+  PAYROLL_LIABILITY: 'payroll_liability',
+  CURRENT_LIABILITY: 'current_liability',
+  LONG_TERM_DEBT: 'long_term_debt',
+  NON_CURRENT_LIABILITY: 'non_current_liability',
+
+  // Equity
+  SHARE_CAPITAL: 'share_capital',
+  RETAINED_EARNINGS: 'retained_earnings',
+  CURRENT_EARNINGS: 'current_earnings',
+  DRAWINGS: 'drawings',
+  SUSPENSE: 'suspense',
+  OTHER_EQUITY: 'other_equity',
+
+  // Revenue
+  OPERATING_REVENUE: 'operating_revenue',
+  OTHER_REVENUE: 'other_revenue',
+  SALES_DISCOUNT: 'sales_discount',
+
+  // Expenses
+  COST_OF_GOODS_SOLD: 'cost_of_goods_sold',
+  OPERATING_EXPENSE: 'operating_expense',
+  PAYROLL_EXPENSE: 'payroll_expense',
+  DEPRECIATION_EXPENSE: 'depreciation_expense',
+  TAX_EXPENSE: 'tax_expense',
+  INTEREST_EXPENSE: 'interest_expense',
+  OTHER_EXPENSE: 'other_expense',
+} as const;
+
+export type GLReportCategory = (typeof GL_REPORT_CATEGORY)[keyof typeof GL_REPORT_CATEGORY];
+
 export const JOURNAL_ENTRY_SOURCE_TYPE = {
   // System Automated Subsystems
   SALES_INVOICE: 'sales_invoice',

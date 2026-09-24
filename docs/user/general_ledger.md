@@ -9,10 +9,9 @@ action: "read"
 routes:
   - "/general-ledger"
   - "/general-ledger/trial-balance"
-  - "/general-ledger/cash-flow"
   - "/general-ledger/journal-entries"
   - "/general-ledger/journal-entries/new"
-tags: ["finance", "general-ledger", "gl", "chart-of-accounts", "journal-entries", "trial-balance", "cash-flow", "accounting", "fiscal-periods", "invariants"]
+tags: ["finance", "general-ledger", "gl", "chart-of-accounts", "journal-entries", "trial-balance", "accounting", "fiscal-periods", "invariants"]
 fields:
   account_code:
     title: "Account Code"
@@ -30,6 +29,7 @@ fields:
     title: "Credit (CR)"
     summary: "Right-side transaction value increasing Liabilities/Equity/Revenue or decreasing Assets/Expenses."
 related:
+  - "balance-sheet"
   - "cash-flow"
   - "fiscal-periods"
   - "balances"
@@ -156,6 +156,108 @@ All state transitions and ledger postings atomically insert an audit event into 
 
 ---
 
+## Balance Sheet & Movement Calculations (MTD, YTD, Last YTD)
+
+The **Balance Sheet** (`/general-ledger/balance-sheet`) provides a point-in-time financial statement of the organization's assets, liabilities, and equity as of a chosen cutoff date (`asOfDate`), alongside period-over-period movement analytics.
+
+```mermaid
+flowchart LR
+    subgraph BalanceSheet["Balance Sheet Equation (Invariant Parity)"]
+        Assets["Total Assets\n(Debit Normal)"]
+        Liabilities["Total Liabilities\n(Credit Normal)"]
+        Equity["Total Equity\n(Credit Normal)\n+ Current Net Income"]
+        
+        Assets <===>|Must Exactly Balance| Sum["Liabilities + Equity"]
+        Liabilities --> Sum
+        Equity --> Sum
+    end
+```
+
+### 1. Structure & Root Classifications
+
+1. **Assets (Debit Normal)**: Liquid cash, accounts receivable, inventory assets, equipment, and other economic resources owned.
+2. **Liabilities (Credit Normal)**: Accounts payable, tax liabilities, short-term accruals, and long-term debt obligations.
+3. **Equity (Credit Normal)**: Shareholder capital, retained earnings from prior fiscal years, and **Current Period Earnings / Net Income**.
+
+#### Dynamic Current Period Earnings (Net Income)
+HeroBM dynamically calculates unclosed earnings for the active fiscal period directly from the income statement accounts:
+
+```
+Net Income = Total Revenue - Total Expense
+```
+
+and presents it within the Equity section. This guarantees that the Balance Sheet balances at any point in time without requiring manual period-end closing journals.
+
+---
+
+### 2. Mathematical Formulas & Movement Calculations
+
+Every row in the Balance Sheet report presents the point-in-time balance alongside three distinct movement metrics:
+
+```
++---------------+---------------------+--------------------+--------------------+-------------------------+
+| Account Name  |   Balance (Amount)  |    Movement MTD    |    Movement YTD    |    Movement Last YTD    |
++---------------+---------------------+--------------------+--------------------+-------------------------+
+| Cutoff Range  | Cumulative to As-Of | Month-to-Date      | Fiscal Year-to-Date| Prior Fiscal YTD        |
+|               | (<= asOfDate)       | (YYYY-MM-01..As-Of)| (FY Start..As-Of)  | (Prior FY Start..Prior) |
++---------------+---------------------+--------------------+--------------------+-------------------------+
+```
+
+#### A. Cumulative Balance (Amount)
+The cumulative position of the account from the inception of the ledger up to the end of the `asOfDate`:
+- **Asset Accounts**:
+  ```
+  Ending Balance = Cumulative Debits - Cumulative Credits
+  ```
+- **Liability & Equity Accounts**:
+  ```
+  Ending Balance = Cumulative Credits - Cumulative Debits
+  ```
+- **Current Period Net Income (Equity)**:
+  ```
+  Cumulative Net Income = Cumulative Revenue - Cumulative Expense
+  ```
+
+#### B. Movement MTD (Month-to-Date)
+The net financial change posted within the calendar month of the `asOfDate` (from `YYYY-MM-01` through `asOfDate`):
+- **Asset Movement MTD**: `Period Debits - Period Credits`
+- **Liability & Equity Movement MTD**: `Period Credits - Period Debits`
+- **Current Period Net Income MTD**: `MTD Revenue Movement - MTD Expense Movement`
+
+#### C. Movement YTD (Fiscal Year-to-Date)
+The net financial change posted from the start of the active fiscal year through `asOfDate`:
+- **Date Range**: Determined dynamically from the organization's `fiscalYearStartMonth` (e.g. Month 7 / July 1 for Australian fiscal years, Month 1 / January 1 for calendar fiscal years).
+- **Asset Movement YTD**: `Period Debits - Period Credits`
+- **Liability & Equity Movement YTD**: `Period Credits - Period Debits`
+- **Current Period Net Income YTD**: `YTD Revenue Movement - YTD Expense Movement`
+
+#### D. Movement Last YTD (Comparative Prior Fiscal Year-to-Date)
+The net financial change posted during the equivalent comparative period in the *prior* fiscal year:
+- **Date Range**: From the prior fiscal year start date (`fiscalYearStart - 1 year`) through the comparative prior cutoff date (`asOfDate - 1 year`).
+- **Purpose**: Enables immediate comparative benchmarking of asset accumulation, debt reduction, and retained earnings growth against the prior year's performance at the exact same point in time.
+- **Asset Movement Last YTD**: `Period Debits - Period Credits`
+- **Liability & Equity Movement Last YTD**: `Period Credits - Period Debits`
+- **Current Period Net Income Last YTD**: `Last YTD Revenue Movement - Last YTD Expense Movement`
+
+---
+
+### 3. Balance Sheet Invariants & Validation
+
+HeroBM enforces and displays real-time mathematical validation across all four columns:
+
+1. **Cumulative Balance Invariant**:
+   ```
+   Total Assets = Total Liabilities + Total Equity (Tolerance: <= 0.005)
+   ```
+2. **Movement Invariants (MTD, YTD, Last YTD)**:
+   ```
+   Total Assets Movement = Total Liabilities Movement + Total Equity Movement (Tolerance: <= 0.005)
+   ```
+
+If any rounding or out-of-balance condition occurs, the UI displays a warning banner indicating the exact out-of-balance variance for immediate investigation.
+
+---
+
 ## Step-by-Step Workflows
 
 ### 1. Creating a Manual Journal Entry
@@ -178,6 +280,13 @@ All state transitions and ledger postings atomically insert an audit event into 
 3. Verify that the **Parity Verification Banner** is green (reconciled with zero drift).
 4. Review direct operating, investing, and financing cash flow breakdowns.
 
+### 4. Analyzing the Balance Sheet & Movements
+1. Go to **Finance** → **General Ledger** → **Balance Sheet** (`/general-ledger/balance-sheet`).
+2. Select the **As Of Date** using the date picker or quick presets.
+3. Inspect **Total Assets**, **Total Liabilities**, and **Total Equity** subtotals.
+4. Review **Movement MTD**, **Movement YTD**, and **Movement Last YTD** to identify working capital velocity and equity trends.
+5. Confirm the green **Balanced** status banner confirming Assets = Liabilities + Equity with zero drift.
+
 ---
 
 ## Field Reference
@@ -187,6 +296,11 @@ All state transitions and ledger postings atomically insert an audit event into 
 | **Account Code** | Unique numerical GL identifier (e.g. `1000 Bank`). |
 | **Account Name** | Descriptive label of the ledger account. |
 | **Account Classification** | Root category (`Asset`, `Liability`, `Equity`, `Revenue`, `Expense`). |
+| **As Of Date** | Point-in-time cutoff date for cumulative balances and movement intervals. |
+| **Balance (Amount)** | Cumulative ending balance posted up to the `asOfDate` (DR - CR for Assets, CR - DR for Liabilities/Equity). |
+| **Movement MTD** | Net monetary change posted from the start of the calendar month to `asOfDate`. |
+| **Movement YTD** | Net monetary change posted from the start of the current fiscal year to `asOfDate`. |
+| **Movement Last YTD** | Net monetary change posted during the comparative prior fiscal year period. |
 | **Debit / Credit** | Double-entry transaction amounts (must balance to zero). |
 | **Journal Entry Number** | Unique audit sequence identifier (e.g. `JRN-2026-00041`). |
 | **Zero-Sum Variance** | Difference check ensuring debits equal credits (`<= 0.005`). |

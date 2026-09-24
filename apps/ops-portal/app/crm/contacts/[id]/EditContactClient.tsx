@@ -18,6 +18,7 @@ import { useAutoSaveEntity } from '@/hooks/useAutoSaveEntity';
 import { CONTACT_STATE, SystemResource, hasPermission, getErrorMessage } from '@herobm/shared';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import CrmActivitiesSection from '@/components/shared/CrmActivitiesSection';
+import { DynamicForm } from '@/components/DynamicForm';
 
 interface ContactFormDto {
   firstName: string;
@@ -28,6 +29,7 @@ interface ContactFormDto {
   mobile: string;
   createdOn: string;
   modifiedOn: string;
+  metadata?: Record<string, unknown>;
 }
 
 function GeneralInfoTab({
@@ -145,6 +147,19 @@ export default function EditContactClient({ contactId }: { contactId: string }) 
   const rawTab = searchParams.get('tab');
   const initialTab = (rawTab === 'affiliations' || rawTab === 'actors' ? 'organizations' : rawTab as 'overview' | 'projects' | 'affiliations' | 'actors' | 'organizations' | 'opportunities') || 'overview';
   const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'affiliations' | 'actors' | 'organizations' | 'opportunities'>(initialTab);
+  const [contactMetadataSchema, setContactMetadataSchema] = useState<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    api.organizationsControllerGetSettings()
+      .then((res) => {
+        if (res.data?.contactMetadataSchema) {
+          setContactMetadataSchema(res.data.contactMetadataSchema as Record<string, unknown>);
+        }
+      })
+      .catch((e) => {
+        reportError(e, 'EditContactClient - loadSettings');
+      });
+  }, []);
 
   const {
     entity: contact,
@@ -165,7 +180,8 @@ export default function EditContactClient({ contactId }: { contactId: string }) 
       phone: data.phone || '',
       mobile: data.mobile || '',
       createdOn: (data.createdOn as unknown as string) || '',
-      modifiedOn: (data.modifiedOn as unknown as string) || ''
+      modifiedOn: (data.modifiedOn as unknown as string) || '',
+      metadata: (data.metadata as Record<string, unknown>) || {},
     }),
   });
 
@@ -202,6 +218,12 @@ export default function EditContactClient({ contactId }: { contactId: string }) 
     await saveField(field as keyof ContactFormDto, value);
   };
 
+  const hasCustomFields = !!(
+    contactMetadataSchema?.properties &&
+    typeof contactMetadataSchema.properties === 'object' &&
+    Object.keys(contactMetadataSchema.properties).length > 0
+  );
+
   const navItems = [
     {
       id: "tab-overview",
@@ -211,6 +233,7 @@ export default function EditContactClient({ contactId }: { contactId: string }) 
       onClick: () => setActiveTab("overview"),
       subtargets: [
         { id: 'info-section', label: 'Info', onClick: () => { setActiveTab('overview'); setTimeout(() => document.getElementById('info-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        ...(hasCustomFields ? [{ id: 'custom-fields-section', label: 'Custom Fields', onClick: () => { setActiveTab('overview'); setTimeout(() => document.getElementById('custom-fields-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } }] : []),
         { id: 'activities-section', label: 'Activities', onClick: () => { setActiveTab('overview'); setTimeout(() => document.getElementById('activities-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
         { id: 'activity-section', label: 'System Log', onClick: () => { setActiveTab('overview'); setTimeout(() => document.getElementById('activity-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
       ],
@@ -277,6 +300,25 @@ export default function EditContactClient({ contactId }: { contactId: string }) 
                 loading={loading} 
               />
             </div>
+            {hasCustomFields && (
+              <div id="custom-fields-section" className="card">
+                <h3 className="section-heading">
+                  <span className="material-symbols-outlined">tune</span>
+                  <span>Custom Fields</span>
+                </h3>
+                <DynamicForm
+                  schema={contactMetadataSchema!}
+                  data={(dto.metadata || contact?.metadata || {}) as Record<string, unknown>}
+                  onChange={(newMetadata) => {
+                    updateField('metadata' as keyof ContactFormDto, newMetadata);
+                  }}
+                  onBlur={(newMetadata) => {
+                    saveField('metadata' as keyof ContactFormDto, newMetadata);
+                  }}
+                  readOnly={loading}
+                />
+              </div>
+            )}
             <div id="activities-section">
               <CrmActivitiesSection
                 entityType="contact"

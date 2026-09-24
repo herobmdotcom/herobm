@@ -9,8 +9,13 @@ import {
   transferOrderLines,
   transferOrderShipments,
   warehouseEvents,
+  zones,
+  bins,
   uomDictionary,
   taxCategories,
+  projects,
+  projectTasks,
+  customers,
 } from '@herobm/db-schema';
 import { EntityType } from '../../common/event-types';
 import { eq } from 'drizzle-orm';
@@ -18,6 +23,10 @@ import {
   TRANSFER_ORDER_STATE,
   PRODUCT_STATE,
   SHIPMENT_STATE,
+  CUSTOMER_STATE,
+  PROJECT_STATE,
+  PROJECT_BILLING_TYPE,
+  PROJECT_TASK_STATE,
 } from '@herobm/shared';
 
 describe('TransfersCoreService', () => {
@@ -32,7 +41,7 @@ describe('TransfersCoreService', () => {
   beforeEach(async () => {
     await pg.db
       .insert(uomDictionary)
-      .values({ uomCode: 'EA', description: 'Each' });
+      .values({ uomCode: 'EA', description: 'Each', category: 'goods' });
     await pg.db.insert(taxCategories).values({
       taxCategoryId: '00000000-0000-4000-8000-000000000000',
       code: 'GST',
@@ -97,6 +106,7 @@ describe('TransfersCoreService', () => {
         orderNumber: `${prefix}005`,
         sourceLocationId: LOCATION_SRC_ID,
         destinationLocationId: LOCATION_DST_ID,
+        isProjectReturn: false,
         stateCode: TRANSFER_ORDER_STATE.CONFIRMED,
         createdBy: 'system',
       });
@@ -129,6 +139,7 @@ describe('TransfersCoreService', () => {
         orderNumber: 'TO-123',
         sourceLocationId: LOCATION_SRC_ID,
         destinationLocationId: LOCATION_DST_ID,
+        isProjectReturn: false,
         stateCode: TRANSFER_ORDER_STATE.CONFIRMED,
         createdBy: 'system',
       });
@@ -157,6 +168,122 @@ describe('TransfersCoreService', () => {
       expect(result.events).toHaveLength(1);
       expect(result.events[0].eventType).toBe('CREATED');
     });
+
+    it('should return transfer with joined project details and line projectTaskId', async () => {
+      const PROJECT_ID = '00000000-0000-4000-8000-000000000088';
+      const TASK_ID = '00000000-0000-4000-8000-000000000087';
+      const CUST_ID = '00000000-0000-4000-8000-000000000089';
+
+      await pg.db.insert(customers).values({
+        customerId: CUST_ID,
+        customerNumber: 'CUST-001',
+        currencyCode: 'AUD',
+        stateCode: CUSTOMER_STATE.ACTIVE,
+        source: 'app',
+        createdBy: 'system',
+      });
+
+      const ZONE_DST_ID = '00000000-0000-4000-8000-000000000076';
+      const STAGING_BIN_ID = '00000000-0000-4000-8000-000000000077';
+
+      await pg.db.insert(zones).values({
+        zoneId: ZONE_DST_ID,
+        locationId: LOCATION_DST_ID,
+        code: 'STG',
+        name: 'Staging Area',
+        source: 'app',
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(bins).values({
+        binId: STAGING_BIN_ID,
+        binNumber: 'STG-01',
+        zoneId: ZONE_DST_ID,
+        binType: 'staging',
+        source: 'app',
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(projects).values({
+        projectId: PROJECT_ID,
+        projectNumber: 'PRJ-2026-001',
+        name: 'Commercial Fitout',
+        customerId: CUST_ID,
+        stateCode: PROJECT_STATE.ACTIVE,
+        billingType: PROJECT_BILLING_TYPE.TIME_AND_MATERIALS,
+        currencyCode: 'AUD',
+        stagingBinId: STAGING_BIN_ID,
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(projectTasks).values({
+        projectTaskId: TASK_ID,
+        projectId: PROJECT_ID,
+        taskCode: '1.0',
+        name: 'Task 1',
+        stateCode: PROJECT_TASK_STATE.NOT_STARTED,
+        isMilestone: false,
+        isBillable: true,
+        createdBy: 'system',
+      });
+
+      const PRJ_TRANSFER_ID = '00000000-0000-4000-8000-000000000086';
+      await pg.db.insert(transferOrders).values({
+        transferOrderId: PRJ_TRANSFER_ID,
+        orderNumber: 'TO-PRJ-001',
+        sourceLocationId: LOCATION_SRC_ID,
+        destinationLocationId: LOCATION_DST_ID,
+        projectId: PROJECT_ID,
+        projectTaskId: TASK_ID,
+        isProjectReturn: false,
+        stateCode: TRANSFER_ORDER_STATE.CONFIRMED,
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(transferOrderLines).values({
+        transferOrderLineId: '00000000-0000-4000-8000-000000000085',
+        transferOrderId: PRJ_TRANSFER_ID,
+        productId: PROD_ID,
+        quantity: '5',
+        projectTaskId: TASK_ID,
+      });
+
+      const result = await service.findOne(PRJ_TRANSFER_ID);
+      expect(result.projectId).toBe(PROJECT_ID);
+      expect(result.projectTaskId).toBe(TASK_ID);
+      expect(result.projectNumber).toBe('PRJ-2026-001');
+      expect(result.projectName).toBe('Commercial Fitout');
+      expect(result.stagingBinId).toBe(STAGING_BIN_ID);
+      expect(result.stagingBinNumber).toBe('STG-01');
+      expect(result.destinationBinId).toBe(STAGING_BIN_ID);
+      expect(result.destinationBinNumber).toBe('STG-01');
+      expect(result.sourceBinId).toBeNull();
+      expect(result.sourceBinNumber).toBeNull();
+      expect(result.lines[0].projectTaskId).toBe(TASK_ID);
+
+      // Return transfer
+      const PRJ_RETURN_TRANSFER_ID = '00000000-0000-4000-8000-000000000084';
+      await pg.db.insert(transferOrders).values({
+        transferOrderId: PRJ_RETURN_TRANSFER_ID,
+        orderNumber: 'TO-PRJ-RET-001',
+        sourceLocationId: LOCATION_SRC_ID,
+        destinationLocationId: LOCATION_DST_ID,
+        projectId: PROJECT_ID,
+        isProjectReturn: true,
+        stateCode: TRANSFER_ORDER_STATE.CONFIRMED,
+        createdBy: 'system',
+      });
+
+      const retResult = await service.findOne(PRJ_RETURN_TRANSFER_ID);
+      expect(retResult.projectId).toBe(PROJECT_ID);
+      expect(retResult.isProjectReturn).toBe(true);
+      expect(retResult.stagingBinId).toBe(STAGING_BIN_ID);
+      expect(retResult.stagingBinNumber).toBe('STG-01');
+      expect(retResult.sourceBinId).toBe(STAGING_BIN_ID);
+      expect(retResult.sourceBinNumber).toBe('STG-01');
+      expect(retResult.destinationBinId).toBeNull();
+      expect(retResult.destinationBinNumber).toBeNull();
+    });
   });
 
   describe('findAll', () => {
@@ -167,6 +294,7 @@ describe('TransfersCoreService', () => {
           orderNumber: 'TO-FIND-1',
           sourceLocationId: LOCATION_SRC_ID,
           destinationLocationId: LOCATION_DST_ID,
+          isProjectReturn: false,
           stateCode: TRANSFER_ORDER_STATE.CONFIRMED,
           createdBy: 'system',
         },
@@ -175,6 +303,7 @@ describe('TransfersCoreService', () => {
           orderNumber: 'TO-FIND-2',
           sourceLocationId: LOCATION_SRC_ID,
           destinationLocationId: LOCATION_DST_ID,
+          isProjectReturn: false,
           stateCode: TRANSFER_ORDER_STATE.SHIPPED,
           createdBy: 'system',
         },
@@ -187,6 +316,58 @@ describe('TransfersCoreService', () => {
       expect(result.data.map((d) => d.orderNumber)).toContain('TO-FIND-2');
     });
 
+    it('should filter transfers by projectId', async () => {
+      const CUST_ID = '00000000-0000-4000-8000-000000000078';
+      const PROJECT_ID = '00000000-0000-4000-8000-000000000077';
+      const PRJ_TO_ID = '00000000-0000-4000-8000-000000000076';
+
+      await pg.db.insert(customers).values({
+        customerId: CUST_ID,
+        customerNumber: 'CUST-002',
+        currencyCode: 'AUD',
+        stateCode: CUSTOMER_STATE.ACTIVE,
+        source: 'app',
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(projects).values({
+        projectId: PROJECT_ID,
+        projectNumber: 'PRJ-2026-002',
+        name: 'Project Beta',
+        customerId: CUST_ID,
+        stateCode: PROJECT_STATE.ACTIVE,
+        billingType: PROJECT_BILLING_TYPE.TIME_AND_MATERIALS,
+        currencyCode: 'AUD',
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(transferOrders).values({
+        transferOrderId: PRJ_TO_ID,
+        orderNumber: 'TO-FILTER-PRJ',
+        sourceLocationId: LOCATION_SRC_ID,
+        destinationLocationId: LOCATION_DST_ID,
+        projectId: PROJECT_ID,
+        isProjectReturn: false,
+        stateCode: TRANSFER_ORDER_STATE.CONFIRMED,
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(transferOrderLines).values({
+        transferOrderLineId: '00000000-0000-4000-8000-000000000075',
+        transferOrderId: PRJ_TO_ID,
+        productId: PROD_ID,
+        quantity: '12',
+      });
+
+      const result = await service.findAll({ projectId: PROJECT_ID });
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].id).toBe(PRJ_TO_ID);
+      expect(result.data[0].projectId).toBe(PROJECT_ID);
+      expect(result.data[0].lines).toHaveLength(1);
+      expect(result.data[0].lines[0].productNumber).toBe('PROD-1');
+      expect(result.data[0].lines[0].quantity).toBe('12');
+    });
+
     it('should filter transfers by stateCode', async () => {
       const result = await service.findAll({
         limit: 10,
@@ -195,6 +376,79 @@ describe('TransfersCoreService', () => {
       expect(
         result.data.every((d) => d.stateCode === TRANSFER_ORDER_STATE.SHIPPED),
       ).toBe(true);
+    });
+
+    it('should filter transfers by hasPendingReceipt', async () => {
+      const TO_PENDING = '00000000-0000-4000-8000-000000000091';
+      const TO_FULFILLED = '00000000-0000-4000-8000-000000000092';
+      const TO_UNSHIPPED = '00000000-0000-4000-8000-000000000093';
+
+      await pg.db.insert(transferOrders).values([
+        {
+          transferOrderId: TO_PENDING,
+          orderNumber: 'TO-PENDING-RECV',
+          sourceLocationId: LOCATION_SRC_ID,
+          destinationLocationId: LOCATION_DST_ID,
+          isProjectReturn: false,
+          stateCode: TRANSFER_ORDER_STATE.PICKING, // Partially shipped, so still in picking
+          createdBy: 'system',
+        },
+        {
+          transferOrderId: TO_FULFILLED,
+          orderNumber: 'TO-FULFILLED-RECV',
+          sourceLocationId: LOCATION_SRC_ID,
+          destinationLocationId: LOCATION_DST_ID,
+          isProjectReturn: false,
+          stateCode: TRANSFER_ORDER_STATE.RECEIVED,
+          createdBy: 'system',
+        },
+        {
+          transferOrderId: TO_UNSHIPPED,
+          orderNumber: 'TO-UNSHIPPED-RECV',
+          sourceLocationId: LOCATION_SRC_ID,
+          destinationLocationId: LOCATION_DST_ID,
+          isProjectReturn: false,
+          stateCode: TRANSFER_ORDER_STATE.PICKING,
+          createdBy: 'system',
+        },
+      ]);
+
+      await pg.db.insert(transferOrderLines).values([
+        {
+          transferOrderLineId: '00000000-0000-4000-8000-000000000094',
+          transferOrderId: TO_PENDING,
+          productId: PROD_ID,
+          quantity: '20',
+          quantityShipped: '5',
+          quantityReceived: '0',
+        },
+        {
+          transferOrderLineId: '00000000-0000-4000-8000-000000000095',
+          transferOrderId: TO_FULFILLED,
+          productId: PROD_ID,
+          quantity: '5',
+          quantityShipped: '5',
+          quantityReceived: '5',
+        },
+        {
+          transferOrderLineId: '00000000-0000-4000-8000-000000000096',
+          transferOrderId: TO_UNSHIPPED,
+          productId: PROD_ID,
+          quantity: '10',
+          quantityShipped: '0',
+          quantityReceived: '0',
+        },
+      ]);
+
+      const result = await service.findAll({
+        hasPendingReceipt: true,
+        destinationLocationId: LOCATION_DST_ID,
+      });
+
+      const orderNumbers = result.data.map((d) => d.orderNumber);
+      expect(orderNumbers).toContain('TO-PENDING-RECV');
+      expect(orderNumbers).not.toContain('TO-FULFILLED-RECV');
+      expect(orderNumbers).not.toContain('TO-UNSHIPPED-RECV');
     });
   });
 
@@ -210,6 +464,7 @@ describe('TransfersCoreService', () => {
         orderNumber: 'TO-123',
         sourceLocationId: LOCATION_SRC_ID,
         destinationLocationId: LOCATION_DST_ID,
+        isProjectReturn: false,
         stateCode: TRANSFER_ORDER_STATE.CONFIRMED,
         createdBy: 'system',
       });

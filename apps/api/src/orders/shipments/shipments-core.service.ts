@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { eq, sql, desc, and, gte, or, inArray } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import { DRIZZLE } from '../../drizzle/drizzle.module';
 import type { DrizzleDB } from '../../drizzle/drizzle.module';
 import {
@@ -30,6 +31,7 @@ import {
   transferOrderLines,
   locations,
   organizations,
+  projects,
 } from '@herobm/db-schema';
 import { AppConfigService } from '../../settings/app-config.service';
 import { getValuationStrategy } from '../../inventory/valuation';
@@ -166,6 +168,7 @@ export class ShipmentsCoreService {
 
     if (rows.length === 0) {
       // Try fetching as a Transfer Order Shipment instead
+      const stagingBin = alias(bins, 'stagingBin');
       const transferRows = await this.db
         .select({
           shipmentId: transferOrderShipments.shipmentId,
@@ -190,6 +193,27 @@ export class ShipmentsCoreService {
           deliveryPostalCode: locations.postalCode,
           deliveryCountry: locations.country,
           shippingNotes: transferOrderShipments.shippingNotes,
+          sourceLocationId: transferOrders.sourceLocationId,
+          destinationLocationId: transferOrders.destinationLocationId,
+          isSameSite: sql<boolean>`CASE WHEN ${transferOrders.sourceLocationId} = ${transferOrders.destinationLocationId} THEN true ELSE false END`,
+          projectId: transferOrders.projectId,
+          isProjectReturn: transferOrders.isProjectReturn,
+          projectNumber: projects.projectNumber,
+          projectName: projects.name,
+          stagingBinId: projects.stagingBinId,
+          stagingBinNumber: stagingBin.binNumber,
+          sourceBinId: sql<
+            string | null
+          >`CASE WHEN ${transferOrders.isProjectReturn} = true THEN ${projects.stagingBinId} ELSE NULL END`,
+          sourceBinNumber: sql<
+            string | null
+          >`CASE WHEN ${transferOrders.isProjectReturn} = true THEN ${stagingBin.binNumber} ELSE NULL END`,
+          destinationBinId: sql<
+            string | null
+          >`CASE WHEN ${transferOrders.isProjectReturn} = true THEN NULL ELSE ${projects.stagingBinId} END`,
+          destinationBinNumber: sql<
+            string | null
+          >`CASE WHEN ${transferOrders.isProjectReturn} = true THEN NULL ELSE ${stagingBin.binNumber} END`,
         })
         .from(transferOrderShipments)
         .innerJoin(
@@ -203,6 +227,8 @@ export class ShipmentsCoreService {
           locations,
           eq(transferOrders.destinationLocationId, locations.locationId),
         )
+        .leftJoin(projects, eq(transferOrders.projectId, projects.projectId))
+        .leftJoin(stagingBin, eq(projects.stagingBinId, stagingBin.binId))
         .where(eq(transferOrderShipments.shipmentId, shipmentId))
         .limit(1);
 

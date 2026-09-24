@@ -22,6 +22,7 @@ describe('FX Lifecycle (e2e)', () => {
   let productNumber: string;
   let locationId: string;
   let bankAccountId: string;
+  let taxCategoryId: string;
 
   // GL Accounts needed for verification
   let accounts: Record<string, string> = {};
@@ -55,30 +56,30 @@ describe('FX Lifecycle (e2e)', () => {
       .expect(201);
     adminToken = loginRes.body.access_token;
 
-    // 2. Fetch Master Data
-    const customers = await request(app.getHttpServer())
-      .get('/api/customers?limit=1')
+    // 2. Setup Master Data (Create dedicated customer and supplier to avoid test data pollution/credit hold conflicts)
+    const custRes = await request(app.getHttpServer())
+      .post('/api/customers')
       .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-    customerId = customers.body.data[0].customerId;
+      .send({
+        billingAddressCountry: 'GB',
+        customerNumber: `CUST-FX-${Date.now()}`,
+        name: 'FX E2E Customer',
+        currencyCode: 'GBP',
+        creditLimit: '1000000',
+      })
+      .expect(201);
+    customerId = custRes.body.customerId;
 
-    await request(app.getHttpServer())
-      .patch(`/api/customers/${customerId}`)
+    const vendRes = await request(app.getHttpServer())
+      .post('/api/suppliers')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ currencyCode: 'GBP' })
-      .expect(200);
-
-    const vendors = await request(app.getHttpServer())
-      .get('/api/suppliers?limit=1')
-      .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-    vendorId = vendors.body.data[0].vendorId;
-
-    await request(app.getHttpServer())
-      .patch(`/api/suppliers/${vendorId}`)
-      .set('Authorization', `Bearer ${adminToken}`)
-      .send({ currencyCode: 'EUR' })
-      .expect(200);
+      .send({
+        vendorNumber: `VEND-FX-${Date.now()}`,
+        name: 'FX E2E Vendor',
+        currencyCode: 'EUR',
+      })
+      .expect(201);
+    vendorId = vendRes.body.vendorId;
 
     const locations = await request(app.getHttpServer())
       .get('/api/inventory/locations')
@@ -105,6 +106,14 @@ describe('FX Lifecycle (e2e)', () => {
       bankLeaves.find((a) => a.accountType === 'Bank') ||
       bankLeaves[0];
     bankAccountId = bankAccount.glAccountId;
+
+    const taxCatRes = await request(app.getHttpServer())
+      .get('/api/tax-categories')
+      .set('Authorization', `Bearer ${adminToken}`);
+    const gstCat =
+      (taxCatRes.body || []).find((c: any) => parseFloat(c.rate) === 0.1) ||
+      taxCatRes.body[0];
+    taxCategoryId = gstCat?.taxCategoryId;
 
     // Ensure we have an FX Gain and Loss account in GL Settings!
     const db = app.get(DRIZZLE);
@@ -507,7 +516,14 @@ describe('FX Lifecycle (e2e)', () => {
           currencyCode: 'GBP',
           orderDate: '2026-06-01',
           name: 'SO FX Lifecycle',
-          lines: [{ productId, quantity: '5', pricePerUnit: '200.00' }], // 1000 GBP Subtotal + 100 GST = 1100 GBP Total
+          lines: [
+            {
+              productId,
+              quantity: '5',
+              pricePerUnit: '200.00',
+              taxCategoryId,
+            },
+          ], // 1000 GBP Subtotal + 100 GST = 1100 GBP Total
         })
         .expect(201);
       soId = soRes.body.salesOrderId;

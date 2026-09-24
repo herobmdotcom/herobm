@@ -5,6 +5,7 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.1
  */
+import type { CreateOpportunityDtoMetadata } from './createOpportunityDtoMetadata';
 
 export interface CreateOpportunityDto {
   name: string;
@@ -21,4 +22,7 @@ export interface CreateOpportunityDto {
   probability?: number;
   actualValue?: string;
   description?: string;
+  organizationId?: string;
+  /** Custom metadata object */
+  metadata?: CreateOpportunityDtoMetadata;
 }

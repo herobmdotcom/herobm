@@ -22,6 +22,9 @@ export {
   PRODUCT_TRANSITIONS,
   WORK_ORDER_TRANSITIONS,
   WORK_ORDER_PICK_TRANSITIONS,
+  PROJECT_TRANSITIONS,
+  PROJECT_TASK_TRANSITIONS,
+  STOCKTAKE_TRANSITIONS,
 
   PUTAWAY_STATUS,
   type PutawayStatus,
@@ -44,6 +47,7 @@ export {
   BACKORDER_STATE,
   TRANSFER_ORDER_STATE,
   RECONCILIATION_STATE,
+  STOCKTAKE_STATE,
   PAYMENT_STATE,
   CUSTOMER_STATE,
   TRANSFER_ORDER_PICK_STATE,
@@ -51,6 +55,13 @@ export {
   PRODUCT_STATE,
   OPPORTUNITY_STATE,
   PROJECT_STATE,
+  PROJECT_RESOURCE_STATE,
+  PROJECT_TASK_STATE,
+  PROJECT_BILLING_TYPE,
+  RESOURCE_TYPE,
+  PROJECT_LINE_TYPE,
+  PROJECT_LEDGER_ENTRY_TYPE,
+  PROJECT_SOURCE_TYPE,
   ORGANIZATION_STATE,
   CONTACT_STATE,
   WORK_ORDER_STATE,
@@ -61,11 +72,13 @@ export {
   SALES_ORDER_LIFECYCLE,
   PURCHASE_ORDER_LIFECYCLE,
   OPEN_PURCHASE_ORDER_STATES,
+  OPEN_SALES_ORDER_STATES,
   ON_ORDER_PURCHASE_ORDER_STATES,
   COMMITTED_SALES_ORDER_STATES,
   PURCHASE_INVOICE_LIFECYCLE,
   SALES_INVOICE_LIFECYCLE,
   RECONCILIATION_LIFECYCLE,
+  STOCKTAKE_LIFECYCLE,
   SHIPMENT_LIFECYCLE,
   PURCHASE_RETURN_LIFECYCLE,
   PURCHASE_RETURN_SHIPMENT_LIFECYCLE,
@@ -74,7 +87,8 @@ export {
   SALES_CREDIT_NOTE_LIFECYCLE,
   SALES_ORDER_PICK_LIFECYCLE,
   BACKORDER_LIFECYCLE,
-
+  PROJECT_LIFECYCLE,
+  PROJECT_TASK_LIFECYCLE,
 
   // Helpers
   getAllowedTransitions,
@@ -83,6 +97,7 @@ export {
   cap,
   isOnOrderPurchaseOrderState,
   isCommittedSalesOrderState,
+  isOpenSalesOrderState,
 } from './state-machines';
 
 export type {
@@ -112,7 +127,14 @@ export type {
   ContactState,
   OpportunityState,
   ProjectState,
+  ProjectTaskState,
+  ProjectBillingType,
+  ResourceType,
+  ProjectLineType,
+  ProjectLedgerEntryType,
+  ProjectSourceType,
   ReconciliationState,
+  StocktakeState,
   WorkOrderState,
   WorkOrderPickState,
 } from './state-machines';
@@ -172,6 +194,12 @@ export {
   parsePickBarcode,
   formatQuantity,
   resolveSalesLineAvailabilityStatus,
+  UOM_CATEGORY,
+  PRODUCT_TYPE,
+  PRODUCT_TYPE_LABELS,
+  isGoodsProductType,
+  isServiceProductType,
+  isFreightProductType,
 } from './inventory';
 export type {
   InventoryLevelMinimal,
@@ -179,6 +207,7 @@ export type {
   InventoryGap,
   InventoryLevelData,
   ProductType,
+  UomCategory,
   PickBarcodePayload,
   SalesLineAvailabilityStatus,
   ResolveSalesLineAvailabilityParams,
@@ -194,6 +223,7 @@ export type { CurrencyDef, RevenueRoutingStrategy, ExpenseRoutingStrategy } from
 
 export {
   GL_ACCOUNT_TYPE,
+  GL_REPORT_CATEGORY,
   JOURNAL_ENTRY_SOURCE_TYPE,
   USER_SELECTABLE_JOURNAL_SOURCE_TYPES,
   TAKE_ON_JOURNAL_SOURCE_TYPES,
@@ -204,6 +234,7 @@ export {
 } from './accounting';
 export type {
   GLAccountType,
+  GLReportCategory,
   JournalEntrySourceType,
   AgedBalanceRow,
   AgedTotals,
@@ -226,4 +257,5 @@ export * from './event-types';
 export * from './ledger-hash';
 export * from './tax';
 export * from './crm';
+export * from './projects';
 

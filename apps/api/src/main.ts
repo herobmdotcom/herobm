@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
-// Force reload 1
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe, RequestMethod } from '@nestjs/common';
+import { json, urlencoded } from 'express';
 import helmet from 'helmet';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { FileLoggerService } from './common/file-logger.service';
@@ -13,7 +13,12 @@ async function bootstrap() {
   const fileLogger = new FileLoggerService();
   const app = await NestFactory.create(AppModule, {
     logger: fileLogger,
+    bodyParser: false,
   });
+
+  // Support ERP bulk JSON payloads (up to ~50k records) while protecting V8 memory / event loop
+  app.use(json({ limit: '10mb' }));
+  app.use(urlencoded({ limit: '10mb', extended: true }));
 
   // Apply Helmet HTTP security headers
   app.use(
@@ -78,6 +83,10 @@ async function bootstrap() {
         'Manufacturing work orders and assembly',
       )
       .addTag('Warehouse', 'Inventory, receiving, and fulfillment')
+      .addTag(
+        'Stocktakes',
+        'Physical inventory audits and count reconciliations',
+      )
       .addTag('Payments', 'Payment processing and reconciliation')
       .addTag('General Ledger', 'Accounting, charts, and journals')
       .addTag('Tax', 'Tax configuration and mappings')

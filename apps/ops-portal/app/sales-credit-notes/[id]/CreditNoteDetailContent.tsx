@@ -17,6 +17,7 @@ import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
 import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
 import { routes } from '@/lib/routes';
 import type { ValidState } from '@/types/states';
+import { DynamicForm } from '@/components/DynamicForm';
 
 interface CreditNoteDetailLine {
   creditNoteLineId?: string;
@@ -48,6 +49,7 @@ interface CreditNoteDetailData {
   outstandingAmount?: number | string | null;
   currencyCode?: string | null;
   stateCode: string;
+  metadata?: Record<string, unknown>;
   lines?: CreditNoteDetailLine[];
   events?: TimelineEvent[];
 }
@@ -57,6 +59,7 @@ export default function CreditNoteDetailContent({ id }: { id: string }) {
   const { baseCurrency } = useSettings();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<CreditNoteDetailData | null>(null);
+  const [creditNoteMetadataSchema, setCreditNoteMetadataSchema] = useState<Record<string, unknown> | null>(null);
 
   const fetchCreditNote = useCallback(() => {
     setLoading(true);
@@ -71,6 +74,16 @@ export default function CreditNoteDetailContent({ id }: { id: string }) {
   useEffect(() => {
     fetchCreditNote();
   }, [fetchCreditNote]);
+
+  useEffect(() => {
+    api.ordersControllerGetSettings()
+      .then((res) => {
+        if (res.data?.creditNoteMetadataSchema) {
+          setCreditNoteMetadataSchema(res.data.creditNoteMetadataSchema as Record<string, unknown>);
+        }
+      })
+      .catch((err) => reportError(err, 'CreditNoteDetailContent:getSettings'));
+  }, []);
 
   useDocumentTitle(data ? `Credit Note ${data.creditNoteNumber}` : 'Credit Note Details');
 
@@ -88,6 +101,12 @@ export default function CreditNoteDetailContent({ id }: { id: string }) {
   const taxAmount = parseFloat(data.taxAmount?.toString() || '0');
   const feeAmount = parseFloat(data.feeAmount?.toString() || '0');
   const totalCredit = subtotal + taxAmount - feeAmount;
+
+  const hasCustomFields = !!(
+    creditNoteMetadataSchema?.properties &&
+    typeof creditNoteMetadataSchema.properties === 'object' &&
+    Object.keys(creditNoteMetadataSchema.properties).length > 0
+  );
 
   const lineColumns: DataTableColumn<CreditNoteDetailLine>[] = [
     {
@@ -329,6 +348,21 @@ export default function CreditNoteDetailContent({ id }: { id: string }) {
             }}
           />
         </div>
+
+        {/* Custom Fields Card */}
+        {hasCustomFields && (
+          <div id="custom-fields-section" className="card">
+            <h3 className="section-heading mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined shrink-0">tune</span>
+              <span>{tCommon('customFields')}</span>
+            </h3>
+            <DynamicForm
+              schema={creditNoteMetadataSchema!}
+              data={(data.metadata || {}) as Record<string, unknown>}
+              readOnly={true}
+            />
+          </div>
+        )}
 
         {/* Activity Timeline Card */}
         <div id="timeline-section" className="card">

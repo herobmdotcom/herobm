@@ -60,6 +60,11 @@ export const routes = {
           : '/purchase-orders/returns/new',
     },
   },
+  demand: {
+    open: () => '/purchase-orders/demands',
+    restock: () => '/demand/restock',
+    movement: () => '/demand/movement',
+  },
   supplierInvoices: {
     list: () => '/supplier-invoices',
     detail: (id: string) => `/supplier-invoices/${id}`,
@@ -94,6 +99,12 @@ export const routes = {
     picking: () => '/inventory/picking',
     shipping: () => '/inventory/shipping',
     scanToDispatch: () => '/inventory/shipping/scan-to-dispatch',
+    stocktakes: {
+      list: () => '/inventory/stocktakes',
+      detail: (id: string) => `/inventory/stocktakes/${id}`,
+      count: (id: string) => `/inventory/stocktakes/${id}/count`,
+      new: () => '/inventory/stocktakes?action=new',
+    },
   },
   receiving: {
     list: () => '/receiving',
@@ -108,6 +119,19 @@ export const routes = {
     list: () => '/manufacturing/work-orders',
     detail: (id: string) => `/manufacturing/work-orders/${id}`,
     new: () => '/manufacturing/work-orders/new',
+  },
+
+  // Projects
+  projects: {
+    list: () => '/projects',
+    detail: (id: string) => `/projects/${id}`,
+    new: () => '/projects/new',
+  },
+  resources: {
+    list: (query?: { create?: boolean }) =>
+      query?.create ? '/resources?create=true' : '/resources',
+    detail: (id: string) => `/resources/${id}`,
+    new: () => '/resources?create=true',
   },
 
   // CRM
@@ -139,6 +163,8 @@ export const routes = {
   generalLedger: {
     list: () => '/general-ledger',
     detail: (id: string) => `/general-ledger/${id}`,
+    profitAndLoss: () => '/general-ledger/profit-and-loss',
+    balanceSheet: () => '/general-ledger/balance-sheet',
     trialBalance: () => '/general-ledger/trial-balance',
     cashFlow: () => '/general-ledger/cash-flow',
     journalEntries: {
@@ -187,9 +213,11 @@ export const routes = {
     settings: {
       system: () => '/admin/settings/system',
       crm: () => '/admin/settings/crm',
+      projects: () => '/admin/settings/projects',
       financial: () => '/admin/settings/financial',
       integrations: () => '/admin/settings/integrations',
       license: () => '/admin/settings/license',
+      customFields: () => '/admin/settings/custom-fields',
       pdfHooks: () => '/admin/settings/pdf-templates?tab=hooks',
       pdfTemplates: {
         list: () => '/admin/settings/pdf-templates',
@@ -221,4 +249,8 @@ export const routes = {
     systemLogs: () => '/admin/system-logs',
     version: () => '/admin/version',
   },
+
+  // Help & Documentation
+  help: (topicId?: string) =>
+    topicId ? `/help?topic=${encodeURIComponent(topicId)}` : '/help',
 } as const;

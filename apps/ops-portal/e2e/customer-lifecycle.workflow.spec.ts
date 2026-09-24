@@ -4,12 +4,16 @@ import { waitForGrid, searchPageTable } from './helpers/grid';
 import { uniqueId } from './helpers/generators';
 
 test.describe('Workflow: Customer & Entity Lifecycle', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.abort());
+  });
+
   test('executes customer creation, detail view validation, search, and order form integration', async ({ page }) => {
     const custNumber = uniqueId('CUST');
     const custName = `Acme E2E Corp ${custNumber}`;
 
     // 1. Navigate to New Customer creation form
-    await page.goto('/customers/new', { waitUntil: 'networkidle' });
+    await page.goto('/customers/new', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
 
     // 2. Fill Customer Number and Name
@@ -52,7 +56,7 @@ test.describe('Workflow: Customer & Entity Lifecycle', () => {
     await expect(header).toBeVisible();
 
     // 6. Navigate to Customers list and search for the newly created customer
-    await page.goto('/customers', { waitUntil: 'networkidle' });
+    await page.goto('/customers', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
     await waitForGrid(page);
 

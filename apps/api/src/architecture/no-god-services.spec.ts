@@ -19,11 +19,8 @@ function walk(dir: string): string[] {
 describe('Architecture - No God Services', () => {
   const MAX_LINES = 1500;
 
-  // Pre-existing violations tracked by separate advisories.
-  // Remove entries from this list as each service is decomposed.
-  const KNOWN_VIOLATIONS = new Set<string>([
-    path.normalize('orders/picking.service.ts'),
-  ]);
+  // All known violations have been successfully decomposed!
+  const KNOWN_VIOLATIONS = new Set<string>([]);
 
   it(`should not have any .service.ts file exceeding ${MAX_LINES} lines`, () => {
     const srcDir = path.resolve(__dirname, '..');

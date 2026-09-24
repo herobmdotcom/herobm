@@ -1,0 +1,102 @@
+{
+  "activities": {
+    "actions": {
+      "cancel": "Cancel",
+      "complete": "Mark Complete",
+      "create": "Create",
+      "delete": "Delete",
+      "edit": "Edit",
+      "logCall": "Log Call",
+      "logEmail": "Log Email",
+      "logInteraction": "Log Interaction",
+      "logMeeting": "Log Meeting",
+      "markComplete": "Mark Complete",
+      "markOpen": "Mark as Open",
+      "newTask": "New Task",
+      "reopen": "Reopen Task",
+      "save": "Save Changes",
+      "saving": "Saving..."
+    },
+    "empty": "No activities or tasks logged yet.",
+    "fields": {
+      "assignedTo": "Assignee",
+      "contact": "Contact",
+      "description": "Notes / Minutes / Details",
+      "dueDate": "Due Date",
+      "opportunity": "Opportunity",
+      "priority": "Priority",
+      "status": "Status",
+      "subject": "Subject",
+      "type": "Type"
+    },
+    "filter": {
+      "activitiesOnly": "Interactions & Tasks",
+      "all": "All Activity",
+      "auditOnly": "System Logs",
+      "interactions": "Interactions",
+      "tasks": "Tasks"
+    },
+    "metadata": {
+      "completedOn": "Completed on {date}",
+      "loggedBy": "Logged by {user}",
+      "unknownUser": "User"
+    },
+    "modal": {
+      "editCall": "Edit Phone Call",
+      "editEmail": "Edit Email",
+      "editGeneric": "Edit Activity",
+      "editMeeting": "Edit Meeting Minutes",
+      "editTask": "Edit Task",
+      "titleCall": "Log Phone Call",
+      "titleEmail": "Log Email",
+      "titleGeneric": "Log Activity",
+      "titleMeeting": "Log Meeting Minutes",
+      "titleTask": "Create Task"
+    },
+    "priorities": {
+      "high": "High",
+      "low": "Low",
+      "medium": "Medium",
+      "urgent": "Urgent"
+    },
+    "status": {
+      "cancelled": "Cancelled",
+      "completed": "Completed",
+      "open": "Open",
+      "scheduled": "Scheduled"
+    },
+    "subtitle": "External interactions, communications, and follow-ups",
+    "tasks": {
+      "allTasks": "All Tasks",
+      "completed": "Completed",
+      "due": "Due",
+      "dueToday": "Due Today",
+      "myTasks": "My Tasks",
+      "noOpenTasks": "No open tasks.",
+      "overdue": "Overdue",
+      "upcoming": "Upcoming"
+    },
+    "title": "Activities",
+    "toasts": {
+      "completed": "Task marked as completed",
+      "created": "Activity logged successfully",
+      "deleted": "Activity deleted",
+      "failedToComplete": "Failed to complete task",
+      "failedToCreate": "Failed to log activity",
+      "failedToDelete": "Failed to delete activity",
+      "failedToLoad": "Failed to load activities",
+      "failedToUpdate": "Failed to update activity",
+      "reopened": "Task marked as open",
+      "updated": "Activity updated"
+    },
+    "types": {
+      "call": "Phone Call",
+      "email": "Email",
+      "meeting": "Meeting",
+      "note": "Note",
+      "task": "Task"
+    }
+  },
+  "customFields": "Custom Fields"
+}
+

@@ -40,17 +40,20 @@ Bugs, security issues, and architectural drift are treated as system infections 
                      [Tactical Fix Implemented]
                                  │
                                  ▼
-                     [AST Structural Test Added] (infra/tests/test_adv_*.ts)
+                     [Domain-Native Immunization Test Added]
+                     (AST in infra/tests/ | dbt YAML in pipelines/ | Specs in apps/)
                                  │
                                  ▼
                      [Documentation Updated & Verified]
 ```
 
 ### Invariant Testing with TypeScript AST (`ts-morph`)
-Whenever a structural bug or boundary violation is resolved, an automated AST test is added to `infra/tests/` to prevent recurrence across all workspaces. Key structural boundary suites include:
+Whenever a code architecture, security, or boundary violation is resolved, an automated AST test is added to `infra/tests/` to prevent recurrence across all workspaces. Key structural boundary suites include:
 - **Single-Writer Table Boundaries (`test_financial_table_write_boundaries.ts`)**: Enforces that each database table is written to exclusively by its authorized domain service, preventing cross-module database pollution.
 - **Pass-the-TX Completeness (`test_adv_104_no_unpassed_tx.ts`, `test_adv_142_pass_the_tx_completeness.ts`)**: Ensures all service methods participating in transactions receive and propagate the active `tx` handle without falling back to unmanaged pool connections.
 - **Audit Mutation Parity (`test_adv_099_emit_event_mutations.ts`, `test_adv_103_no_spurious_events.ts`)**: Verifies that every mutation emits an audit event and no method emits spurious events without performing writes.
+
+*Note: Non-architectural bugs (such as ELT SQL transforms, dbt schema constraints, or business logic) are immunized in their domain-native test suites (e.g. dbt schema YAML tests, `infra/tests/test_data_counts.py`, or NestJS/RTL spec files) rather than pseudo-structural regex scripts.*
 
 ---
 

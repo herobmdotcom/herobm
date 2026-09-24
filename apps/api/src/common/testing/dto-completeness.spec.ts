@@ -53,6 +53,70 @@ describe('Global DTO Completeness', () => {
         'modifiedOn',
       ], // Generated/Metadata
     },
+    {
+      module: 'ProductGroups',
+      schemaFile: '@herobm/db-schema',
+      tableName: 'productGroups',
+      dtoFile: '../../products/dto.ts',
+      dtoClass: 'BaseProductGroupDto',
+      ignoredColumns: ['productGroupId'],
+    },
+    {
+      module: 'ProductDefaultBins',
+      schemaFile: '@herobm/db-schema',
+      tableName: 'productDefaultBins',
+      dtoFile: '../../products/dto.ts',
+      dtoClass: 'LinkBinDto',
+      ignoredColumns: [
+        'productDefaultBinId',
+        'productId', // Passed in URL param
+        'createdOn',
+        'modifiedOn',
+      ],
+    },
+    {
+      module: 'ProductComponents',
+      schemaFile: '@herobm/db-schema',
+      tableName: 'productComponents',
+      dtoFile: '../../products/dto.ts',
+      dtoClass: 'AddProductComponentDto',
+      ignoredColumns: ['componentId', 'parentProductId'],
+    },
+    {
+      module: 'ProductUoms',
+      schemaFile: '@herobm/db-schema',
+      tableName: 'productUoms',
+      dtoFile: '../../products/dto.ts',
+      dtoClass: 'AddProductUomDto',
+      ignoredColumns: [
+        'productUomId',
+        'productId',
+        'isSalesDefault',
+        'isPurchaseDefault',
+      ],
+    },
+    {
+      module: 'ProductSuppliers',
+      schemaFile: '@herobm/db-schema',
+      tableName: 'productSuppliers',
+      dtoFile: '../../products/dto.ts',
+      dtoClass: 'AddSupplierDto',
+      ignoredColumns: [
+        'productSupplierId',
+        'productId',
+        'discountPercent',
+        'priceBreakQuantity',
+        'isPreferred',
+        'minPurchaseQty',
+        'purchaseUnit',
+        'stateCode',
+        'sourceId',
+        'source',
+        'createdBy',
+        'createdOn',
+        'modifiedOn',
+      ],
+    },
   ];
 
   for (const map of mappings) {

@@ -1,0 +1,93 @@
+{
+  "actions": {
+    "done": "Done",
+    "pickAll": "Pick All"
+  },
+  "buttons": {
+    "pick": "Pick"
+  },
+  "clickToEdit": "Click to edit",
+  "columns": {
+    "action": "Action",
+    "binLocation": "Bin Location",
+    "description": "Description",
+    "lineNumber": "#",
+    "location": "Location",
+    "notes": "Notes",
+    "onHand": "On Hand",
+    "ordered": "Ordered",
+    "pickQty": "Pick Qty",
+    "picked": "Picked",
+    "product": "Product",
+    "qtyToShip": "Qty to Ship",
+    "remaining": "Remaining",
+    "shipped": "Shipped",
+    "status": "Status",
+    "trackingNumber": "Tracking Number"
+  },
+  "createShipment": "Create Shipment",
+  "createdOn": "Created {date}",
+  "createdOnBy": "Created {date} by {user}",
+  "creditBlockedMessage": "Picking is blocked due to a credit hold.",
+  "creditBlockedTitle": "Credit Hold",
+  "errors": {
+    "atLeastOneLineRequired": "At least one line with a quantity is required",
+    "cannotReducePicked": "Cannot reduce picked to {qty} — {shipped} already shipped",
+    "failedToCreateShipment": "Failed to create shipment",
+    "failedToGeneratePickingSlip": "Failed to generate picking slip",
+    "failedToPickAll": "Failed to pick all",
+    "failedToUpdateLocation": "Failed to update location",
+    "failedToUpdatePick": "Failed to update pick",
+    "failedToUpdateShipment": "Failed to update shipment",
+    "unpickToChangeLocation": "Must unpick to change location"
+  },
+  "linesPicked": "{picked} / {total} lines picked",
+  "loadingOrder": "Loading order context...",
+  "locationLabel": "Location:",
+  "newShipment": "New Shipment",
+  "noItemsToPick": "No items available to pick.",
+  "noName": "No Name",
+  "noOrders": "No {tab} orders pending.",
+  "noPhysicalLines": "No physical lines",
+  "noShipmentsYet": "No products have shipped yet.",
+  "outOfStock": "Out of Stock",
+  "pagination": {
+    "next": "Next",
+    "pageOf": "Page {page} of {totalPages}",
+    "previous": "Prev",
+    "totalOrders": "({total} orders)"
+  },
+  "pickAllCreateShipment": "Pick All & Create Shipment",
+  "picked": "Picked",
+  "pickingSlipPdf": "Picking Slip PDF",
+  "placeholders": {
+    "notes": "Shipment notes",
+    "tracking": "Tracking #"
+  },
+  "printPickingSlip": "Print Picking Slip",
+  "qtyOption": "(qty: {qty})",
+  "selectBin": "Select Bin...",
+  "selectOrder": "Select an order from the list to pick items.",
+  "shipments": "Shipments",
+  "shipped": "Shipped",
+  "statuses": {
+    "dispatched": "Dispatched",
+    "done": "Fully Picked",
+    "partial": "Partially Picked",
+    "picked": "Picked"
+  },
+  "tabs": {
+    "blocked": "Blocked",
+    "partial": "Partial",
+    "ready": "Ready"
+  },
+  "title": "Picking",
+  "toPick": "To Pick",
+  "tooltips": {
+    "allocated": "Allocated",
+    "cancelPick": "Cancel Pick",
+    "partiallyPicked": "Partially picked",
+    "stockSpecificallyOrdered": "Stock was specifically ordered for this line"
+  },
+  "unavailable": "Unavailable"
+}

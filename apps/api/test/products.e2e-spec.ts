@@ -160,4 +160,40 @@ describe('Products (e2e)', () => {
       expect(demoRes.headers['cache-control']).toContain('public');
     }
   });
+
+  it('GET /api/products?productType=service — filters products by productType', async () => {
+    // 1. Create a service product
+    const srvNum = `SRV-E2E-${Date.now()}`;
+    const createRes = await request(app.getHttpServer())
+      .post('/api/products')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        productNumber: srvNum,
+        name: 'E2E Service Product',
+        productType: 'service',
+        baseUom: 'HOUR',
+        listPrice: '150.00',
+        standardCost: '75.00',
+      });
+    expect(createRes.status).toBe(201);
+    const srvId = createRes.body.productId;
+
+    // 2. Query with productType=service
+    const filterRes = await request(app.getHttpServer())
+      .get('/api/products?productType=service&limit=100')
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(filterRes.status).toBe(200);
+    expect(filterRes.body.data.length).toBeGreaterThanOrEqual(1);
+    const found = filterRes.body.data.find(
+      (p: { productId: string }) => p.productId === srvId,
+    );
+    expect(found).toBeDefined();
+    expect(found.productType).toBe('service');
+    expect(
+      filterRes.body.data.every(
+        (p: { productType: string }) => p.productType === 'service',
+      ),
+    ).toBe(true);
+  });
 });

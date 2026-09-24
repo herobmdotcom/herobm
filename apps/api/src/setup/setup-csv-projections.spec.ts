@@ -70,21 +70,23 @@ describe('CSV Extended Projections (Unit)', () => {
   });
 
   describe('Registry & Metadata', () => {
-    it('should register all 4 extended projections', () => {
+    it('should register all 5 extended projections', () => {
       expect(hasCsvProjection('customers_extended')).toBe(true);
       expect(hasCsvProjection('suppliers_extended')).toBe(true);
       expect(hasCsvProjection('products_extended')).toBe(true);
       expect(hasCsvProjection('sales_orders_extended')).toBe(true);
+      expect(hasCsvProjection('projects_extended')).toBe(true);
       expect(hasCsvProjection('unknown_projection')).toBe(false);
 
       const projections = getAllCsvProjections();
-      expect(projections.length).toBe(4);
+      expect(projections.length).toBe(5);
       expect(projections.map((p) => p.name)).toEqual(
         expect.arrayContaining([
           'Customers (Extended)',
           'Suppliers (Extended)',
           'Products (Extended)',
           'Sales Orders (Extended)',
+          'Projects (Extended)',
         ]),
       );
     });
@@ -262,6 +264,7 @@ describe('CSV Extended Projections (Unit)', () => {
       await pg.db.insert(uomDictionary).values({
         uomCode: 'BOX',
         description: 'Box of 100',
+        category: 'goods',
       });
 
       // 3. Seed product

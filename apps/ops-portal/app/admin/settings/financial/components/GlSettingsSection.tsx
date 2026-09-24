@@ -188,6 +188,21 @@ export function GlSettingsSection({ glSettings, updateGlSetting, glLoading, glAc
               {renderAccountField('defaultOtcCardAccountId', tSettings('labels.defaultOtcCard'), false)}
             </div>
           </div>
+
+          {/* 7. General Ledger & Equity Control Accounts */}
+          <div className="p-5 bg-[var(--bg-subtle)] rounded-lg flex flex-col gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px] text-[var(--color-primary-600)]">account_balance</span>
+                <h4 className="text-sm font-semibold text-foreground">{tSettings('financialSettings.domainGeneralLedger')}</h4>
+              </div>
+              <p className="text-xs text-muted mt-0.5">{tSettings('financialSettings.domainGeneralLedgerDesc')}</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+              {renderAccountField('defaultSuspenseAccountId', tSettings('labels.defaultSuspense'), true)}
+              {renderAccountField('defaultRetainedEarningsAccountId', tSettings('labels.defaultRetainedEarnings'), true)}
+            </div>
+          </div>
         </div>
       )}
     </div>

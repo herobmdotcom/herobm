@@ -198,6 +198,7 @@ export class PurchaseDebitNotesService {
         currencyCode: purchaseDebitNotes.currencyCode,
         stateCode: purchaseDebitNotes.stateCode,
         notes: purchaseDebitNotes.notes,
+        metadata: purchaseDebitNotes.metadata,
         createdBy: purchaseDebitNotes.createdBy,
         createdOn: purchaseDebitNotes.createdOn,
         modifiedOn: purchaseDebitNotes.modifiedOn,

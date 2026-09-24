@@ -39,10 +39,14 @@ describe('Projection Completeness', () => {
   describe('OrdersQueryService.findOne — salesOrderLineItems', () => {
     const SCHEMA_TABLE = 'salesOrderLineItems';
 
-    // These columns are intentionally NOT projected because they come
-    // from a joined table instead of the line items table itself.
-    // productNumber comes from the products table via leftJoin.
-    const JOINED_EXTRAS = ['productNumber'];
+    // These columns come from joined tables (e.g. coreProducts via leftJoin)
+    // instead of the line items table itself.
+    const JOINED_EXTRAS = [
+      'productNumber',
+      'productType',
+      'structureType',
+      'baseUom',
+    ];
 
     it('should project every schema column from salesOrderLineItems', () => {
       const schemaColumns = getSchemaColumns(schemaPath, SCHEMA_TABLE);
@@ -65,7 +69,7 @@ describe('Projection Completeness', () => {
       expect(missingColumns).toEqual([]);
     });
 
-    it('should include joined fields (productNumber) in the projection', () => {
+    it('should include joined fields in the projection', () => {
       const projectionFields = getFindOneProjectionFields(
         servicePath,
         'async findOne(',

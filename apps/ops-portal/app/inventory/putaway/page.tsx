@@ -26,6 +26,12 @@ interface PutawayLine {
     quantity: string;
     createdOn: string;
     returnReason?: string;
+    projectId?: string | null;
+    projectNumber?: string | null;
+    projectName?: string | null;
+    projectStagingBinId?: string | null;
+    projectStagingBinNumber?: string | null;
+    isProjectReturn?: boolean | null;
 }
 
 interface BinInfo {
@@ -49,7 +55,7 @@ export default function PutawayPage() {
     const { app } = useSettings();
 
     const [locations, setLocations] = useState<api.InventoryLocationResponseDto[]>([]);
-    const [selectedLocationId, setSelectedLocationId] = useState<string>('');
+    const [selectedLocationId, setSelectedLocationId, locReady] = usePersistedSetting('putaway-location', 'UNSET');
     const [pendingLines, setPendingLines] = useState<PutawayLine[]>([]);
     const [selectedLine, setSelectedLine] = useState<PutawayLine | null>(null);
     const [loadingLines, setLoadingLines] = useState(false);
@@ -69,22 +75,30 @@ export default function PutawayPage() {
 
     // Fetch Locations
     useEffect(() => {
-        api.inventoryControllerFindAllLocations({} )
+        api.inventoryControllerFindAllLocations({})
             .then((response) => {
                 const res = response.data;
                 const locs = res || [];
                 setLocations(locs);
-                if (locs.length > 0) {
-                    const defaultLocId = app?.defaultFulfillmentLocationId || locs[0].locationId;
-                    setSelectedLocationId(defaultLocId);
-                }
             })
             .catch(err => reportError(err, 'Failed to load locations'));
-    }, [app?.defaultFulfillmentLocationId]);
+    }, []);
+
+    useEffect(() => {
+        if (locReady && locations.length > 0) {
+            if (selectedLocationId === 'UNSET') {
+                const defaultLocId = app?.defaultFulfillmentLocationId || locations[0].locationId;
+                setSelectedLocationId(defaultLocId as string);
+            } else if (selectedLocationId !== '' && !locations.some(l => l.locationId === selectedLocationId)) {
+                const defaultLocId = app?.defaultFulfillmentLocationId || locations[0].locationId;
+                setSelectedLocationId(defaultLocId as string);
+            }
+        }
+    }, [locReady, locations, selectedLocationId, app?.defaultFulfillmentLocationId, setSelectedLocationId]);
 
     // Fetch Pending Lines
     useEffect(() => {
-        if (!selectedLocationId) return;
+        if (!locReady || !selectedLocationId || selectedLocationId === 'UNSET') return;
 
         setLoadingLines(true);
         setSelectedLine(null);
@@ -97,18 +111,23 @@ export default function PutawayPage() {
             })
             .catch(err => reportError(err, 'Failed to load pending lines'))
             .finally(() => setLoadingLines(false));
-    }, [selectedLocationId]);
+    }, [selectedLocationId, locReady]);
 
     // Fetch Context for Selected Line
     useEffect(() => {
-        if (!selectedLine || !selectedLocationId) {
+        if (!selectedLine || !selectedLocationId || selectedLocationId === 'UNSET') {
             setContext(null);
             return;
         }
 
         setLoadingContext(true);
         setError(null);
-        api.inventoryControllerGetPutawayContext({ productId: selectedLine.productId, locationId: selectedLocationId })
+        api.inventoryControllerGetPutawayContext({
+            productId: selectedLine.productId,
+            locationId: selectedLocationId,
+            projectId: selectedLine.projectId || undefined,
+            isProjectReturn: selectedLine.isProjectReturn ?? undefined,
+        })
             .then((response) => {
                 const contextData = response.data ;
                 setContext(contextData as unknown as PutawayContext);
@@ -149,7 +168,7 @@ export default function PutawayPage() {
                 putaways: [
                     {
                         lineId: selectedLine.id,
-                        sourceType: selectedLine.sourceType as "goods_receipt" | "sales_return",
+                        sourceType: selectedLine.sourceType as "goods_receipt" | "sales_return" | "transfer_receipt" | "work_order",
                         destinationBinId: selectedBinId,
                         quantity: selectedLine.quantity,
                         newTotalQuantity,
@@ -188,10 +207,34 @@ export default function PutawayPage() {
                         </div>
                     )}
 
-                    {selectedLine?.returnReason && (
-                        <div className="mb-4 text-sm">
-                            <span className="font-medium text-[var(--text-muted)]">Return Reason: </span>
-                            <span className="text-[var(--text-primary)]">{selectedLine.returnReason}</span>
+                    {(selectedLine?.projectNumber || selectedLine?.returnReason) && (
+                        <div className="mb-4 space-y-1 text-sm">
+                            {selectedLine?.projectNumber && (
+                                <div>
+                                    <span className="font-medium text-[var(--text-muted)]">
+                                        {selectedLine.isProjectReturn ? t('putaway.projectReturn') : t('putaway.projectStaging')}{' '}
+                                    </span>
+                                    <span className="text-[var(--text-primary)]">
+                                        {selectedLine.projectNumber} {selectedLine.projectName ? `— ${selectedLine.projectName}` : ''}
+                                    </span>
+                                </div>
+                            )}
+
+                            {selectedLine?.projectNumber && (selectedLine.projectStagingBinNumber || (selectedLine.projectStagingBinId && context?.availableBins.find(b => b.binId === selectedLine.projectStagingBinId)?.binNumber)) && (
+                                <div>
+                                    <span className="font-medium text-[var(--text-muted)]">{t('putaway.stagingBin')} </span>
+                                    <span className="text-[var(--text-primary)]">
+                                        {selectedLine.projectStagingBinNumber || context?.availableBins.find(b => b.binId === selectedLine.projectStagingBinId)?.binNumber}
+                                    </span>
+                                </div>
+                            )}
+
+                            {selectedLine?.returnReason && (
+                                <div>
+                                    <span className="font-medium text-[var(--text-muted)]">{t('putaway.returnReason')} </span>
+                                    <span className="text-[var(--text-primary)]">{selectedLine.returnReason}</span>
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -383,7 +426,7 @@ export default function PutawayPage() {
                 <>
                     <span className="text-sm font-semibold text-[var(--text-muted)]">{tCommon('location')}:</span>
                     <select
-                        value={selectedLocationId}
+                        value={selectedLocationId === 'UNSET' ? '' : selectedLocationId}
                         onChange={(e) => setSelectedLocationId(e.target.value)}
                         className="input text-sm w-full sm:w-48"
                     >
@@ -436,6 +479,8 @@ export default function PutawayPage() {
                                                 <span className="font-bold text-[var(--warning)] uppercase">{t('putaway.return')}</span>
                                             ) : line.sourceType === 'work_order' ? (
                                                 <span className="font-bold text-sky-500 uppercase">WORK ORDER</span>
+                                            ) : line.sourceType === 'transfer_receipt' ? (
+                                                <span className="font-bold text-purple-600 uppercase">TRANSFER</span>
                                             ) : (
                                                 <span className="font-bold text-[var(--success)] uppercase">{t('putaway.receipt')}</span>
                                             )}
@@ -443,6 +488,14 @@ export default function PutawayPage() {
                                             <span className="uppercase tracking-wider">{line.productNumber}</span>
                                             <span className="text-[var(--text-muted)]">•</span>
                                             <span>{t('putaway.ref', { ref: line.referenceNumber })}</span>
+                                            {line.projectNumber && (
+                                                <>
+                                                    <span className="text-[var(--text-muted)]">•</span>
+                                                    <span>
+                                                        Project: {line.projectNumber}
+                                                    </span>
+                                                </>
+                                            )}
                                         </div>
                                         {line.returnReason && (
                                             <div className="mt-1 text-[11px] text-[var(--text-secondary)] truncate">

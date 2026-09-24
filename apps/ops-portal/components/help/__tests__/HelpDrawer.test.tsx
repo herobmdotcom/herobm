@@ -56,6 +56,29 @@ describe('MarkdownRenderer', () => {
     expect(screen.getByText('NOTE')).toBeInTheDocument();
   });
 
+  it('escapes raw HTML tags and disables XSS injection in markdown and alerts (BL-059)', () => {
+    const maliciousMarkdown = `
+# Safe Heading
+<script>window.pwned = true;</script>
+<img src="x" onerror="alert(1)" alt="exploit" />
+<iframe src="https://evil.com"></iframe>
+
+> [!WARNING]
+> <script>alert("nested xss");</script>
+> <a href="javascript:alert(2)">malicious link</a>
+`;
+    const { container } = render(<MarkdownRenderer content={maliciousMarkdown} />);
+
+    // Assert that no dangerous DOM elements are injected
+    expect(container.querySelector('script')).toBeNull();
+    expect(container.querySelector('iframe')).toBeNull();
+    expect(container.querySelector('img[onerror]')).toBeNull();
+
+    // Verify the raw text content is escaped as text instead of parsed as HTML
+    expect(container.textContent).toContain('<script>');
+    expect(container.textContent).toContain('<iframe');
+  });
+
   it('renders external links with target="_blank" and rewrites relative .md doc links', () => {
     const markdown = `Check [External Resource](https://github.com/frappe/erpnext) and [Fiscal Periods](./fiscal_periods.md).`;
     render(<MarkdownRenderer content={markdown} />);

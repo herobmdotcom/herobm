@@ -43,6 +43,8 @@ import {
   EmailDocumentDto,
   FulfillDirectOrderDto,
   DirectFulfillmentResponseDto,
+  UpdateSalesSettingsDto,
+  SalesSettingsResponseDto,
 } from './dto';
 import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import { AuthUser } from '../auth/auth-user.decorator';
@@ -74,6 +76,29 @@ export class OrdersController {
     private readonly ordersQueryService: OrdersQueryService,
     private readonly directFulfillmentService: DirectFulfillmentService,
   ) {}
+
+  @Get('settings')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Sales Settings',
+    description: 'Retrieve sales domain settings and metadata schemas.',
+  })
+  @ApiOkResponse({ type: SalesSettingsResponseDto })
+  async getSettings() {
+    return this.ordersService.getSettings();
+  }
+
+  @Patch('settings')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Sales Settings',
+    description: 'Update sales domain settings and metadata schemas.',
+  })
+  @ApiBody({ type: UpdateSalesSettingsDto })
+  @ApiOkResponse({ type: SalesSettingsResponseDto })
+  async updateSettings(@Body() body: UpdateSalesSettingsDto) {
+    return this.ordersService.updateSettings(body);
+  }
 
   // -------------------------------------------------------------------------
   // Read endpoints — unified list (ABM + app via UNION)

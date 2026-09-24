@@ -31,6 +31,8 @@ import {
   EmptyBodyDto,
   SuccessResponseDto,
   OrganizationQueryDto,
+  CrmSettingsResponseDto,
+  UpdateCrmSettingsDto,
 } from './dto';
 import { ApiPaginatedResponse } from '../common/pagination';
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
@@ -42,6 +44,29 @@ import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 @CasbinResource(SystemResource.CRM)
 export class OrganizationsController {
   constructor(private readonly organizationsService: OrganizationsService) {}
+
+  @Get('settings')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get CRM Settings',
+    description: 'Retrieve the CRM domain settings and metadata schemas.',
+  })
+  @ApiOkResponse({ type: CrmSettingsResponseDto })
+  async getSettings() {
+    return this.organizationsService.getSettings();
+  }
+
+  @Patch('settings')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update CRM Settings',
+    description: 'Update the CRM domain settings and metadata schemas.',
+  })
+  @ApiBody({ type: UpdateCrmSettingsDto })
+  @ApiOkResponse({ type: CrmSettingsResponseDto })
+  async updateSettings(@Body() body: UpdateCrmSettingsDto) {
+    return this.organizationsService.updateSettings(body);
+  }
 
   @Post()
   @CasbinAction('write')

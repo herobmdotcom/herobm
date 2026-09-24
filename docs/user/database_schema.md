@@ -134,23 +134,25 @@ flowchart TD
 
 ## Schema Summary & Table Directory
 
-The `herobm_core` schema contains **118 tables**, **1262 columns**, and **243 foreign key relationships** across **8 business domains**:
+The `herobm_core` schema contains **133 tables**, **1449 columns**, and **280 foreign key relationships** across **8 business domains**:
 
 | Table | Domain | Primary Key | Columns | Foreign Keys | Live Rows |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| [contacts](#table-contacts) | CRM & Stakeholders | `contact_id` | 14 | 2 | — |
+| [contacts](#table-contacts) | CRM & Stakeholders | `contact_id` | 15 | 2 | — |
 | [crm_activities](#table-crm-activities) | CRM & Stakeholders | `activity_id` | 16 | 5 | — |
 | [customer_delivery_addresses](#table-customer-delivery-addresses) | CRM & Stakeholders | `id` | 17 | 1 | — |
 | [customer_groups](#table-customer-groups) | CRM & Stakeholders | `customer_group_id` | 14 | 6 | — |
-| [customers](#table-customers) | CRM & Stakeholders | `customer_id` | 24 | 4 | — |
-| [opportunities](#table-opportunities) | CRM & Stakeholders | `opportunity_id` | 14 | 1 | — |
+| [customers](#table-customers) | CRM & Stakeholders | `customer_id` | 25 | 4 | — |
+| [opportunities](#table-opportunities) | CRM & Stakeholders | `opportunity_id` | 15 | 1 | — |
 | [opportunity_contacts](#table-opportunity-contacts) | CRM & Stakeholders | `opportunity_contact_id` | 5 | 2 | — |
 | [opportunity_notes](#table-opportunity-notes) | CRM & Stakeholders | `note_id` | 5 | 2 | — |
 | [opportunity_organizations](#table-opportunity-organizations) | CRM & Stakeholders | `opportunity_organization_id` | 5 | 2 | — |
 | [organization_contact_links](#table-organization-contact-links) | CRM & Stakeholders | `link_id` | 6 | 2 | — |
 | [organization_notes](#table-organization-notes) | CRM & Stakeholders | `note_id` | 5 | 2 | — |
 | [organization_organization_links](#table-organization-organization-links) | CRM & Stakeholders | `link_id` | 5 | 2 | — |
-| [organizations](#table-organizations) | CRM & Stakeholders | `organization_id` | 25 | 3 | — |
+| [organizations](#table-organizations) | CRM & Stakeholders | `organization_id` | 26 | 3 | — |
+| [project_notes](#table-project-notes) | CRM & Stakeholders | `note_id` | 5 | 2 | — |
+| [projects](#table-projects) | CRM & Stakeholders | `project_id` | 23 | 5 | — |
 | [trading_terms](#table-trading-terms) | CRM & Stakeholders | `trading_terms_id` | 10 | 0 | — |
 | [discount_matrix](#table-discount-matrix) | Products & Catalog | `discount_matrix_id` | 7 | 3 | — |
 | [product_components](#table-product-components) | Products & Catalog | `component_id` | 7 | 2 | — |
@@ -159,27 +161,27 @@ The `herobm_core` schema contains **118 tables**, **1262 columns**, and **243 fo
 | [product_images](#table-product-images) | Products & Catalog | `image_id` | 10 | 1 | — |
 | [product_suppliers](#table-product-suppliers) | Products & Catalog | `product_supplier_id` | 18 | 2 | — |
 | [product_uoms](#table-product-uoms) | Products & Catalog | `product_uom_id` | 7 | 2 | — |
-| [products](#table-products) | Products & Catalog | `product_id` | 31 | 6 | — |
-| [uom_dictionary](#table-uom-dictionary) | Products & Catalog | `uom_code` | 3 | 0 | — |
+| [products](#table-products) | Products & Catalog | `product_id` | 32 | 6 | — |
+| [uom_dictionary](#table-uom-dictionary) | Products & Catalog | `uom_code` | 4 | 0 | — |
 | [backorders](#table-backorders) | Sales & Distribution | `backorder_id` | 15 | 10 | — |
 | [sales_credit_note_lines](#table-sales-credit-note-lines) | Sales & Distribution | `credit_note_line_id` | 13 | 4 | — |
-| [sales_credit_notes](#table-sales-credit-notes) | Sales & Distribution | `credit_note_id` | 19 | 4 | — |
+| [sales_credit_notes](#table-sales-credit-notes) | Sales & Distribution | `credit_note_id` | 20 | 4 | — |
 | [sales_events](#table-sales-events) | Sales & Distribution | `event_id` | 8 | 0 | — |
 | [sales_invoice_lines](#table-sales-invoice-lines) | Sales & Distribution | `invoice_line_id` | 6 | 2 | — |
-| [sales_invoices](#table-sales-invoices) | Sales & Distribution | `invoice_id` | 23 | 2 | — |
+| [sales_invoices](#table-sales-invoices) | Sales & Distribution | `invoice_id` | 24 | 2 | — |
 | [sales_order_lines](#table-sales-order-lines) | Sales & Distribution | `sales_order_line_id` | 19 | 5 | — |
 | [sales_order_picks](#table-sales-order-picks) | Sales & Distribution | `pick_id` | 10 | 4 | — |
 | [sales_order_return_lines](#table-sales-order-return-lines) | Sales & Distribution | `return_line_id` | 14 | 3 | — |
 | [sales_order_returns](#table-sales-order-returns) | Sales & Distribution | `return_id` | 9 | 2 | — |
 | [sales_order_shipment_lines](#table-sales-order-shipment-lines) | Sales & Distribution | `shipment_line_id` | 4 | 2 | — |
-| [sales_order_shipments](#table-sales-order-shipments) | Sales & Distribution | `shipment_id` | 11 | 2 | — |
-| [sales_orders](#table-sales-orders) | Sales & Distribution | `sales_order_id` | 33 | 3 | — |
+| [sales_order_shipments](#table-sales-order-shipments) | Sales & Distribution | `shipment_id` | 12 | 2 | — |
+| [sales_orders](#table-sales-orders) | Sales & Distribution | `sales_order_id` | 34 | 3 | — |
 | [goods_received](#table-goods-received) | Purchasing & Procurement | `goods_received_id` | 10 | 2 | — |
 | [goods_received_lines](#table-goods-received-lines) | Purchasing & Procurement | `goods_received_line_id` | 9 | 4 | — |
 | [procurement_events](#table-procurement-events) | Purchasing & Procurement | `event_id` | 8 | 0 | — |
 | [purchase_debit_note_lines](#table-purchase-debit-note-lines) | Purchasing & Procurement | `debit_note_line_id` | 10 | 4 | — |
 | [purchase_debit_note_shipments](#table-purchase-debit-note-shipments) | Purchasing & Procurement | `debit_note_shipment_id` | 4 | 2 | — |
-| [purchase_debit_notes](#table-purchase-debit-notes) | Purchasing & Procurement | `debit_note_id` | 19 | 3 | — |
+| [purchase_debit_notes](#table-purchase-debit-notes) | Purchasing & Procurement | `debit_note_id` | 20 | 3 | — |
 | [purchase_invoice_lines](#table-purchase-invoice-lines) | Purchasing & Procurement | `invoice_line_id` | 10 | 4 | — |
 | [purchase_invoice_receipts](#table-purchase-invoice-receipts) | Purchasing & Procurement | `invoice_receipt_id` | 4 | 2 | — |
 | [purchase_invoices](#table-purchase-invoices) | Purchasing & Procurement | `invoice_id` | 23 | 2 | — |
@@ -188,23 +190,23 @@ The `herobm_core` schema contains **118 tables**, **1262 columns**, and **243 fo
 | [purchase_order_return_shipment_lines](#table-purchase-order-return-shipment-lines) | Purchasing & Procurement | `shipment_line_id` | 4 | 2 | — |
 | [purchase_order_return_shipments](#table-purchase-order-return-shipments) | Purchasing & Procurement | `shipment_id` | 10 | 2 | — |
 | [purchase_order_returns](#table-purchase-order-returns) | Purchasing & Procurement | `return_id` | 8 | 1 | — |
-| [purchase_orders](#table-purchase-orders) | Purchasing & Procurement | `purchase_order_id` | 17 | 2 | — |
+| [purchase_orders](#table-purchase-orders) | Purchasing & Procurement | `purchase_order_id` | 18 | 2 | — |
 | [supplier_expiries](#table-supplier-expiries) | Purchasing & Procurement | `expiry_id` | 8 | 1 | — |
 | [supplier_groups](#table-supplier-groups) | Purchasing & Procurement | `supplier_group_id` | 17 | 6 | — |
-| [suppliers](#table-suppliers) | Purchasing & Procurement | `vendor_id` | 26 | 4 | — |
+| [suppliers](#table-suppliers) | Purchasing & Procurement | `vendor_id` | 27 | 4 | — |
 | [bin_contents](#table-bin-contents) | Warehouse & Inventory | `bin_content_id` | 5 | 2 | — |
 | [bins](#table-bins) | Warehouse & Inventory | `bin_id` | 12 | 1 | — |
 | [inventory_entries](#table-inventory-entries) | Warehouse & Inventory | `entry_id` | 10 | 0 | — |
 | [inventory_events](#table-inventory-events) | Warehouse & Inventory | `event_id` | 8 | 0 | — |
 | [inventory_ledger](#table-inventory-ledger) | Warehouse & Inventory | `ledger_id` | 7 | 5 | — |
 | [locations](#table-locations) | Warehouse & Inventory | `location_id` | 14 | 0 | — |
-| [transfer_order_lines](#table-transfer-order-lines) | Warehouse & Inventory | `transfer_order_line_id` | 6 | 2 | — |
+| [transfer_order_lines](#table-transfer-order-lines) | Warehouse & Inventory | `transfer_order_line_id` | 7 | 3 | — |
 | [transfer_order_picks](#table-transfer-order-picks) | Warehouse & Inventory | `pick_id` | 10 | 4 | — |
 | [transfer_order_receipt_lines](#table-transfer-order-receipt-lines) | Warehouse & Inventory | `receipt_line_id` | 7 | 4 | — |
 | [transfer_order_receipts](#table-transfer-order-receipts) | Warehouse & Inventory | `receipt_id` | 7 | 1 | — |
 | [transfer_order_shipment_lines](#table-transfer-order-shipment-lines) | Warehouse & Inventory | `shipment_line_id` | 6 | 4 | — |
-| [transfer_order_shipments](#table-transfer-order-shipments) | Warehouse & Inventory | `shipment_id` | 10 | 1 | — |
-| [transfer_orders](#table-transfer-orders) | Warehouse & Inventory | `transfer_order_id` | 10 | 2 | — |
+| [transfer_order_shipments](#table-transfer-order-shipments) | Warehouse & Inventory | `shipment_id` | 11 | 1 | — |
+| [transfer_orders](#table-transfer-orders) | Warehouse & Inventory | `transfer_order_id` | 13 | 4 | — |
 | [warehouse_events](#table-warehouse-events) | Warehouse & Inventory | `event_id` | 8 | 0 | — |
 | [zones](#table-zones) | Warehouse & Inventory | `zone_id` | 9 | 1 | — |
 | [activities](#table-activities) | Financials & General Ledger | `activity_id` | 7 | 0 | — |
@@ -213,13 +215,13 @@ The `herobm_core` schema contains **118 tables**, **1262 columns**, and **243 fo
 | [csv_mapping_profiles](#table-csv-mapping-profiles) | Financials & General Ledger | `profile_id` | 12 | 0 | — |
 | [exchange_rates](#table-exchange-rates) | Financials & General Ledger | `exchange_rate_id` | 7 | 0 | — |
 | [financial_events](#table-financial-events) | Financials & General Ledger | `event_id` | 8 | 0 | — |
-| [gl_accounts](#table-gl-accounts) | Financials & General Ledger | `gl_account_id` | 12 | 0 | — |
+| [gl_accounts](#table-gl-accounts) | Financials & General Ledger | `gl_account_id` | 13 | 0 | — |
 | [gl_fiscal_periods](#table-gl-fiscal-periods) | Financials & General Ledger | `period_id` | 14 | 0 | — |
 | [gl_journal_entries](#table-gl-journal-entries) | Financials & General Ledger | `journal_entry_id` | 13 | 1 | — |
 | [gl_journal_lines](#table-gl-journal-lines) | Financials & General Ledger | `journal_line_id` | 17 | 6 | — |
 | [gl_match_groups](#table-gl-match-groups) | Financials & General Ledger | `match_group_id` | 5 | 1 | — |
 | [gl_reconciliations](#table-gl-reconciliations) | Financials & General Ledger | `reconciliation_id` | 8 | 1 | — |
-| [gl_settings](#table-gl-settings) | Financials & General Ledger | `settings_id` | 30 | 22 | — |
+| [gl_settings](#table-gl-settings) | Financials & General Ledger | `settings_id` | 32 | 24 | — |
 | [payment_allocations](#table-payment-allocations) | Financials & General Ledger | `allocation_id` | 7 | 1 | — |
 | [payment_entries](#table-payment-entries) | Financials & General Ledger | `payment_id` | 19 | 1 | — |
 | [payment_lines](#table-payment-lines) | Financials & General Ledger | `payment_line_id` | 5 | 2 | — |
@@ -230,10 +232,10 @@ The `herobm_core` schema contains **118 tables**, **1262 columns**, and **243 fo
 | [tax_positions](#table-tax-positions) | Financials & General Ledger | `tax_position_id` | 3 | 0 | — |
 | [work_order_components](#table-work-order-components) | Manufacturing & Work Orders | `work_order_component_id` | 5 | 2 | — |
 | [work_order_picks](#table-work-order-picks) | Manufacturing & Work Orders | `pick_id` | 9 | 3 | — |
-| [work_orders](#table-work-orders) | Manufacturing & Work Orders | `work_order_id` | 16 | 4 | — |
+| [work_orders](#table-work-orders) | Manufacturing & Work Orders | `work_order_id` | 17 | 4 | — |
 | [_pipeline_jobs](#table--pipeline-jobs) | System, Security & Telemetry | `job_id` | 8 | 0 | — |
 | [api_keys](#table-api-keys) | System, Security & Telemetry | `api_key_id` | 8 | 0 | — |
-| [app_settings](#table-app-settings) | System, Security & Telemetry | `settings_id` | 32 | 7 | — |
+| [app_settings](#table-app-settings) | System, Security & Telemetry | `settings_id` | 34 | 7 | — |
 | [business_report_events](#table-business-report-events) | System, Security & Telemetry | `event_id` | 8 | 0 | — |
 | [business_reports](#table-business-reports) | System, Security & Telemetry | `id` | 8 | 0 | — |
 | [casbin_rule](#table-casbin-rule) | System, Security & Telemetry | `id` | 8 | 0 | — |
@@ -249,13 +251,27 @@ The `herobm_core` schema contains **118 tables**, **1262 columns**, and **243 fo
 | [pdf_template_hooks](#table-pdf-template-hooks) | System, Security & Telemetry | `id` | 5 | 1 | — |
 | [pdf_templates](#table-pdf-templates) | System, Security & Telemetry | `id` | 9 | 0 | — |
 | [system_events](#table-system-events) | System, Security & Telemetry | `event_id` | 8 | 0 | — |
-| [tenant_settings](#table-tenant-settings) | System, Security & Telemetry | `tenant_settings_id` | 19 | 0 | — |
+| [tenant_settings](#table-tenant-settings) | System, Security & Telemetry | `tenant_settings_id` | 20 | 0 | — |
 | [user_events](#table-user-events) | System, Security & Telemetry | `event_id` | 7 | 0 | — |
 | [user_settings](#table-user-settings) | System, Security & Telemetry | `user_id` | 6 | 1 | — |
 | [user_two_factor](#table-user-two-factor) | System, Security & Telemetry | `user_id` | 7 | 1 | — |
 | [users](#table-users) | System, Security & Telemetry | `user_id` | 8 | 0 | — |
 | [webhooks](#table-webhooks) | System, Security & Telemetry | `webhook_id` | 6 | 0 | — |
 | [crm_activity_contacts](#table-crm-activity-contacts) | System, Security & Telemetry | `activity_contact_id` | 4 | 2 | — |
+| [crm_settings](#table-crm-settings) | System, Security & Telemetry | `settings_id` | 8 | 0 | — |
+| [manufacturing_settings](#table-manufacturing-settings) | System, Security & Telemetry | `manufacturing_settings_id` | 3 | 0 | — |
+| [product_settings](#table-product-settings) | System, Security & Telemetry | `settings_id` | 4 | 0 | — |
+| [project_budget_lines](#table-project-budget-lines) | System, Security & Telemetry | `budget_line_id` | 15 | 4 | — |
+| [project_ledger_entries](#table-project-ledger-entries) | System, Security & Telemetry | `ledger_id` | 25 | 7 | — |
+| [project_resource_assignments](#table-project-resource-assignments) | System, Security & Telemetry | `assignment_id` | 6 | 2 | — |
+| [project_resources](#table-project-resources) | System, Security & Telemetry | `resource_id` | 13 | 4 | — |
+| [project_settings](#table-project-settings) | System, Security & Telemetry | `settings_id` | 4 | 0 | — |
+| [project_tasks](#table-project-tasks) | System, Security & Telemetry | `project_task_id` | 16 | 2 | — |
+| [purchasing_settings](#table-purchasing-settings) | System, Security & Telemetry | `purchasing_settings_id` | 4 | 0 | — |
+| [sales_settings](#table-sales-settings) | System, Security & Telemetry | `sales_settings_id` | 5 | 0 | — |
+| [stocktake_counts](#table-stocktake-counts) | System, Security & Telemetry | `stocktake_count_id` | 10 | 4 | — |
+| [stocktake_lines](#table-stocktake-lines) | System, Security & Telemetry | `stocktake_line_id` | 10 | 3 | — |
+| [stocktakes](#table-stocktakes) | System, Security & Telemetry | `stocktake_id` | 22 | 2 | — |
 
 ---
 
@@ -336,9 +352,11 @@ The table below catalogs all referential constraints across the application data
 | `gl_settings` | `default_otc_cash_account_id` | `gl_accounts` | `gl_account_id` | `RESTRICT` |
 | `gl_settings` | `default_ppv_account_id` | `gl_accounts` | `gl_account_id` | `RESTRICT` |
 | `gl_settings` | `default_purchase_tax_account_id` | `gl_accounts` | `gl_account_id` | `RESTRICT` |
+| `gl_settings` | `default_retained_earnings_account_id` | `gl_accounts` | `gl_account_id` | `RESTRICT` |
 | `gl_settings` | `default_revenue_account_id` | `gl_accounts` | `gl_account_id` | `RESTRICT` |
 | `gl_settings` | `default_sales_tax_account_id` | `gl_accounts` | `gl_account_id` | `RESTRICT` |
 | `gl_settings` | `default_shrinkage_account_id` | `gl_accounts` | `gl_account_id` | `RESTRICT` |
+| `gl_settings` | `default_suspense_account_id` | `gl_accounts` | `gl_account_id` | `RESTRICT` |
 | `gl_settings` | `realised_fx_gain_account_id` | `gl_accounts` | `gl_account_id` | `RESTRICT` |
 | `gl_settings` | `realised_fx_loss_account_id` | `gl_accounts` | `gl_account_id` | `RESTRICT` |
 | `gl_settings` | `unrealised_fx_gain_account_id` | `gl_accounts` | `gl_account_id` | `RESTRICT` |
@@ -398,6 +416,32 @@ The table below catalogs all referential constraints across the application data
 | `products` | `product_group_id` | `product_groups` | `product_group_id` | `RESTRICT` |
 | `products` | `purchase_tax_category_id` | `tax_categories` | `tax_category_id` | `RESTRICT` |
 | `products` | `sales_tax_category_id` | `tax_categories` | `tax_category_id` | `RESTRICT` |
+| `project_budget_lines` | `product_id` | `products` | `product_id` | `RESTRICT` |
+| `project_budget_lines` | `project_id` | `projects` | `project_id` | `RESTRICT` |
+| `project_budget_lines` | `project_task_id` | `project_tasks` | `project_task_id` | `RESTRICT` |
+| `project_budget_lines` | `resource_id` | `project_resources` | `resource_id` | `RESTRICT` |
+| `project_ledger_entries` | `budget_line_id` | `project_budget_lines` | `budget_line_id` | `SET NULL` |
+| `project_ledger_entries` | `inventory_entry_id` | `inventory_entries` | `entry_id` | `RESTRICT` |
+| `project_ledger_entries` | `product_id` | `products` | `product_id` | `RESTRICT` |
+| `project_ledger_entries` | `project_id` | `projects` | `project_id` | `RESTRICT` |
+| `project_ledger_entries` | `project_task_id` | `project_tasks` | `project_task_id` | `RESTRICT` |
+| `project_ledger_entries` | `resource_id` | `project_resources` | `resource_id` | `RESTRICT` |
+| `project_ledger_entries` | `user_id` | `users` | `user_id` | `RESTRICT` |
+| `project_notes` | `created_by_id` | `users` | `user_id` | `RESTRICT` |
+| `project_notes` | `project_id` | `projects` | `project_id` | `cascade` |
+| `project_resource_assignments` | `project_id` | `projects` | `project_id` | `cascade` |
+| `project_resource_assignments` | `resource_id` | `project_resources` | `resource_id` | `RESTRICT` |
+| `project_resources` | `base_uom` | `uom_dictionary` | `uom_code` | `RESTRICT` |
+| `project_resources` | `service_product_id` | `products` | `product_id` | `RESTRICT` |
+| `project_resources` | `user_id` | `users` | `user_id` | `RESTRICT` |
+| `project_resources` | `vendor_id` | `suppliers` | `vendor_id` | `RESTRICT` |
+| `project_tasks` | `parent_task_id` | `project_tasks` | `project_task_id` | `RESTRICT` |
+| `project_tasks` | `project_id` | `projects` | `project_id` | `RESTRICT` |
+| `projects` | `customer_id` | `customers` | `customer_id` | `RESTRICT` |
+| `projects` | `opportunity_id` | `opportunities` | `opportunity_id` | `RESTRICT` |
+| `projects` | `project_manager_id` | `users` | `user_id` | `RESTRICT` |
+| `projects` | `staging_bin_id` | `bins` | `bin_id` | `RESTRICT` |
+| `projects` | `staging_location_id` | `locations` | `location_id` | `RESTRICT` |
 | `purchase_debit_note_lines` | `account_id` | `gl_accounts` | `gl_account_id` | `RESTRICT` |
 | `purchase_debit_note_lines` | `debit_note_id` | `purchase_debit_notes` | `debit_note_id` | `RESTRICT` |
 | `purchase_debit_note_lines` | `purchase_order_line_id` | `purchase_order_lines` | `purchase_order_line_id` | `RESTRICT` |
@@ -464,6 +508,15 @@ The table below catalogs all referential constraints across the application data
 | `sales_orders` | `customer_id` | `customers` | `customer_id` | `RESTRICT` |
 | `sales_orders` | `fulfillment_location_id` | `locations` | `location_id` | `RESTRICT` |
 | `sales_orders` | `opportunity_id` | `opportunities` | `opportunity_id` | `RESTRICT` |
+| `stocktake_counts` | `bin_id` | `bins` | `bin_id` | `RESTRICT` |
+| `stocktake_counts` | `product_id` | `products` | `product_id` | `RESTRICT` |
+| `stocktake_counts` | `stocktake_id` | `stocktakes` | `stocktake_id` | `cascade` |
+| `stocktake_counts` | `stocktake_line_id` | `stocktake_lines` | `stocktake_line_id` | `cascade` |
+| `stocktake_lines` | `bin_id` | `bins` | `bin_id` | `RESTRICT` |
+| `stocktake_lines` | `product_id` | `products` | `product_id` | `RESTRICT` |
+| `stocktake_lines` | `stocktake_id` | `stocktakes` | `stocktake_id` | `cascade` |
+| `stocktakes` | `inventory_entry_id` | `inventory_entries` | `entry_id` | `RESTRICT` |
+| `stocktakes` | `location_id` | `locations` | `location_id` | `RESTRICT` |
 | `supplier_expiries` | `vendor_id` | `suppliers` | `vendor_id` | `RESTRICT` |
 | `supplier_groups` | `default_activity_id` | `activities` | `activity_id` | `RESTRICT` |
 | `supplier_groups` | `default_ap_account_id` | `gl_accounts` | `gl_account_id` | `RESTRICT` |
@@ -479,6 +532,7 @@ The table below catalogs all referential constraints across the application data
 | `tax_position_mappings` | `source_tax_category_id` | `tax_categories` | `tax_category_id` | `cascade` |
 | `tax_position_mappings` | `tax_position_id` | `tax_positions` | `tax_position_id` | `cascade` |
 | `transfer_order_lines` | `product_id` | `products` | `product_id` | `RESTRICT` |
+| `transfer_order_lines` | `project_task_id` | `project_tasks` | `project_task_id` | `RESTRICT` |
 | `transfer_order_lines` | `transfer_order_id` | `transfer_orders` | `transfer_order_id` | `RESTRICT` |
 | `transfer_order_picks` | `bin_id` | `bins` | `bin_id` | `RESTRICT` |
 | `transfer_order_picks` | `product_id` | `products` | `product_id` | `RESTRICT` |
@@ -495,6 +549,8 @@ The table below catalogs all referential constraints across the application data
 | `transfer_order_shipment_lines` | `transfer_order_line_id` | `transfer_order_lines` | `transfer_order_line_id` | `RESTRICT` |
 | `transfer_order_shipments` | `transfer_order_id` | `transfer_orders` | `transfer_order_id` | `RESTRICT` |
 | `transfer_orders` | `destination_location_id` | `locations` | `location_id` | `RESTRICT` |
+| `transfer_orders` | `project_id` | `projects` | `project_id` | `RESTRICT` |
+| `transfer_orders` | `project_task_id` | `project_tasks` | `project_task_id` | `RESTRICT` |
 | `transfer_orders` | `source_location_id` | `locations` | `location_id` | `RESTRICT` |
 | `user_settings` | `user_id` | `users` | `user_id` | `cascade` |
 | `user_two_factor` | `user_id` | `users` | `user_id` | `cascade` |
@@ -532,8 +588,9 @@ Accounts, contacts, relationship graphs, CRM projects, customer groups, and addr
 | 10 | `linkedin_profile` | `text` | YES | — | — |
 | 11 | `referred_by_organization_id` | `uuid` | YES | — | 🔗 `organizations.organization_id` |
 | 12 | `referred_by_contact_id` | `uuid` | YES | — | 🔗 `contacts.contact_id` |
-| 13 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
-| 14 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
+| 13 | `metadata` | `jsonb` | YES | — | — |
+| 14 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 15 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
 
 ### Table: `herobm_core.crm_activities` {#table-crm-activities}
 
@@ -622,9 +679,10 @@ Accounts, contacts, relationship graphs, CRM projects, customer groups, and addr
 | 19 | `source` | `text` | NO | — | — |
 | 20 | `price_tier` | `text` | YES | — | — |
 | 21 | `notes` | `text` | YES | — | — |
-| 22 | `created_by` | `text` | YES | — | — |
-| 23 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
-| 24 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
+| 22 | `metadata` | `jsonb` | YES | — | — |
+| 23 | `created_by` | `text` | YES | — | — |
+| 24 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 25 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
 
 ### Table: `herobm_core.opportunities` {#table-opportunities}
 
@@ -641,9 +699,10 @@ Accounts, contacts, relationship graphs, CRM projects, customer groups, and addr
 | 9 | `probability` | `integer` | YES | — | — |
 | 10 | `actual_value` | `numeric` | YES | — | — |
 | 11 | `description` | `text` | YES | — | — |
-| 12 | `owner_id` | `uuid` | YES | — | 🔗 `users.user_id` |
-| 13 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
-| 14 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
+| 12 | `metadata` | `jsonb` | YES | — | — |
+| 13 | `owner_id` | `uuid` | YES | — | 🔗 `users.user_id` |
+| 14 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 15 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
 
 ### Table: `herobm_core.opportunity_contacts` {#table-opportunity-contacts}
 
@@ -733,8 +792,47 @@ Accounts, contacts, relationship graphs, CRM projects, customer groups, and addr
 | 21 | `referred_by_contact_id` | `uuid` | YES | — | 🔗 `contacts.contact_id` |
 | 22 | `referral_note` | `text` | YES | — | — |
 | 23 | `tags` | `text[]` | YES | — | — |
-| 24 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
-| 25 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
+| 24 | `metadata` | `jsonb` | YES | — | — |
+| 25 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 26 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
+
+### Table: `herobm_core.project_notes` {#table-project-notes}
+
+| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `note_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
+| 2 | `project_id` | `uuid` | NO | — | 🔗 `projects.project_id` (cascade) |
+| 3 | `content` | `text` | NO | — | — |
+| 4 | `created_by_id` | `uuid` | YES | — | 🔗 `users.user_id` |
+| 5 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+
+### Table: `herobm_core.projects` {#table-projects}
+
+| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `project_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
+| 2 | `project_number` | `text` | NO | — | ⚡ `UNIQUE` |
+| 3 | `name` | `text` | NO | — | — |
+| 4 | `description` | `text` | YES | — | — |
+| 5 | `customer_id` | `uuid` | NO | — | 🔗 `customers.customer_id` |
+| 6 | `opportunity_id` | `uuid` | YES | — | 🔗 `opportunities.opportunity_id` |
+| 7 | `state_code` | `text` | NO | — | — |
+| 8 | `stage` | `text` | YES | — | — |
+| 9 | `billing_type` | `text` | NO | — | — |
+| 10 | `project_manager_id` | `uuid` | YES | — | 🔗 `users.user_id` |
+| 11 | `currency_code` | `text` | NO | — | 🏷️ `CHECK` |
+| 12 | `staging_location_id` | `uuid` | YES | — | 🔗 `locations.location_id` |
+| 13 | `staging_bin_id` | `uuid` | YES | — | 🔗 `bins.bin_id` |
+| 14 | `start_date` | `timestamp with time zone` | YES | — | — |
+| 15 | `target_end_date` | `timestamp with time zone` | YES | — | — |
+| 16 | `actual_end_date` | `timestamp with time zone` | YES | — | — |
+| 17 | `wip_method` | `text` | NO | — | — |
+| 18 | `notes` | `text` | YES | — | — |
+| 19 | `metadata` | `jsonb` | YES | — | — |
+| 20 | `discount_percentage` | `numeric(5, 2)` | YES | — | — |
+| 21 | `created_by` | `text` | YES | — | — |
+| 22 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 23 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
 
 ### Table: `herobm_core.trading_terms` {#table-trading-terms}
 
@@ -890,11 +988,12 @@ Item masters, product groups, units of measure, supplier pricing matrix, and bil
 | 24 | `image_path` | `text` | YES | — | — |
 | 25 | `state_code` | `text` | NO | — | — |
 | 26 | `notes` | `text` | YES | — | — |
-| 27 | `source_id` | `text` | YES | — | ⚡ `UNIQUE` |
-| 28 | `source` | `text` | NO | — | — |
-| 29 | `created_by` | `text` | YES | — | — |
-| 30 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
-| 31 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
+| 27 | `metadata` | `jsonb` | YES | — | — |
+| 28 | `source_id` | `text` | YES | — | ⚡ `UNIQUE` |
+| 29 | `source` | `text` | NO | — | — |
+| 30 | `created_by` | `text` | YES | — | — |
+| 31 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 32 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
 
 ### Table: `herobm_core.uom_dictionary` {#table-uom-dictionary}
 
@@ -902,7 +1001,8 @@ Item masters, product groups, units of measure, supplier pricing matrix, and bil
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | `uom_code` | `text` | NO | — | 🔑 `PK` |
 | 2 | `description` | `text` | NO | — | — |
-| 3 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 3 | `category` | `text` | NO | — | — |
+| 4 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
 
 
 ---
@@ -969,9 +1069,10 @@ Sales quotations, confirmed orders, pick lists, shipments, sales invoices, and c
 | 14 | `exchange_rate` | `numeric` | NO | — | — |
 | 15 | `state_code` | `text` | NO | — | — |
 | 16 | `notes` | `text` | YES | — | — |
-| 17 | `created_by` | `text` | YES | — | — |
-| 18 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
-| 19 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
+| 17 | `metadata` | `jsonb` | YES | — | — |
+| 18 | `created_by` | `text` | YES | — | — |
+| 19 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 20 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
 
 ### Table: `herobm_core.sales_events` {#table-sales-events}
 
@@ -1019,11 +1120,12 @@ Sales quotations, confirmed orders, pick lists, shipments, sales invoices, and c
 | 16 | `due_date` | `timestamp with time zone` | YES | — | — |
 | 17 | `terms_description` | `text` | YES | — | — |
 | 18 | `notes` | `text` | YES | — | — |
-| 19 | `early_payment_discount` | `numeric` | YES | — | — |
-| 20 | `early_payment_discount_days` | `integer` | YES | — | — |
-| 21 | `created_by` | `text` | YES | — | — |
-| 22 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
-| 23 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
+| 19 | `metadata` | `jsonb` | YES | — | — |
+| 20 | `early_payment_discount` | `numeric` | YES | — | — |
+| 21 | `early_payment_discount_days` | `integer` | YES | — | — |
+| 22 | `created_by` | `text` | YES | — | — |
+| 23 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 24 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
 
 ### Table: `herobm_core.sales_order_lines` {#table-sales-order-lines}
 
@@ -1115,12 +1217,13 @@ Sales quotations, confirmed orders, pick lists, shipments, sales invoices, and c
 | 3 | `sales_order_id` | `uuid` | NO | — | 🔗 `sales_orders.sales_order_id` |
 | 4 | `state_code` | `text` | NO | — | 🏷️ `CHECK` |
 | 5 | `notes` | `text` | YES | — | — |
-| 6 | `tracking_number` | `text` | YES | — | — |
-| 7 | `delivery_company_name` | `text` | YES | — | — |
-| 8 | `fulfillment_location_id` | `uuid` | YES | — | 🔗 `locations.location_id` |
-| 9 | `created_by` | `text` | YES | — | — |
-| 10 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
-| 11 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
+| 6 | `shipping_notes` | `text` | YES | — | — |
+| 7 | `tracking_number` | `text` | YES | — | — |
+| 8 | `delivery_company_name` | `text` | YES | — | — |
+| 9 | `fulfillment_location_id` | `uuid` | YES | — | 🔗 `locations.location_id` |
+| 10 | `created_by` | `text` | YES | — | — |
+| 11 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 12 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
 
 ### Table: `herobm_core.sales_orders` {#table-sales-orders}
 
@@ -1148,17 +1251,18 @@ Sales quotations, confirmed orders, pick lists, shipments, sales invoices, and c
 | 20 | `delivery_postal_code` | `text` | YES | — | — |
 | 21 | `delivery_country` | `text` | YES | — | — |
 | 22 | `custom_fields` | `jsonb` | YES | — | — |
-| 23 | `discrepancies_acknowledged` | `boolean` | NO | — | — |
-| 24 | `source_id` | `text` | YES | — | ⚡ `UNIQUE` |
-| 25 | `source` | `text` | NO | — | — |
-| 26 | `terms_description` | `text` | YES | — | — |
-| 27 | `credit_hold_override_at` | `timestamp with time zone` | YES | — | — |
-| 28 | `credit_hold_override_by` | `text` | YES | — | — |
-| 29 | `credit_hold_override_reason` | `text` | YES | — | — |
-| 30 | `opportunity_id` | `uuid` | YES | — | 🔗 `opportunities.opportunity_id` |
-| 31 | `created_by` | `text` | YES | — | — |
-| 32 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
-| 33 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
+| 23 | `metadata` | `jsonb` | YES | — | — |
+| 24 | `discrepancies_acknowledged` | `boolean` | NO | — | — |
+| 25 | `source_id` | `text` | YES | — | ⚡ `UNIQUE` |
+| 26 | `source` | `text` | NO | — | — |
+| 27 | `terms_description` | `text` | YES | — | — |
+| 28 | `credit_hold_override_at` | `timestamp with time zone` | YES | — | — |
+| 29 | `credit_hold_override_by` | `text` | YES | — | — |
+| 30 | `credit_hold_override_reason` | `text` | YES | — | — |
+| 31 | `opportunity_id` | `uuid` | YES | — | 🔗 `opportunities.opportunity_id` |
+| 32 | `created_by` | `text` | YES | — | — |
+| 33 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 34 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
 
 
 ---
@@ -1253,9 +1357,10 @@ Purchase orders, goods receipts, purchase bills, vendor debit notes, returns, an
 | 14 | `exchange_rate` | `numeric` | NO | — | — |
 | 15 | `state_code` | `text` | NO | — | 🏷️ `CHECK` |
 | 16 | `notes` | `text` | YES | — | — |
-| 17 | `created_by` | `text` | YES | — | — |
-| 18 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
-| 19 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
+| 17 | `metadata` | `jsonb` | YES | — | — |
+| 18 | `created_by` | `text` | YES | — | — |
+| 19 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 20 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
 
 ### Table: `herobm_core.purchase_invoice_lines` {#table-purchase-invoice-lines}
 
@@ -1394,11 +1499,12 @@ Purchase orders, goods receipts, purchase bills, vendor debit notes, returns, an
 | 10 | `exchange_rate` | `numeric` | NO | — | — |
 | 11 | `notes` | `text` | YES | — | — |
 | 12 | `custom_fields` | `jsonb` | YES | — | — |
-| 13 | `expected_date` | `timestamp with time zone` | YES | — | — |
-| 14 | `terms_description` | `text` | YES | — | — |
-| 15 | `created_by` | `text` | YES | — | — |
-| 16 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
-| 17 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
+| 13 | `metadata` | `jsonb` | YES | — | — |
+| 14 | `expected_date` | `timestamp with time zone` | YES | — | — |
+| 15 | `terms_description` | `text` | YES | — | — |
+| 16 | `created_by` | `text` | YES | — | — |
+| 17 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 18 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
 
 ### Table: `herobm_core.supplier_expiries` {#table-supplier-expiries}
 
@@ -1456,15 +1562,16 @@ Purchase orders, goods receipts, purchase bills, vendor debit notes, returns, an
 | 15 | `state_code` | `text` | NO | — | — |
 | 16 | `external_id` | `text` | YES | — | — |
 | 17 | `notes` | `text` | YES | — | — |
-| 18 | `bank_account_name` | `text` | YES | — | — |
-| 19 | `bank_bsb` | `text` | YES | — | — |
-| 20 | `bank_account_number` | `text` | YES | — | — |
-| 21 | `tax_position_id` | `uuid` | YES | — | 🔗 `tax_positions.tax_position_id` |
-| 22 | `source_id` | `text` | YES | — | ⚡ `UNIQUE` |
-| 23 | `source` | `text` | NO | — | — |
-| 24 | `created_by` | `text` | YES | — | — |
-| 25 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
-| 26 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
+| 18 | `metadata` | `jsonb` | YES | — | — |
+| 19 | `bank_account_name` | `text` | YES | — | — |
+| 20 | `bank_bsb` | `text` | YES | — | — |
+| 21 | `bank_account_number` | `text` | YES | — | — |
+| 22 | `tax_position_id` | `uuid` | YES | — | 🔗 `tax_positions.tax_position_id` |
+| 23 | `source_id` | `text` | YES | — | ⚡ `UNIQUE` |
+| 24 | `source` | `text` | NO | — | — |
+| 25 | `created_by` | `text` | YES | — | — |
+| 26 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 27 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
 
 
 ---
@@ -1566,9 +1673,10 @@ Locations, warehouse zones, bin storage, stock ledger, stock balances, and inter
 | 1 | `transfer_order_line_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
 | 2 | `transfer_order_id` | `uuid` | NO | — | 🔗 `transfer_orders.transfer_order_id` |
 | 3 | `product_id` | `uuid` | NO | — | 🔗 `products.product_id` |
-| 4 | `quantity` | `numeric` | NO | — | — |
-| 5 | `quantity_shipped` | `numeric` | YES | — | — |
-| 6 | `quantity_received` | `numeric` | YES | — | — |
+| 4 | `project_task_id` | `uuid` | YES | — | 🔗 `project_tasks.project_task_id` |
+| 5 | `quantity` | `numeric` | NO | — | — |
+| 6 | `quantity_shipped` | `numeric` | YES | — | — |
+| 7 | `quantity_received` | `numeric` | YES | — | — |
 
 ### Table: `herobm_core.transfer_order_picks` {#table-transfer-order-picks}
 
@@ -1630,10 +1738,11 @@ Locations, warehouse zones, bin storage, stock ledger, stock balances, and inter
 | 4 | `tracking_number` | `text` | YES | — | — |
 | 5 | `carrier_id` | `uuid` | YES | — | — |
 | 6 | `notes` | `text` | YES | — | — |
-| 7 | `state_code` | `text` | NO | — | — |
-| 8 | `shipped_by` | `text` | YES | — | — |
-| 9 | `shipped_on` | `timestamp with time zone` | YES | `now()` | — |
-| 10 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 7 | `shipping_notes` | `text` | YES | — | — |
+| 8 | `state_code` | `text` | NO | — | — |
+| 9 | `shipped_by` | `text` | YES | — | — |
+| 10 | `shipped_on` | `timestamp with time zone` | YES | `now()` | — |
+| 11 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
 
 ### Table: `herobm_core.transfer_orders` {#table-transfer-orders}
 
@@ -1643,12 +1752,15 @@ Locations, warehouse zones, bin storage, stock ledger, stock balances, and inter
 | 2 | `order_number` | `text` | NO | — | ⚡ `UNIQUE` |
 | 3 | `source_location_id` | `uuid` | NO | — | 🔗 `locations.location_id` |
 | 4 | `destination_location_id` | `uuid` | NO | — | 🔗 `locations.location_id` |
-| 5 | `state_code` | `text` | NO | — | — |
-| 6 | `notes` | `text` | YES | — | — |
-| 7 | `shipping_notes` | `text` | YES | — | — |
-| 8 | `created_by` | `text` | YES | — | — |
-| 9 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
-| 10 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
+| 5 | `project_id` | `uuid` | YES | — | 🔗 `projects.project_id` |
+| 6 | `project_task_id` | `uuid` | YES | — | 🔗 `project_tasks.project_task_id` |
+| 7 | `is_project_return` | `boolean` | NO | — | — |
+| 8 | `state_code` | `text` | NO | — | — |
+| 9 | `notes` | `text` | YES | — | — |
+| 10 | `shipping_notes` | `text` | YES | — | — |
+| 11 | `created_by` | `text` | YES | — | — |
+| 12 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 13 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
 
 ### Table: `herobm_core.warehouse_events` {#table-warehouse-events}
 
@@ -1776,14 +1888,15 @@ Chart of accounts, double-entry journals, fiscal periods, bank reconciliation, t
 | 2 | `account_code` | `text` | NO | — | ⚡ `UNIQUE` |
 | 3 | `name` | `text` | NO | — | — |
 | 4 | `account_type` | `text` | NO | — | — |
-| 5 | `parent_account_id` | `uuid` | YES | — | — |
-| 6 | `is_group` | `boolean` | NO | — | — |
-| 7 | `is_system` | `boolean` | NO | — | — |
-| 8 | `is_bank_account` | `boolean` | NO | — | — |
-| 9 | `currency_code` | `text` | NO | — | 🏷️ `CHECK` |
-| 10 | `metadata` | `jsonb` | YES | — | — |
-| 11 | `is_active` | `boolean` | NO | — | — |
-| 12 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 5 | `report_category` | `text` | YES | — | — |
+| 6 | `parent_account_id` | `uuid` | YES | — | — |
+| 7 | `is_group` | `boolean` | NO | — | — |
+| 8 | `is_system` | `boolean` | NO | — | — |
+| 9 | `is_bank_account` | `boolean` | NO | — | — |
+| 10 | `currency_code` | `text` | NO | — | 🏷️ `CHECK` |
+| 11 | `metadata` | `jsonb` | YES | — | — |
+| 12 | `is_active` | `boolean` | NO | — | — |
+| 13 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
 
 ### Table: `herobm_core.gl_fiscal_periods` {#table-gl-fiscal-periods}
 
@@ -1901,6 +2014,8 @@ Chart of accounts, double-entry journals, fiscal periods, bank reconciliation, t
 | 28 | `default_discounts_given_account_id` | `uuid` | YES | — | 🔗 `gl_accounts.gl_account_id` |
 | 29 | `default_otc_cash_account_id` | `uuid` | YES | — | 🔗 `gl_accounts.gl_account_id` |
 | 30 | `default_otc_card_account_id` | `uuid` | YES | — | 🔗 `gl_accounts.gl_account_id` |
+| 31 | `default_suspense_account_id` | `uuid` | YES | — | 🔗 `gl_accounts.gl_account_id` |
+| 32 | `default_retained_earnings_account_id` | `uuid` | YES | — | 🔗 `gl_accounts.gl_account_id` |
 
 ### Table: `herobm_core.payment_allocations` {#table-payment-allocations}
 
@@ -2060,9 +2175,10 @@ Production work orders, component allocations, and manufacturing picking tickets
 | 11 | `assembly_cost_per_unit` | `numeric` | YES | — | — |
 | 12 | `additional_cost` | `numeric` | YES | — | — |
 | 13 | `total_cost` | `numeric` | YES | — | — |
-| 14 | `created_by` | `text` | YES | — | — |
-| 15 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
-| 16 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
+| 14 | `metadata` | `jsonb` | YES | — | — |
+| 15 | `created_by` | `text` | YES | — | — |
+| 16 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 17 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
 
 
 ---
@@ -2111,28 +2227,30 @@ User access control, API keys, webhook outbox, PDF reports, async ELT pipeline j
 | 8 | `default_sales_tax_category_id` | `uuid` | YES | — | 🔗 `tax_categories.tax_category_id` |
 | 9 | `inventory_valuation_method` | `text` | NO | — | — |
 | 10 | `inventory_accounting_mode` | `text` | NO | — | — |
-| 11 | `credit_limit_behavior` | `text` | NO | — | — |
-| 12 | `smtp_host` | `text` | YES | — | — |
-| 13 | `smtp_port` | `integer` | YES | — | — |
-| 14 | `smtp_user` | `text` | YES | — | — |
-| 15 | `smtp_pass_encrypted` | `text` | YES | — | — |
-| 16 | `smtp_from_address` | `text` | YES | — | — |
-| 17 | `organization_tags` | `jsonb` | YES | — | — |
-| 18 | `organization_contact_roles` | `jsonb` | YES | — | — |
-| 19 | `opportunity_contact_roles` | `jsonb` | YES | — | — |
-| 20 | `opportunity_organization_roles` | `jsonb` | YES | — | — |
-| 21 | `opportunity_stages` | `jsonb` | YES | — | — |
-| 22 | `opportunity_types` | `jsonb` | YES | — | — |
-| 23 | `referral_modes` | `jsonb` | YES | — | — |
-| 24 | `activity_types` | `jsonb` | YES | — | — |
-| 25 | `sales_analysis_codes` | `jsonb` | YES | — | — |
-| 26 | `api_rate_limit` | `numeric` | NO | — | — |
-| 27 | `setup_completed_at` | `timestamp with time zone` | YES | — | — |
-| 28 | `system_identifier` | `text` | YES | — | — |
-| 29 | `active_license_key` | `text` | YES | — | — |
-| 30 | `active_license_payload` | `jsonb` | YES | — | — |
-| 31 | `tax_provider_mappings` | `jsonb` | YES | — | — |
-| 32 | `enrichment_provider_mappings` | `jsonb` | YES | — | — |
+| 11 | `allow_negative_inventory` | `boolean` | NO | — | — |
+| 12 | `credit_limit_behavior` | `text` | NO | — | — |
+| 13 | `smtp_host` | `text` | YES | — | — |
+| 14 | `smtp_port` | `integer` | YES | — | — |
+| 15 | `smtp_user` | `text` | YES | — | — |
+| 16 | `smtp_pass_encrypted` | `text` | YES | — | — |
+| 17 | `smtp_from_address` | `text` | YES | — | — |
+| 18 | `organization_tags` | `jsonb` | YES | — | — |
+| 19 | `organization_contact_roles` | `jsonb` | YES | — | — |
+| 20 | `opportunity_contact_roles` | `jsonb` | YES | — | — |
+| 21 | `opportunity_organization_roles` | `jsonb` | YES | — | — |
+| 22 | `opportunity_stages` | `jsonb` | YES | — | — |
+| 23 | `opportunity_types` | `jsonb` | YES | — | — |
+| 24 | `project_stages` | `jsonb` | YES | — | — |
+| 25 | `referral_modes` | `jsonb` | YES | — | — |
+| 26 | `activity_types` | `jsonb` | YES | — | — |
+| 27 | `sales_analysis_codes` | `jsonb` | YES | — | — |
+| 28 | `api_rate_limit` | `numeric` | NO | — | — |
+| 29 | `setup_completed_at` | `timestamp with time zone` | YES | — | — |
+| 30 | `system_identifier` | `text` | YES | — | — |
+| 31 | `active_license_key` | `text` | YES | — | — |
+| 32 | `active_license_payload` | `jsonb` | YES | — | — |
+| 33 | `tax_provider_mappings` | `jsonb` | YES | — | — |
+| 34 | `enrichment_provider_mappings` | `jsonb` | YES | — | — |
 
 ### Table: `herobm_core.business_report_events` {#table-business-report-events}
 
@@ -2348,6 +2466,7 @@ User access control, API keys, webhook outbox, PDF reports, async ELT pipeline j
 | 17 | `bank_account_number` | `text` | YES | — | — |
 | 18 | `bank_swift_bic` | `text` | YES | — | — |
 | 19 | `bank_iban` | `text` | YES | — | — |
+| 20 | `pdf_theme_config` | `jsonb` | YES | — | — |
 
 ### Table: `herobm_core.user_events` {#table-user-events}
 
@@ -2416,5 +2535,220 @@ User access control, API keys, webhook outbox, PDF reports, async ELT pipeline j
 | 2 | `activity_id` | `uuid` | NO | — | 🔗 `crm_activities.activity_id` (cascade) |
 | 3 | `contact_id` | `uuid` | NO | — | 🔗 `contacts.contact_id` (cascade) |
 | 4 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+
+### Table: `herobm_core.crm_settings` {#table-crm-settings}
+
+| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `settings_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
+| 2 | `organization_metadata_schema` | `jsonb` | YES | — | — |
+| 3 | `opportunity_metadata_schema` | `jsonb` | YES | — | — |
+| 4 | `contact_metadata_schema` | `jsonb` | YES | — | — |
+| 5 | `customer_metadata_schema` | `jsonb` | YES | — | — |
+| 6 | `supplier_metadata_schema` | `jsonb` | YES | — | — |
+| 7 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 8 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
+
+### Table: `herobm_core.manufacturing_settings` {#table-manufacturing-settings}
+
+| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `manufacturing_settings_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
+| 2 | `work_order_metadata_schema` | `jsonb` | YES | — | — |
+| 3 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
+
+### Table: `herobm_core.product_settings` {#table-product-settings}
+
+| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `settings_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
+| 2 | `product_metadata_schema` | `jsonb` | YES | — | — |
+| 3 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 4 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
+
+### Table: `herobm_core.project_budget_lines` {#table-project-budget-lines}
+
+| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `budget_line_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
+| 2 | `project_id` | `uuid` | NO | — | 🔗 `projects.project_id` |
+| 3 | `project_task_id` | `uuid` | NO | — | 🔗 `project_tasks.project_task_id` |
+| 4 | `line_type` | `text` | NO | — | — |
+| 5 | `resource_id` | `uuid` | YES | — | 🔗 `project_resources.resource_id` |
+| 6 | `product_id` | `uuid` | YES | — | 🔗 `products.product_id` |
+| 7 | `description` | `text` | YES | — | — |
+| 8 | `planned_quantity` | `numeric` | NO | — | — |
+| 9 | `unit_cost` | `numeric(12, 2)` | NO | — | — |
+| 10 | `total_cost` | `numeric(12, 2)` | NO | — | — |
+| 11 | `unit_price` | `numeric(12, 2)` | NO | — | — |
+| 12 | `discount_percentage` | `numeric(5, 2)` | YES | — | — |
+| 13 | `total_price` | `numeric(12, 2)` | NO | — | — |
+| 14 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 15 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
+
+### Table: `herobm_core.project_ledger_entries` {#table-project-ledger-entries}
+
+| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `ledger_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
+| 2 | `project_id` | `uuid` | NO | — | 🔗 `projects.project_id` |
+| 3 | `project_task_id` | `uuid` | NO | — | 🔗 `project_tasks.project_task_id` |
+| 4 | `entry_type` | `text` | NO | — | — |
+| 5 | `line_type` | `text` | NO | — | — |
+| 6 | `source_type` | `text` | NO | — | — |
+| 7 | `source_id` | `uuid` | YES | — | — |
+| 8 | `inventory_entry_id` | `uuid` | YES | — | 🔗 `inventory_entries.entry_id` |
+| 9 | `resource_id` | `uuid` | YES | — | 🔗 `project_resources.resource_id` |
+| 10 | `product_id` | `uuid` | YES | — | 🔗 `products.product_id` |
+| 11 | `user_id` | `uuid` | YES | — | 🔗 `users.user_id` |
+| 12 | `description` | `text` | YES | — | — |
+| 13 | `quantity` | `numeric` | NO | — | — |
+| 14 | `unit_cost_base` | `numeric(12, 2)` | NO | — | — |
+| 15 | `total_cost_base` | `numeric(12, 2)` | NO | — | — |
+| 16 | `unit_price_base` | `numeric(12, 2)` | NO | — | — |
+| 17 | `discount_percentage` | `numeric(5, 2)` | YES | — | — |
+| 18 | `total_price_base` | `numeric(12, 2)` | NO | — | — |
+| 19 | `is_billable` | `boolean` | NO | — | — |
+| 20 | `is_billed` | `boolean` | NO | — | — |
+| 21 | `sales_invoice_line_id` | `uuid` | YES | — | — |
+| 22 | `budget_line_id` | `uuid` | YES | — | 🔗 `project_budget_lines.budget_line_id` |
+| 23 | `posting_date` | `timestamp with time zone` | NO | — | — |
+| 24 | `created_by` | `text` | NO | — | — |
+| 25 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+
+### Table: `herobm_core.project_resource_assignments` {#table-project-resource-assignments}
+
+| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `assignment_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
+| 2 | `project_id` | `uuid` | NO | — | 🔗 `projects.project_id` (cascade), ⚡ `UNIQUE` |
+| 3 | `resource_id` | `uuid` | NO | — | 🔗 `project_resources.resource_id`, ⚡ `UNIQUE` |
+| 4 | `notes` | `text` | YES | — | — |
+| 5 | `created_by` | `text` | YES | — | — |
+| 6 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+
+### Table: `herobm_core.project_resources` {#table-project-resources}
+
+| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `resource_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
+| 2 | `resource_number` | `text` | NO | — | ⚡ `UNIQUE` |
+| 3 | `name` | `text` | NO | — | — |
+| 4 | `resource_type` | `text` | NO | — | — |
+| 5 | `user_id` | `uuid` | YES | — | 🔗 `users.user_id` |
+| 6 | `vendor_id` | `uuid` | YES | — | 🔗 `suppliers.vendor_id` |
+| 7 | `service_product_id` | `uuid` | YES | — | 🔗 `products.product_id` |
+| 8 | `base_uom` | `text` | NO | — | 🔗 `uom_dictionary.uom_code` |
+| 9 | `direct_unit_cost` | `numeric(12, 2)` | NO | — | — |
+| 10 | `unit_price` | `numeric(12, 2)` | NO | — | — |
+| 11 | `is_active` | `boolean` | NO | — | — |
+| 12 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 13 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
+
+### Table: `herobm_core.project_settings` {#table-project-settings}
+
+| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `settings_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
+| 2 | `project_metadata_schema` | `jsonb` | YES | — | — |
+| 3 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 4 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
+
+### Table: `herobm_core.project_tasks` {#table-project-tasks}
+
+| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `project_task_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
+| 2 | `project_id` | `uuid` | NO | — | 🔗 `projects.project_id` |
+| 3 | `task_code` | `text` | NO | — | — |
+| 4 | `name` | `text` | NO | — | — |
+| 5 | `description` | `text` | YES | — | — |
+| 6 | `parent_task_id` | `uuid` | YES | — | 🔗 `project_tasks.project_task_id` |
+| 7 | `state_code` | `text` | NO | — | — |
+| 8 | `is_milestone` | `boolean` | NO | — | — |
+| 9 | `is_billable` | `boolean` | NO | — | — |
+| 10 | `planned_start_date` | `timestamp with time zone` | YES | — | — |
+| 11 | `planned_end_date` | `timestamp with time zone` | YES | — | — |
+| 12 | `actual_start_date` | `timestamp with time zone` | YES | — | — |
+| 13 | `actual_end_date` | `timestamp with time zone` | YES | — | — |
+| 14 | `created_by` | `text` | YES | — | — |
+| 15 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 16 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
+
+### Table: `herobm_core.purchasing_settings` {#table-purchasing-settings}
+
+| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `purchasing_settings_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
+| 2 | `purchase_order_metadata_schema` | `jsonb` | YES | — | — |
+| 3 | `debit_note_metadata_schema` | `jsonb` | YES | — | — |
+| 4 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
+
+### Table: `herobm_core.sales_settings` {#table-sales-settings}
+
+| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `sales_settings_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
+| 2 | `sales_order_metadata_schema` | `jsonb` | YES | — | — |
+| 3 | `sales_invoice_metadata_schema` | `jsonb` | YES | — | — |
+| 4 | `credit_note_metadata_schema` | `jsonb` | YES | — | — |
+| 5 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
+
+### Table: `herobm_core.stocktake_counts` {#table-stocktake-counts}
+
+| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `stocktake_count_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
+| 2 | `stocktake_id` | `uuid` | NO | — | 🔗 `stocktakes.stocktake_id` (cascade) |
+| 3 | `stocktake_line_id` | `uuid` | YES | — | 🔗 `stocktake_lines.stocktake_line_id` (cascade) |
+| 4 | `product_id` | `uuid` | NO | — | 🔗 `products.product_id` |
+| 5 | `bin_id` | `uuid` | NO | — | 🔗 `bins.bin_id` |
+| 6 | `quantity` | `numeric` | NO | — | — |
+| 7 | `count_mode` | `text` | NO | — | — |
+| 8 | `counted_by` | `text` | NO | — | — |
+| 9 | `counted_at` | `timestamp with time zone` | YES | `now()` | — |
+| 10 | `notes` | `text` | YES | — | — |
+
+### Table: `herobm_core.stocktake_lines` {#table-stocktake-lines}
+
+| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `stocktake_line_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
+| 2 | `stocktake_id` | `uuid` | NO | — | 🔗 `stocktakes.stocktake_id` (cascade), ⚡ `UNIQUE` |
+| 3 | `product_id` | `uuid` | NO | — | 🔗 `products.product_id`, ⚡ `UNIQUE` |
+| 4 | `bin_id` | `uuid` | NO | — | 🔗 `bins.bin_id`, ⚡ `UNIQUE` |
+| 5 | `expected_quantity` | `numeric` | NO | — | — |
+| 6 | `counted_quantity` | `numeric` | YES | — | — |
+| 7 | `is_unlisted` | `boolean` | NO | — | — |
+| 8 | `notes` | `text` | YES | — | — |
+| 9 | `last_counted_at` | `timestamp with time zone` | YES | — | — |
+| 10 | `last_counted_by` | `text` | YES | — | — |
+
+### Table: `herobm_core.stocktakes` {#table-stocktakes}
+
+| # | Column | Data Type | Nullable | Default | Constraints & Relationships |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `stocktake_id` | `uuid` | NO | `gen_random_uuid()` | 🔑 `PK` |
+| 2 | `stocktake_number` | `text` | NO | — | ⚡ `UNIQUE` |
+| 3 | `name` | `text` | NO | — | — |
+| 4 | `location_id` | `uuid` | NO | — | 🔗 `locations.location_id` |
+| 5 | `state_code` | `text` | NO | — | — |
+| 6 | `scope_type` | `text` | NO | — | — |
+| 7 | `zone_filter` | `text` | YES | — | — |
+| 8 | `bin_pattern` | `text` | YES | — | — |
+| 9 | `is_blind_count` | `boolean` | NO | — | — |
+| 10 | `notes` | `text` | YES | — | — |
+| 11 | `inventory_entry_id` | `uuid` | YES | — | 🔗 `inventory_entries.entry_id` |
+| 12 | `created_by` | `text` | YES | — | — |
+| 13 | `created_on` | `timestamp with time zone` | YES | `now()` | — |
+| 14 | `opened_by` | `text` | YES | — | — |
+| 15 | `opened_at` | `timestamp with time zone` | YES | — | — |
+| 16 | `reviewed_by` | `text` | YES | — | — |
+| 17 | `reviewed_at` | `timestamp with time zone` | YES | — | — |
+| 18 | `submitted_by` | `text` | YES | — | — |
+| 19 | `submitted_on` | `timestamp with time zone` | YES | — | — |
+| 20 | `cancelled_by` | `text` | YES | — | — |
+| 21 | `cancelled_at` | `timestamp with time zone` | YES | — | — |
+| 22 | `modified_on` | `timestamp with time zone` | YES | `now()` | — |
 
 

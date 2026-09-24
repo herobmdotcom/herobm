@@ -8,6 +8,7 @@ import {
   Min,
   Max,
   IsDateString,
+  IsObject,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -63,9 +64,24 @@ export class CreateOpportunityDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  organizationId?: string;
+
+  @ApiPropertyOptional({ type: Object, description: 'Custom metadata object' })
+  @IsOptional()
+  @IsObject()
+  metadata?: Record<string, unknown>;
 }
 
 export class UpdateOpportunityDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  organizationId?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
@@ -117,6 +133,11 @@ export class UpdateOpportunityDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @ApiPropertyOptional({ type: Object, description: 'Custom metadata object' })
+  @IsOptional()
+  @IsObject()
+  metadata?: Record<string, unknown>;
 }
 
 export class CreateOpportunityNoteDto {
@@ -230,6 +251,10 @@ export class OpportunityResponseDto {
   @ApiProperty()
   modifiedOn!: Date;
 
+  @ApiPropertyOptional({ type: Object })
+  @IsOptional()
+  metadata?: Record<string, unknown> | null;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsUUID()
@@ -253,6 +278,16 @@ export class OpportunityResponseDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @IsUUID()
+  organizationId?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  customerId?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
   opportunityContacts?: unknown[];
 
   @ApiPropertyOptional({
@@ -265,6 +300,10 @@ export class OpportunityResponseDto {
   @ApiPropertyOptional({ description: 'Total number of linked sales quotes' })
   @IsOptional()
   quoteCount?: number | null;
+
+  @ApiPropertyOptional({ description: 'Total number of linked projects' })
+  @IsOptional()
+  projectCount?: number | null;
 
   @ApiPropertyOptional()
   @IsOptional()

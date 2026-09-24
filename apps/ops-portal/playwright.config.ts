@@ -19,10 +19,11 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  /* Opt out of parallel tests on CI or container environments to prevent server overload. */
+  workers: process.env.PLAYWRIGHT_WORKERS ? parseInt(process.env.PLAYWRIGHT_WORKERS) : (process.env.CI ? 1 : 2),
+  timeout: 60000,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: [['list'], ['html', { open: 'never' }]],
+  reporter: 'list',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
@@ -32,8 +33,9 @@ export default defineConfig({
     trace: 'on-first-retry',
     
     /* Avoid timeouts for slow local loading */
-    navigationTimeout: 30000,
-    actionTimeout: 10000,
+    navigationTimeout: 45000,
+    actionTimeout: 15000,
+    channel: process.env.PLAYWRIGHT_CHANNEL || 'chrome',
   },
 
   /* Configure projects for major browsers */

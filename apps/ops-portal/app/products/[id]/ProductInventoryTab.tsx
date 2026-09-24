@@ -33,9 +33,9 @@ export function ProductInventoryTab({
 
   const [locations, setLocations] = useState<api.InventoryLocationResponseDto[]>([]);
   const [addingBinLink, setAddingBinLink] = useState(false);
-  const [newBinLink, setNewBinLink] = useState({ locationId: '', binId: '', isPrimaryPerLocation: true, minQty: '', maxQty: '' });
+  const [newBinLink, setNewBinLink] = useState({ locationId: '', binId: '', isPrimaryPerLocation: true, minQuantity: '', maxQuantity: '' });
   const [editingBinId, setEditingBinId] = useState<string | null>(null);
-  const [editingBinData, setEditingBinData] = useState({ locationId: '', binId: '', isPrimaryPerLocation: true, minQty: '', maxQty: '' });
+  const [editingBinData, setEditingBinData] = useState({ locationId: '', binId: '', isPrimaryPerLocation: true, minQuantity: '', maxQuantity: '' });
   const [availableBins, setAvailableBins] = useState<api.InventoryBinResponseDto[]>([]);
   const [saving, setSaving] = useState(false);
   const [inventoryLevels, setInventoryLevels] = useState<api.InventoryResponseDto[]>([]);
@@ -171,6 +171,8 @@ export function ProductInventoryTab({
       bin.isDefault = true;
       bin.isPrimary = db.isPrimaryPerLocation;
       bin.productDefaultBinId = db.productDefaultBinId;
+      bin.minQuantity = db.minQuantity;
+      bin.maxQuantity = db.maxQuantity;
     });
 
     return Array.from(locMap.values())
@@ -331,8 +333,8 @@ export function ProductInventoryTab({
                     className="input text-right"
                     type="number"
                     min="0"
-                    value={newBinLink.minQty}
-                    onChange={(e) => setNewBinLink({ ...newBinLink, minQty: e.target.value })}
+                    value={newBinLink.minQuantity}
+                    onChange={(e) => setNewBinLink({ ...newBinLink, minQuantity: e.target.value })}
                   />
                 </div>
                 <div className="w-[90px]">
@@ -341,8 +343,8 @@ export function ProductInventoryTab({
                     className="input text-right"
                     type="number"
                     min="0"
-                    value={newBinLink.maxQty}
-                    onChange={(e) => setNewBinLink({ ...newBinLink, maxQty: e.target.value })}
+                    value={newBinLink.maxQuantity}
+                    onChange={(e) => setNewBinLink({ ...newBinLink, maxQuantity: e.target.value })}
                   />
                 </div>
                 <div className="w-[80px]">
@@ -364,7 +366,7 @@ export function ProductInventoryTab({
                     className="text-[var(--text-muted)] hover:bg-[var(--bg-card-hover)]"
                     onClick={() => {
                       setAddingBinLink(false);
-                      setNewBinLink({ locationId: '', binId: '', isPrimaryPerLocation: false, minQty: '', maxQty: '' });
+                      setNewBinLink({ locationId: '', binId: '', isPrimaryPerLocation: false, minQuantity: '', maxQuantity: '' });
                     }}
                     disabled={saving}
                   >
@@ -378,10 +380,16 @@ export function ProductInventoryTab({
                     onClick={async () => {
                       try {
                         setSaving(true);
-                        await api.productsControllerLinkDefaultBin(productId, newBinLink);
+                        await api.productsControllerLinkDefaultBin(productId, {
+                          locationId: newBinLink.locationId,
+                          binId: newBinLink.binId,
+                          isPrimaryPerLocation: newBinLink.isPrimaryPerLocation,
+                          minQuantity: newBinLink.minQuantity || '0',
+                          maxQuantity: newBinLink.maxQuantity || undefined,
+                        });
                         toast.success(t('products.storage.toastLinkAdded'));
                         setAddingBinLink(false);
-                        setNewBinLink({ locationId: '', binId: '', isPrimaryPerLocation: false, minQty: '', maxQty: '' });
+                        setNewBinLink({ locationId: '', binId: '', isPrimaryPerLocation: false, minQuantity: '', maxQuantity: '' });
                         await onRefresh();
                       } catch (err: unknown) {
                         toast.error(getErrorMessage(err));
@@ -447,8 +455,8 @@ export function ProductInventoryTab({
                               className="input input-sm w-full text-right h-[32px]"
                               type="number"
                               min="0"
-                              value={editingBinData.minQty}
-                              onChange={(e) => setEditingBinData({ ...editingBinData, minQty: e.target.value })}
+                              value={editingBinData.minQuantity}
+                              onChange={(e) => setEditingBinData({ ...editingBinData, minQuantity: e.target.value })}
                             />
                           </td>
                           <td className="py-2 px-4">
@@ -456,8 +464,8 @@ export function ProductInventoryTab({
                               className="input input-sm w-full text-right h-[32px]"
                               type="number"
                               min="0"
-                              value={editingBinData.maxQty}
-                              onChange={(e) => setEditingBinData({ ...editingBinData, maxQty: e.target.value })}
+                              value={editingBinData.maxQuantity}
+                              onChange={(e) => setEditingBinData({ ...editingBinData, maxQuantity: e.target.value })}
                             />
                           </td>
                           <td colSpan={4} className="py-2 px-4">
@@ -486,7 +494,13 @@ export function ProductInventoryTab({
                                 onClick={async () => {
                                   try {
                                     setSaving(true);
-                                    await api.productsControllerLinkDefaultBin(productId, editingBinData);
+                                    await api.productsControllerLinkDefaultBin(productId, {
+                                      locationId: editingBinData.locationId,
+                                      binId: editingBinData.binId,
+                                      isPrimaryPerLocation: editingBinData.isPrimaryPerLocation,
+                                      minQuantity: editingBinData.minQuantity || '0',
+                                      maxQuantity: editingBinData.maxQuantity || undefined,
+                                    });
                                     toast.success(t('products.storage.toastLinkUpdated'));
                                     setEditingBinId(null);
                                     await onRefresh();
@@ -518,8 +532,8 @@ export function ProductInventoryTab({
                               )}
                             </div>
                           </td>
-                          <td className="py-2 px-4 text-[var(--text-secondary)] text-right tabular-nums">{bin.isDefault ? (bin.minQty !== undefined && bin.minQty !== null && bin.minQty !== '' ? formatQuantity(bin.minQty) : '0') : '—'}</td>
-                          <td className="py-2 px-4 text-[var(--text-secondary)] text-right tabular-nums">{bin.isDefault ? (bin.maxQty !== undefined && bin.maxQty !== null && bin.maxQty !== '' ? formatQuantity(bin.maxQty) : '0') : '—'}</td>
+                          <td className="py-2 px-4 text-[var(--text-secondary)] text-right tabular-nums">{bin.isDefault ? (bin.minQuantity !== undefined && bin.minQuantity !== null && bin.minQuantity !== '' ? formatQuantity(bin.minQuantity) : '0') : '—'}</td>
+                          <td className="py-2 px-4 text-[var(--text-secondary)] text-right tabular-nums">{bin.isDefault ? (bin.maxQuantity !== undefined && bin.maxQuantity !== null && bin.maxQuantity !== '' ? formatQuantity(bin.maxQuantity) : '0') : '—'}</td>
                           <td className="py-2 px-4 font-medium text-[var(--text-secondary)] text-right tabular-nums">{formatQuantity(bin.quantityOnHand)}</td>
                           <td colSpan={3}></td>
                           <td className="py-2 px-4 text-center">
@@ -532,8 +546,8 @@ export function ProductInventoryTab({
                                       locationId: lvl.locationId,
                                       binId: bin.binId,
                                       isPrimaryPerLocation: bin.isPrimary || false,
-                                      minQty: bin.minQty || '',
-                                      maxQty: bin.maxQty || '',
+                                      minQuantity: bin.minQuantity !== undefined && bin.minQuantity !== null ? String(bin.minQuantity) : '',
+                                      maxQuantity: bin.maxQuantity !== undefined && bin.maxQuantity !== null ? String(bin.maxQuantity) : '',
                                     });
                                   }}
                                   className="p-1 hover:bg-[var(--bg-card-hover)] rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
