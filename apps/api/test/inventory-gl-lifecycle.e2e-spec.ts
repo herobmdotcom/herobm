@@ -91,22 +91,40 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
       .expect(201);
     adminToken = loginRes.body.access_token;
 
-    // 2. Fetch Master Data
-    const customers = await request(app.getHttpServer())
-      .get('/api/customers?limit=10')
+    // 2. Fetch GL Settings to get default base currency
+    const settingsRes = await request(app.getHttpServer())
+      .get('/api/gl/settings')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    const activeCustomer =
-      customers.body.data.find(
-        (c: any) => c.stateCode === CUSTOMER_STATE.ACTIVE,
-      ) || customers.body.data[0];
-    customerId = activeCustomer.customerId;
+    const settings = settingsRes.body;
+    baseCurrency = settings.baseCurrency || 'AUD';
 
-    const vendors = await request(app.getHttpServer())
-      .get('/api/suppliers?limit=1')
+    // Create dedicated customer and supplier for lifecycle test
+    const custRes = await request(app.getHttpServer())
+      .post('/api/customers')
       .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-    vendorId = vendors.body.data[0].vendorId;
+      .send({
+        customerNumber: `CUST-LIFE-${Date.now()}`,
+        name: 'Lifecycle E2E Customer',
+        currencyCode: baseCurrency,
+        billingAddressLine1: '123 E2E St',
+        billingAddressCity: 'E2E City',
+        billingAddressCountry: 'AU',
+      })
+      .expect(201);
+    customerId = custRes.body.customerId;
+
+    const vendRes = await request(app.getHttpServer())
+      .post('/api/suppliers')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        vendorNumber: `VEND-LIFE-${Date.now()}`,
+        name: 'Lifecycle E2E Vendor',
+        address1Country: 'AU',
+        currencyCode: baseCurrency,
+      })
+      .expect(201);
+    vendorId = vendRes.body.vendorId;
 
     const locations = await request(app.getHttpServer())
       .get('/api/inventory/locations')
@@ -174,17 +192,10 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
       taxCatRes.body[0];
     taxCategoryId = gstCat?.taxCategoryId;
 
-    // Fetch GL Settings to get default base currency
-    const settingsRes = await request(app.getHttpServer())
-      .get('/api/gl/settings')
-      .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-    const settings = settingsRes.body;
-    baseCurrency = settings.baseCurrency || 'AUD';
-
     const db = app.get(DRIZZLE);
     await db.execute(
       sql`UPDATE herobm_core.gl_settings SET 
+        base_currency = 'AUD',
         default_ap_account_id = ${apId}::uuid,
         default_ar_account_id = ${arId}::uuid,
         default_inventory_account_id = ${invId}::uuid,
@@ -192,16 +203,11 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
         default_ppv_account_id = ${ppvId}::uuid,
         default_cogs_account_id = ${cogsId}::uuid`,
     );
+    baseCurrency = 'AUD';
     await db.execute(
       sql`UPDATE herobm_core.app_settings SET 
         inventory_accounting_mode = 'perpetual',
         inventory_valuation_method = 'weighted_average'`,
-    );
-    await db.execute(
-      sql`UPDATE herobm_core.customers SET currency_code = ${baseCurrency} WHERE customer_id = ${customerId}`,
-    );
-    await db.execute(
-      sql`UPDATE herobm_core.suppliers SET currency_code = ${baseCurrency} WHERE vendor_id = ${vendorId}`,
     );
 
     const appConfig = app.get(AppConfigService);
@@ -545,10 +551,16 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
         customerId,
         deliveryAddressLine1: '123 E2E St',
         deliveryCity: 'E2E City',
-        deliveryCountry: 'US',
+        deliveryCountry: 'AU',
         name: 'SO E2E Lifecycle',
         lines: [
-          { productId, quantity: '5', pricePerUnit: '25.00', taxCategoryId },
+          {
+            productId,
+            quantity: '5',
+            pricePerUnit: '25.00',
+            unitCost: '10.00',
+            taxCategoryId,
+          },
         ],
       });
 
@@ -619,6 +631,7 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
       .expect(200);
 
     const entry = glDetailRes.body;
+    console.log('Step 7 GL Entry details:', JSON.stringify(entry, null, 2));
     const cogsLine = entry.lines.find(
       (l: any) => l.accountId === accounts.cogs,
     );

@@ -758,23 +758,24 @@ describe('API E2E — Ledger Symmetry Register', () => {
       .expect(201);
     const validProductId = products.body.productId;
 
-    console.log('before locations');
+    console.log('before locations and bins');
     const locations = await request(app.getHttpServer())
       .get('/api/inventory/locations')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    const validLocationId = locations.body[0].locationId;
-    const validLocationNo = locations.body[0].code;
 
-    console.log('before bins');
     const db = app.get(DRIZZLE);
     const rows = await db.execute(sql`
-      SELECT b.bin_id FROM herobm_core.bins b
+      SELECT b.bin_id, z.location_id, l.code FROM herobm_core.bins b
       JOIN herobm_core.zones z ON b.zone_id = z.zone_id
-      WHERE z.location_id = ${validLocationId} AND b.bin_type NOT IN ('staging', 'quarantine') AND b.is_unavailable = false
+      JOIN herobm_core.locations l ON z.location_id = l.location_id
+      WHERE b.bin_type NOT IN ('staging', 'quarantine') AND b.is_unavailable = false
       LIMIT 1
     `);
     const validBinId = rows[0]?.bin_id;
+    const validLocationId =
+      rows[0]?.location_id || locations.body[0]?.locationId;
+    const validLocationNo = rows[0]?.code || locations.body[0]?.code;
 
     // Add inventory so shipment tests don't fail with INVENTORY_GAP
     await db.execute(sql`

@@ -135,6 +135,13 @@ describe('Financial Immutability Triggers (e2e)', () => {
           ${testId}::uuid, ${`JE-TEST-${Date.now()}`}, CURRENT_DATE, 'manual', false
         );
       `);
+      await db.execute(sql`
+        INSERT INTO herobm_core.financial_events (
+          entity_type, entity_id, event_type, entity_display_name, actor
+        ) VALUES (
+          'system', ${testId}::uuid, 'gl_posted', 'System', 'system'
+        );
+      `);
 
       let error: any = null;
       try {
@@ -350,6 +357,13 @@ describe('Financial Immutability Triggers (e2e)', () => {
           ${jeId}::uuid, ${`JE-UPD-${Date.now()}`}, CURRENT_DATE, 'manual', false
         );
       `);
+      await db.execute(sql`
+        INSERT INTO herobm_core.financial_events (
+          entity_type, entity_id, event_type, entity_display_name, actor
+        ) VALUES (
+          'system', ${jeId}::uuid, 'gl_posted', 'System', 'system'
+        );
+      `);
 
       await db.execute(sql`
         INSERT INTO herobm_core.gl_journal_lines (
@@ -388,6 +402,13 @@ describe('Financial Immutability Triggers (e2e)', () => {
           journal_entry_id, entry_number, entry_date, source_type, is_reversed
         ) VALUES (
           ${jeId}::uuid, ${`JE-REC-${Date.now()}`}, CURRENT_DATE, 'manual', false
+        );
+      `);
+      await db.execute(sql`
+        INSERT INTO herobm_core.financial_events (
+          entity_type, entity_id, event_type, entity_display_name, actor
+        ) VALUES (
+          'system', ${jeId}::uuid, 'gl_posted', 'System', 'system'
         );
       `);
 
@@ -486,13 +507,22 @@ describe('Financial Immutability Triggers (e2e)', () => {
 
       const jeId = randomUUID();
       await expect(
-        db.execute(sql`
-          INSERT INTO herobm_core.gl_journal_entries (
-            journal_entry_id, entry_number, entry_date, source_type, is_reversed
-          ) VALUES (
-            ${jeId}::uuid, ${`JE-OPEN-${Date.now()}`}, '2024-02-15', 'manual', false
-          );
-        `),
+        (async () => {
+          await db.execute(sql`
+            INSERT INTO herobm_core.gl_journal_entries (
+              journal_entry_id, entry_number, entry_date, source_type, is_reversed
+            ) VALUES (
+              ${jeId}::uuid, ${`JE-OPEN-${Date.now()}`}, '2024-02-15', 'manual', false
+            );
+          `);
+          await db.execute(sql`
+            INSERT INTO herobm_core.financial_events (
+              entity_type, entity_id, event_type, entity_display_name, actor
+            ) VALUES (
+              'system', ${jeId}::uuid, 'gl_posted', 'System', 'system'
+            );
+          `);
+        })(),
       ).resolves.not.toThrow();
     });
   });

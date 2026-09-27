@@ -672,11 +672,13 @@ describe('API E2E — Inventory Ledger Fuzz & Robustness Suite', () => {
 
           // 2. Fetch inventory summary from API for primary location
           const invRes = await request(app.getHttpServer())
-            .get(`/api/inventory?locationId=${locationId}`)
+            .get(
+              `/api/inventory/by-products?productIds=${p5Product}&locationId=${locationId}`,
+            )
             .set('Authorization', `Bearer ${adminToken}`)
             .expect(200);
 
-          const allLevels = invRes.body.data || invRes.body || [];
+          const allLevels = invRes.body || [];
           const level = allLevels.find(
             (l: any) =>
               l.productId === p5Product && l.locationId === locationId,
@@ -704,12 +706,13 @@ describe('API E2E — Inventory Ledger Fuzz & Robustness Suite', () => {
 
           // 4. Verify available quantity equals moveQty
           const updatedInvRes = await request(app.getHttpServer())
-            .get(`/api/inventory?locationId=${locationId}`)
+            .get(
+              `/api/inventory/by-products?productIds=${p5Product}&locationId=${locationId}`,
+            )
             .set('Authorization', `Bearer ${adminToken}`)
             .expect(200);
 
-          const updatedLevels =
-            updatedInvRes.body.data || updatedInvRes.body || [];
+          const updatedLevels = updatedInvRes.body || [];
           const updatedLevel = updatedLevels.find(
             (l: any) =>
               l.productId === p5Product && l.locationId === locationId,

@@ -12,8 +12,8 @@ import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
-import { sql } from 'drizzle-orm';
-import { binContents } from '@herobm/db-schema';
+import { sql, eq, and } from 'drizzle-orm';
+import { binContents, bins, zones } from '@herobm/db-schema';
 import { parsePickBarcode, CUSTOMER_STATE } from '@herobm/shared';
 
 import request from 'supertest';
@@ -23,6 +23,7 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
   let adminToken: string;
   let viewerToken: string;
   let locationId: string;
+  let mainBinId: string;
   let validCustomerId: string;
   let validProductId: string;
   let secondProductId: string;
@@ -57,12 +58,29 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
       .expect(201);
     viewerToken = viewerLogin.body.access_token;
 
-    // Fetch location
+    // Fetch location and real pickable bin
     const locRes = await request(app.getHttpServer())
       .get('/api/inventory/locations')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    locationId = locRes.body[0].locationId;
+
+    const [binRow] = await db
+      .select({
+        binId: bins.binId,
+        locationId: zones.locationId,
+      })
+      .from(bins)
+      .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+      .where(
+        and(
+          eq(bins.isUnavailable, false),
+          sql`${bins.binType} NOT IN ('staging', 'quarantine')`,
+        ),
+      )
+      .limit(1);
+
+    locationId = binRow?.locationId || locRes.body[0].locationId;
+    mainBinId = binRow?.binId || '00000000-0000-4000-8000-000000000003';
 
     // Create dedicated customer to avoid credit hold conflicts with other test data
     const custRes = await request(app.getHttpServer())
@@ -102,8 +120,7 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
       .expect(201);
     secondProductId = p2.body.productId;
 
-    // Seed stock into pickable MAIN-BIN-1 for both products
-    const mainBinId = '00000000-0000-4000-8000-000000000003';
+    // Seed stock into pickable bin for both products
     await db
       .insert(binContents)
       .values([
@@ -118,7 +135,12 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
           actualQuantity: '100',
         },
       ])
-      .onConflictDoNothing();
+      .onConflictDoUpdate({
+        target: [binContents.binId, binContents.productId],
+        set: {
+          actualQuantity: '100',
+        },
+      });
   }, 120_000);
 
   afterAll(async () => {
@@ -190,11 +212,11 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
     return { orderId, lineIds };
   }
 
-  /** Resolve the storage bin ID for picking. Always use the seeded MAIN-BIN-1
+  /** Resolve the storage bin ID for picking. Always use the resolved mainBinId
    *  storage bin so we never accidentally pick FROM the SHIPPING staging bin
    *  (which would create cancelling ledger entries). */
   async function getFirstBinId(): Promise<string> {
-    return '00000000-0000-4000-8000-000000000003'; // MAIN-BIN-1 from test-seed.ts
+    return mainBinId;
   }
 
   /** Pick a line via the new POST endpoint. */

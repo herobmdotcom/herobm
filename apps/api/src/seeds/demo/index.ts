@@ -421,31 +421,42 @@ export async function seedMasterData(
 
   // Resolve Key GL Accounts for Transactions
   const allGlAccounts = await db.select().from(glAccounts);
-  const findAccount = (codePrefix: string) =>
-    allGlAccounts.find((a) => a.accountCode.startsWith(codePrefix))
-      ?.glAccountId || allGlAccounts[0]?.glAccountId;
+  const defaultAccount =
+    allGlAccounts.find((a) => !a.isGroup)?.glAccountId ||
+    allGlAccounts[0]?.glAccountId ||
+    '';
+  const findAccount = (codePrefix: string): string =>
+    allGlAccounts.find(
+      (a) => !a.isGroup && a.accountCode.startsWith(codePrefix),
+    )?.glAccountId || defaultAccount;
 
-  const bankAccountId = findAccount('1000') || findAccount('1110');
+  const bankAccountId =
+    findAccount('1000') || findAccount('1110') || defaultAccount;
   const arAccountId =
     glSettingRows[0]?.defaultArAccountId ||
     findAccount('1100') ||
-    findAccount('1200');
+    findAccount('1200') ||
+    defaultAccount;
   const apAccountId =
     glSettingRows[0]?.defaultApAccountId ||
     findAccount('2100') ||
-    findAccount('2000');
+    findAccount('2000') ||
+    defaultAccount;
   const salesAccountId =
     glSettingRows[0]?.defaultRevenueAccountId ||
     findAccount('4100') ||
-    findAccount('4000');
+    findAccount('4000') ||
+    defaultAccount;
   const cogsAccountId =
     glSettingRows[0]?.defaultCogsAccountId ||
     findAccount('5100') ||
-    findAccount('5000');
+    findAccount('5000') ||
+    defaultAccount;
   const inventoryAccountId =
     glSettingRows[0]?.defaultInventoryAccountId ||
     findAccount('1300') ||
-    findAccount('1400');
+    findAccount('1400') ||
+    defaultAccount;
 
   // Resolve Financial Dimensions
   const costCenterRows = await db.select().from(costCenters).limit(1);

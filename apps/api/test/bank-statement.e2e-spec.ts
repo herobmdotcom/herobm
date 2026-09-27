@@ -10,8 +10,9 @@ import {
   glJournalEntries,
   glJournalLines,
   glReconciliations,
+  financialEvents,
 } from '@herobm/db-schema';
-import { eq, ne } from 'drizzle-orm';
+import { eq, ne, and } from 'drizzle-orm';
 import { RECONCILIATION_STATE } from '@herobm/shared';
 import * as crypto from 'crypto';
 
@@ -139,10 +140,24 @@ describe('BankStatementController (e2e)', () => {
       })
       .returning();
 
+    await db.insert(financialEvents).values({
+      entityType: 'system',
+      entityId: je[0].journalEntryId,
+      eventType: 'gl_posted',
+      entityDisplayName: 'System',
+      actor: 'system',
+    });
+
     const otherAccounts = await db
       .select({ glAccountId: glAccounts.glAccountId })
       .from(glAccounts)
-      .where(ne(glAccounts.glAccountId, bankAccountId))
+      .where(
+        and(
+          ne(glAccounts.glAccountId, bankAccountId),
+          eq(glAccounts.isGroup, false),
+          eq(glAccounts.isActive, true),
+        ),
+      )
       .limit(1);
     const offsetAccountId = otherAccounts[0]?.glAccountId || bankAccountId;
 

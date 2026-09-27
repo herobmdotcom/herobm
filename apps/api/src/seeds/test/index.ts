@@ -19,6 +19,7 @@ import {
   uomDictionary,
   glJournalEntries,
   glJournalLines,
+  financialEvents,
 } from '@herobm/db-schema';
 import { eq, sql } from 'drizzle-orm';
 import { seedCoaAccounts, seedCoaSettings } from '../prod/core';
@@ -179,7 +180,7 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
   const bankAccs = await db
     .select()
     .from(glAccounts)
-    .where(eq(glAccounts.isBankAccount, true))
+    .where(sql`is_bank_account = true AND is_group = false`)
     .limit(1);
 
   if (!bankAccs.length) {
@@ -191,12 +192,12 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
   const arAccs = await db
     .select()
     .from(glAccounts)
-    .where(sql`name ILIKE '%Receivable%'`)
+    .where(sql`name ILIKE '%Receivable%' AND is_group = false`)
     .limit(1);
   const apAccs = await db
     .select()
     .from(glAccounts)
-    .where(sql`name ILIKE '%Payable%'`)
+    .where(sql`name ILIKE '%Payable%' AND is_group = false`)
     .limit(1);
 
   const arId = arAccs.length ? arAccs[0].glAccountId : bankAcc.glAccountId;
@@ -282,6 +283,26 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
         exchangeRate: '1',
         isReconciled: false,
         journalLineId: crypto.randomUUID(),
+      },
+    ])
+    .onConflictDoNothing();
+
+  await db
+    .insert(financialEvents)
+    .values([
+      {
+        entityType: 'system',
+        entityId: custJeId,
+        eventType: 'gl_posted',
+        entityDisplayName: 'System',
+        actor: 'system',
+      },
+      {
+        entityType: 'system',
+        entityId: supJeId,
+        eventType: 'gl_posted',
+        entityDisplayName: 'System',
+        actor: 'system',
       },
     ])
     .onConflictDoNothing();

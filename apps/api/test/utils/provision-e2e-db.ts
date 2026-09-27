@@ -58,11 +58,17 @@ function getMigrationsFingerprint(): string {
     hash.update(String(extStat.mtimeMs));
     hash.update(String(extStat.size));
   }
-  const testSeedFile = path.join(__dirname, 'test-seed.ts');
-  if (fs.existsSync(testSeedFile)) {
-    const seedStat = fs.statSync(testSeedFile);
-    hash.update(String(seedStat.mtimeMs));
-    hash.update(String(seedStat.size));
+  const seedFiles = [
+    path.join(__dirname, 'test-seed.ts'),
+    path.join(__dirname, '..', '..', 'src', 'seeds', 'test', 'index.ts'),
+    path.join(__dirname, '..', '..', 'src', 'seeds', 'prod', 'core.ts'),
+  ];
+  for (const sFile of seedFiles) {
+    if (fs.existsSync(sFile)) {
+      const sStat = fs.statSync(sFile);
+      hash.update(String(sStat.mtimeMs));
+      hash.update(String(sStat.size));
+    }
   }
   return hash.digest('hex');
 }

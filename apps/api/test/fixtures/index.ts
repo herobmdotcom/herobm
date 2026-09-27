@@ -14,6 +14,7 @@ import {
   salesInvoices,
   uomDictionary,
   organizations,
+  financialEvents,
 } from '@herobm/db-schema';
 import {
   SalesOrderState,
@@ -279,6 +280,14 @@ export async function createTestGlEntry(
     entryDate: new Date().toISOString(),
     isReversed: false,
     createdBy: 'system',
+  });
+
+  await db.insert(financialEvents).values({
+    entityType: 'system',
+    entityId: journalEntryId,
+    eventType: 'gl_posted',
+    entityDisplayName: 'System',
+    actor: 'system',
   });
 
   return { journalEntryId };

@@ -4,6 +4,10 @@ import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
 
 import request from 'supertest';
+import * as crypto from 'crypto';
+import { eq, and } from 'drizzle-orm';
+import { bins, zones } from '@herobm/db-schema';
+import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import { CUSTOMER_STATE } from '@herobm/shared';
 
 describe('Freight and Non-Stock Lifecycle (e2e)', () => {
@@ -15,6 +19,8 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
   let vendorId: string;
   let soId: string;
   let locationId: string;
+
+  let storageBinId: string;
 
   beforeAll(async () => {
     // Force final invoice mode for predictable non-stock billing in E2E
@@ -155,6 +161,70 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
         ],
       })
       .expect(201);
+
+    // Putaway to storage bin so picking doesn't create negative storage stock
+    const db = app.get(DRIZZLE);
+    const [storageBin] = await db
+      .select({
+        binId: bins.binId,
+        binNumber: bins.binNumber,
+        zoneCode: zones.code,
+      })
+      .from(bins)
+      .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+      .where(
+        and(
+          eq(zones.locationId, locationId),
+          eq(bins.binType, 'storage'),
+          eq(bins.isUnavailable, false),
+        ),
+      )
+      .limit(1);
+
+    let testBinId = storageBin?.binId as string | undefined;
+    if (!testBinId) {
+      const zoneId = crypto.randomUUID();
+      await db.insert(zones).values({
+        zoneId,
+        locationId,
+        code: 'Z-FRT-' + Date.now().toString().slice(-4),
+        name: 'FRT Zone',
+        source: 'e2e',
+      });
+      testBinId = crypto.randomUUID();
+      await db.insert(bins).values({
+        binId: testBinId,
+        zoneId,
+        binNumber: 'B-FRT-' + Date.now().toString().slice(-4),
+        binType: 'storage',
+        source: 'e2e',
+      });
+    }
+    storageBinId = testBinId;
+
+    const pendingRes = await request(app.getHttpServer())
+      .get(`/api/inventory/pending-putaway?locationId=${locationId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    const putawayLine = pendingRes.body.find(
+      (p: any) => p.productId === physicalProductId,
+    );
+    if (putawayLine) {
+      await request(app.getHttpServer())
+        .post('/api/inventory/putaway')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          putaways: [
+            {
+              lineId: putawayLine.id,
+              sourceType: 'goods_receipt',
+              destinationBinId: storageBinId,
+              quantity: '10',
+            },
+          ],
+        })
+        .expect(201);
+    }
   }, 120_000);
 
   afterAll(async () => {
@@ -223,13 +293,6 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
   });
 
   it('Step 3: Pick physical line and dispatch shipment', async () => {
-    // Get bins
-    const binsRes = await request(app.getHttpServer())
-      .get('/api/inventory/bins')
-      .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-    const binId = binsRes.body.data[0].binId;
-
     // Get order lines
     const detail = await request(app.getHttpServer())
       .get(`/api/sales-orders/${soId}`)
@@ -245,7 +308,7 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
         `/api/sales-orders/${soId}/picking/lines/${physicalLine.salesOrderLineId}`,
       )
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ binId, quantity: physicalLine.quantity })
+      .send({ binId: storageBinId, quantity: physicalLine.quantity })
       .expect(201);
 
     // Create shipment with all lines (physical + freight)

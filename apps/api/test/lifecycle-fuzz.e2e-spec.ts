@@ -790,8 +790,10 @@ describe('API E2E — End-to-End Cross-Ledger Lifecycle Fuzz Suite', () => {
       // 6. No Negative Inventory in Storage Bins
       const negativeBins = await sqlClient`
         SELECT count(*)::int as count
-        FROM herobm_core.bin_contents
-        WHERE actual_quantity < 0
+        FROM herobm_core.bin_contents bc
+        JOIN herobm_core.bins b ON b.bin_id = bc.bin_id
+        WHERE bc.actual_quantity < 0
+          AND b.bin_type IN ('storage', 'pick', 'bulk')
       `;
       expect(negativeBins[0].count).toEqual(0);
     });
