@@ -20,11 +20,12 @@ import {
   goodsReceivedLines,
   zones,
   bins,
+  binContents,
   uomDictionary,
   taxCategories,
   organizations,
 } from '@herobm/db-schema';
-import { eq, sql } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import {
   PURCHASE_ORDER_STATE,
   MATCH_STATUS,
@@ -57,17 +58,19 @@ describe('GoodsReceivedWriteService', () => {
     // Seed static data
     await pg.db
       .insert(uomDictionary)
-      .values({ uomCode: 'EA', description: 'Each', category: 'goods' });
-    await pg.db.insert(taxCategories).values({
-      taxCategoryId: TAX_CAT_ID,
-      code: 'GST',
-      title: 'GST',
-      rate: '0.1',
-      type: 'tax_applies',
-    });
-  });
+      .values({ uomCode: 'EA', description: 'Each', category: 'goods' })
+      .onConflictDoNothing();
+    await pg.db
+      .insert(taxCategories)
+      .values({
+        taxCategoryId: TAX_CAT_ID,
+        code: 'GST',
+        title: 'GST',
+        rate: '0.1',
+        type: 'tax_applies',
+      })
+      .onConflictDoNothing();
 
-  beforeEach(async () => {
     mockInventoryService = {
       recordInventoryMovement: jest.fn().mockResolvedValue(undefined),
     };
@@ -157,13 +160,13 @@ describe('GoodsReceivedWriteService', () => {
     // Clean tables in order
     await pg.db.delete(goodsReceivedLines);
     await pg.db.delete(goodsReceived);
+    await pg.db.delete(binContents);
     await pg.db.delete(purchaseOrderLineItems);
     await pg.db.delete(purchaseOrders);
-    await pg.db.delete(bins);
-    await pg.db.delete(zones);
     await pg.db.delete(products);
     await pg.db.delete(locations);
     await pg.db.delete(suppliers);
+    await pg.db.delete(organizations);
   });
 
   async function seedBasics() {
@@ -214,14 +217,51 @@ describe('GoodsReceivedWriteService', () => {
         structureType: 'standard',
       })
       .onConflictDoNothing();
+
+    let [zone] = await pg.db
+      .select({ zoneId: zones.zoneId })
+      .from(zones)
+      .where(
+        and(eq(zones.locationId, LOCATION_ID), eq(zones.code, 'HANDLING')),
+      );
+    if (!zone) {
+      [zone] = await pg.db
+        .insert(zones)
+        .values({
+          locationId: LOCATION_ID,
+          code: 'HANDLING',
+          name: 'Receiving Dock',
+          source: 'app',
+        })
+        .returning();
+    }
+
+    let [receivingBin] = await pg.db
+      .select({ binId: bins.binId })
+      .from(bins)
+      .where(
+        and(eq(bins.zoneId, zone.zoneId), eq(bins.binNumber, 'RECEIVING')),
+      );
+    if (!receivingBin) {
+      [receivingBin] = await pg.db
+        .insert(bins)
+        .values({
+          zoneId: zone.zoneId,
+          binNumber: 'RECEIVING',
+          binType: 'staging',
+          source: 'app',
+        })
+        .returning();
+    }
   }
 
   describe('create', () => {
     it('should throw NotFoundException when supplier does not exist', async () => {
+      await seedBasics();
       await expect(
         service.create(
           {
-            vendorId: VENDOR_ID,
+            vendorId: '00000000-0000-4000-8000-999999999999',
             locationId: LOCATION_ID,
             lines: [{ productId: PROD_ID, quantityReceived: '5' }],
           },
@@ -486,7 +526,7 @@ describe('GoodsReceivedWriteService', () => {
         'admin',
       );
 
-      // 4. Assert the boundary doesn't strip 'BOX'
+      // 4. Assert the boundary passes packaging UOM, purchase price unitCost, and originalQuantity to ledger
       expect(mockInventoryService.recordInventoryMovement).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({
@@ -495,6 +535,140 @@ describe('GoodsReceivedWriteService', () => {
               productId: PROD_ID,
               quantity: 5,
               uomCode: 'BOX',
+              unitCost: expect.stringMatching(/^100/),
+              originalQuantity: 5,
+            }),
+          ]),
+        }),
+      );
+    });
+  });
+
+  describe('cancelReception - ADV-215 Valuation Reversal', () => {
+    it('should recalculate and revert product Weighted Average Cost (WAC) when cancelling a goods receipt', async () => {
+      await seedBasics();
+
+      let [zone] = await pg.db
+        .select()
+        .from(zones)
+        .where(
+          and(eq(zones.locationId, LOCATION_ID), eq(zones.code, 'HANDLING')),
+        );
+
+      if (!zone) {
+        [zone] = await pg.db
+          .insert(zones)
+          .values({
+            locationId: LOCATION_ID,
+            code: 'HANDLING',
+            name: 'Receiving Dock',
+            source: 'app',
+          })
+          .returning();
+      }
+
+      let [receivingBin] = await pg.db
+        .select()
+        .from(bins)
+        .where(
+          and(eq(bins.zoneId, zone.zoneId), eq(bins.binNumber, 'RECEIVING')),
+        );
+
+      if (!receivingBin) {
+        [receivingBin] = await pg.db
+          .insert(bins)
+          .values({
+            zoneId: zone.zoneId,
+            binNumber: 'RECEIVING',
+            binType: 'staging',
+            source: 'app',
+          })
+          .returning();
+      }
+
+      // 2. Initial state: Product has WAC = $10.00 and 100 units on hand in warehouse
+      await pg.db
+        .update(products)
+        .set({ weightedAverageCost: '10.0000', standardCost: '10.00' })
+        .where(eq(products.productId, PROD_ID));
+
+      await pg.db.insert(binContents).values({
+        binId: receivingBin.binId,
+        productId: PROD_ID,
+        actualQuantity: '100',
+      });
+
+      // 3. Setup PO: 200 units @ $50.00
+      const PO_ID = '00000000-0000-4000-8000-000000000099';
+      await pg.db.insert(purchaseOrders).values({
+        purchaseOrderId: PO_ID,
+        orderNumber: 'PO-WAC-01',
+        vendorId: VENDOR_ID,
+        deliveryLocationId: LOCATION_ID,
+        stateCode: PURCHASE_ORDER_STATE.ORDERED,
+        currencyCode: 'USD',
+        exchangeRate: '1',
+      });
+
+      await pg.db.insert(purchaseOrderLineItems).values({
+        purchaseOrderId: PO_ID,
+        lineNumber: 1,
+        productId: PROD_ID,
+        quantity: '200',
+        quantityReceived: '0',
+        pricePerUnit: '50.00',
+        taxCategoryId: TAX_CAT_ID,
+      });
+
+      // 4. Create Goods Receipt for 200 units @ $50
+      // Expected new WAC = (100 * 10 + 200 * 50) / 300 = 36.6667
+      const receipt = await service.create(
+        {
+          vendorId: VENDOR_ID,
+          locationId: LOCATION_ID,
+          lines: [{ productId: PROD_ID, quantityReceived: '200' }],
+        },
+        'admin',
+      );
+
+      let [prod] = await pg.db
+        .select()
+        .from(products)
+        .where(eq(products.productId, PROD_ID));
+      expect(Number(prod.weightedAverageCost)).toBeCloseTo(36.6667, 3);
+
+      // Simulate stock now on-hand = 300 in bin_contents
+      await pg.db
+        .update(binContents)
+        .set({ actualQuantity: '300' })
+        .where(eq(binContents.binId, receivingBin.binId));
+
+      mockInventoryService.recordInventoryMovement.mockClear();
+
+      // 5. Cancel the Goods Receipt
+      await service.cancelReception(receipt.goodsReceivedId, 'admin');
+
+      // 6. Assert WAC has reverted to pre-receipt value ($10.0000)
+      [prod] = await pg.db
+        .select()
+        .from(products)
+        .where(eq(products.productId, PROD_ID));
+
+      expect(Number(prod.weightedAverageCost)).toBeCloseTo(10.0, 3);
+
+      // 7. ADV-INV-002: Assert the unitCost was explicitly passed to the ledger to prevent WAC drift
+      expect(
+        mockInventoryService.recordInventoryMovement,
+      ).toHaveBeenCalledTimes(1);
+      const inventoryCall =
+        mockInventoryService.recordInventoryMovement.mock.calls[0][1];
+      expect(inventoryCall).toEqual(
+        expect.objectContaining({
+          lines: expect.arrayContaining([
+            expect.objectContaining({
+              productId: PROD_ID,
+              quantity: -200,
+              unitCost: expect.stringMatching(/^50/),
             }),
           ]),
         }),

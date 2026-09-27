@@ -1,3 +1,4 @@
+import { Decimal } from 'decimal.js';
 import {
   Injectable,
   Inject,
@@ -34,6 +35,7 @@ import {
   getValidStates,
   PurchaseReturnState,
   PurchaseReturnShipmentState,
+  toDecimal,
 } from '@herobm/shared';
 import { AppConfigService } from '../settings/app-config.service';
 import { GlService } from '../gl/gl.service';
@@ -47,6 +49,10 @@ import {
   generateReturnNumber,
   generateShipmentNumber,
   getSupplierReturnsBinId,
+  recalculateShipReturnWac,
+  recalculateUnshipReturnWac,
+  executeStageReturnMovements,
+  executeUnstageReturnMovements,
 } from './purchase-returns.utils';
 
 const VALID_RETURN_STATES = getValidStates(PURCHASE_RETURN_TRANSITIONS);
@@ -238,50 +244,15 @@ export class PurchaseReturnsService {
           orderLineRows.map((ol) => [ol.purchaseOrderLineId, ol]),
         );
 
-        for (const rl of returnLines) {
-          if (!rl.sourceBinId) {
-            throw new BadRequestException(
-              `Source bin (sourceBinId) is required for return line '${rl.returnLineId}' before it can be staged.`,
-            );
-          }
-
-          const orderLine = orderLinesMap.get(rl.purchaseOrderLineId);
-
-          if (!orderLine || !orderLine.productId) {
-            throw new BadRequestException(
-              `Purchase order line not found for return line ${rl.returnLineId}`,
-            );
-          }
-
-          const qty = parseFloat(rl.quantityReturned || '0');
-          if (qty <= 0) {
-            throw new BadRequestException(
-              `Invalid quantity returned for return line ${rl.returnLineId}`,
-            );
-          }
-
-          const movementNumber = `MOV-${Date.now()}`;
-          await this.inventoryMovementService.recordInventoryMovement(tx, {
-            entryNumber: movementNumber,
-            sourceType: 'PURCHASE_RETURN_STAGE',
-            sourceId: returnId,
-            userId: actor,
-            lines: [
-              {
-                productId: orderLine.productId,
-                binId: rl.sourceBinId,
-                quantity: -qty,
-                uomCode: orderLine.unitOfMeasure || 'EA',
-              },
-              {
-                productId: orderLine.productId,
-                binId: supplierReturnsBinId,
-                quantity: qty,
-                uomCode: orderLine.unitOfMeasure || 'EA',
-              },
-            ],
-          });
-        }
+        await executeStageReturnMovements(
+          tx,
+          returnLines,
+          orderLinesMap,
+          supplierReturnsBinId,
+          returnId,
+          actor,
+          this.inventoryMovementService,
+        );
       }
 
       const updated = await this.changePurchaseReturnState(
@@ -363,50 +334,15 @@ export class PurchaseReturnsService {
           orderLineRows.map((ol) => [ol.purchaseOrderLineId, ol]),
         );
 
-        for (const rl of returnLines) {
-          const orderLine = orderLinesMap.get(rl.purchaseOrderLineId);
-
-          if (!orderLine || !orderLine.productId) {
-            throw new BadRequestException(
-              `Purchase order line not found for return line ${rl.returnLineId}`,
-            );
-          }
-
-          if (!rl.sourceBinId) {
-            throw new BadRequestException(
-              `Source bin not found for return line ${rl.returnLineId}`,
-            );
-          }
-
-          const qty = parseFloat(rl.quantityReturned || '0');
-          if (qty <= 0) {
-            throw new BadRequestException(
-              `Invalid quantity returned for return line ${rl.returnLineId}`,
-            );
-          }
-
-          const movementNumber = `MOV-${Date.now()}`;
-          await this.inventoryMovementService.recordInventoryMovement(tx, {
-            entryNumber: movementNumber,
-            sourceType: 'PURCHASE_RETURN_UNSTAGE',
-            sourceId: returnId,
-            userId: actor,
-            lines: [
-              {
-                productId: orderLine.productId,
-                binId: supplierReturnsBinId,
-                quantity: -qty,
-                uomCode: orderLine.unitOfMeasure || 'EA',
-              },
-              {
-                productId: orderLine.productId,
-                binId: rl.sourceBinId,
-                quantity: qty,
-                uomCode: orderLine.unitOfMeasure || 'EA',
-              },
-            ],
-          });
-        }
+        await executeUnstageReturnMovements(
+          tx,
+          returnLines,
+          orderLinesMap,
+          supplierReturnsBinId,
+          returnId,
+          actor,
+          this.inventoryMovementService,
+        );
       }
 
       const updated = await this.changePurchaseReturnState(
@@ -582,6 +518,9 @@ export class PurchaseReturnsService {
             productId: orderLine.productId,
             quantity: rl.quantityReturned,
             uomCode: orderLine.unitOfMeasure,
+            unitCost: orderLine.pricePerUnit
+              ? String(orderLine.pricePerUnit)
+              : undefined,
           });
         }
       }
@@ -594,16 +533,26 @@ export class PurchaseReturnsService {
 
         const validStockLines = stockLines.filter(
           (l) => l.productId != null,
-        ) as { productId: string; quantity: string; uomCode: string }[];
+        ) as {
+          productId: string;
+          quantity: string;
+          uomCode: string;
+          unitCost?: string;
+        }[];
 
         const moveLines = validStockLines.map((line) => ({
           productId: line.productId,
           binId: supplierReturnsBinId,
-          quantity: -parseFloat(line.quantity), // negative quantity for removing from inventory
+          quantity: toDecimal(line.quantity).negated().toNumber(), // negative quantity for removing from inventory
           uomCode: line.uomCode,
+          unitCost: line.unitCost,
         }));
 
         if (moveLines.length > 0) {
+          const valuationMethodCode =
+            this.appConfig?.valuationMethod?.() || 'weighted_average';
+          await recalculateShipReturnWac(tx, moveLines, valuationMethodCode);
+
           await this.inventoryMovementService.recordInventoryMovement(tx, {
             entryNumber:
               'RSH-' +
@@ -620,7 +569,7 @@ export class PurchaseReturnsService {
       }
 
       // Decrement PO quantity Received
-      let totalValueReturned = 0;
+      let totalValueReturned = new Decimal(0);
       const aggregatedReturns = new Map<string, number>();
 
       for (const rl of returnLines) {
@@ -628,15 +577,17 @@ export class PurchaseReturnsService {
         const orderLine = orderLinesMap.get(rl.purchaseOrderLineId);
 
         if (orderLine && orderLine.pricePerUnit) {
-          totalValueReturned +=
-            parseFloat(orderLine.pricePerUnit) *
-            parseFloat(rl.quantityReturned);
+          totalValueReturned = totalValueReturned.plus(
+            new Decimal(orderLine.pricePerUnit).mul(rl.quantityReturned || 0),
+          );
         }
 
-        const qty = parseFloat(rl.quantityReturned) || 0;
+        const qty = new Decimal(rl.quantityReturned || 0).toNumber();
         aggregatedReturns.set(
           rl.purchaseOrderLineId,
-          (aggregatedReturns.get(rl.purchaseOrderLineId) || 0) + qty,
+          new Decimal(aggregatedReturns.get(rl.purchaseOrderLineId) || 0)
+            .plus(qty)
+            .toNumber(),
         );
       }
 
@@ -653,7 +604,7 @@ export class PurchaseReturnsService {
       }
 
       // 4. Financial Integration (GL)
-      if (totalValueReturned > 0) {
+      if (totalValueReturned.greaterThan(0)) {
         const accountingStrategy = getAccountingStrategy(
           this.appConfig.inventoryAccountingMode(),
           {
@@ -666,7 +617,7 @@ export class PurchaseReturnsService {
         );
 
         const glResult = accountingStrategy.onSupplierReturn({
-          amount: Number(totalValueReturned.toFixed(2)),
+          amount: totalValueReturned.toDecimalPlaces(2).toNumber(),
           memo: `Supplier Return ${ret.returnNumber}`,
           partyType: 'supplier',
           partyId: po.vendorId || undefined,
@@ -798,6 +749,16 @@ export class PurchaseReturnsService {
             actor,
           );
 
+          const valuationMethodCode =
+            this.appConfig?.valuationMethod?.() || 'weighted_average';
+          await recalculateUnshipReturnWac(
+            tx,
+            orderLine.productId,
+            qty,
+            orderLine.pricePerUnit,
+            valuationMethodCode,
+          );
+
           const movementNumber = `MOV-${Date.now()}`;
           await this.inventoryMovementService.recordInventoryMovement(tx, {
             entryNumber: movementNumber,
@@ -810,6 +771,9 @@ export class PurchaseReturnsService {
                 binId: supplierReturnsBinId,
                 quantity: qty,
                 uomCode: orderLine.unitOfMeasure || 'EA',
+                unitCost: orderLine.pricePerUnit
+                  ? String(orderLine.pricePerUnit)
+                  : undefined,
               },
             ],
           });

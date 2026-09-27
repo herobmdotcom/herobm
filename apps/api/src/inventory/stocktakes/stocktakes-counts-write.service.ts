@@ -15,7 +15,7 @@ import {
   bins,
   products,
 } from '@herobm/db-schema';
-import { STOCKTAKE_STATE } from '@herobm/shared';
+import { STOCKTAKE_STATE, toDecimal } from '@herobm/shared';
 import { emitEvent } from '../../common/emit-event';
 import { EntityType, EventType } from '../../common/event-types';
 import type {
@@ -71,12 +71,13 @@ export class StocktakesCountsWriteService {
         )
         .limit(1);
 
-      const countQty = parseFloat(dto.quantity);
-      if (isNaN(countQty) || countQty < 0) {
+      const countQtyDec = toDecimal(dto.quantity);
+      if (countQtyDec.lessThan(0)) {
         throw new BadRequestException(
           'Count quantity must be a non-negative number',
         );
       }
+      const countQty = countQtyDec.toNumber();
 
       let lineId: string;
       let newCountedQty: number;

@@ -25,7 +25,7 @@ jest.mock('../common/emit-event', () => ({
 }));
 
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { eq, sql } from 'drizzle-orm';
+import { eq, sql, and } from 'drizzle-orm';
 import {
   createTestCustomer,
   createTestProduct,
@@ -1318,6 +1318,161 @@ describe('ReturnsWriteService', () => {
           'admin',
         ),
       ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  // =========================================================================
+  // receiveReturnLines()
+  // =========================================================================
+
+  describe('receiveReturnLines (ADV-INV-002)', () => {
+    it('should forward the original shipment unitCost to the inventory ledger to prevent WAC drift', async () => {
+      const cust = await createTestCustomer(pg.db);
+      const prod = await createTestProduct(pg.db);
+
+      const [loc] = await pg.db
+        .insert(locations)
+        .values({
+          locationId: '10000000-0000-4000-8000-000000000002',
+          code: 'LOC2',
+          name: 'Loc 2',
+          source: 'app',
+          createdBy: 'system',
+        })
+        .onConflictDoNothing()
+        .returning();
+
+      // Create RETURNS bin
+      let [zone] = await pg.db
+        .select()
+        .from(zones)
+        .where(
+          and(
+            eq(
+              zones.locationId,
+              loc ? loc.locationId : '10000000-0000-4000-8000-000000000002',
+            ),
+            eq(zones.code, 'HANDLING'),
+          ),
+        );
+      if (!zone) {
+        [zone] = await pg.db
+          .insert(zones)
+          .values({
+            locationId: loc
+              ? loc.locationId
+              : '10000000-0000-4000-8000-000000000002',
+            code: 'HANDLING',
+            name: 'Handling',
+            source: 'app',
+          })
+          .returning();
+      }
+
+      let [bin] = await pg.db
+        .select()
+        .from(bins)
+        .where(
+          and(eq(bins.zoneId, zone.zoneId), eq(bins.binNumber, 'RETURNS')),
+        );
+      if (!bin) {
+        [bin] = await pg.db
+          .insert(bins)
+          .values({
+            zoneId: zone.zoneId,
+            binNumber: 'RETURNS',
+            binType: 'storage',
+            source: 'app',
+          })
+          .returning();
+      }
+
+      const order = await createTestSalesOrder(pg.db, {
+        customerId: cust.customerId,
+        locationId: loc
+          ? loc.locationId
+          : '10000000-0000-4000-8000-000000000002',
+      });
+
+      const taxRes = await pg.db
+        .select()
+        .from(taxCategories)
+        .where(eq(taxCategories.code, 'GST'));
+
+      const orderLine = await createTestSalesOrderLine(pg.db, {
+        salesOrderId: order.salesOrderId,
+        productId: prod.productId,
+        quantity: 10,
+        price: 50,
+        taxCategoryId: taxRes[0].taxCategoryId,
+      });
+
+      // Directly patch the order line to have a specific unitCost
+      await pg.db
+        .update(salesOrderLineItems)
+        .set({ unitCost: '42.50' })
+        .where(
+          eq(salesOrderLineItems.salesOrderLineId, orderLine.salesOrderLineId),
+        );
+
+      const shipment = await createTestShipment(pg.db, {
+        salesOrderId: order.salesOrderId,
+      });
+      await createTestShipmentLine(pg.db, {
+        shipmentId: shipment.shipmentId,
+        salesOrderLineId: orderLine.salesOrderLineId,
+        quantityShipped: 10,
+      });
+
+      const ret = await createTestReturn(pg.db, {
+        salesOrderId: order.salesOrderId,
+        state: RETURN_STATE.CONFIRMED,
+      });
+
+      const retLine = await createTestReturnLine(pg.db, {
+        returnId: ret.returnId,
+        salesOrderLineId: orderLine.salesOrderLineId,
+        quantity: 5,
+      });
+
+      // Act
+      await service.receiveReturnLines(
+        ret.returnId,
+        {
+          locationId: loc
+            ? loc.locationId
+            : '10000000-0000-4000-8000-000000000002',
+          lines: [
+            { returnLineId: retLine.returnLineId, quantityReceived: '5' },
+          ],
+        },
+        'admin',
+      );
+
+      // Assert
+      expect(
+        mockInventoryService.recordInventoryMovement,
+      ).toHaveBeenCalledTimes(1);
+      const inventoryCall =
+        mockInventoryService.recordInventoryMovement.mock.calls[0][1];
+      expect(inventoryCall).toEqual(
+        expect.objectContaining({
+          lines: expect.arrayContaining([
+            expect.objectContaining({
+              productId: prod.productId,
+              quantity: 5,
+              unitCost: '42.50',
+            }),
+          ]),
+        }),
+      );
+
+      // Assert WAC update on product master
+      const [updatedProd] = await pg.db
+        .select()
+        .from(products)
+        .where(eq(products.productId, prod.productId));
+      expect(Number(updatedProd.weightedAverageCost)).toBeCloseTo(42.5, 2);
     });
   });
 });

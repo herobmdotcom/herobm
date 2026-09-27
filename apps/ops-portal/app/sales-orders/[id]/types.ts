@@ -79,18 +79,28 @@ export interface OrderDetail {
     parentId?: string | null;
     customFields?: Record<string, unknown>;
     metadata?: Record<string, unknown> | null;
-    backorders?: {
-        productId?: string;
-        productNumber?: string;
-        quantity?: string;
-        stateCode: string;
-        purchaseOrderId?: string;
-        purchaseOrderNumber?: string;
-        salesOrderId?: string;
-        orderNumber?: string;
-        name?: string;
-        createdOn: string;
-    }[];
+    backorders?: BackorderItem[];
+}
+
+export interface BackorderItem {
+    salesOrderLineId?: string;
+    lineNumber?: number | string;
+    productId?: string;
+    productNumber?: string;
+    quantity?: string;
+    stateCode?: string;
+    purchaseOrderId?: string;
+    purchaseOrderNumber?: string;
+    purchaseOrderState?: string;
+    transferOrderId?: string;
+    transferOrderNumber?: string;
+    transferOrderState?: string;
+    salesOrderId?: string;
+    orderNumber?: string;
+    name?: string;
+    createdOn?: string;
+    demandDate?: string;
+    expectedDate?: string;
 }
 
 export interface InventoryLevel {

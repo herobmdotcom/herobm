@@ -12,6 +12,7 @@ import {
   glSettings,
 } from '@herobm/db-schema';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
+import { AppConfigService } from '../src/settings/app-config.service';
 
 describe('FX Lifecycle (e2e)', () => {
   let app: INestApplication;
@@ -155,6 +156,14 @@ describe('FX Lifecycle (e2e)', () => {
       await db.update(glSettings).set({ defaultPpvAccountId: ppvId });
     }
 
+    await db.execute(
+      sql`UPDATE herobm_core.app_settings SET 
+        inventory_accounting_mode = 'perpetual',
+        inventory_valuation_method = 'weighted_average'`,
+    );
+    const appConfig = app.get(AppConfigService);
+    await appConfig.reload();
+
     const settingsRes = await request(app.getHttpServer())
       .get('/api/gl/settings')
       .set('Authorization', `Bearer ${adminToken}`)
@@ -202,6 +211,16 @@ describe('FX Lifecycle (e2e)', () => {
   }, 120_000);
 
   afterAll(async () => {
+    try {
+      const db = app.get(DRIZZLE);
+      await db.execute(
+        sql`UPDATE herobm_core.app_settings SET inventory_accounting_mode = 'periodic'`,
+      );
+      const appConfig = app.get(AppConfigService);
+      await appConfig.reload();
+    } catch {
+      // ignore
+    }
     await app.close();
   });
 
@@ -297,6 +316,7 @@ describe('FX Lifecycle (e2e)', () => {
         .post('/api/goods-received')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
+          purchaseOrderId: poId,
           vendorId,
           locationId,
           packingSlipNumber: 'FX-PACK-1',

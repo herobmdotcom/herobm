@@ -123,9 +123,9 @@ export default tseslint.config(
           message: "ADV-072: Do not use 'defaultValue' in translation calls. Systematically add all strings to en.json."
         },
         {
-          // ADV-090: Centralized Browser Locale Date Formatting
+          // ADV-220: Centralized Browser Locale Date Formatting
           selector: "CallExpression[callee.property.name='toLocaleDateString']",
-          message: "ADV-090: Do not call .toLocaleDateString() directly in UI components as it is vulnerable to UTC timezone day-shifts. Use formatLocalDate() from '@/lib/date'."
+          message: "ADV-220: Do not call .toLocaleDateString() directly in UI components as it is vulnerable to UTC timezone day-shifts. Use formatLocalDate() from '@herobm/shared' or '@/lib/date'."
         }
       ]
     },

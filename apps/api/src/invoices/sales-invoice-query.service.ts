@@ -1,5 +1,18 @@
+import { Decimal } from 'decimal.js';
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { eq, sql, desc, and, gte, or, asc, lt, gt, ilike } from 'drizzle-orm';
+import {
+  eq,
+  sql,
+  desc,
+  and,
+  gte,
+  or,
+  asc,
+  lt,
+  gt,
+  ilike,
+  type SQL,
+} from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -158,10 +171,10 @@ export class SalesInvoiceQueryService {
         asc(salesInvoiceLines.invoiceLineId),
       );
 
-    const invoiceTax = parseFloat(invoice.taxAmount || '0');
-    const invoiceSubtotal = linesRaw.reduce(
-      (sum, l) => sum + parseFloat(l.amount || '0'),
-      0,
+    const invoiceTaxDec = new Decimal(invoice.taxAmount || '0');
+    const invoiceSubtotalDec = linesRaw.reduce(
+      (sum, l) => sum.add(new Decimal(l.amount || '0')),
+      new Decimal(0),
     );
 
     const lines = linesRaw.map((line) => {
@@ -169,31 +182,34 @@ export class SalesInvoiceQueryService {
       if (line.taxAmount != null) {
         taxAmount = line.taxAmount;
       } else {
-        const lineAmt = parseFloat(line.amount || '0');
-        const lineQty = parseFloat(line.quantityInvoiced || '0');
+        const lineAmtDec = new Decimal(line.amount || '0');
+        const lineQtyDec = new Decimal(line.quantityInvoiced || '0');
 
-        if (lineAmt === 0 || lineQty === 0) {
+        if (lineAmtDec.isZero() || lineQtyDec.isZero()) {
           taxAmount = '0';
         } else if (
           line.orderLineTax != null &&
           line.orderLineAmount != null &&
-          parseFloat(line.orderLineAmount) > 0
+          new Decimal(line.orderLineAmount).gt(0)
         ) {
-          taxAmount = (
-            (lineAmt / parseFloat(line.orderLineAmount)) *
-            parseFloat(line.orderLineTax)
-          ).toFixed(2);
+          taxAmount = lineAmtDec
+            .div(new Decimal(line.orderLineAmount))
+            .mul(new Decimal(line.orderLineTax))
+            .toFixed(2);
         } else if (
           line.orderLineTax != null &&
           line.orderLineQuantity != null &&
-          parseFloat(line.orderLineQuantity) > 0
+          new Decimal(line.orderLineQuantity).gt(0)
         ) {
-          taxAmount = (
-            (lineQty / parseFloat(line.orderLineQuantity)) *
-            parseFloat(line.orderLineTax)
-          ).toFixed(2);
-        } else if (invoiceTax > 0 && invoiceSubtotal > 0) {
-          taxAmount = ((lineAmt / invoiceSubtotal) * invoiceTax).toFixed(2);
+          taxAmount = lineQtyDec
+            .div(new Decimal(line.orderLineQuantity))
+            .mul(new Decimal(line.orderLineTax))
+            .toFixed(2);
+        } else if (invoiceTaxDec.gt(0) && invoiceSubtotalDec.gt(0)) {
+          taxAmount = lineAmtDec
+            .div(invoiceSubtotalDec)
+            .mul(invoiceTaxDec)
+            .toFixed(2);
         }
       }
 
@@ -284,8 +300,7 @@ export class SalesInvoiceQueryService {
           )})`,
         );
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic grouping of raw DB results
-      const groupedLines: Record<string, any[]> = {};
+      const groupedLines: Record<string, typeof allLines> = {};
       for (const line of allLines) {
         if (!groupedLines[line.invoiceId]) {
           groupedLines[line.invoiceId] = [];
@@ -383,8 +398,7 @@ export class SalesInvoiceQueryService {
       searchTerm,
     } = query;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle SQL operators array typing
-    const conditions: any[] = [];
+    const conditions: SQL[] = [];
 
     // When filtering by specific invoiceId, skip the date range filter
     if (invoiceId) {
@@ -410,12 +424,11 @@ export class SalesInvoiceQueryService {
         );
 
       if (isUuid) {
-        conditions.push(
-          or(
-            eq(customers.customerId, customerId),
-            eq(customers.externalId, customerId),
-          ),
+        const orCond = or(
+          eq(customers.customerId, customerId),
+          eq(customers.externalId, customerId),
         );
+        if (orCond) conditions.push(orCond);
       } else {
         conditions.push(eq(customers.externalId, customerId));
       }

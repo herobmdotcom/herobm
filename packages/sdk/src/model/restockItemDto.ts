@@ -47,4 +47,10 @@ export interface RestockItemDto {
   minPurchaseQty?: number | null;
   /** @nullable */
   purchaseUnit?: string | null;
+  /** @nullable */
+  purchaseUomId?: string | null;
+  /** @nullable */
+  purchaseUomCode?: string | null;
+  /** @nullable */
+  purchaseUomRatio?: number | null;
 }

@@ -1,3 +1,4 @@
+import { Decimal } from 'decimal.js';
 import {
   Injectable,
   Inject,
@@ -56,13 +57,15 @@ export class ProjectsBudgetService {
       dto.discountPercentage !== undefined
         ? dto.discountPercentage
         : project.discountPercentage
-          ? parseFloat(project.discountPercentage)
+          ? new Decimal(project.discountPercentage).toNumber()
           : 0;
 
-    const totalCost = Number(dto.plannedQuantity) * Number(dto.unitCost);
+    const totalCost = new Decimal(dto.plannedQuantity)
+      .mul(dto.unitCost)
+      .toNumber();
     const computedPrice = computeLinePrice({
-      quantity: Number(dto.plannedQuantity),
-      pricePerUnit: Number(dto.unitPrice),
+      quantity: new Decimal(dto.plannedQuantity).toNumber(),
+      pricePerUnit: new Decimal(dto.unitPrice).toNumber(),
       discountPercentage: lineDiscount,
       taxRate: 0,
     });
@@ -144,25 +147,25 @@ export class ProjectsBudgetService {
 
     const plannedQuantity =
       dto.plannedQuantity !== undefined
-        ? Number(dto.plannedQuantity)
-        : Number(existing.plannedQuantity);
+        ? new Decimal(dto.plannedQuantity).toNumber()
+        : new Decimal(existing.plannedQuantity || 0).toNumber();
     const unitCost =
       dto.unitCost !== undefined
-        ? Number(dto.unitCost)
-        : Number(existing.unitCost);
+        ? new Decimal(dto.unitCost).toNumber()
+        : new Decimal(existing.unitCost || 0).toNumber();
     const unitPrice =
       dto.unitPrice !== undefined
-        ? Number(dto.unitPrice)
-        : Number(existing.unitPrice);
+        ? new Decimal(dto.unitPrice).toNumber()
+        : new Decimal(existing.unitPrice || 0).toNumber();
 
     const lineDiscount =
       dto.discountPercentage !== undefined
         ? dto.discountPercentage
         : existing.discountPercentage
-          ? parseFloat(existing.discountPercentage)
+          ? new Decimal(existing.discountPercentage).toNumber()
           : 0;
 
-    const totalCost = plannedQuantity * unitCost;
+    const totalCost = new Decimal(plannedQuantity).mul(unitCost).toNumber();
     const computedPrice = computeLinePrice({
       quantity: plannedQuantity,
       pricePerUnit: unitPrice,

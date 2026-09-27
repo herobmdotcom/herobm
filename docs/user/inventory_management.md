@@ -78,9 +78,10 @@ The system dynamically computes sellable availability:
 Available Quantity = On-Hand Stock - Allocated Order Reservations - Quarantine Stock
 ```
 
-* **On-Hand**: Physical inventory present in warehouse storage, pick, and bulk bins.
-* **Allocated / Committed**: Units committed to confirmed customer sales orders awaiting picking/dispatch.
-* **Quarantine**: Units in quarantine bins awaiting inspection or return.
+* **On-Hand (`quantity_on_hand`)**: Total physical inventory present in the facility across storage, pick, bulk, and staging dock bins (reflects actual building assets until carrier dispatch).
+* **Allocated / Committed (`quantity_committed`)**: Units committed to confirmed customer sales orders awaiting picking or dispatch.
+* **Quarantine**: Units in quarantine bins awaiting inspection or return (excluded from on-hand sales availability).
+* **Available (`quantity_available`)**: Net sellable units available for immediate order commitment (`On-Hand - Committed - Reserved`).
 
 ### 3. On-Order Stock Calculation (Incoming POs)
 The system tracks incoming inventory from suppliers based on active Purchase Orders:

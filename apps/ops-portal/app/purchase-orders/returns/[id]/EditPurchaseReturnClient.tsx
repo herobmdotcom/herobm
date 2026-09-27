@@ -19,7 +19,14 @@ import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
 import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
 import LinkedEntityCard from '@/components/shared/LinkedEntityCard';
 import * as api from '@herobm/sdk';
-import { PURCHASE_RETURN_STATE, DATA_SOURCE_CONTEXT, getErrorMessage, computeReturnCreditSummary } from '@herobm/shared';
+import {
+  PURCHASE_RETURN_STATE,
+  DATA_SOURCE_CONTEXT,
+  getErrorMessage,
+  computeReturnCreditSummary,
+  computeLinePrice,
+  toFinancialDecimal,
+} from '@herobm/shared';
 import { reportError } from '@/lib/api';
 import { routes } from '@/lib/routes';
 import { toast } from 'react-hot-toast';
@@ -314,11 +321,13 @@ export default function EditPurchaseReturnClient({ id }: { id: string }) {
       width: 130,
       align: 'right',
       render: (line) => {
-        const qty = parseFloat(line.quantityReturned || '0');
-        const price = parseFloat(line.pricePerUnit || '0');
+        const linePricing = computeLinePrice({
+          quantity: toFinancialDecimal(line.quantityReturned).toNumber(),
+          pricePerUnit: toFinancialDecimal(line.pricePerUnit).toNumber(),
+        });
         return (
           <span className="font-semibold tabular-nums">
-            {formatAmount(qty * price, currency)}
+            {formatAmount(linePricing.amount, currency)}
           </span>
         );
       },

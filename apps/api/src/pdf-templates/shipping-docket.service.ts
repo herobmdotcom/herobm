@@ -16,6 +16,7 @@ import {
   transferOrderLines,
   locations,
 } from '@herobm/db-schema';
+import { formatReportDate, formatReportDateTime } from '@herobm/shared';
 
 export interface ShippingDocketData {
   header: {
@@ -253,9 +254,7 @@ export class ShippingDocketService {
         customerAddress,
         trackingNumber: shipment.trackingNumber ?? '—',
         notes: shipment.notes ?? '',
-        dispatchDate: shipment.createdOn
-          ? new Date(shipment.createdOn).toLocaleDateString('en-IE')
-          : '',
+        dispatchDate: formatReportDate(shipment.createdOn, undefined, ''),
         deliveryName: shipment.deliveryName ?? '',
         deliveryCompanyName: shipment.deliveryCompanyName ?? '',
         deliveryPhone: shipment.deliveryPhone ?? '',
@@ -271,13 +270,7 @@ export class ShippingDocketService {
       lines: mappedLines,
       totalQuantity,
       totalLines: mappedLines.length,
-      generatedAt:
-        new Date().toLocaleDateString('en-IE') +
-        ' ' +
-        new Date().toLocaleTimeString('en-IE', {
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
+      generatedAt: formatReportDateTime(new Date()),
     };
 
     const customText =

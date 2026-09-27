@@ -146,7 +146,14 @@ export {
   computeReturnCreditSummary,
   resolveEffectiveDiscount,
   getTaxLabel,
+  distributeLumpSum,
+  distributeProRata,
+  roundMoney,
+  roundRate,
+  toFinancialDecimal,
+  formatMoneyString,
 } from './pricing';
+export type { ProrationTarget, ProrationResult } from './pricing';
 
 
 export {
@@ -161,6 +168,9 @@ export {
   getCurrency,
   getCurrencyByAbmCode,
   formatAmount,
+  convertAmount,
+  convertAmountDecimal,
+  MissingExchangeRateError,
   REVENUE_ROUTING_PRECEDENCE,
   EXPENSE_ROUTING_PRECEDENCE,
   getCurrencyForCountry,
@@ -217,7 +227,7 @@ export type { ReportDefinition } from './reports';
 
 export { formatCompositeQuantity, calculateUomPriceAdjustment, normalizeUomCode } from './uom';
 export type { ProductUom } from './uom';
-export type { LinePricingInput, LinePricingResult, OrderTotalsResult, DiscountRule, TaxCategoryLabelInput } from './pricing';
+export * from './pricing';
 export type { CurrencyDef, RevenueRoutingStrategy, ExpenseRoutingStrategy } from './currency';
 
 
@@ -258,4 +268,6 @@ export * from './ledger-hash';
 export * from './tax';
 export * from './crm';
 export * from './projects';
+export * from './date';
+export { Decimal } from 'decimal.js';
 

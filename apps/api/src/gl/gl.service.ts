@@ -1,3 +1,4 @@
+import { Decimal } from 'decimal.js';
 import {
   Injectable,
   Inject,
@@ -229,13 +230,18 @@ export class GlService implements OnModuleInit {
     }
 
     // 2. Validate balance invariant
-    const totalDebit = lines.reduce((sum, l) => sum + (l.debit || 0), 0);
-    const totalCredit = lines.reduce((sum, l) => sum + (l.credit || 0), 0);
+    const totalDebitDec = lines.reduce(
+      (sum, l) => sum.plus(new Decimal(l.debit || 0).toDecimalPlaces(2)),
+      new Decimal(0),
+    );
+    const totalCreditDec = lines.reduce(
+      (sum, l) => sum.plus(new Decimal(l.credit || 0).toDecimalPlaces(2)),
+      new Decimal(0),
+    );
 
-    // Use rounding to avoid floating-point issues (2 decimal places)
-    if (Math.abs(totalDebit - totalCredit) > 0.005) {
+    if (!totalDebitDec.equals(totalCreditDec)) {
       throw new BadRequestException(
-        `Journal entry is unbalanced: debit=${totalDebit.toFixed(2)}, credit=${totalCredit.toFixed(2)}`,
+        `Journal entry is unbalanced: debit=${totalDebitDec.toFixed(2)}, credit=${totalCreditDec.toFixed(2)}`,
       );
     }
 
@@ -410,8 +416,10 @@ export class GlService implements OnModuleInit {
             continue;
           }
 
-          const isDebit = Number(l.debit) > 0;
-          const amount = isDebit ? Number(l.debit) : Number(l.credit);
+          const isDebit = new Decimal(l.debit || '0').gt(0);
+          const amount = isDebit
+            ? new Decimal(l.debit || '0').toNumber()
+            : new Decimal(l.credit || '0').toNumber();
 
           if (isRevenue) {
             // Revenue account:

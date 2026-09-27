@@ -1,3 +1,5 @@
+import { Decimal } from 'decimal.js';
+import { toDecimal } from '@herobm/shared';
 import {
   Injectable,
   Inject,
@@ -244,7 +246,7 @@ export class ProductsService {
                 for (const c of comps) {
                   if (!c.childProductId) continue;
                   const avail = availableMap.get(c.childProductId) || 0;
-                  const req = Number(c.quantity) || 1;
+                  const req = toDecimal(c.quantity).toNumber() || 1;
                   const buildable = Math.floor(avail / req);
                   if (buildable < maxBuildable) {
                     maxBuildable = buildable;
@@ -252,11 +254,13 @@ export class ProductsService {
                 }
                 if (maxBuildable === Number.MAX_SAFE_INTEGER) maxBuildable = 0;
 
-                const physicalOnHand = Number(row.quantityOnHand) || 0;
+                const physicalOnHand = toDecimal(row.quantityOnHand).toNumber();
                 if (row.productType === 'non-stock') {
                   row.quantityOnHand = maxBuildable;
                 } else {
-                  row.quantityOnHand = physicalOnHand + maxBuildable;
+                  row.quantityOnHand = toDecimal(physicalOnHand)
+                    .plus(maxBuildable)
+                    .toNumber();
                 }
               }
             }
@@ -275,9 +279,16 @@ export class ProductsService {
       countQb = countQb.where(and(...conditions));
     }
 
-    const [{ count: total }] = await countQb;
+    const [{ count: rowCount }] = await countQb;
 
-    return { data, page, limit, total: Number(total), nextCursor, prevCursor };
+    return {
+      data,
+      page,
+      limit,
+      total: Number(rowCount),
+      nextCursor,
+      prevCursor,
+    };
   }
 
   async findOne(id: string, tx?: DrizzleDB) {
@@ -406,8 +417,8 @@ export class ProductsService {
     return {
       data: components.map((c) => ({
         ...c,
-        parentQuantity: Number(c.parentQuantity),
-        quantity: Number(c.quantity),
+        parentQuantity: toDecimal(c.parentQuantity).toNumber(),
+        quantity: toDecimal(c.quantity).toNumber(),
       })),
     };
   }
@@ -497,28 +508,28 @@ export class ProductsService {
     return {
       productId: product.productId,
       standardCost: product.standardCost
-        ? parseFloat(product.standardCost).toFixed(2)
+        ? new Decimal(product.standardCost).toFixed(2)
         : null,
       weightedAverageCost: product.weightedAverageCost
-        ? parseFloat(product.weightedAverageCost).toFixed(2)
+        ? new Decimal(product.weightedAverageCost).toFixed(2)
         : null,
       listPrice: product.listPrice
-        ? parseFloat(product.listPrice).toFixed(2)
+        ? new Decimal(product.listPrice).toFixed(2)
         : null,
       tradePrice: product.tradePrice
-        ? parseFloat(product.tradePrice).toFixed(2)
+        ? new Decimal(product.tradePrice).toFixed(2)
         : null,
       preferredSupplierCost: preferredSupplier?.costPrice
-        ? parseFloat(preferredSupplier.costPrice).toFixed(2)
+        ? new Decimal(preferredSupplier.costPrice).toFixed(2)
         : null,
       preferredSupplierDiscount: preferredSupplier?.discountPercent
-        ? parseFloat(preferredSupplier.discountPercent).toFixed(2)
+        ? new Decimal(preferredSupplier.discountPercent).toFixed(2)
         : null,
       preferredSupplierVendorId: preferredSupplier?.vendorId ?? null,
       preferredSupplierName: preferredSupplier?.vendorName ?? null,
       preferredSupplierVendorNumber: preferredSupplier?.vendorNumber ?? null,
       lastPurchasePrice: latestPo?.pricePerUnit
-        ? parseFloat(latestPo.pricePerUnit).toFixed(2)
+        ? new Decimal(latestPo.pricePerUnit).toFixed(2)
         : null,
       lastPurchaseDate: latestPo?.createdOn
         ? new Date(latestPo.createdOn).toISOString()

@@ -16,8 +16,8 @@ function printHelp() {
 =========================================
 Usage:
   node scripts/setup-backup.mjs [mode] [options]
-  make backup-destination [DEST="remote:path"]
-  make backup-setup [CRON="..."] [EMAIL="..."]
+  make backup-destination [DEST="remote:path"] [SOURCE="name"]
+  make backup-setup [CRON="..."] [EMAIL="..."] [SOURCE="name"]
 
 Operational Modes:
   --destination, -d, destination  Configure cloud / remote storage destination (rclone)
@@ -27,6 +27,7 @@ Operational Modes:
 
 Destination Options (--destination):
   --dest <remote:path>            Set backup destination directly (e.g. gdrive:herobm_backups)
+  --source, -s <name>             Set source VM/host identifier (e.g. vm-node-01)
   --test, --verify                Test connectivity to the configured destination
   --no-verify                     Skip remote connectivity check
   --profile, -p <name>            Target environment profile (.env.<name>)
@@ -37,6 +38,7 @@ Backup Schedule Options (--backup):
   --daily                         Shortcut for daily schedule at 2:00 AM (0 2 * * *)
   --weekly                        Shortcut for weekly schedule on Sunday at 2:00 AM (0 2 * * 0)
   --email <address>               Send backup log email notifications to address
+  --source, -s <name>             Set source VM/host identifier (e.g. vm-node-01)
   --profile, -p <name>            Target environment profile (.env.<name>)
   --run-now                       Execute an immediate backup test run after setup
   --dry-run                       Simulate without modifying crontab
@@ -48,6 +50,7 @@ function parseCliArgs() {
     const options = {
         mode: '',
         dest: '',
+        source: '',
         cron: '',
         email: '',
         profile: '',
@@ -73,6 +76,8 @@ function parseCliArgs() {
             options.mode = 'all';
         } else if (arg === '--dest' || arg === '-Dest' || arg === '-Destination') {
             options.dest = rawArgs[++i] || '';
+        } else if (arg === '--source' || arg === '-Source' || arg === '-s' || arg === '--source-name' || arg === '--host') {
+            options.source = rawArgs[++i] || '';
         } else if (arg === '--cron' || arg === '-Cron') {
             options.cron = rawArgs[++i] || '';
         } else if (arg === '--email' || arg === '-Email') {
@@ -160,9 +165,30 @@ function createPrompter() {
     };
 }
 
+function resolveSource(options, envCtx) {
+    const rawHost = os.hostname();
+    const sourceRaw = (options.source || envCtx.envVars.BACKUP_SOURCE_NAME || envCtx.envVars.HEROBM_INSTANCE_NAME || rawHost || 'herobm').trim();
+    const sourceTag = sourceRaw.toLowerCase().replace(/[^a-z0-9_-]/g, '_').replace(/^_+|_+$/g, '') || 'herobm';
+    return { sourceRaw, sourceTag, rawHost };
+}
+
+function updateEnvVar(filePath, key, value) {
+    let envContent = fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf8') : '';
+    const regex = new RegExp(`^${key}=.*$`, 'm');
+    if (envContent.match(regex)) {
+        envContent = envContent.replace(regex, `${key}=${value}`);
+    } else {
+        envContent = envContent.trimEnd() + `\n${key}=${value}\n`;
+    }
+    fs.writeFileSync(filePath, envContent);
+}
+
 async function setupDestination(options, prompter, envCtx) {
     console.log('\n\x1b[36m=== HeroBM Backup Destination Configuration ===\x1b[0m');
-    console.log(`Target Environment: \x1b[35m${envCtx.envFileName}\x1b[0m`);
+    console.log(`Target Environment : \x1b[35m${envCtx.envFileName}\x1b[0m`);
+
+    const { sourceTag, sourceRaw } = resolveSource(options, envCtx);
+    console.log(`Source / Hostname  : \x1b[33m${sourceTag}\x1b[0m${sourceRaw !== sourceTag ? ` (${sourceRaw})` : ''}`);
 
     const currentDest = envCtx.envVars.BACKUP_RCLONE_DEST || '';
     if (currentDest) {
@@ -203,6 +229,14 @@ async function setupDestination(options, prompter, envCtx) {
     let destination = options.dest;
 
     if (!destination && !options.nonInteractive && !options.dryRun) {
+        if (!options.source) {
+            const defaultSource = envCtx.envVars.BACKUP_SOURCE_NAME || os.hostname() || 'herobm';
+            const sourceChoice = await prompter.question(`\nEnter VM / host identifier for backup tags & alerts [Default: ${defaultSource}]: `);
+            if (sourceChoice) {
+                options.source = sourceChoice;
+            }
+        }
+
         if (rcloneInstalled) {
             try {
                 const remotesOut = execSync('rclone listremotes', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
@@ -281,23 +315,34 @@ async function setupDestination(options, prompter, envCtx) {
 
     if (options.dryRun) {
         console.log(`\n\x1b[32m[dry-run] Would update ${envCtx.envFileName} with BACKUP_RCLONE_DEST=${destination}\x1b[0m`);
+        if (options.source) {
+            console.log(`\x1b[32m[dry-run] Would update ${envCtx.envFileName} with BACKUP_SOURCE_NAME=${options.source}\x1b[0m`);
+        }
         return;
     }
 
-    let envContent = fs.existsSync(envCtx.envFilePath) ? fs.readFileSync(envCtx.envFilePath, 'utf8') : '';
-    if (envContent.includes('BACKUP_RCLONE_DEST=')) {
-        envContent = envContent.replace(/^BACKUP_RCLONE_DEST=.*$/m, `BACKUP_RCLONE_DEST=${destination}`);
-    } else {
-        envContent = envContent.trimEnd() + `\nBACKUP_RCLONE_DEST=${destination}\n`;
+    updateEnvVar(envCtx.envFilePath, 'BACKUP_RCLONE_DEST', destination);
+    if (options.source) {
+        updateEnvVar(envCtx.envFilePath, 'BACKUP_SOURCE_NAME', options.source);
     }
-
-    fs.writeFileSync(envCtx.envFilePath, envContent);
     console.log(`\n\x1b[32m[OK] Updated ${envCtx.envFileName} with BACKUP_RCLONE_DEST=${destination}\x1b[0m`);
 }
 
 async function setupBackupSchedule(options, prompter, envCtx) {
     console.log('\n\x1b[36m=== HeroBM Automated Backup Schedule Configuration ===\x1b[0m');
     console.log(`Target Environment : \x1b[35m${envCtx.envFileName}\x1b[0m`);
+
+    if (!options.source && !options.nonInteractive && !options.dryRun) {
+        console.log('\n\x1b[33m1. VM / Host Identifier (Optional)\x1b[0m');
+        const defaultSource = envCtx.envVars.BACKUP_SOURCE_NAME || os.hostname() || 'herobm';
+        const sourceChoice = await prompter.question(`Enter VM / host identifier for backup archives and email alerts [Default: ${defaultSource}]: `);
+        if (sourceChoice) {
+            options.source = sourceChoice;
+        }
+    }
+
+    const { sourceTag, sourceRaw } = resolveSource(options, envCtx);
+    console.log(`Source / Hostname  : \x1b[33m${sourceTag}\x1b[0m${sourceRaw !== sourceTag ? ` (${sourceRaw})` : ''}`);
 
     const currentDest = envCtx.envVars.BACKUP_RCLONE_DEST;
     if (currentDest) {
@@ -310,7 +355,8 @@ async function setupBackupSchedule(options, prompter, envCtx) {
         console.log('\n\x1b[33m[NOTICE] Automated crontab scheduling is native to Linux & macOS.\x1b[0m');
         console.log('On Windows, configure a Windows Scheduled Task with the following command:');
         const profileArg = envCtx.activeProfile ? ` --profile ${envCtx.activeProfile}` : '';
-        console.log(`  \x1b[36mnode scripts/backup-db.mjs${profileArg}\x1b[0m\n`);
+        const sourceArg = options.source ? ` --source ${options.source}` : '';
+        console.log(`  \x1b[36mnode scripts/backup-db.mjs${profileArg}${sourceArg}\x1b[0m\n`);
         if (!options.dryRun && options.nonInteractive) return;
     }
 
@@ -328,7 +374,7 @@ async function setupBackupSchedule(options, prompter, envCtx) {
     } else if (options.weekly) {
         cronExp = '0 2 * * 0';
     } else if (!options.nonInteractive && !options.dryRun && !isWindows) {
-        console.log('\n\x1b[33m1. Backup Frequency\x1b[0m');
+        console.log('\n\x1b[33m2. Backup Frequency\x1b[0m');
         console.log('  1) Daily at 2:00 AM');
         console.log('  2) Weekly (Sunday at 2:00 AM)');
         console.log('  3) Custom Cron Expression');
@@ -347,24 +393,26 @@ async function setupBackupSchedule(options, prompter, envCtx) {
 
     let emailDest = options.email;
     if (!emailDest && !options.nonInteractive && !options.dryRun && !isWindows) {
-        console.log('\n\x1b[33m2. Email Alerts (Optional)\x1b[0m');
+        console.log('\n\x1b[33m3. Email Alerts (Optional)\x1b[0m');
         emailDest = await prompter.question('Enter recipient email for backup log alerts (or leave blank for none): ');
     }
 
     const profileArg = envCtx.activeProfile ? ` --profile ${envCtx.activeProfile}` : '';
+    const sourceArg = options.source ? ` --source ${options.source}` : '';
     const nodePath = process.execPath;
 
     let mailCmd = '';
     if (emailDest) {
         const pyScript = path.join(rootDir, 'scripts', 'send-email.py');
-        mailCmd = ` | python3 "${pyScript}" --to "${emailDest}" --subject "HeroBM DB Backup Log"`;
+        const emailSubject = `[${sourceTag}] HeroBM DB Backup Log`;
+        mailCmd = ` | python3 "${pyScript}" --to "${emailDest}" --subject "${emailSubject}" --source "${sourceTag}"`;
     }
 
     let cronCmd = '';
     if (mailCmd) {
-        cronCmd = `${nodePath} ${backupScript}${profileArg} 2>&1 | tee -a ${logFile}${mailCmd}`;
+        cronCmd = `${nodePath} ${backupScript}${profileArg}${sourceArg} 2>&1 | tee -a ${logFile}${mailCmd}`;
     } else {
-        cronCmd = `${nodePath} ${backupScript}${profileArg} >> ${logFile} 2>&1`;
+        cronCmd = `${nodePath} ${backupScript}${profileArg}${sourceArg} >> ${logFile} 2>&1`;
     }
 
     const cronLine = `${cronExp} ${cronCmd}`;
@@ -372,7 +420,14 @@ async function setupBackupSchedule(options, prompter, envCtx) {
     if (options.dryRun) {
         console.log('\n\x1b[32m[dry-run] Generated Crontab Line:\x1b[0m');
         console.log(`  ${cronLine}`);
+        if (options.source) {
+            console.log(`\x1b[32m[dry-run] Would update ${envCtx.envFileName} with BACKUP_SOURCE_NAME=${options.source}\x1b[0m`);
+        }
         return;
+    }
+
+    if (options.source) {
+        updateEnvVar(envCtx.envFilePath, 'BACKUP_SOURCE_NAME', options.source);
     }
 
     if (!isWindows) {
@@ -407,9 +462,9 @@ async function setupBackupSchedule(options, prompter, envCtx) {
     }
 
     if (runNow) {
-        console.log('\n\x1b[36mExecuting immediate database backup test run...\x1b[0m');
-        prompter.close();
-        const backupArgs = envCtx.activeProfile ? ['scripts/backup-db.mjs', '--profile', envCtx.activeProfile] : ['scripts/backup-db.mjs'];
+        const backupArgs = ['scripts/backup-db.mjs'];
+        if (envCtx.activeProfile) backupArgs.push('--profile', envCtx.activeProfile);
+        if (options.source) backupArgs.push('--source', options.source);
         spawnSync(process.execPath, backupArgs, { cwd: rootDir, stdio: 'inherit', shell: process.platform === 'win32' });
     }
 }

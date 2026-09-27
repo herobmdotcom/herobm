@@ -23,7 +23,7 @@ import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 import { SystemResource } from '@herobm/shared';
 import { emitEvent } from '../common/emit-event';
-import { EventType, EntityType } from '../common/event-types';
+import { EventType, EntityType, type EntityTypeValue } from '../common/event-types';
 import { AppConfigService } from '../settings/app-config.service';
 import { EncryptionService } from '../common/encryption.service';
 import * as nodemailer from 'nodemailer';
@@ -176,8 +176,7 @@ export class EmailController {
       };
 
       // 1. Log to EMAIL generic entity
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required because Drizzle transactions have complex inferred types
-      await emitEvent(tx as any, {
+      await emitEvent(tx, {
         entityType: EntityType.EMAIL,
         entityId: updatedEmail.id,
         eventType: EventType.DISMISSED,
@@ -189,10 +188,8 @@ export class EmailController {
       // 2. Log to business entity if present
       if (updatedEmail.entityType && updatedEmail.entityId) {
         // @sync-ignore - Dynamic dispatch is intentional for emails mapped to other entities
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required because Drizzle transactions have complex inferred types
-        await emitEvent(tx as any, {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB entity type enum mappings are complex
-          entityType: updatedEmail.entityType as any,
+        await emitEvent(tx, {
+          entityType: updatedEmail.entityType as EntityTypeValue,
           entityId: updatedEmail.entityId,
           eventType: `email.${EventType.DISMISSED}`,
           entityDisplayName: `Email to ${updatedEmail.toAddress}`,

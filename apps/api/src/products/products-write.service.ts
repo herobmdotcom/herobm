@@ -13,10 +13,8 @@ import {
   masterDataEvents,
   productUoms,
   productDefaultBins,
-  productComponents,
   productSuppliers,
   bins,
-  productImages,
   uomDictionary,
 } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
@@ -29,16 +27,19 @@ import {
   isServiceProductType,
 } from '@herobm/shared';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
-import { StorageService } from '../common/storage/storage.service';
 import {
   CreateProductDto,
   UpdateProductDto,
   CopyProductDto,
   AddSupplierDto,
   LinkBinDto,
+  AddProductComponentDto,
+  UpdateProductComponentDto,
 } from './dto';
 
 import { ProductCopyService } from './product-copy.service';
+import { ProductComponentsService } from './product-components.service';
+import { ProductMediaService } from './product-media.service';
 
 @Injectable()
 export class ProductsWriteService {
@@ -46,8 +47,9 @@ export class ProductsWriteService {
 
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
-    private readonly storageService: StorageService,
     private readonly productCopyService: ProductCopyService,
+    private readonly productComponentsService: ProductComponentsService,
+    private readonly productMediaService: ProductMediaService,
   ) {}
 
   private async validateProductUomCategory(
@@ -330,6 +332,24 @@ export class ProductsWriteService {
       throw new NotFoundException(`Product not found`);
     }
 
+    if (dto.purchaseUomId) {
+      const [uom] = await this.db
+        .select({ productUomId: productUoms.productUomId })
+        .from(productUoms)
+        .where(
+          and(
+            eq(productUoms.productUomId, dto.purchaseUomId),
+            eq(productUoms.productId, productId),
+          ),
+        )
+        .limit(1);
+      if (!uom) {
+        throw new BadRequestException(
+          `Purchase UOM '${dto.purchaseUomId}' does not belong to product '${productId}'`,
+        );
+      }
+    }
+
     const isPreferred = dto.isPreferred ?? false;
     const payload = {
       productId,
@@ -349,6 +369,7 @@ export class ProductsWriteService {
           ? dto.minPurchaseQty.toString()
           : null,
       purchaseUnit: dto.purchaseUnit || null,
+      purchaseUomId: dto.purchaseUomId || null,
       effectiveFrom: dto.effectiveFrom ? new Date(dto.effectiveFrom) : null,
       effectiveTo: dto.effectiveTo ? new Date(dto.effectiveTo) : null,
       stateCode: PRODUCT_STATE.ACTIVE,
@@ -666,98 +687,10 @@ export class ProductsWriteService {
    */
   async addComponent(
     productId: string,
-    dto: {
-      childProductId: string;
-      parentQuantity: string;
-      quantity: string;
-      sequenceNumber?: number;
-      fractionalBehavior?:
-        | 'allow_fractional'
-        | 'round_up'
-        | 'round_down'
-        | 'force_multiple';
-    },
+    dto: AddProductComponentDto,
     actor: string,
   ) {
-    // Validate parent exists and is a kit
-    const [parent] = await this.db
-      .select({
-        structureType: coreProducts.structureType,
-        name: coreProducts.name,
-      })
-      .from(coreProducts)
-      .where(eq(coreProducts.productId, productId))
-      .limit(1);
-
-    if (!parent) {
-      throw new NotFoundException(`Product ${productId} not found`);
-    }
-
-    if (parent.structureType !== 'kit') {
-      throw new BadRequestException('Only kit products can have components');
-    }
-
-    // Validate child exists
-    const [child] = await this.db
-      .select({ id: coreProducts.productId })
-      .from(coreProducts)
-      .where(eq(coreProducts.productId, dto.childProductId))
-      .limit(1);
-
-    if (!child) {
-      throw new NotFoundException(
-        `Child product ${dto.childProductId} not found`,
-      );
-    }
-
-    // Check for circular dependency (simple 1-level check for now)
-    if (productId === dto.childProductId) {
-      throw new BadRequestException('Product cannot be a component of itself');
-    }
-
-    // Deeper circular dependency check (checking if parent is already a component of child)
-    const [cycle] = await this.db
-      .select({ id: productComponents.componentId })
-      .from(productComponents)
-      .where(
-        and(
-          eq(productComponents.parentProductId, dto.childProductId),
-          eq(productComponents.childProductId, productId),
-        ),
-      )
-      .limit(1);
-
-    if (cycle) {
-      throw new BadRequestException('Circular dependency detected');
-    }
-
-    return await this.db.transaction(async (tx) => {
-      const [component] = await tx
-        .insert(productComponents)
-        .values({
-          parentProductId: productId,
-          childProductId: dto.childProductId,
-          parentQuantity: dto.parentQuantity,
-          quantity: dto.quantity,
-          sequenceNumber: dto.sequenceNumber || 0,
-          fractionalBehavior: dto.fractionalBehavior || 'allow_fractional',
-        })
-        .returning();
-
-      await emitEvent(tx, {
-        entityType: EntityType.PRODUCT,
-        entityId: productId,
-        eventType: EventType.UPDATED,
-        entityDisplayName: parent.name,
-        payload: {
-          action: 'component_added',
-          componentId: component.componentId,
-        },
-        actor,
-      });
-
-      return component;
-    });
+    return this.productComponentsService.addComponent(productId, dto, actor);
   }
 
   /**
@@ -766,104 +699,26 @@ export class ProductsWriteService {
   async updateComponent(
     productId: string,
     componentId: string,
-    dto: {
-      parentQuantity?: string;
-      quantity?: string;
-      sequenceNumber?: number;
-      fractionalBehavior?:
-        | 'allow_fractional'
-        | 'round_up'
-        | 'round_down'
-        | 'force_multiple';
-    },
+    dto: UpdateProductComponentDto,
     actor: string,
   ) {
-    const [existing] = await this.db
-      .select()
-      .from(productComponents)
-      .where(
-        and(
-          eq(productComponents.componentId, componentId),
-          eq(productComponents.parentProductId, productId),
-        ),
-      )
-      .limit(1);
-
-    if (!existing) {
-      throw new NotFoundException('Component not found');
-    }
-
-    return await this.db.transaction(async (tx) => {
-      const [updated] = await tx
-        .update(productComponents)
-        .set({
-          parentQuantity: dto.parentQuantity ?? existing.parentQuantity,
-          quantity: dto.quantity ?? existing.quantity,
-          sequenceNumber: dto.sequenceNumber ?? existing.sequenceNumber,
-          fractionalBehavior:
-            dto.fractionalBehavior ?? existing.fractionalBehavior,
-        })
-        .where(eq(productComponents.componentId, componentId))
-        .returning();
-
-      const [product] = await tx
-        .select({ name: coreProducts.name })
-        .from(coreProducts)
-        .where(eq(coreProducts.productId, productId));
-
-      await emitEvent(tx, {
-        entityType: EntityType.PRODUCT,
-        entityId: productId,
-        eventType: EventType.UPDATED,
-        entityDisplayName: product.name,
-        payload: { action: 'component_updated', componentId },
-        actor,
-      });
-
-      return updated;
-    });
+    return this.productComponentsService.updateComponent(
+      productId,
+      componentId,
+      dto,
+      actor,
+    );
   }
 
   /**
    * Remove a component from a kit product.
    */
   async removeComponent(productId: string, componentId: string, actor: string) {
-    const [existing] = await this.db
-      .select()
-      .from(productComponents)
-      .where(
-        and(
-          eq(productComponents.componentId, componentId),
-          eq(productComponents.parentProductId, productId),
-        ),
-      )
-      .limit(1);
-
-    if (!existing) {
-      throw new NotFoundException('Component not found');
-    }
-
-    await this.db.transaction(async (tx) => {
-      await tx
-        .delete(productComponents)
-        .where(eq(productComponents.componentId, componentId));
-
-      const [product] = await tx
-        .select({ name: coreProducts.name })
-        .from(coreProducts)
-        .where(eq(coreProducts.productId, productId));
-
-      await emitEvent(tx, {
-        entityType: EntityType.PRODUCT,
-        entityId: productId,
-        eventType: EventType.UPDATED,
-        entityDisplayName: product.name,
-        payload: { action: 'component_removed', componentId },
-        actor,
-      });
-    });
-
-    return { deleted: true };
+    return this.productComponentsService.removeComponent(
+      productId,
+      componentId,
+      actor,
+    );
   }
 
   /**
@@ -874,112 +729,14 @@ export class ProductsWriteService {
     file: Express.Multer.File,
     actor: string,
   ) {
-    if (!file || !file.buffer) {
-      throw new BadRequestException('No image file provided');
-    }
-
-    const [product] = await this.db
-      .select()
-      .from(coreProducts)
-      .where(eq(coreProducts.productId, productId))
-      .limit(1);
-
-    if (!product) {
-      throw new NotFoundException(`Product '${productId}' not found`);
-    }
-
-    const saved = await this.storageService.saveProductImage(productId, file);
-
-    await this.db.transaction(async (tx) => {
-      // 1. Update product.image_path
-      await tx
-        .update(coreProducts)
-        .set({
-          imagePath: saved.storagePath,
-          modifiedOn: new Date(),
-        })
-        .where(eq(coreProducts.productId, productId));
-
-      // 2. Insert into product_images table
-      await tx.insert(productImages).values({
-        productId,
-        storagePath: saved.storagePath,
-        fileName: saved.fileName,
-        mimeType: saved.mimeType,
-        byteSize: saved.byteSize,
-        isPrimary: true,
-        sortOrder: 0,
-        createdBy: actor,
-      });
-
-      // 3. Emit audit event
-      await emitEvent(tx, {
-        entityType: EntityType.PRODUCT,
-        entityId: productId,
-        eventType: EventType.UPDATED,
-        entityDisplayName: product.name,
-        payload: {
-          action: 'image_uploaded',
-          imagePath: saved.storagePath,
-          fileName: saved.fileName,
-        },
-        actor,
-      });
-    });
-
-    return {
-      imagePath: saved.storagePath,
-      fileName: saved.fileName,
-      mimeType: saved.mimeType,
-      byteSize: saved.byteSize,
-    };
+    return this.productMediaService.uploadImage(productId, file, actor);
   }
 
   /**
    * Remove the image for a product.
    */
   async removeImage(productId: string, actor: string) {
-    const [product] = await this.db
-      .select()
-      .from(coreProducts)
-      .where(eq(coreProducts.productId, productId))
-      .limit(1);
-
-    if (!product) {
-      throw new NotFoundException(`Product '${productId}' not found`);
-    }
-
-    const oldPath = product.imagePath;
-
-    await this.db.transaction(async (tx) => {
-      await tx
-        .update(coreProducts)
-        .set({
-          imagePath: null,
-          modifiedOn: new Date(),
-        })
-        .where(eq(coreProducts.productId, productId));
-
-      await tx
-        .delete(productImages)
-        .where(eq(productImages.productId, productId));
-
-      await emitEvent(tx, {
-        entityType: EntityType.PRODUCT,
-        entityId: productId,
-        eventType: EventType.UPDATED,
-        entityDisplayName: product.name,
-        payload: { action: 'image_removed', previousImagePath: oldPath },
-        actor,
-      });
-    });
-
-    // If it was an uploaded file, delete it from storage
-    if (oldPath && oldPath.includes('uploads/')) {
-      await this.storageService.deleteFile(oldPath);
-    }
-
-    return { removed: true };
+    return this.productMediaService.removeImage(productId, actor);
   }
 
   /**

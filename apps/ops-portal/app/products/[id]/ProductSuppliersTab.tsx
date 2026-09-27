@@ -21,6 +21,9 @@ export interface ProductSupplierItem {
   isPreferred?: boolean;
   minPurchaseQty?: string | null;
   purchaseUnit?: string | null;
+  purchaseUomId?: string | null;
+  purchaseUomCode?: string | null;
+  purchaseUomRatio?: string | number | null;
   stateCode?: string | null;
 }
 
@@ -135,7 +138,7 @@ export function ProductSuppliersTab({
                   s.isPreferred ? t('products.costSummary.preferredSupplier') : null,
                   s.vendorNumber ? `#${s.vendorNumber}` : null,
                   s.supplierPartNumber ? `${t('products.supplierModal.inputs.supplierPartNo')}: ${s.supplierPartNumber}` : null,
-                  moqVal && moqVal > 0 ? `MOQ: ${moqVal}${s.purchaseUnit ? ` ${s.purchaseUnit}` : ''}` : null,
+                  moqVal && moqVal > 0 ? `MOQ: ${moqVal}${s.purchaseUomCode ? ` ${s.purchaseUomCode}` : (s.purchaseUnit ? ` ${s.purchaseUnit}` : '')}` : null,
                   s.discountPercent && parseFloat(s.discountPercent) > 0 ? `${tCommon('columns.discountPct')}: ${parseFloat(s.discountPercent)}%` : null,
                 ]}
                 amount={s.costPrice ? `$${parseFloat(s.costPrice).toFixed(2)}` : undefined}

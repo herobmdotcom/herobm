@@ -4,8 +4,14 @@ import React, { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { DataTable, MobileCardField, type DataTableColumn } from '@/components/shared/DataTable';
 import { Button } from '@/components/shared/Button';
-import { computeLinePrice, computeOrderTotals, LineType } from '@herobm/shared';
-import type { OrderLineItem, OrderLinesTableProps } from './types';
+import {
+  computeLinePrice,
+  computeOrderTotals,
+  toFinancialDecimal,
+  roundMoney,
+  LineType,
+} from '@herobm/shared';
+import type { OrderLineItem, OrderLinesTableProps, TaxCategory } from './types';
 import { ProductCell } from './cells/ProductCell';
 import { DescriptionCell } from './cells/DescriptionCell';
 import { QuantityCell } from './cells/QuantityCell';
@@ -62,7 +68,7 @@ export function OrderLinesTable<T extends OrderLineItem = OrderLineItem>({
   const hasActionColumn = Boolean(
     onRemoveLine &&
       (isEditable ||
-        (lines || []).some((l) => l.isPostConfirmation && isDetailsEditable) ||
+        (lines || []).some((l: T) => l.isPostConfirmation && isDetailsEditable) ||
         isPostConfirmationAddingEnabled)
   );
 
@@ -77,37 +83,32 @@ export function OrderLinesTable<T extends OrderLineItem = OrderLineItem>({
       };
     }
 
-    let sub = 0;
-    let disc = 0;
-    let tax = 0;
+    let totalDiscountDec = toFinancialDecimal(0);
 
-    const mappedLines = (lines || []).map((line) => {
+    const mappedLines = (lines || []).map((line: T) => {
       if (line.lineType === LineType.COMMENT) {
         return { amount: 0, tax: 0 };
       }
 
-      const qty = parseFloat(String(line.quantity || '0'));
-      const price = parseFloat(String(line.pricePerUnit || '0'));
-      const discPct = parseFloat(String(line.discountPercentage || '0'));
+      const qtyDec = toFinancialDecimal(line.quantity);
+      const priceDec = toFinancialDecimal(line.pricePerUnit);
+      const discPct = toFinancialDecimal(line.discountPercentage).toNumber();
 
-      const selectedCat = taxCategories.find((c) => c.taxCategoryId === line.taxCategoryId);
+      const selectedCat = (taxCategories || []).find((c: TaxCategory) => c.taxCategoryId === line.taxCategoryId);
       const rate = selectedCat
-        ? parseFloat(String(selectedCat.rate || '0'))
+        ? toFinancialDecimal(selectedCat.rate).toNumber()
         : line.taxRate ?? 0;
 
       const pricing = computeLinePrice({
-        quantity: qty,
-        pricePerUnit: price,
+        quantity: qtyDec.toNumber(),
+        pricePerUnit: priceDec.toNumber(),
         discountPercentage: discPct,
         taxRate: rate,
       });
 
-      const lineGross = qty * price;
-      const lineDisc = lineGross - pricing.amount;
-
-      sub += lineGross;
-      disc += lineDisc;
-      tax += pricing.tax;
+      const lineGross = qtyDec.mul(priceDec);
+      const lineDisc = lineGross.minus(pricing.amount);
+      totalDiscountDec = totalDiscountDec.plus(lineDisc);
 
       return {
         amount: pricing.amount,
@@ -117,10 +118,10 @@ export function OrderLinesTable<T extends OrderLineItem = OrderLineItem>({
 
     const totals = computeOrderTotals(mappedLines);
     return {
-      subtotal: Number(totals.subtotal.toFixed(2)),
-      totalDiscount: Number(disc.toFixed(2)),
-      totalTax: Number(totals.totalTax.toFixed(2)),
-      grandTotal: Number(totals.totalAmount.toFixed(2)),
+      subtotal: totals.subtotal,
+      totalDiscount: roundMoney(totalDiscountDec).toNumber(),
+      totalTax: totals.totalTax,
+      grandTotal: totals.totalAmount,
     };
   }, [lines, taxCategories, passedSubtotal, passedTotalTax, passedTotalDiscount, passedGrandTotal]);
 

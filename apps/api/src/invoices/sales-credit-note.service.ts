@@ -6,6 +6,7 @@ import {
   NotFoundException,
   forwardRef,
 } from '@nestjs/common';
+import { Decimal } from 'decimal.js';
 import {
   eq,
   sql,
@@ -44,6 +45,7 @@ import {
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { GlService } from '../gl/gl.service';
+import { JournalLineDto } from '../gl/dto';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { OrganizationService } from '../settings/organization.service';
 import { AppConfigService } from '../settings/app-config.service';
@@ -99,10 +101,9 @@ export class SalesCreditNoteService {
       .where(sql`${salesCreditNotes.creditNoteNumber} LIKE ${prefix + '%'}`)
       .orderBy(sql`${salesCreditNotes.creditNoteNumber} DESC`)
       .limit(1);
-    const seq =
-      result.length > 0
-        ? parseInt(result[0].creditNoteNumber.replace(prefix, ''), 10) + 1
-        : 1;
+    const lastNumStr =
+      result.length > 0 ? result[0].creditNoteNumber.replace(prefix, '') : '0';
+    const seq = new Decimal(lastNumStr).plus(1).toNumber();
     return `${prefix}${String(seq).padStart(4, '0')}`;
   }
 
@@ -286,12 +287,13 @@ export class SalesCreditNoteService {
         )
         .where(eq(salesCreditNotes.salesOrderId, ret.salesOrderId));
 
-      const creditedQtyMap = new Map<string, number>();
+      const creditedQtyMap = new Map<string, Decimal>();
       for (const pc of priorCredits) {
-        const current = creditedQtyMap.get(pc.salesOrderLineId!) || 0;
+        const current =
+          creditedQtyMap.get(pc.salesOrderLineId!) || new Decimal(0);
         creditedQtyMap.set(
           pc.salesOrderLineId!,
-          current + parseFloat(pc.quantityCredited),
+          current.plus(new Decimal(pc.quantityCredited || '0')),
         );
       }
 
@@ -361,44 +363,47 @@ export class SalesCreditNoteService {
           null;
 
         const unitPriceStr = rl.pricePerUnit || orderLine.pricePerUnit || '0';
-        const unitPrice = parseFloat(unitPriceStr);
+        const unitPriceDec = new Decimal(unitPriceStr);
         const discStr =
           rl.discountPercentage || orderLine.discountPercentage || '0';
-        const disc = parseFloat(discStr);
-        const refundedQty = parseFloat(rl.quantityReturned || '0');
-        const fee = parseFloat(rl.returnFee || '0');
+        const discDec = new Decimal(discStr);
+        const refundedQtyDec = new Decimal(rl.quantityReturned || '0');
+        const feeDec = new Decimal(rl.returnFee || '0');
 
         const shipped = shippedQtyMap.get(rl.salesOrderLineId) || 0;
         const invoiced = invoicedQtyMap.get(rl.salesOrderLineId) || 0;
-        const previouslyCredited = creditedQtyMap.get(rl.salesOrderLineId) || 0;
+        const previouslyCreditedDec =
+          creditedQtyMap.get(rl.salesOrderLineId) || new Decimal(0);
 
         const isRefund = rl.resolution === 'refund';
-        const totalRefunded = previouslyCredited + refundedQty;
+        const totalRefunded = previouslyCreditedDec
+          .plus(refundedQtyDec)
+          .toNumber();
         const creditableQty = isRefund
           ? Math.min(
-              refundedQty,
+              refundedQtyDec.toNumber(),
               getAvailableToCredit(
                 shipped,
                 invoiced,
                 totalRefunded,
-                previouslyCredited,
+                previouslyCreditedDec.toNumber(),
               ),
             )
           : 0;
 
-        if (creditableQty <= 0 && fee <= 0) continue;
+        if (creditableQty <= 0 && feeDec.lessThanOrEqualTo(0)) continue;
 
         const qty = creditableQty;
 
         // Resolve per-line tax rate
-        let taxRate = 0;
+        let taxRateDec = new Decimal(0);
         if (orderLine.taxCategoryId) {
           try {
             const cat = await this.taxService.getById(
               orderLine.taxCategoryId,
               innerTx,
             );
-            taxRate = parseFloat(cat.rate ?? '0');
+            taxRateDec = new Decimal(cat.rate ?? '0');
           } catch (err: unknown) {
             if (err instanceof NotFoundException) {
               // Category not found — fall back to 0%
@@ -410,9 +415,9 @@ export class SalesCreditNoteService {
 
         const pricing = computeLinePrice({
           quantity: qty,
-          pricePerUnit: unitPrice,
-          discountPercentage: disc,
-          taxRate,
+          pricePerUnit: unitPriceDec.toNumber(),
+          discountPercentage: discDec.toNumber(),
+          taxRate: taxRateDec.toNumber(),
         });
 
         const resolvedDescription =
@@ -443,10 +448,10 @@ export class SalesCreditNoteService {
 
         creditLineInputs.push({
           quantity: qty,
-          pricePerUnit: unitPrice,
-          discountPercentage: disc,
-          taxRate,
-          returnFee: fee,
+          pricePerUnit: unitPriceDec.toNumber(),
+          discountPercentage: discDec.toNumber(),
+          taxRate: taxRateDec.toNumber(),
+          returnFee: feeDec.toNumber(),
           resolution: rl.resolution,
         });
       }
@@ -527,8 +532,7 @@ export class SalesCreditNoteService {
       const finalAct = customerActivityId || sysDefaultAct || undefined;
 
       // 8. Post the GL journal entry (reverse of sales invoice)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-      const glLines: any[] = [
+      const glLines: JournalLineDto[] = [
         {
           accountCode: revCode,
           debit: totalCreditAmount,
@@ -583,8 +587,8 @@ export class SalesCreditNoteService {
       );
 
       // Record Refund in External Engine if applicable
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Order DTO missing taxProvider in strict types
-      const orderTaxProvider = (order as any).taxProvider;
+      const orderTaxProvider = (order as Record<string, unknown>)
+        .taxProvider as string | undefined;
       if (
         orderTaxProvider &&
         orderTaxProvider !== 'internal' &&
@@ -598,13 +602,15 @@ export class SalesCreditNoteService {
           (l) => l.productType !== 'freight',
         );
 
-        const shippingTotal = freightLines.reduce((sum, l) => {
-          const discountAmt =
-            l.quantity *
-            parseFloat(l.pricePerUnit) *
-            (parseFloat(l.discountPercentage) / 100);
-          return sum + l.quantity * parseFloat(l.pricePerUnit) - discountAmt;
-        }, 0);
+        const shippingTotalDec = freightLines.reduce((sum, l) => {
+          const priceDec = new Decimal(l.pricePerUnit);
+          const qtyDec = new Decimal(l.quantity);
+          const discPercentDec = new Decimal(l.discountPercentage || '0');
+          const lineGrossDec = qtyDec.mul(priceDec);
+          const discountAmtDec = lineGrossDec.mul(discPercentDec).div(100);
+          const lineNetDec = lineGrossDec.minus(discountAmtDec);
+          return sum.plus(lineNetDec);
+        }, new Decimal(0));
 
         const payload = {
           transaction_id: creditNote.creditNoteId,
@@ -612,7 +618,7 @@ export class SalesCreditNoteService {
             latestInvoice?.invoiceId ?? order.salesOrderId,
           transaction_date: new Date().toISOString(),
           amount: totalCreditAmount,
-          shipping: shippingTotal,
+          shipping: shippingTotalDec.toNumber(),
           sales_tax: totalTaxAmount,
           from_country: org.country || 'US',
           from_zip: org.postCode,
@@ -625,17 +631,20 @@ export class SalesCreditNoteService {
           to_city: billingAddressCity,
           to_street: billingAddressLine1,
           line_items: taxableLines.map((l) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-            const payloadLine: any = {
+            const lineUnitPriceDec = new Decimal(l.pricePerUnit);
+            const lineQtyDec = new Decimal(l.quantity);
+            const lineDiscPercentDec = new Decimal(l.discountPercentage || '0');
+            const lineDiscountDec = lineUnitPriceDec
+              .mul(lineDiscPercentDec)
+              .div(100)
+              .mul(lineQtyDec);
+            const payloadLine: Record<string, unknown> = {
               id: l.salesOrderLineId,
               product_identifier: l.productNumber,
               description: l.productDescription,
               quantity: l.quantity,
-              unit_price: parseFloat(l.pricePerUnit),
-              discount:
-                parseFloat(l.pricePerUnit) *
-                (parseFloat(l.discountPercentage) / 100) *
-                l.quantity,
+              unit_price: lineUnitPriceDec.toNumber(),
+              discount: lineDiscountDec.toNumber(),
               sales_tax: l.tax,
             };
             if (l.externalTaxCode) {
@@ -691,8 +700,7 @@ export class SalesCreditNoteService {
         : [null];
 
       // 9. Outbox event
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle transaction type mismatch with Outbox emitter
-      await emitEvent(innerTx as any, {
+      await emitEvent(innerTx, {
         entityType: EntityType.SALES_ORDER,
         entityId: ret.salesOrderId,
         eventType: EventType.CREDIT_NOTE_POSTED,
@@ -912,12 +920,13 @@ export class SalesCreditNoteService {
       )
       .where(eq(salesCreditNotes.salesOrderId, ret.salesOrderId));
 
-    const creditedQtyMap = new Map<string, number>();
+    const creditedQtyMap = new Map<string, Decimal>();
     for (const pc of priorCredits) {
-      const current = creditedQtyMap.get(pc.salesOrderLineId!) || 0;
+      const current =
+        creditedQtyMap.get(pc.salesOrderLineId!) || new Decimal(0);
       creditedQtyMap.set(
         pc.salesOrderLineId!,
-        current + parseFloat(pc.quantityCredited),
+        current.plus(new Decimal(pc.quantityCredited || '0')),
       );
     }
 
@@ -953,35 +962,36 @@ export class SalesCreditNoteService {
 
       if (!orderLine) continue;
 
-      const unitPrice = parseFloat(orderLine.pricePerUnit || '0');
-      const disc = parseFloat(orderLine.discountPercentage || '0');
-      const refundedQty = parseFloat(rl.quantityReturned || '0');
-      const fee = parseFloat(rl.returnFee || '0');
+      const unitPriceDec = new Decimal(orderLine.pricePerUnit || '0');
+      const discDec = new Decimal(orderLine.discountPercentage || '0');
+      const refundedQtyDec = new Decimal(rl.quantityReturned || '0');
+      const feeDec = new Decimal(rl.returnFee || '0');
 
       const shipped = shippedQtyMap.get(rl.salesOrderLineId) || 0;
       const invoiced = invoicedQtyMap.get(rl.salesOrderLineId) || 0;
-      const previouslyCredited = creditedQtyMap.get(rl.salesOrderLineId) || 0;
+      const previouslyCreditedDec =
+        creditedQtyMap.get(rl.salesOrderLineId) || new Decimal(0);
 
       const isRefund = rl.resolution === 'refund';
       const creditableQty = isRefund
         ? getAvailableToCredit(
             shipped,
             invoiced,
-            refundedQty,
-            previouslyCredited,
+            refundedQtyDec.toNumber(),
+            previouslyCreditedDec.toNumber(),
           )
         : 0;
 
-      if (creditableQty <= 0 && fee <= 0) continue;
+      if (creditableQty <= 0 && feeDec.lessThanOrEqualTo(0)) continue;
 
-      let taxRate = 0;
+      let taxRateDec = new Decimal(0);
       if (orderLine.taxCategoryId) {
         try {
           const cat = await this.taxService.getById(
             orderLine.taxCategoryId,
             innerTx,
           );
-          taxRate = parseFloat(cat.rate ?? '0');
+          taxRateDec = new Decimal(cat.rate ?? '0');
         } catch (err: unknown) {
           if (err instanceof NotFoundException) {
             // Category not found — fall back to 0%
@@ -993,10 +1003,10 @@ export class SalesCreditNoteService {
 
       creditLineInputs.push({
         quantity: creditableQty,
-        pricePerUnit: unitPrice,
-        discountPercentage: disc,
-        taxRate,
-        returnFee: fee,
+        pricePerUnit: unitPriceDec.toNumber(),
+        discountPercentage: discDec.toNumber(),
+        taxRate: taxRateDec.toNumber(),
+        returnFee: feeDec.toNumber(),
       });
     }
 
@@ -1049,11 +1059,12 @@ export class SalesCreditNoteService {
 
     if (!arAcct) throw new BadRequestException('AR account not found');
 
-    let totalCreditAmount = 0;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Array of anonymous complex objects to be inserted
-    const glLines: any[] = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Array of anonymous complex objects to be inserted
-    const cnLineValues: any[] = [];
+    let totalCreditAmountDec = new Decimal(0);
+    const glLines: JournalLineDto[] = [];
+    const cnLineValues: Omit<
+      typeof salesCreditNoteLines.$inferInsert,
+      'creditNoteId'
+    >[] = [];
 
     const accountIds = [
       ...new Set(
@@ -1074,16 +1085,16 @@ export class SalesCreditNoteService {
     const accountMap = new Map(accountRows.map((a) => [a.glAccountId, a]));
 
     for (const line of dto.lines) {
-      const amount = line.amount;
-      totalCreditAmount += amount;
+      const amountDec = new Decimal(line.amount);
+      totalCreditAmountDec = totalCreditAmountDec.plus(amountDec);
 
       cnLineValues.push({
         description: line.description,
-        amount: amount.toFixed(2),
+        amount: amountDec.toFixed(2),
         accountId: line.accountId,
         taxCategoryId: line.taxCategoryId ?? null,
         quantityCredited: '1',
-        pricePerUnit: amount.toFixed(2),
+        pricePerUnit: amountDec.toFixed(2),
       });
 
       if (line.accountId) {
@@ -1093,7 +1104,7 @@ export class SalesCreditNoteService {
 
         glLines.push({
           accountCode: acct.accountCode,
-          debit: amount,
+          debit: amountDec.toNumber(),
           credit: 0,
           memo: line.description,
           costCenterId: custInfo.costCenterId || undefined,
@@ -1105,7 +1116,7 @@ export class SalesCreditNoteService {
     glLines.push({
       accountCode: arAcct.accountCode,
       debit: 0,
-      credit: totalCreditAmount,
+      credit: totalCreditAmountDec.toNumber(),
       memo: dto.notes ?? 'Ad-hoc credit note',
       partyType: 'customer',
       partyId: customerId,
@@ -1120,10 +1131,10 @@ export class SalesCreditNoteService {
       .values({
         creditNoteNumber,
         customerId,
-        totalAmount: totalCreditAmount.toFixed(2),
+        totalAmount: totalCreditAmountDec.toFixed(2),
         taxAmount: '0.00',
         feeAmount: '0.00',
-        outstandingAmount: totalCreditAmount.toFixed(2),
+        outstandingAmount: totalCreditAmountDec.toFixed(2),
         currencyCode,
         stateCode: SALES_CREDIT_NOTE_STATE.POSTED,
         notes: dto.notes ?? 'Ad-hoc credit note',
@@ -1136,8 +1147,8 @@ export class SalesCreditNoteService {
 
     await innerTx.insert(salesCreditNoteLines).values(
       cnLineValues.map((l) => ({
-        creditNoteId: creditNote.creditNoteId,
         ...l,
+        creditNoteId: creditNote.creditNoteId,
       })),
     );
 
@@ -1162,7 +1173,7 @@ export class SalesCreditNoteService {
     });
 
     this.logger.log(
-      `Ad-hoc credit note ${creditNoteNumber} posted for customer ${customerId}: credit=${totalCreditAmount}`,
+      `Ad-hoc credit note ${creditNoteNumber} posted for customer ${customerId}: credit=${totalCreditAmountDec.toFixed(2)}`,
     );
     return creditNote;
   }
@@ -1320,8 +1331,7 @@ export class SalesCreditNoteService {
 
       if (!allowed || !allowed.includes(newState)) {
         throw new BadRequestException(
-          `Cannot transition credit note from '${existing.stateCode}' to '${newState}'. ` +
-            `Allowed transitions: ${allowed?.join(', ') || 'none'}`,
+          `Cannot transition credit note from '${existing.stateCode}' to '${newState}'. Allowed transitions: ${allowed?.join(', ') || 'none'}`,
         );
       }
 
@@ -1345,16 +1355,15 @@ export class SalesCreditNoteService {
               eq(glJournalLines.journalEntryId, originalEntry.journalEntryId),
             );
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-          const reversedLines: any[] = originalLines.map((line) => ({
+          const reversedLines: JournalLineDto[] = originalLines.map((line) => ({
             accountId: line.glAccountId,
-            debit: parseFloat(line.credit),
-            credit: parseFloat(line.debit),
+            debit: new Decimal(line.credit).toNumber(),
+            credit: new Decimal(line.debit).toNumber(),
             memo: `Cancellation Reversal: ${line.memo}`,
-            costCenterId: line.costCenterId,
-            activityId: line.activityId,
-            partyType: line.partyType,
-            partyId: line.partyId,
+            costCenterId: line.costCenterId ?? undefined,
+            activityId: line.activityId ?? undefined,
+            partyType: (line.partyType as 'customer' | 'supplier') || undefined,
+            partyId: line.partyId ?? undefined,
           }));
 
           await this.glService.postJournalEntry(
@@ -1377,8 +1386,7 @@ export class SalesCreditNoteService {
         .where(eq(salesCreditNotes.creditNoteId, creditNoteId))
         .returning();
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle transaction type mismatch with Outbox emitter
-      await emitEvent(db as any, {
+      await emitEvent(db, {
         entityType: EntityType.SALES_ORDER,
         entityId: existing.salesOrderId || creditNoteId,
         eventType: EventType.STATUS_CHANGED,

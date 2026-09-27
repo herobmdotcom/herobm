@@ -20,7 +20,13 @@ import {
 import {
   SALES_INVOICE_STATE,
   LineType,
+  computeLinePrice,
   computeOrderTotals,
+  formatReportDate,
+  formatReportDateTime,
+  toDecimal,
+  formatMoneyString,
+  roundCurrency,
 } from '@herobm/shared';
 import { AppConfigService } from '../settings/app-config.service';
 import { RunHookOptionsDto } from './dto';
@@ -121,20 +127,28 @@ export class SalesInvoiceService {
         }
 
         const inv = invLineMap.get(l.salesOrderLineId)!;
-        const originalQty = parseFloat(l.quantity || '1');
-        const invoicedQty = parseFloat(inv.quantity);
-        const ratio = originalQty > 0 ? invoicedQty / originalQty : 0;
-
-        const proratedAmount = parseFloat(l.amount || '0') * ratio;
-        const proratedTax = parseFloat(l.tax || '0') * ratio;
+        const lAmtDec = toDecimal(l.amount);
+        const lTaxDec = toDecimal(l.tax);
+        const lineTaxRate =
+          lAmtDec.greaterThan(0) && lTaxDec.greaterThan(0)
+            ? lTaxDec.div(lAmtDec).times(100).toNumber()
+            : 0;
+        const linePricing = computeLinePrice({
+          quantity: toDecimal(inv.quantity).toNumber(),
+          pricePerUnit: toDecimal(
+            inv.pricePerUnit || l.pricePerUnit,
+          ).toNumber(),
+          discountPercentage: toDecimal(l.discountPercentage).toNumber(),
+          taxRate: lineTaxRate,
+        });
 
         return {
           ...l,
           quantity: inv.quantity,
           pricePerUnit: inv.pricePerUnit,
-          amount: proratedAmount.toFixed(2),
-          tax: proratedTax.toFixed(2),
-          totalAmount: (proratedAmount + proratedTax).toFixed(2),
+          amount: linePricing.amount.toFixed(2),
+          tax: linePricing.tax.toFixed(2),
+          totalAmount: linePricing.totalAmount.toFixed(2),
         };
       });
 
@@ -184,7 +198,7 @@ export class SalesInvoiceService {
       invoiceMeta: {
         invoiceNumber: invoice.invoiceNumber,
         dueDate: invoice.dueDate
-          ? new Date(invoice.dueDate).toLocaleDateString('en-IE')
+          ? formatReportDate(invoice.dueDate, undefined, '')
           : null,
         sequenceNumber,
         totalInvoices,
@@ -280,23 +294,25 @@ export class SalesInvoiceService {
       )
       .where(eq(salesInvoiceLines.invoiceId, invoiceId));
 
-    const invoiceTax = parseFloat(invoice.taxAmount || '0');
+    const invoiceTax = toDecimal(invoice.taxAmount);
     const invoiceSubtotal = linesRaw.reduce(
-      (sum, l) => sum + parseFloat(l.amount || '0'),
-      0,
+      (sum, l) => sum.plus(toDecimal(l.amount)),
+      toDecimal(0),
     );
 
     const lines = linesRaw.map((line, idx) => {
-      const lineAmt = parseFloat(line.amount || '0');
-      let lineTax = 0;
+      const lineAmt = toDecimal(line.amount);
+      let lineTax = toDecimal(0);
       if (line.taxAmount != null) {
-        lineTax = parseFloat(line.taxAmount);
-      } else if (invoiceTax > 0 && invoiceSubtotal > 0) {
-        lineTax = (lineAmt / invoiceSubtotal) * invoiceTax;
+        lineTax = toDecimal(line.taxAmount);
+      } else if (invoiceTax.greaterThan(0) && invoiceSubtotal.greaterThan(0)) {
+        lineTax = lineAmt.div(invoiceSubtotal).times(invoiceTax);
       }
-      const disc = parseFloat(line.discountPercentage || '0');
+      const disc = toDecimal(line.discountPercentage);
       const taxRate =
-        lineAmt > 0 && lineTax > 0 ? (lineTax / lineAmt) * 100 : 0;
+        lineAmt.greaterThan(0) && lineTax.greaterThan(0)
+          ? lineTax.div(lineAmt).times(100)
+          : toDecimal(0);
 
       return {
         lineNumber: idx + 1,
@@ -308,7 +324,7 @@ export class SalesInvoiceService {
         taxRate: `${taxRate.toFixed(1)}%`,
         tax: lineTax.toFixed(2),
         amount: lineAmt.toFixed(2),
-        totalAmount: (lineAmt + lineTax).toFixed(2),
+        totalAmount: lineAmt.plus(lineTax).toFixed(2),
         unitOfMeasure: 'EA',
       };
     });
@@ -340,11 +356,11 @@ export class SalesInvoiceService {
         projectNumber: invoice.projectNumber || '',
         customerName: invoice.customerName || '',
         customerOrderNumber: invoice.customerOrderNumber || '',
-        orderDate: invoice.invoiceDate
-          ? new Date(invoice.invoiceDate).toLocaleDateString('en-IE')
-          : invoice.createdOn
-            ? new Date(invoice.createdOn).toLocaleDateString('en-IE')
-            : '',
+        orderDate: formatReportDate(
+          invoice.invoiceDate || invoice.createdOn,
+          undefined,
+          '',
+        ),
         currencyCode: invoice.currencyCode || fallbackCurrency,
         name: invoice.projectName || '',
       },
@@ -354,19 +370,13 @@ export class SalesInvoiceService {
         totalTax: totals.totalTax,
         totalAmount: totals.totalAmount,
       },
-      generatedAt:
-        new Date().toLocaleDateString('en-IE') +
-        ' ' +
-        new Date().toLocaleTimeString('en-IE', {
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
+      generatedAt: formatReportDateTime(new Date()),
       customPdfText: customText,
       quoteIntroText: customText,
       invoiceMeta: {
         invoiceNumber: invoice.invoiceNumber,
         dueDate: invoice.dueDate
-          ? new Date(invoice.dueDate).toLocaleDateString('en-IE')
+          ? formatReportDate(invoice.dueDate, undefined, '')
           : null,
         sequenceNumber: sequenceNumber > 0 ? sequenceNumber : 1,
         totalInvoices: totalInvoices > 0 ? totalInvoices : 1,

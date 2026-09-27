@@ -1,3 +1,4 @@
+import { Decimal } from 'decimal.js';
 import { asc, eq, and, sql, desc } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -235,22 +236,25 @@ export async function executeLedgerIntegrityAudit(
 
   for (const je of allJournalEntries) {
     const lines = linesByJournal.get(je.journalEntryId) || [];
-    const totalDebit = lines.reduce((acc, l) => acc + Number(l.debit || 0), 0);
-    const totalCredit = lines.reduce(
-      (acc, l) => acc + Number(l.credit || 0),
-      0,
+    const totalDebitDec = lines.reduce(
+      (acc, l) => acc.plus(l.debit || 0),
+      new Decimal(0),
     );
-    const drift = Math.abs(totalDebit - totalCredit);
+    const totalCreditDec = lines.reduce(
+      (acc, l) => acc.plus(l.credit || 0),
+      new Decimal(0),
+    );
+    const driftDec = totalDebitDec.minus(totalCreditDec).abs();
 
-    if (drift > 0.001) {
+    if (driftDec.gt(0.001)) {
       anomalies.push({
         type: 'unbalanced_journal_entry',
         entryNumber: je.entryNumber,
         journalEntryId: je.journalEntryId,
         details: {
-          totalDebit: Number(totalDebit.toFixed(2)),
-          totalCredit: Number(totalCredit.toFixed(2)),
-          drift: Number(drift.toFixed(4)),
+          totalDebit: new Decimal(totalDebitDec.toFixed(2)).toNumber(),
+          totalCredit: new Decimal(totalCreditDec.toFixed(2)).toNumber(),
+          drift: new Decimal(driftDec.toFixed(4)).toNumber(),
         },
       });
     }

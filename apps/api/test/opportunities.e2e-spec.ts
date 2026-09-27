@@ -158,8 +158,7 @@ describe('Opportunities (e2e)', () => {
         .set('Authorization', `Bearer ${adminToken}`);
       expect(
         getRes.body.opportunityContacts.find(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test check
-          (pc: any) => pc.contactId === createdContactId,
+          (pc: { contactId: string }) => pc.contactId === createdContactId,
         ),
       ).toBeDefined();
     });
@@ -180,8 +179,7 @@ describe('Opportunities (e2e)', () => {
         .get(`/api/opportunities/${createdOpportunityId}`)
         .set('Authorization', `Bearer ${adminToken}`);
       const link = getRes.body.opportunityContacts.find(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test check
-        (pc: any) => pc.contactId === createdContactId,
+        (pc: { contactId: string }) => pc.contactId === createdContactId,
       );
       expect(link.roles).toContain('Influencer');
     });
@@ -224,8 +222,8 @@ describe('Opportunities (e2e)', () => {
         .get(`/api/opportunities/${createdOpportunityId}`)
         .set('Authorization', `Bearer ${adminToken}`);
       const link = getRes.body.opportunityOrganizations.find(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test check
-        (po: any) => po.organizationId === createdOrganizationId,
+        (po: { organizationId: string }) =>
+          po.organizationId === createdOrganizationId,
       );
       expect(link.roles).toContain('strategic_partner');
     });

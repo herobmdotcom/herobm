@@ -1,10 +1,11 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { Decimal } from 'decimal.js';
 
 export interface AbaTransaction {
   bsb: string;
   accountNumber: string;
   accountName: string;
-  amount: number;
+  amount: number | string | Decimal;
   traceBsb: string;
   traceAccountNumber: string;
   remitterName: string;
@@ -33,20 +34,21 @@ export class AbaGeneratorService {
     // Type 0 - Descriptive Record
     lines.push(this.formatDescriptiveRecord(context));
 
-    let netTotal = 0;
-    let creditTotal = 0;
-    const debitTotal = 0;
+    let netTotal = new Decimal(0);
+    let creditTotal = new Decimal(0);
+    const debitTotal = new Decimal(0);
 
     // Type 1 - Detail Records
     for (const tx of context.transactions) {
-      if (tx.amount <= 0) {
+      const txAmount = new Decimal(tx.amount);
+      if (txAmount.lessThanOrEqualTo(0)) {
         throw new BadRequestException(
           'Transaction amount must be greater than zero.',
         );
       }
       lines.push(this.formatDetailRecord(tx));
-      creditTotal += tx.amount;
-      netTotal += tx.amount;
+      creditTotal = creditTotal.plus(txAmount);
+      netTotal = netTotal.plus(txAmount);
     }
 
     // Type 7 - File Total Record
@@ -90,7 +92,8 @@ export class AbaGeneratorService {
     line += ' '; // Indicator (blank)
     line += tx.transactionCode || '53'; // Transaction Code (53 = Pay/Credit)
 
-    const amountCents = Math.round(tx.amount * 100).toString();
+    const txAmount = new Decimal(tx.amount);
+    const amountCents = txAmount.mul(100).round().toString();
     line += this.padStr(amountCents, 10, '0', true); // Amount
 
     line += this.padStr(tx.accountName, 32); // Title of Account
@@ -110,18 +113,18 @@ export class AbaGeneratorService {
 
   private formatFileTotalRecord(
     context: AbaFileContext,
-    netTotal: number,
-    creditTotal: number,
-    debitTotal: number,
+    netTotal: Decimal,
+    creditTotal: Decimal,
+    debitTotal: Decimal,
     recordCount: number,
   ): string {
     let line = '7'; // Record Type
     line += '999-999'; // BSB Format filler
     line += this.padStr('', 12); // Blank
 
-    const netTotalCents = Math.round(Math.abs(netTotal) * 100).toString();
-    const creditTotalCents = Math.round(creditTotal * 100).toString();
-    const debitTotalCents = Math.round(debitTotal * 100).toString();
+    const netTotalCents = netTotal.abs().mul(100).round().toString();
+    const creditTotalCents = creditTotal.mul(100).round().toString();
+    const debitTotalCents = debitTotal.mul(100).round().toString();
 
     line += this.padStr(netTotalCents, 10, '0', true); // Net Total
     line += this.padStr(creditTotalCents, 10, '0', true); // Credit Total

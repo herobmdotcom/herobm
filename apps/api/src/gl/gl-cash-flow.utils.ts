@@ -6,6 +6,7 @@
  * independent control account proof engine asserting zero reconciliation drift.
  */
 
+import { Decimal } from 'decimal.js';
 import { DrizzleDB } from '../drizzle/drizzle.module';
 import { sql } from 'drizzle-orm';
 import { roundCurrency } from './gl-financial-statements.utils';
@@ -490,9 +491,9 @@ export async function calculateCashFlowStatement(
 
     for (const line of lines) {
       const isCash = cashAccountIds.has(line.glAccountId);
-      const debit = parseFloat(line.debit || '0');
-      const credit = parseFloat(line.credit || '0');
-      const netMovement = debit - credit;
+      const debitDec = new Decimal(line.debit || '0');
+      const creditDec = new Decimal(line.credit || '0');
+      const netMovement = debitDec.minus(creditDec).toNumber();
 
       if (isCash) {
         entryNetCash += netMovement;
@@ -526,8 +527,10 @@ export async function calculateCashFlowStatement(
     }
 
     for (const nl of nonCashLines) {
-      const weight = Math.abs(nl.netLine) / totalOpposing;
-      const allocatedCash = entryNetCash * weight;
+      const weight = new Decimal(Math.abs(nl.netLine))
+        .div(totalOpposing)
+        .toNumber();
+      const allocatedCash = new Decimal(entryNetCash).mul(weight).toNumber();
       const classification = classifyCashFlowCounterpart(
         nl,
         allocatedCash,
@@ -617,7 +620,10 @@ export async function calculateCashFlowStatement(
   ].filter((l) => Math.abs(l.amount) > 0.001);
 
   const netOperatingCash = roundCurrency(
-    operatingLines.reduce((sum, l) => sum + l.amount, 0),
+    operatingLines.reduce(
+      (sum, l) => new Decimal(sum).plus(l.amount).toNumber(),
+      0,
+    ),
   );
 
   const investingLines: CashFlowLineItem[] = [
@@ -642,7 +648,10 @@ export async function calculateCashFlowStatement(
   ].filter((l) => Math.abs(l.amount) > 0.001);
 
   const netInvestingCash = roundCurrency(
-    investingLines.reduce((sum, l) => sum + l.amount, 0),
+    investingLines.reduce(
+      (sum, l) => new Decimal(sum).plus(l.amount).toNumber(),
+      0,
+    ),
   );
 
   const financingLines: CashFlowLineItem[] = [
@@ -679,11 +688,17 @@ export async function calculateCashFlowStatement(
   ].filter((l) => Math.abs(l.amount) > 0.001);
 
   const netFinancingCash = roundCurrency(
-    financingLines.reduce((sum, l) => sum + l.amount, 0),
+    financingLines.reduce(
+      (sum, l) => new Decimal(sum).plus(l.amount).toNumber(),
+      0,
+    ),
   );
 
   const netChangeInCash = roundCurrency(
-    netOperatingCash + netInvestingCash + netFinancingCash,
+    new Decimal(netOperatingCash)
+      .plus(netInvestingCash)
+      .plus(netFinancingCash)
+      .toNumber(),
   );
 
   // 5. Dual Verification Check (Parity Proof)
@@ -875,9 +890,9 @@ export async function calculateCashFlowLineDrilldown(
     const entryMemo = lines[0]?.entryMemo || '';
 
     for (const line of lines) {
-      const debit = parseFloat(line.debit || '0') || 0;
-      const credit = parseFloat(line.credit || '0') || 0;
-      const netMovement = debit - credit;
+      const debitDec = new Decimal(line.debit || '0');
+      const creditDec = new Decimal(line.credit || '0');
+      const netMovement = debitDec.minus(creditDec).toNumber();
 
       if (cashAccountIds.has(line.glAccountId)) {
         entryNetCash += netMovement;
@@ -919,8 +934,10 @@ export async function calculateCashFlowLineDrilldown(
     }
 
     for (const nl of nonCashLines) {
-      const weight = Math.abs(nl.netLine) / totalOpposing;
-      const allocatedCash = entryNetCash * weight;
+      const weight = new Decimal(Math.abs(nl.netLine))
+        .div(totalOpposing)
+        .toNumber();
+      const allocatedCash = new Decimal(entryNetCash).mul(weight).toNumber();
       const classification = classifyCashFlowCounterpart(
         nl,
         allocatedCash,

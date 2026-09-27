@@ -146,8 +146,10 @@ export default function AccountGroupsAdmin() {
     }
   ], [tCommon, t, matrixRules]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-  const handleSave = async (payload: any, isNew: boolean) => {
+  const handleSave = async (
+    payload: Partial<api.CustomerGroupResponseDto>,
+    isNew: boolean,
+  ) => {
     if (!payload.groupCode || !payload.name) {
       toast.error('Code and Name are required');
       throw new Error('Code and Name are required');
@@ -166,11 +168,16 @@ export default function AccountGroupsAdmin() {
         earlyPaymentDiscountDays: payload.earlyPaymentDiscountDays || null,
       };
 
-      if (!isNew) {
-        await api.customerGroupsControllerUpdate(payload.customerGroupId, formattedPayload);
+      if (!isNew && payload.customerGroupId) {
+        await api.customerGroupsControllerUpdate(
+          payload.customerGroupId!,
+          formattedPayload as unknown as api.UpdateCustomerGroupDto,
+        );
         toast.success('Group updated');
       } else {
-        await api.customerGroupsControllerCreate(formattedPayload);
+        await api.customerGroupsControllerCreate(
+          formattedPayload as unknown as api.CreateCustomerGroupDto,
+        );
         toast.success('Group created');
       }
       loadData();

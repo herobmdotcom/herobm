@@ -7,12 +7,16 @@ import { WorkOrdersExecutionService } from './work-orders-execution.service';
 import { DrizzleModule } from '../drizzle/drizzle.module';
 import { InventoryModule } from '../inventory/inventory.module';
 import { OrdersModule } from '../orders/orders.module';
+import { GlModule } from '../gl/gl.module';
+import { SettingsModule } from '../settings/settings.module';
 
 @Module({
   imports: [
     DrizzleModule,
     forwardRef(() => InventoryModule),
     forwardRef(() => OrdersModule),
+    GlModule,
+    SettingsModule,
   ],
   controllers: [WorkOrdersController],
   providers: [

@@ -226,8 +226,7 @@ export class OrganizationsService {
         organizationId: string;
       } | null,
       direction: direction,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle pagination requires loose typing here
-      applyWhere: (q: any, c: any, dir: any) => {
+      applyWhere: (q, c, dir) => {
         const scoreOp = dir === 'next' ? sql`<` : sql`>`;
         const nameOp = dir === 'next' ? sql`>` : sql`<`;
         const idOp = dir === 'next' ? sql`>` : sql`<`;
@@ -247,8 +246,7 @@ export class OrganizationsService {
 
         return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
       },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle pagination requires loose typing here
-      applyOrderBy: (q: any, dir: any) => {
+      applyOrderBy: (q, dir) => {
         const sortOrder = dir === 'next' ? desc : asc;
         const nameSortOrder = dir === 'next' ? asc : desc;
         return q.orderBy(
@@ -257,8 +255,7 @@ export class OrganizationsService {
           nameSortOrder(organizations.organizationId),
         );
       },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle pagination requires loose typing here
-      encodeRow: (item: any) => ({
+      encodeRow: (item) => ({
         score: Number(item.score || 0),
         name: item.name || '',
         organizationId: item.organizationId,

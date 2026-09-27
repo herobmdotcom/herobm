@@ -16,6 +16,10 @@ import {
   SALES_INVOICE_STATE,
   SALES_CREDIT_NOTE_STATE,
   PAYMENT_STATE,
+  formatReportDate,
+  parseLocalDate,
+  toDecimal,
+  Decimal,
 } from '@herobm/shared';
 
 export interface CustomerStatementData {
@@ -195,14 +199,11 @@ export class CustomerStatementService {
     const txs: RawTx[] = [];
 
     for (const inv of invoices) {
-      const invDate = inv.invoiceDate
-        ? new Date(inv.invoiceDate)
-        : inv.createdOn
-          ? new Date(inv.createdOn)
-          : new Date();
-      const dueDateStr = inv.dueDate
-        ? new Date(inv.dueDate).toLocaleDateString('en-IE')
-        : '—';
+      const invDate =
+        parseLocalDate(inv.invoiceDate) ||
+        parseLocalDate(inv.createdOn) ||
+        new Date();
+      const dueDateStr = formatReportDate(inv.dueDate, undefined, '—');
       const amount = parseFloat(inv.totalAmount || '0');
 
       txs.push({
@@ -217,7 +218,7 @@ export class CustomerStatementService {
     }
 
     for (const cr of creditNotes) {
-      const crDate = cr.createdOn ? new Date(cr.createdOn) : new Date();
+      const crDate = parseLocalDate(cr.createdOn) || new Date();
       const amount = parseFloat(cr.totalAmount || '0');
 
       txs.push({
@@ -232,11 +233,10 @@ export class CustomerStatementService {
     }
 
     for (const pmt of payments) {
-      const pmtDate = pmt.paymentDate
-        ? new Date(pmt.paymentDate)
-        : pmt.createdOn
-          ? new Date(pmt.createdOn)
-          : new Date();
+      const pmtDate =
+        parseLocalDate(pmt.paymentDate) ||
+        parseLocalDate(pmt.createdOn) ||
+        new Date();
       const amount = parseFloat(pmt.totalAmount || '0');
 
       txs.push({
@@ -253,23 +253,25 @@ export class CustomerStatementService {
     // Sort by date ascending
     txs.sort((a, b) => a.date.getTime() - b.date.getTime());
 
-    let runningBalance = 0;
-    let totalDebits = 0;
-    let totalCredits = 0;
+    let runningBalance = toDecimal(0);
+    let totalDebits = toDecimal(0);
+    let totalCredits = toDecimal(0);
 
     const lines = txs.map((t) => {
-      totalDebits += t.debit;
-      totalCredits += t.credit;
-      runningBalance += t.debit - t.credit;
+      const debitDec = toDecimal(t.debit);
+      const creditDec = toDecimal(t.credit);
+      totalDebits = totalDebits.plus(debitDec);
+      totalCredits = totalCredits.plus(creditDec);
+      runningBalance = runningBalance.plus(debitDec).minus(creditDec);
 
       return {
-        date: t.date.toLocaleDateString('en-IE'),
+        date: formatReportDate(t.date, undefined, '—'),
         type: t.type,
         documentNumber: t.documentNumber,
         reference: t.reference,
         dueDate: t.dueDate,
-        debit: t.debit > 0 ? t.debit.toFixed(2) : '0.00',
-        credit: t.credit > 0 ? t.credit.toFixed(2) : '0.00',
+        debit: debitDec.greaterThan(0) ? debitDec.toFixed(2) : '0.00',
+        credit: creditDec.greaterThan(0) ? creditDec.toFixed(2) : '0.00',
         runningBalance: runningBalance.toFixed(2),
       };
     });
@@ -350,7 +352,7 @@ export class CustomerStatementService {
         customerName: cust.name || '—',
         billingAddress: billingAddressParts.join(', '),
         customerContact: '',
-        statementDate: now.toLocaleDateString('en-IE'),
+        statementDate: formatReportDate(now, undefined, '—'),
         paymentTerms: cust.termsDescription || cust.termsCode || '30 Days',
         creditLimit: cust.creditLimit?.toString() || '',
         currencyCode: cust.currencyCode || baseCurrency,
@@ -367,7 +369,7 @@ export class CustomerStatementService {
       summary: {
         totalDebits: totalDebits.toFixed(2),
         totalCredits: totalCredits.toFixed(2),
-        totalOutstanding: Math.max(0, runningBalance).toFixed(2),
+        totalOutstanding: Decimal.max(0, runningBalance).toFixed(2),
       },
       bank: bankDetails,
       customPdfText: customText || undefined,

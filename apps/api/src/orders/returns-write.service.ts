@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { AppConfigService } from '../settings/app-config.service';
 import { SalesCreditNoteService } from '../invoices/sales-credit-note.service';
+import Decimal from 'decimal.js';
 
 import {
   eq,
@@ -36,6 +37,7 @@ import {
   salesEvents,
   outbox,
   bins,
+  binContents,
   zones,
   products as coreProducts,
   customers as coreAccounts,
@@ -58,10 +60,12 @@ import {
 
 import {
   RETURN_STATE,
+  type ReturnState,
   SALES_ORDER_STATE,
   RETURN_TRANSITIONS as RETURN_STATE_TRANSITIONS,
   getValidStates,
   PUTAWAY_STATUS,
+  type PutawayStatus,
   RETURN_RESOLUTION,
 } from '@herobm/shared';
 import { getValuationStrategy } from '../inventory/valuation';
@@ -75,6 +79,11 @@ import {
   ReceiveReturnDto,
   CreateOrderDto,
 } from './dto';
+import {
+  generateReturnNumber,
+  getAlreadyReturnedQty,
+  recalculateSalesReturnWac,
+} from './returns-write.utils';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
 
 const VALID_RETURN_STATES = getValidStates(RETURN_STATE_TRANSITIONS);
@@ -95,65 +104,12 @@ export class ReturnsWriteService {
 
   private readonly logger = new Logger(ReturnsWriteService.name);
 
-  /**
-   * Generate a human-readable return number (RET-YYYYMMDD-NNNN).
-   */
-  private async generateReturnNumber(tx?: DrizzleDB): Promise<string> {
-    const db = tx || this.db;
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const prefix = `RET-${today}-`;
-    const result = await db
-      .select({ returnNumber: salesOrderReturns.returnNumber })
-      .from(salesOrderReturns)
-      .where(sql`${salesOrderReturns.returnNumber} LIKE ${prefix + '%'}`)
-      .orderBy(sql`${salesOrderReturns.returnNumber} DESC`)
-      .limit(1);
-    const seq =
-      result.length > 0
-        ? parseInt(result[0].returnNumber.replace(prefix, ''), 10) + 1
-        : 1;
-    return `${prefix}${String(seq).padStart(4, '0')}`;
-  }
-
-  /**
-   * Calculate how much quantity has already been returned for a given order line
-   * across all non-cancelled returns.
-   */
-  private async getAlreadyReturnedQty(
-    salesOrderLineId: string,
-    excludeReturnId?: string,
-    tx?: DrizzleDB,
-  ): Promise<number> {
-    const db = tx || this.db;
-    const query = db
-      .select({
-        total: sql<string>`COALESCE(SUM(${salesOrderReturnLines.quantityReturned}::numeric), 0)::text`,
-      })
-      .from(salesOrderReturnLines)
-      .innerJoin(
-        salesOrderReturns,
-        eq(salesOrderReturnLines.returnId, salesOrderReturns.returnId),
-      )
-      .where(
-        and(
-          eq(salesOrderReturnLines.salesOrderLineId, salesOrderLineId),
-          sql`${salesOrderReturns.stateCode} != ${RETURN_STATE.CANCELLED}`,
-          excludeReturnId
-            ? sql`${salesOrderReturns.returnId} != ${excludeReturnId}`
-            : undefined,
-        ),
-      );
-
-    const rows = await query;
-    return parseFloat(rows[0]?.total ?? '0');
-  }
-
   // -------------------------------------------------------------------------
   // CRUD Operations
   // -------------------------------------------------------------------------
 
   /** Allowed order states for creating a return (goods must be shipping or shipped). */
-  private static readonly RETURNABLE_ORDER_STATES = [
+  private static readonly RETURNABLE_ORDER_STATES: readonly string[] = [
     SALES_ORDER_STATE.PICKING,
     SALES_ORDER_STATE.SHIPPED,
     SALES_ORDER_STATE.INVOICED,
@@ -172,9 +128,7 @@ export class ReturnsWriteService {
       async (innerTx: DrizzleDB) => {
         const order = await this.findOrder(salesOrderId, innerTx);
         if (
-          !ReturnsWriteService.RETURNABLE_ORDER_STATES.includes(
-            order.stateCode as any, // eslint-disable-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
-          )
+          !ReturnsWriteService.RETURNABLE_ORDER_STATES.includes(order.stateCode)
         ) {
           throw new BadRequestException(
             `Cannot create a return against order in state '${order.stateCode}'. ` +
@@ -192,10 +146,9 @@ export class ReturnsWriteService {
             salesOrderId,
             innerTx,
           );
-          const alreadyReturned = await this.getAlreadyReturnedQty(
-            line.salesOrderLineId,
-            undefined,
+          const alreadyReturned = await getAlreadyReturnedQty(
             innerTx,
+            line.salesOrderLineId,
           );
 
           // Validate against shipped qty (not ordered qty)
@@ -208,14 +161,14 @@ export class ReturnsWriteService {
           );
 
           if (line.returnFee) {
-            const fee = parseFloat(line.returnFee);
-            if (fee < 0) {
+            const fee = new Decimal(line.returnFee);
+            if (fee.isNegative()) {
               throw new BadRequestException(`Return fee cannot be negative`);
             }
           }
         }
 
-        const returnNumber = await this.generateReturnNumber(innerTx);
+        const returnNumber = await generateReturnNumber(innerTx);
 
         const [ret] = await innerTx
           .insert(salesOrderReturns)
@@ -413,8 +366,7 @@ export class ReturnsWriteService {
         const [updated] = await innerTx
           .update(salesOrderReturns)
           .set({
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
-            stateCode: newState as any,
+            stateCode: newState as ReturnState,
             modifiedOn: new Date(),
           })
           .where(eq(salesOrderReturns.returnId, returnId))
@@ -503,10 +455,9 @@ export class ReturnsWriteService {
           ret.salesOrderId,
           innerTx,
         );
-        const alreadyReturned = await this.getAlreadyReturnedQty(
-          dto.salesOrderLineId,
-          undefined,
+        const alreadyReturned = await getAlreadyReturnedQty(
           innerTx,
+          dto.salesOrderLineId,
         );
 
         // Validate against shipped qty (not ordered qty)
@@ -527,8 +478,8 @@ export class ReturnsWriteService {
         }
 
         if (dto.returnFee) {
-          const fee = parseFloat(dto.returnFee);
-          if (fee < 0) {
+          const fee = new Decimal(dto.returnFee);
+          if (fee.isNegative()) {
             throw new BadRequestException(`Return fee cannot be negative`);
           }
         }
@@ -617,7 +568,7 @@ export class ReturnsWriteService {
         }
 
         const stockLines = [];
-        let totalReturnCost = 0;
+        let totalReturnCost = new Decimal(0);
         const valuationStrategy = getValuationStrategy(
           this.appConfig.valuationMethod(),
         );
@@ -646,7 +597,14 @@ export class ReturnsWriteService {
         const productRows =
           productIds.length > 0
             ? await innerTx
-                .select()
+                .select({
+                  productId: coreProducts.productId,
+                  standardCost: coreProducts.standardCost,
+                  weightedAverageCost: coreProducts.weightedAverageCost,
+                  qoh: sql<number>`COALESCE((SELECT SUM(${binContents.actualQuantity}::numeric) FROM ${binContents} WHERE ${binContents.productId} = ${coreProducts.productId}), 0)`.mapWith(
+                    Number,
+                  ),
+                })
                 .from(coreProducts)
                 .where(inArray(coreProducts.productId, productIds))
             : [];
@@ -672,6 +630,10 @@ export class ReturnsWriteService {
                 productId: orderLine.productId!,
                 quantity: newlyReceived,
                 uomCode: orderLine.unitOfMeasure,
+                unitCost:
+                  orderLine.unitCost != null
+                    ? String(orderLine.unitCost)
+                    : undefined,
               });
 
               // Calculate COGS
@@ -682,19 +644,21 @@ export class ReturnsWriteService {
               if (product) {
                 const cost =
                   orderLine.unitCost != null
-                    ? (parseFloat(orderLine.unitCost) * newlyReceived).toFixed(
-                        2,
+                    ? new Decimal(orderLine.unitCost).mul(
+                        new Decimal(newlyReceived),
                       )
-                    : valuationStrategy.getCogs(
-                        {
-                          productId: product.productId,
-                          standardCost: product.standardCost || '0',
-                          weightedAverageCost:
-                            product.weightedAverageCost || '0',
-                        },
-                        newlyReceived,
+                    : new Decimal(
+                        valuationStrategy.getCogs(
+                          {
+                            productId: product.productId,
+                            standardCost: product.standardCost || '0',
+                            weightedAverageCost:
+                              product.weightedAverageCost || '0',
+                          },
+                          newlyReceived,
+                        ),
                       );
-                totalReturnCost += parseFloat(cost);
+                totalReturnCost = totalReturnCost.plus(cost);
               }
             }
 
@@ -711,6 +675,14 @@ export class ReturnsWriteService {
         }
 
         if (stockLines.length > 0) {
+          // Recalculate WAC for received return lines
+          await recalculateSalesReturnWac(
+            innerTx,
+            stockLines,
+            productMap,
+            valuationStrategy,
+          );
+
           // Receive into the CUSTOMER_RETURNS bin (HANDLING zone)
           const [returnsBin] = await innerTx
             .select({ binId: bins.binId })
@@ -735,6 +707,7 @@ export class ReturnsWriteService {
             binId: returnsBin.binId,
             quantity: line.quantity,
             uomCode: line.uomCode || 'EA',
+            unitCost: line.unitCost,
           }));
 
           await this.inventoryMovementService.recordInventoryMovement(innerTx, {
@@ -783,7 +756,9 @@ export class ReturnsWriteService {
           const retActivityId = retOrder?.activityId || undefined;
 
           const returnGlWithDims = accountingStrategy.onSalesReturn({
-            amount: Number(totalReturnCost.toFixed(2)),
+            amount: totalReturnCost
+              .toDecimalPlaces(2, Decimal.ROUND_HALF_UP)
+              .toNumber(),
             memo: `Sales Return ${ret.returnNumber} (Partial)`,
             costCenterId: retCostCenterId,
             activityId: retActivityId,
@@ -791,8 +766,7 @@ export class ReturnsWriteService {
 
           if (returnGlWithDims) {
             await this.glService.postJournalEntry(
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-              returnGlWithDims.lines as any[],
+              returnGlWithDims.lines,
               {
                 actor,
                 entryDate: new Date().toISOString().slice(0, 10),
@@ -896,10 +870,10 @@ export class ReturnsWriteService {
             ret.salesOrderId,
             innerTx,
           );
-          const alreadyReturned = await this.getAlreadyReturnedQty(
+          const alreadyReturned = await getAlreadyReturnedQty(
+            innerTx,
             existingLine.salesOrderLineId,
             returnId,
-            innerTx,
           );
 
           // Validate against shipped qty (not ordered qty)
@@ -917,8 +891,8 @@ export class ReturnsWriteService {
         }
 
         if (dto.returnFee !== undefined) {
-          const fee = parseFloat(dto.returnFee);
-          if (fee < 0) {
+          const fee = new Decimal(dto.returnFee);
+          if (fee.isNegative()) {
             throw new BadRequestException(`Return fee cannot be negative`);
           }
         }
@@ -1225,11 +1199,11 @@ export class ReturnsWriteService {
       const states = targetState.split(',');
       if (states.length === 1) {
         conditions.push(
-          eq(salesOrderReturns.stateCode, targetState as any), // eslint-disable-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
+          eq(salesOrderReturns.stateCode, targetState as ReturnState),
         );
       } else {
         conditions.push(
-          inArray(salesOrderReturns.stateCode, states as any[]), // eslint-disable-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
+          inArray(salesOrderReturns.stateCode, states as ReturnState[]),
         );
       }
     }
@@ -1457,8 +1431,7 @@ export class ReturnsWriteService {
     await tx
       .update(salesOrderReturnLines)
       .set({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
-        putawayStatus: putawayStatus as any,
+        putawayStatus: putawayStatus as PutawayStatus,
         ...(reason ? { reason } : {}),
       })
       .where(eq(salesOrderReturnLines.returnLineId, returnLineId));

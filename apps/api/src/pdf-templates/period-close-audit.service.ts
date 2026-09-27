@@ -148,8 +148,12 @@ export class PeriodCloseAuditService {
 
   async assembleData(
     periodId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Boundary auth user
-    user?: any,
+    user?: {
+      role?: string;
+      username?: string;
+      email?: string;
+      [key: string]: unknown;
+    },
     options?: Record<string, unknown>,
   ): Promise<PeriodCloseAuditData> {
     const now = new Date();
@@ -211,8 +215,11 @@ export class PeriodCloseAuditService {
         : '',
       actor: e.actor || 'system',
       notes:
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- JSON payload property
-        (e.payload as any)?.notes || (e.payload as any)?.status || undefined,
+        ((e.payload as Record<string, unknown>)?.notes as string | undefined) ||
+        ((e.payload as Record<string, unknown>)?.status as
+          | string
+          | undefined) ||
+        undefined,
     }));
 
     // 7. Cryptographic snapshot hash

@@ -13,7 +13,9 @@ import {
   SALES_ORDER_STATE,
   SHIPMENT_STATE,
   SALES_INVOICE_STATE,
+  toDecimal,
 } from '@herobm/shared';
+import Decimal from 'decimal.js';
 
 export interface LifecycleTrigger {
   entity: 'shipment' | 'sales_invoice' | 'picking';
@@ -81,7 +83,7 @@ export const autoShipWhenFullyShipped: LifecycleRule = {
 
     // 4. Check if fully shipped
     const isFullyShipped = lines.every((line) => {
-      const ordered = parseFloat(line.quantity);
+      const ordered = toDecimal(line.quantity).toNumber();
       const committed = committedMap.get(line.salesOrderLineId) ?? 0;
       return committed >= ordered;
     });
@@ -160,7 +162,7 @@ export const revertToPickingOnShipmentCancel: LifecycleRule = {
 
     // 4. Check if NO LONGER fully shipped
     const isFullyShipped = lines.every((line) => {
-      const ordered = parseFloat(line.quantity);
+      const ordered = toDecimal(line.quantity).toNumber();
       const committed = committedMap.get(line.salesOrderLineId) ?? 0;
       return committed >= ordered;
     });
@@ -248,10 +250,10 @@ export const autoInvoiceWhenFullyInvoiced: LifecycleRule = {
           ),
         );
 
-      const invoiced = parseFloat(totalInvoiced || '0');
-      const ordered = parseFloat(line.quantity || '0');
+      const invoiced = new Decimal(totalInvoiced || '0');
+      const ordered = new Decimal(line.quantity || '0');
 
-      if (invoiced < ordered - 0.001) {
+      if (invoiced.lt(ordered.minus(0.001))) {
         isFullyInvoiced = false;
         break;
       }
@@ -340,10 +342,10 @@ export const revertInvoicedWhenInvoiceCancelled: LifecycleRule = {
           ),
         );
 
-      const invoiced = parseFloat(totalInvoiced || '0');
-      const ordered = parseFloat(line.quantity || '0');
+      const invoiced = new Decimal(totalInvoiced || '0');
+      const ordered = new Decimal(line.quantity || '0');
 
-      if (invoiced < ordered - 0.001) {
+      if (invoiced.lt(ordered.minus(0.001))) {
         isFullyInvoiced = false;
         break;
       }

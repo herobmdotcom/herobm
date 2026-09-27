@@ -61,12 +61,10 @@ export default function GlobalInvoicesPage() {
             field: 'stateCode', 
             headerName: t('columns.state'), 
             width: 140,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-            valueFormatter: (params: import("ag-grid-community").ValueFormatterParams<any>) => {
+            valueFormatter: (params: import("ag-grid-community").ValueFormatterParams) => {
                 if (!params.value) return '';
                 const s = String(params.value).toLowerCase();
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-                return tStates.has(s as any) ? tStates(s as any) : String(params.value);
+                return tStates.has(s as never) ? tStates(s as never) : String(params.value);
             }
         },
     ];

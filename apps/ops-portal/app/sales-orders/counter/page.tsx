@@ -23,6 +23,8 @@ import {
   getErrorMessage,
   computeLinePrice,
   computeOrderTotals,
+  toFinancialDecimal,
+  roundMoney,
   SALES_ORDER_STATE,
   CUSTOM_LINE_ID,
   LineType,
@@ -413,41 +415,42 @@ export default function CounterSalesPage() {
     setLines((prev) => prev.filter((l) => l.key !== key));
   };
 
-  // Calculate Totals using canonical shared computeLinePrice
+  // Calculate Totals using canonical shared computeLinePrice and computeOrderTotals
   const { subtotal, totalDiscount, totalTax, grandTotal } = useMemo(() => {
-    let sub = 0;
-    let disc = 0;
-    let tax = 0;
+    let totalDiscountDec = toFinancialDecimal(0);
+    const mappedLines: Array<{ amount: number; tax: number }> = [];
 
     for (const line of lines) {
       if (line.lineType === LineType.COMMENT) continue;
-      const qty = parseFloat(line.quantity || '0');
-      const price = parseFloat(line.pricePerUnit || '0');
-      const discPct = Math.min(100, Math.max(0, parseFloat(line.discountPercentage || '0')));
+      const qtyDec = toFinancialDecimal(line.quantity);
+      const priceDec = toFinancialDecimal(line.pricePerUnit);
+      const discPct = toFinancialDecimal(line.discountPercentage).toNumber();
       const selectedCat = taxCategories.find((c) => c.taxCategoryId === line.taxCategoryId);
-      const rate = selectedCat ? parseFloat(selectedCat.rate || '0') : (line.taxRate || 0);
+      const rate = selectedCat ? toFinancialDecimal(selectedCat.rate).toNumber() : (line.taxRate || 0);
 
       const pricing = computeLinePrice({
-        quantity: qty,
-        pricePerUnit: price,
+        quantity: qtyDec.toNumber(),
+        pricePerUnit: priceDec.toNumber(),
         discountPercentage: discPct,
         taxRate: rate,
       });
 
-      const lineGross = qty * price;
-      const lineDisc = lineGross - pricing.amount;
+      const lineGross = qtyDec.mul(priceDec);
+      const lineDisc = lineGross.minus(pricing.amount);
+      totalDiscountDec = totalDiscountDec.plus(lineDisc);
 
-      sub += lineGross;
-      disc += lineDisc;
-      tax += pricing.tax;
+      mappedLines.push({
+        amount: pricing.amount,
+        tax: pricing.tax,
+      });
     }
 
-    const total = sub - disc + tax;
+    const totals = computeOrderTotals(mappedLines);
     return {
-      subtotal: Number(sub.toFixed(2)),
-      totalDiscount: Number(disc.toFixed(2)),
-      totalTax: Number(tax.toFixed(2)),
-      grandTotal: Number(total.toFixed(2)),
+      subtotal: totals.subtotal,
+      totalDiscount: roundMoney(totalDiscountDec).toNumber(),
+      totalTax: totals.totalTax,
+      grandTotal: totals.totalAmount,
     };
   }, [lines, taxCategories]);
 
@@ -817,9 +820,9 @@ export default function CounterSalesPage() {
             totalDiscount={totalDiscount}
             totalTax={totalTax}
             grandTotal={grandTotal}
-            onUpdateLine={(key, field, val) => updateLine(Number(key), { [field]: val })}
-            onUpdateLineFields={(key, fields) => updateLine(Number(key), fields)}
-            onRemoveLine={(key) => removeLine(Number(key))}
+            onUpdateLine={(key: string | number, field: string, val: unknown) => updateLine(Number(key), { [field]: val })}
+            onUpdateLineFields={(key: string | number, fields: Record<string, unknown>) => updateLine(Number(key), fields)}
+            onRemoveLine={(key: string | number) => removeLine(Number(key))}
           />
         </div>
 

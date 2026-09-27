@@ -115,6 +115,7 @@ import {
   emailOutbox,
   integrations,
   appSettings,
+  tenantSettings,
 } from '@herobm/db-schema';
 import {
   BIN_TYPE,
@@ -7604,6 +7605,51 @@ async function seedDemoAppSettings(db: SeedDB) {
   }
 }
 
+export async function seedDemoTenantSettings(db: SeedDB, dryRun = false) {
+  if (dryRun) {
+    console.log('  [DRY RUN] Would seed demo tenant settings');
+    return;
+  }
+  const demoData = {
+    name: 'HeroBM Demo Corp',
+    addressLine1: '100 Innovation Way',
+    city: 'Melbourne',
+    state: 'VIC',
+    postCode: '3000',
+    country: 'Australia',
+    email: 'support@herobm.com',
+    phone: '+61 3 9000 0000',
+    website: 'https://herobm.com',
+    bankName: 'Demo National Bank',
+    bankAccountNumber: '12345678',
+    bankIban: 'AU12DEMO00000012345678',
+    bankSwiftBic: 'DEMOAU2S',
+    companyNumber: 'ABN 12 345 678 901',
+    taxNumber: 'GST 12 345 678 901',
+  };
+
+  const existing = await db.select().from(tenantSettings).limit(1);
+  if (existing.length > 0) {
+    await db
+      .update(tenantSettings)
+      .set(demoData)
+      .where(eq(tenantSettings.tenantSettingsId, existing[0].tenantSettingsId));
+    console.log('  Updated tenant_settings with demo company details.');
+  } else {
+    await db
+      .insert(tenantSettings)
+      .values({
+        tenantSettingsId: '00000000-0000-4000-8000-000000000000',
+        ...demoData,
+      })
+      .onConflictDoUpdate({
+        target: tenantSettings.tenantSettingsId,
+        set: demoData,
+      });
+    console.log('  Seeded tenant_settings with demo company details.');
+  }
+}
+
 export async function seedDemoUsers(db: SeedDB, dryRun = false) {
   if (dryRun) {
     console.log('  [DRY RUN] Would seed demo admin user: demo (pw: demodemo)');
@@ -7663,6 +7709,7 @@ export async function runDemoSeeds(
 
     // 1. Run the framework baseline seeds (Users, App settings, Casbin, Reports)
     await runProdSeeds(db, dryRun);
+    await seedDemoTenantSettings(db, dryRun);
     await seedDemoUsers(db, dryRun);
     await seedDemoAppSettings(db);
     await seedCoaAccounts(db, false, region);

@@ -34,6 +34,7 @@ related:
   - "sales-credit-notes"
   - "payments"
   - "general-ledger"
+  - "currency-and-precision"
   - "balances"
 ---
 
@@ -68,7 +69,13 @@ Credit: Sales Revenue Account               (Net Line Items Total)
 Credit: Output Tax / GST Payable            (Statutory Sales Tax Total)
 ```
 
-### 2. Payment Due Date & Trading Terms Computation
+### 2. Pricing, Compound Discounts & Tax Rounding
+Invoice calculations strictly follow the platform's **[5-Tier Precision Architecture](currency-and-precision)**:
+- **Line Pricing**: Evaluated with 28-decimal intermediate precision using strict Half-Up rounding (`Decimal.ROUND_HALF_UP`) to the currency's native minor unit (2 decimals for USD/EUR/AUD, 0 decimals for JPY/KRW).
+- **Compound Discounts**: Multi-tier percentage discounts are evaluated multiplicatively and clamped strictly between 0% and 100% (`0 <= discount <= 100`).
+- **Tax Extraction**: Handled cleanly for both tax-inclusive and tax-exclusive pricing without fractional penny leakage.
+
+### 3. Payment Due Date & Trading Terms Computation
 Upon invoice creation, the system automatically resolves the customer's effective trading terms (`Customer Record` → `Customer Group` → `System Default`) to calculate the legal **Payment Due Date**:
 
 * **`Net (Days from Invoice)` (`net`)**:
@@ -82,7 +89,7 @@ Upon invoice creation, the system automatically resolves the customer's effectiv
 
 Payment terms and early settlement discount windows (e.g. 2% within 10 days) are rendered automatically on official customer Typst PDF invoices.
 
-### 3. Database Immutability & Reversals
+### 4. Database Immutability & Reversals
 * Once posted, a sales invoice cannot be edited or deleted due to database immutability triggers (`herobm_core.prevent_financial_deletion`).
 * To correct or void a posted invoice, operators must issue a formal [Sales Credit Note](./sales_credit_notes.md).
 

@@ -1,3 +1,4 @@
+import { Decimal } from 'decimal.js';
 import { eq } from 'drizzle-orm';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { purchaseInvoices } from '@herobm/db-schema';
@@ -61,15 +62,16 @@ export const autoTransitionPurchaseInvoiceBasedOnOutstandingAmount: PurchaseInvo
       )
         return null;
 
-      const outstanding = parseFloat(invoice.outstandingAmount);
-      const total = parseFloat(invoice.totalAmount);
+      const outstandingDec = new Decimal(invoice.outstandingAmount);
+      const totalDec = new Decimal(invoice.totalAmount);
+      const outstanding = outstandingDec.toNumber();
 
       let targetState = invoice.stateCode;
 
       // 2. Determine correct state
-      if (outstanding <= 0.001) {
+      if (outstandingDec.lte(0.001)) {
         targetState = PURCHASE_INVOICE_STATE.PAID;
-      } else if (outstanding < total - 0.001) {
+      } else if (outstandingDec.lt(totalDec.minus(0.001))) {
         targetState = PURCHASE_INVOICE_STATE.PARTIALLY_PAID;
       } else {
         targetState = PURCHASE_INVOICE_STATE.INVOICED;
@@ -81,8 +83,7 @@ export const autoTransitionPurchaseInvoiceBasedOnOutstandingAmount: PurchaseInvo
       // 4. Execute transition
       await db
         .update(purchaseInvoices)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-        .set({ stateCode: targetState as any, modifiedOn: new Date() })
+        .set({ stateCode: targetState, modifiedOn: new Date() })
         .where(eq(purchaseInvoices.invoiceId, invoiceId));
 
       await emitEvent(db, {

@@ -127,14 +127,12 @@ function EventIcon({ type }: { type: string }) {
         return_line_updated: '✏️',
         return_line_removed: '🗑️',
     };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    return <span className="mr-2 text-xl leading-none" title={t(type as any)}>{icons[type] || '📌'}</span>;
+    return <span className="mr-2 text-xl leading-none" title={t(type as never)}>{icons[type] || '📌'}</span>;
 }
 
 function PurchaseReturnStateBadge({ state }: { state: ValidState }) {
     const t = useTranslations('common.states');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- State key mapping
-    return <span className={`badge badge-return-${state}`}>{t(state as any)}</span>;
+    return <span className={`badge badge-return-${state}`}>{t(state as never)}</span>;
 }
 
 const PICKING_INVOICE_STATES: string[] = [
@@ -318,10 +316,10 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
     const isDraft = order.stateCode === SALES_ORDER_STATE.DRAFT;
     const isPreConfirmation = order.stateCode === SALES_ORDER_STATE.DRAFT || order.stateCode === SALES_ORDER_STATE.QUOTED;
     const isShipped = ([SALES_ORDER_STATE.SHIPPED, SALES_ORDER_STATE.INVOICED, SALES_ORDER_STATE.ARCHIVED, SALES_ORDER_STATE.CANCELLED] as string[]).includes(order.stateCode as string);
-    const activeBackorders = new Set((order.backorders || [])
+    const activeBackorders = new Set<string>((order.backorders || [])
         .filter((bo: { stateCode?: string; productId?: string }) => bo.stateCode === BACKORDER_STATE.PENDING_SUPPLY || bo.stateCode === BACKORDER_STATE.AWAITING_RECEIPT)
         .map((bo: { stateCode?: string; productId?: string }) => bo.productId)
-        .filter(Boolean));
+        .filter((id): id is string => Boolean(id)));
 
     return (
         <>
@@ -461,10 +459,8 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                     editFulfillmentLocationId={editFulfillmentLocationId}
                     inventoryData={inventoryData}
                     inventoryLoading={inventoryLoading}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Props boundary
-                    activeBackorders={activeBackorders as any}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Props boundary
-                    gapMap={gapMap as any}
+                    activeBackorders={activeBackorders}
+                    gapMap={gapMap}
                     isOrderLinesEditable={isOrderLinesEditable}
                     isOrderDetailsEditable={isOrderDetailsEditable}
                     isPostConfirmationAddingEnabled={isPostConfirmationAddingEnabled}
@@ -472,8 +468,7 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                     addLineFromProduct={addLineFromProduct}
                     addBlankLine={addBlankLine}
                     addCommentLine={addCommentLine}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Props boundary
-                    updateLine={updateLine as any}
+                    updateLine={updateLine}
                     updateLineFields={updateLineFields}
                     removeLine={removeLine}
                     calculateTaxes={calculateTaxes}

@@ -40,6 +40,7 @@ import {
   customers,
   suppliers,
   organizations,
+  GLReportCategory,
 } from '@herobm/db-schema';
 import { eq, sql } from 'drizzle-orm';
 
@@ -1671,10 +1672,7 @@ async function seedOrganization(db: SeedDB, dryRun: boolean) {
       tenantSettingsId: '00000000-0000-4000-8000-000000000000',
       name: 'My Company',
     })
-    .onConflictDoUpdate({
-      target: tenantSettings.tenantSettingsId,
-      set: { name: 'My Company' },
-    });
+    .onConflictDoNothing();
 
   console.log('  Seeded default tenant settings (fallback)');
 }
@@ -1916,7 +1914,45 @@ async function seedAppSettings(db: SeedDB, dryRun: boolean) {
   console.log('  Seeded default app_settings');
 }
 
-function loadCoaSettings(prefix = 'au_standard') {
+interface CoaNode {
+  account_number?: string;
+  root_type?: string;
+  report_category?: string;
+  is_group?: number;
+  children?: Record<string, CoaNode>;
+}
+
+interface CoaInsertRow {
+  code: string;
+  name: string;
+  accountType: 'asset' | 'liability' | 'equity' | 'revenue' | 'expense';
+  reportCategory: GLReportCategory | null;
+  parentCode: string | null;
+  isGroup: boolean;
+}
+
+export interface TaxCategoriesAndTermsSettings {
+  gst_categories?: Array<{
+    code: string;
+    title: string;
+    type: string;
+    rate: number;
+    is_default?: boolean;
+  }>;
+  trading_terms?: Array<{
+    code: string;
+    description: string;
+    days: number;
+    type: string;
+  }>;
+  base_currency?: string;
+  fiscal_year_start_month?: number;
+  defaults?: Record<string, string>;
+}
+
+function loadCoaSettings(
+  prefix = 'au_standard',
+): TaxCategoriesAndTermsSettings | null {
   const p = path.join(
     __dirname,
     '..',
@@ -1926,7 +1962,9 @@ function loadCoaSettings(prefix = 'au_standard') {
     `${prefix}_settings.json`,
   );
   if (!fs.existsSync(p)) return null;
-  return JSON.parse(fs.readFileSync(p, 'utf-8'));
+  return JSON.parse(
+    fs.readFileSync(p, 'utf-8'),
+  ) as TaxCategoriesAndTermsSettings;
 }
 
 async function seedBaseGlSettings(db: SeedDB, dryRun: boolean) {
@@ -1990,23 +2028,22 @@ export async function seedCoaAccounts(
   }
 
   let autoCode = 100;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-  const insertRows: any[] = [];
+  const insertRows: CoaInsertRow[] = [];
 
   function walk(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    nodes: any,
+    nodes: Record<string, CoaNode>,
     parentCode: string | null,
     inheritedType: string | null,
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    for (const [name, node] of Object.entries<any>(nodes)) {
-      const accountType =
-        ROOT_TYPE_MAP[node.root_type || ''] || inheritedType || 'asset';
+    for (const [name, node] of Object.entries(nodes)) {
+      const accountType = (ROOT_TYPE_MAP[node.root_type || ''] ||
+        inheritedType ||
+        'asset') as CoaInsertRow['accountType'];
       const code = node.account_number || String(autoCode++);
       const isGroup = node.is_group === 1 || !!node.children;
 
-      const reportCategory = node.report_category || null;
+      const reportCategory = (node.report_category ||
+        null) as CoaInsertRow['reportCategory'];
 
       insertRows.push({
         code,
@@ -2069,8 +2106,7 @@ export async function seedCoaAccounts(
 
 export async function seedTaxCategoriesAndTerms(
   db: SeedDB,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Seed settings schema is dynamic and unstructured
-  settings: any,
+  settings: TaxCategoriesAndTermsSettings,
   dryRun = false,
 ) {
   const categories = settings.gst_categories || [];
@@ -2185,8 +2221,7 @@ export async function seedCoaSettings(
   const fiscalMonth = settings.fiscal_year_start_month || 7;
   const defaults = settings.defaults || {};
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-  const glData: any = {
+  const glData: typeof glSettings.$inferInsert = {
     settingsId: '4e185bce-d31a-4caa-8462-73c261864eff',
     baseCurrency,
     fiscalYearStartMonth: fiscalMonth,
@@ -2278,7 +2313,7 @@ export async function seedCoaSettings(
         }
       }
       if (matchedId) {
-        glData[map.col] = matchedId;
+        (glData as Record<string, unknown>)[map.col] = matchedId;
       }
     }
   }

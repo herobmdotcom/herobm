@@ -26,6 +26,8 @@ import {
 import { EventType, EntityType } from '../common/event-types';
 import { StorageService } from '../common/storage/storage.service';
 import { ProductCopyService } from './product-copy.service';
+import { ProductComponentsService } from './product-components.service';
+import { ProductMediaService } from './product-media.service';
 
 describe('ProductsWriteService', () => {
   const pg = setupPgliteSuite();
@@ -52,6 +54,8 @@ describe('ProductsWriteService', () => {
       providers: [
         ProductsWriteService,
         ProductCopyService,
+        ProductComponentsService,
+        ProductMediaService,
         { provide: DRIZZLE, useValue: pg.db },
         StorageService,
       ],

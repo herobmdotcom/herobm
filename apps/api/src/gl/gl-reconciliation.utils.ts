@@ -1,3 +1,5 @@
+import { Decimal } from 'decimal.js';
+import { roundMoney } from '@herobm/shared';
 import { DrizzleDB } from '../drizzle/drizzle.module';
 import { glSettings, glAccounts } from '@herobm/db-schema';
 import { sql, eq } from 'drizzle-orm';
@@ -67,7 +69,8 @@ export async function calculateSubledgerReconciliation(
     if (!row) return 0;
     const firstVal = Object.values(row)[0];
     if (typeof firstVal === 'number') return firstVal;
-    if (typeof firstVal === 'string') return parseFloat(firstVal) || 0;
+    if (typeof firstVal === 'string')
+      return new Decimal(firstVal).toNumber() || 0;
     return 0;
   };
 
@@ -78,7 +81,10 @@ export async function calculateSubledgerReconciliation(
   const tbCredit = await execScalar(
     sql`SELECT COALESCE(SUM(credit), 0)::numeric FROM herobm_core.gl_journal_lines`,
   );
-  const tbDiff = Math.round((tbDebit - tbCredit) * 100) / 100;
+  const tbDiff = new Decimal(tbDebit)
+    .minus(tbCredit)
+    .toDecimalPlaces(2)
+    .toNumber();
   const isTbZeroSum = Math.abs(tbDiff) < 0.005;
 
   // 2. Accounts Receivable (AR) Parity
@@ -94,7 +100,7 @@ export async function calculateSubledgerReconciliation(
         WHERE jl.gl_account_id = ${arId}::uuid
       `)
     : 0;
-  const arDrift = Math.round((arSubledger - arGl) * 100) / 100;
+  const arDrift = roundMoney(new Decimal(arSubledger).minus(arGl)).toNumber();
   const isArMatched = Math.abs(arDrift) < 0.005;
 
   // 3. Accounts Payable (AP) Parity
@@ -110,7 +116,7 @@ export async function calculateSubledgerReconciliation(
         WHERE jl.gl_account_id = ${apId}::uuid
       `)
     : 0;
-  const apDrift = Math.round((apSubledger - apGl) * 100) / 100;
+  const apDrift = roundMoney(new Decimal(apSubledger).minus(apGl)).toNumber();
   const isApMatched = Math.abs(apDrift) < 0.005;
 
   // 4. Goods Received Not Invoiced (GRNI) Parity
@@ -128,7 +134,9 @@ export async function calculateSubledgerReconciliation(
         WHERE jl.gl_account_id = ${grniId}::uuid
       `)
     : 0;
-  const grniDrift = Math.round((grniSubledger - grniGl) * 100) / 100;
+  const grniDrift = roundMoney(
+    new Decimal(grniSubledger).minus(grniGl),
+  ).toNumber();
   const isGrniMatched = Math.abs(grniDrift) < 0.005;
 
   // 5. Perpetual Inventory Parity
@@ -144,7 +152,9 @@ export async function calculateSubledgerReconciliation(
         WHERE jl.gl_account_id = ${invId}::uuid
       `)
     : 0;
-  const invDrift = Math.round((invSubledger - invGl) * 100) / 100;
+  const invDrift = roundMoney(
+    new Decimal(invSubledger).minus(invGl),
+  ).toNumber();
   const isInvMatched = Math.abs(invDrift) < 0.005;
 
   const isOverallBalanced =

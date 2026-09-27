@@ -52,6 +52,9 @@ interface LineItem {
   taxCategoryId: string | null;
   minPurchaseQty?: string | null;
   purchaseUnit?: string | null;
+  purchaseUomId?: string | null;
+  purchaseUomCode?: string | null;
+  purchaseUomRatio?: string | number | null;
   supplierPartNumber?: string | null;
 }
 
@@ -168,6 +171,9 @@ export default function NewPurchaseOrderPage() {
             discountPercent?: string | null;
             minPurchaseQty?: string | null;
             purchaseUnit?: string | null;
+            purchaseUomId?: string | null;
+            purchaseUomCode?: string | null;
+            purchaseUomRatio?: string | number | null;
             isPreferred?: boolean;
           } | undefined;
 
@@ -180,6 +186,9 @@ export default function NewPurchaseOrderPage() {
               discountPercent?: string | null;
               minPurchaseQty?: string | null;
               purchaseUnit?: string | null;
+              purchaseUomId?: string | null;
+              purchaseUomCode?: string | null;
+              purchaseUomRatio?: string | number | null;
               isPreferred?: boolean;
             }> = Array.isArray(raw)
               ? raw
@@ -214,7 +223,7 @@ export default function NewPurchaseOrderPage() {
             ? parseFloat(String(matchedSupplier.costPrice)).toFixed(2)
             : parseFloat(prod.standardCost || prod.tradePrice || prod.listPrice || '0').toFixed(2);
           const discount = matchedSupplier?.discountPercent ? String(matchedSupplier.discountPercent) : '0';
-          const uom = matchedSupplier?.purchaseUnit || prod.baseUom || 'EA';
+          const uom = matchedSupplier?.purchaseUomCode || matchedSupplier?.purchaseUnit || prod.baseUom || 'EA';
 
           setLines([
             {
@@ -230,6 +239,9 @@ export default function NewPurchaseOrderPage() {
               taxCategoryId: prod.purchaseTaxCategoryId || defaultTaxCategoryId || null,
               minPurchaseQty: matchedSupplier?.minPurchaseQty ?? null,
               purchaseUnit: matchedSupplier?.purchaseUnit ?? null,
+              purchaseUomId: matchedSupplier?.purchaseUomId ?? null,
+              purchaseUomCode: matchedSupplier?.purchaseUomCode ?? null,
+              purchaseUomRatio: matchedSupplier?.purchaseUomRatio ?? null,
               supplierPartNumber: (matchedSupplier as { supplierPartNumber?: string })?.supplierPartNumber ?? null,
             },
           ]);
@@ -286,7 +298,14 @@ export default function NewPurchaseOrderPage() {
     let costPrice = parseFloat(p.standardCost || p.tradePrice || p.listPrice || '0').toFixed(2);
     let discount = '0';
     let uom = 'EA';
-    let suppInfo: { minPurchaseQty?: string | null; purchaseUnit?: string | null; supplierPartNumber?: string | null } | undefined;
+    let suppInfo: {
+      minPurchaseQty?: string | null;
+      purchaseUnit?: string | null;
+      purchaseUomId?: string | null;
+      purchaseUomCode?: string | null;
+      purchaseUomRatio?: string | number | null;
+      supplierPartNumber?: string | null;
+    } | undefined;
 
     if (vendorId) {
       try {
@@ -298,6 +317,9 @@ export default function NewPurchaseOrderPage() {
           discountPercent?: string | null;
           minPurchaseQty?: string | null;
           purchaseUnit?: string | null;
+          purchaseUomId?: string | null;
+          purchaseUomCode?: string | null;
+          purchaseUomRatio?: string | number | null;
           supplierPartNumber?: string | null;
         }> = Array.isArray(raw)
           ? raw
@@ -312,7 +334,13 @@ export default function NewPurchaseOrderPage() {
             costPrice = parseFloat(String(matched.costPrice)).toFixed(2);
           }
           if (matched.discountPercent) discount = String(matched.discountPercent);
-          if (matched.purchaseUnit) uom = matched.purchaseUnit;
+          if (matched.purchaseUomCode) {
+            uom = matched.purchaseUomCode;
+          } else if (matched.purchaseUnit) {
+            uom = matched.purchaseUnit;
+          } else if (p.baseUom) {
+            uom = p.baseUom;
+          }
         }
       } catch {
         // ignore
@@ -334,6 +362,9 @@ export default function NewPurchaseOrderPage() {
         taxCategoryId: defaultTaxCategoryId || null,
         minPurchaseQty: suppInfo?.minPurchaseQty ?? null,
         purchaseUnit: suppInfo?.purchaseUnit ?? null,
+        purchaseUomId: suppInfo?.purchaseUomId ?? null,
+        purchaseUomCode: suppInfo?.purchaseUomCode ?? null,
+        purchaseUomRatio: suppInfo?.purchaseUomRatio ?? null,
         supplierPartNumber: suppInfo?.supplierPartNumber ?? null,
       },
     ]);
@@ -670,8 +701,8 @@ export default function NewPurchaseOrderPage() {
             allowCatalogDescriptionEdit={false}
             subtotal={subtotal}
             totalTax={totalTax}
-            onUpdateLine={(keyOrIdx, field, val) => updateLine(keyOrIdx as number, field as keyof LineItem, String(val))}
-            onUpdateLineFields={(keyOrIdx, fields) =>
+            onUpdateLine={(keyOrIdx: string | number, field: string, val: unknown) => updateLine(keyOrIdx as number, field as keyof LineItem, String(val))}
+            onUpdateLineFields={(keyOrIdx: string | number, fields: Record<string, unknown>) =>
               setLines((prev) =>
                 prev.map((l, i) =>
                   l.key === keyOrIdx || String(l.key) === String(keyOrIdx) || i === Number(keyOrIdx)
@@ -680,7 +711,7 @@ export default function NewPurchaseOrderPage() {
                 ),
               )
             }
-            onRemoveLine={(keyOrIdx) => removeLine(keyOrIdx as number)}
+            onRemoveLine={(keyOrIdx: string | number) => removeLine(keyOrIdx as number)}
           />
           <div id="new-po-lines-bottom" className="h-px w-full" />
         </div>

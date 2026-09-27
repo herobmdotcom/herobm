@@ -13,7 +13,10 @@ tags: ["backup", "restore", "recovery", "rclone", "cron", "disaster-recovery", "
 fields:
   backup_file:
     title: "Backup Archive"
-    summary: "Gzip-compressed PostgreSQL SQL dump file (herobm_db_backup_<timestamp>.sql.gz)."
+    summary: "Gzip-compressed PostgreSQL SQL dump file (herobm_db_backup_<source>_<timestamp>.sql.gz)."
+  backup_source:
+    title: "Source VM / Host Tag"
+    summary: "Identifier used to differentiate backup archives and email alerts when backing up from multiple VMs (BACKUP_SOURCE_NAME or hostname)."
   rclone_destination:
     title: "Cloud Sync Destination"
     summary: "Rclone remote target path (e.g. gdrive:herobm_backups, s3:company-backups/herobm)."
@@ -82,9 +85,9 @@ HeroBM provides unified `make backup-*` targets and direct CLI flags for all bac
 
 | Task | Make Target | Direct Script Command |
 | :--- | :--- | :--- |
-| **Set Up Cloud Destination** | `make backup-destination` | `node scripts/setup-backup.mjs --destination` |
-| **Set Up Backup Schedule** | `make backup-setup` | `node scripts/setup-backup.mjs --backup` |
-| **Run Manual Backup Now** | `make backup-run` | `node scripts/backup-db.mjs` |
+| **Set Up Cloud Destination** | `make backup-destination [DEST=...] [SOURCE=...]` | `node scripts/setup-backup.mjs --destination [--source <name>]` |
+| **Set Up Backup Schedule** | `make backup-setup [CRON=...] [EMAIL=...] [SOURCE=...]` | `node scripts/setup-backup.mjs --backup [--source <name>]` |
+| **Run Manual Backup Now** | `make backup-run [SOURCE=...]` | `node scripts/backup-db.mjs [--source <name>]` |
 | **Restore from a Backup** | `make backup-restore FILE=<path>` | `node scripts/restore-db.mjs <path>` |
 
 ---
@@ -110,11 +113,11 @@ This utility will:
 ### Non-Interactive / Scripted Setup
 You can configure or update your destination non-interactively using CLI flags or Make parameters:
 ```bash
-# Using Make
-make backup-destination DEST="gdrive:my_company_backups"
+# Using Make (with custom VM source identifier)
+make backup-destination DEST="gdrive:my_company_backups" SOURCE="vm-sydney-01"
 
 # Using Node directly
-node scripts/setup-backup.mjs --destination --dest "s3:my-bucket/backups" --profile production
+node scripts/setup-backup.mjs --destination --dest "s3:my-bucket/backups" --source "vm-sydney-01" --profile production
 ```
 
 ---
@@ -122,6 +125,12 @@ node scripts/setup-backup.mjs --destination --dest "s3:my-bucket/backups" --prof
 ## 3. Setting Up Automated Backup Scheduling (`cron`)
 
 On Linux and macOS hosts, automated recurring backups are scheduled via the system `crontab`.
+
+### Multi-VM Deployments & Email Alerts
+When managing multiple VMs sending backups to the same shared destination (such as a shared S3 bucket or Google Drive), each instance automatically tags its backup archives and notification emails with its identifier:
+* **Filename Pattern**: `herobm_db_backup_<source>_<timestamp>.sql.gz`
+* **Email Subject**: `[<source>] HeroBM DB Backup Log`
+* **Identifier Resolution**: Configured via `BACKUP_SOURCE_NAME` in `.env`, passed via `SOURCE="<name>"`, or defaulted to the system's hostname (`os.hostname()`).
 
 ### Interactive Setup
 Run the backup scheduling target:
@@ -131,26 +140,26 @@ make backup-setup
 
 The wizard will prompt you for:
 1. **Frequency**: Daily at 2:00 AM, Weekly (Sunday at 2:00 AM), or a custom cron expression.
-2. **Email Alerts (Optional)**: Provide an email address to receive execution logs via `scripts/send-email.py` after each run.
+2. **Email Alerts (Optional)**: Provide an email address to receive execution logs via `scripts/send-email.py` after each run (emails will include `[<source>]` in the subject).
 3. **Crontab Installation**: Automatically and idempotently installs the scheduled job into your user crontab without disturbing existing jobs.
 4. **Immediate Test Run**: Optionally runs an immediate test backup to verify end-to-end execution.
 
 ### Non-Interactive / Scripted Scheduling
 ```bash
-# Schedule daily backup with email notification
-make backup-setup DAILY=1 EMAIL="admin@example.com"
+# Schedule daily backup with email notification and custom VM identifier
+make backup-setup DAILY=1 EMAIL="admin@example.com" SOURCE="vm-prod-01"
 
 # Schedule with custom cron expression (e.g. daily at 3:30 AM)
-make backup-setup CRON="30 3 * * *"
+make backup-setup CRON="30 3 * * *" SOURCE="vm-melbourne"
 
 # Preview crontab command without installing (Dry Run)
-make backup-setup DAILY=1 DRY_RUN=1
+make backup-setup DAILY=1 SOURCE="vm-prod-01" DRY_RUN=1
 ```
 
 ### Windows Host Scheduling
 On Windows systems, crontab is not available natively. Configure a **Windows Scheduled Task** to execute:
 ```powershell
-node scripts/backup-db.mjs
+node scripts/backup-db.mjs --source "vm-windows-01"
 ```
 
 ---
@@ -160,7 +169,7 @@ node scripts/backup-db.mjs
 To create an immediate database backup archive (e.g. before performing software upgrades or migrations):
 
 ```bash
-make backup-run
+make backup-run SOURCE="vm-prod-01"
 ```
 
 Output:
@@ -169,13 +178,14 @@ Output:
  HEROBM PostgreSQL Database Backup Worker 
 =========================================
 
+Source / Host    : vm-prod-01 (vm-prod-01.internal)
 Target container : postgres-custom
 Target database  : herobm
 Target user      : postgres
-Export file      : /home/user/herobm_backups/herobm_db_backup_2026-09-18_103000.sql.gz
+Export file      : /home/user/herobm_backups/herobm_db_backup_vm-prod-01_2026-09-18_103000.sql.gz
 
 Executing pg_dump via Podman and compressing...
-Backup completed successfully and saved to /home/user/herobm_backups/herobm_db_backup_2026-09-18_103000.sql.gz!
+Backup completed successfully and saved to /home/user/herobm_backups/herobm_db_backup_vm-prod-01_2026-09-18_103000.sql.gz!
 Uploading to external storage via rclone (gdrive:herobm_backups)...
 Upload to external storage complete.
 Cleaning up local backups older than 14 days...

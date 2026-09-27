@@ -1,3 +1,4 @@
+import Decimal from 'decimal.js';
 import { eq, inArray, and, sql } from 'drizzle-orm';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -8,7 +9,11 @@ import {
 } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
-import { PURCHASE_ORDER_STATE } from '@herobm/shared';
+import {
+  PURCHASE_ORDER_STATE,
+  PURCHASE_INVOICE_STATE,
+  type PurchaseOrderState,
+} from '@herobm/shared';
 
 export interface POLifecycleTrigger {
   entity: 'goods_receipt' | 'purchase_invoice' | 'purchase_return';
@@ -61,12 +66,13 @@ export const autoReceiveWhenFullyReceived: POLifecycleRule = {
 
     if (
       !order ||
-      ![
-        PURCHASE_ORDER_STATE.ORDERED,
-        PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED,
-        PURCHASE_ORDER_STATE.DRAFT,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-      ].includes(order.stateCode as any)
+      !(
+        [
+          PURCHASE_ORDER_STATE.ORDERED,
+          PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED,
+          PURCHASE_ORDER_STATE.DRAFT,
+        ] as PurchaseOrderState[]
+      ).includes(order.stateCode)
     )
       return null;
 
@@ -94,8 +100,7 @@ export const autoReceiveWhenFullyReceived: POLifecycleRule = {
       .set({ stateCode: PURCHASE_ORDER_STATE.RECEIVED, modifiedOn: new Date() })
       .where(eq(purchaseOrders.purchaseOrderId, poId));
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    await emitEvent(db as any, {
+    await emitEvent(db, {
       entityType: EntityType.PURCHASE_ORDER,
       entityId: poId,
       eventType: EventType.STATUS_CHANGED,
@@ -141,10 +146,12 @@ export const autoPartiallyReceiveWhenSomeReceived: POLifecycleRule = {
 
     if (
       !order ||
-      ![PURCHASE_ORDER_STATE.ORDERED, PURCHASE_ORDER_STATE.DRAFT].includes(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-        order.stateCode as any,
-      )
+      !(
+        [
+          PURCHASE_ORDER_STATE.ORDERED,
+          PURCHASE_ORDER_STATE.DRAFT,
+        ] as PurchaseOrderState[]
+      ).includes(order.stateCode)
     )
       return null;
 
@@ -181,8 +188,7 @@ export const autoPartiallyReceiveWhenSomeReceived: POLifecycleRule = {
       })
       .where(eq(purchaseOrders.purchaseOrderId, poId));
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    await emitEvent(db as any, {
+    await emitEvent(db, {
       entityType: EntityType.PURCHASE_ORDER,
       entityId: poId,
       eventType: EventType.STATUS_CHANGED,
@@ -226,12 +232,13 @@ export const autoInvoiceWhenFullyInvoicedAndReceived: POLifecycleRule = {
 
     if (
       !order ||
-      [
-        PURCHASE_ORDER_STATE.INVOICED,
-        PURCHASE_ORDER_STATE.CANCELLED,
-        PURCHASE_ORDER_STATE.CLOSED_SHORT,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-      ].includes(order.stateCode as any)
+      (
+        [
+          PURCHASE_ORDER_STATE.INVOICED,
+          PURCHASE_ORDER_STATE.CANCELLED,
+          PURCHASE_ORDER_STATE.CLOSED_SHORT,
+        ] as PurchaseOrderState[]
+      ).includes(order.stateCode)
     )
       return null;
 
@@ -264,9 +271,7 @@ export const autoInvoiceWhenFullyInvoicedAndReceived: POLifecycleRule = {
 
       const [{ totalPostedInvoiced }] = await db
         .select({
-          totalPostedInvoiced:
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-            sql<string>`COALESCE(SUM(CAST(${purchaseInvoiceLines.quantityInvoiced} AS NUMERIC)), 0)::text` as any,
+          totalPostedInvoiced: sql<string>`COALESCE(SUM(CAST(${purchaseInvoiceLines.quantityInvoiced} AS NUMERIC)), 0)::text`,
         })
         .from(purchaseInvoiceLines)
         .innerJoin(
@@ -276,14 +281,14 @@ export const autoInvoiceWhenFullyInvoicedAndReceived: POLifecycleRule = {
         .where(
           and(
             eq(purchaseInvoiceLines.purchaseOrderLineId, line.poLineId),
-            eq(purchaseInvoices.stateCode, PURCHASE_ORDER_STATE.INVOICED),
+            eq(purchaseInvoices.stateCode, PURCHASE_INVOICE_STATE.INVOICED),
           ),
         );
 
-      const invoiced = parseFloat(totalPostedInvoiced || '0');
-      const ordered = parseFloat(line.quantity || '0');
+      const invoiced = new Decimal(totalPostedInvoiced || '0');
+      const ordered = new Decimal(line.quantity || '0');
 
-      if (invoiced < ordered - 0.001) {
+      if (invoiced.lessThan(ordered.minus('0.001'))) {
         isFullyInvoiced = false;
         break;
       }
@@ -297,8 +302,7 @@ export const autoInvoiceWhenFullyInvoicedAndReceived: POLifecycleRule = {
       .set({ stateCode: PURCHASE_ORDER_STATE.INVOICED, modifiedOn: new Date() })
       .where(eq(purchaseOrders.purchaseOrderId, poId));
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    await emitEvent(db as any, {
+    await emitEvent(db, {
       entityType: EntityType.PURCHASE_ORDER,
       entityId: poId,
       eventType: EventType.STATUS_CHANGED,
@@ -341,12 +345,13 @@ export const autoRevertToPartiallyReceivedOnReturn: POLifecycleRule = {
 
     if (
       !order ||
-      ![
-        PURCHASE_ORDER_STATE.RECEIVED,
-        PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED,
-        PURCHASE_ORDER_STATE.INVOICED, // maybe? But if invoiced, we probably have a debit note process
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-      ].includes(order.stateCode as any)
+      !(
+        [
+          PURCHASE_ORDER_STATE.RECEIVED,
+          PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED,
+          PURCHASE_ORDER_STATE.INVOICED, // maybe? But if invoiced, we probably have a debit note process
+        ] as PurchaseOrderState[]
+      ).includes(order.stateCode)
     )
       return null;
 
@@ -371,7 +376,7 @@ export const autoRevertToPartiallyReceivedOnReturn: POLifecycleRule = {
       if (received < ordered) isFullyReceived = false;
     }
 
-    let newState: string | null = null;
+    let newState: PurchaseOrderState | null = null;
     let reason = '';
 
     if (!hasAnyReceipts && order.stateCode !== PURCHASE_ORDER_STATE.ORDERED) {
@@ -393,14 +398,12 @@ export const autoRevertToPartiallyReceivedOnReturn: POLifecycleRule = {
     await db
       .update(purchaseOrders)
       .set({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-        stateCode: newState as any,
+        stateCode: newState,
         modifiedOn: new Date(),
       })
       .where(eq(purchaseOrders.purchaseOrderId, poId));
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    await emitEvent(db as any, {
+    await emitEvent(db, {
       entityType: EntityType.PURCHASE_ORDER,
       entityId: poId,
       eventType: EventType.STATUS_CHANGED,

@@ -4,7 +4,11 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { SHIPMENT_STATE, SALES_ORDER_PICK_STATE } from '@herobm/shared';
+import {
+  SHIPMENT_STATE,
+  SALES_ORDER_PICK_STATE,
+  toDecimal,
+} from '@herobm/shared';
 import { eq, sql, and } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -161,10 +165,10 @@ export async function assertShipmentQtyAvailable(
           sql`state_code != ${SALES_ORDER_PICK_STATE.CANCELLED}`,
         ),
       );
-    picked = parseFloat(String(pickSum?.sum ?? 0));
+    picked = toDecimal(pickSum?.sum ?? 0).toNumber();
   } else {
     // Non-stock / custom line: does not require physical bin picking — treat ordered quantity as available
-    picked = parseFloat(orderLine.quantity);
+    picked = toDecimal(orderLine.quantity).toNumber();
   }
 
   const committedMap = await getCommittedPerLine(db, salesOrderId);
@@ -173,7 +177,7 @@ export async function assertShipmentQtyAvailable(
   // When updating a shipment line, exclude its own quantity (we're replacing it)
   if (excludeShipmentLineId) {
     const existing = await findShipmentLineById(db, excludeShipmentLineId);
-    alreadyCommitted -= parseFloat(existing.quantityShipped);
+    alreadyCommitted -= toDecimal(existing.quantityShipped).toNumber();
   }
 
   validateShipmentQuantity(requestedQty, picked, alreadyCommitted, lineNumber);

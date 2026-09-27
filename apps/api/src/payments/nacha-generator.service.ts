@@ -1,4 +1,5 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { Decimal } from 'decimal.js';
 import {
   Nacha,
   Batch,
@@ -13,7 +14,7 @@ export interface NachaTransaction {
   routingNumber: string;
   accountNumber: string;
   accountName: string;
-  amount: number;
+  amount: number | string | Decimal;
   reference: string;
   transactionCode?: number;
 }
@@ -55,7 +56,8 @@ export class NachaGeneratorService {
     });
 
     for (const tx of context.transactions) {
-      if (tx.amount <= 0) {
+      const txAmount = new Decimal(tx.amount);
+      if (txAmount.lessThanOrEqualTo(0)) {
         throw new BadRequestException(
           'Transaction amount must be greater than zero.',
         );
@@ -73,7 +75,7 @@ export class NachaGeneratorService {
           transactionCode: tx.transactionCode || TransactionCode.CheckingCredit,
           destinationRoutingNumber: routingClean,
           destinationAccountNumber: tx.accountNumber,
-          amount: Math.round(tx.amount * 100), // cents
+          amount: txAmount.mul(100).round().toNumber(), // cents
           transactionId: tx.reference,
           destinationName: tx.accountName,
         }),

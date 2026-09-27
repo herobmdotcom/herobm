@@ -11,6 +11,7 @@ import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { discountMatrix } from '@herobm/db-schema';
 import { CreateDiscountMatrixDto, UpdateDiscountMatrixDto } from './dto';
 import type { DiscountRule } from '@herobm/shared';
+import { toDecimal } from '@herobm/shared';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
@@ -103,8 +104,8 @@ export class DiscountMatrixService {
       );
     }
 
-    const discount = parseFloat(dto.discountPercentage);
-    if (isNaN(discount) || discount < 0 || discount > 100) {
+    const discountDec = toDecimal(dto.discountPercentage);
+    if (discountDec.lessThan(0) || discountDec.greaterThan(100)) {
       throw new BadRequestException(
         'Discount percentage must be between 0 and 100.',
       );
@@ -149,8 +150,8 @@ export class DiscountMatrixService {
    */
   async update(id: string, dto: UpdateDiscountMatrixDto) {
     if (dto.discountPercentage !== undefined) {
-      const discount = parseFloat(dto.discountPercentage);
-      if (isNaN(discount) || discount < 0 || discount > 100) {
+      const discountDec = toDecimal(dto.discountPercentage);
+      if (discountDec.lessThan(0) || discountDec.greaterThan(100)) {
         throw new BadRequestException(
           'Discount percentage must be between 0 and 100.',
         );

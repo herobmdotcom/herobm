@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { products, productUoms } from '@herobm/db-schema';
+import { toDecimal, Decimal } from '@herobm/shared';
 
 export interface UomInputLine {
   uomCode?: string;
@@ -73,7 +74,7 @@ export class UomService {
     }
 
     // Fetch required conversion ratios
-    const ratioMap = new Map<string, number>();
+    const ratioMap = new Map<string, Decimal>();
     if (requestedUoms.size > 0) {
       const uomRows = await dbClient
         .select({
@@ -84,18 +85,19 @@ export class UomService {
         .where(eq(productUoms.productId, productId));
 
       for (const row of uomRows) {
-        ratioMap.set(row.uomCode.toUpperCase(), parseFloat(row.ratio));
+        ratioMap.set(row.uomCode.toUpperCase(), toDecimal(row.ratio));
       }
     }
 
-    let absoluteTotal = 0;
+    let absoluteTotalDec = toDecimal(0);
 
     // Do the centralized math
     for (const line of lines) {
       const uom = line.uomCode || product.baseUom;
+      const lineQty = toDecimal(line.quantity);
 
       if (isSameUom(uom, product.baseUom)) {
-        absoluteTotal += line.quantity;
+        absoluteTotalDec = absoluteTotalDec.plus(lineQty);
       } else {
         const ratio = ratioMap.get(uom.toUpperCase());
         if (ratio === undefined) {
@@ -103,10 +105,10 @@ export class UomService {
             `UOM '${uom}' is not configured for product ${productId}.`,
           );
         }
-        absoluteTotal += line.quantity * ratio;
+        absoluteTotalDec = absoluteTotalDec.plus(lineQty.times(ratio));
       }
     }
 
-    return absoluteTotal;
+    return absoluteTotalDec.toNumber();
   }
 }

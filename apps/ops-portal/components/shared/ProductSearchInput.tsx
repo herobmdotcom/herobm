@@ -50,10 +50,21 @@ export default function ProductSearchInput({
       style={style}
       clearOnSelect
       onSearch={async (term) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type structure bypass
-        const res = await api.productsControllerFindAll({ q: term, limit: 20, productType } as any);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type structure bypass
-        const list: Product[] = ((res.data as any)?.data || res.data || []);
+        const res = await api.productsControllerFindAll({
+          q: term,
+          limit: 20,
+          productType: productType || undefined,
+        });
+        const responseData = res.data as unknown;
+        const list: Product[] =
+          typeof responseData === 'object' &&
+          responseData !== null &&
+          'data' in responseData &&
+          Array.isArray((responseData as { data: unknown }).data)
+            ? (responseData as { data: Product[] }).data
+            : Array.isArray(responseData)
+              ? (responseData as Product[])
+              : [];
         if (structureType) {
           return list.filter((p) => p.structureType === structureType);
         }

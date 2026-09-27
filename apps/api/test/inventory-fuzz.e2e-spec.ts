@@ -222,6 +222,9 @@ describe('API E2E — Inventory Ledger Fuzz & Robustness Suite', () => {
     }
 
     // 7. Ensure GL Settings and Default Accounts are configured for Perpetual Accounting
+    const [originalGl] = await sqlClient`
+      SELECT * FROM herobm_core.gl_settings LIMIT 1
+    `;
     const existingAccounts = await sqlClient`
       SELECT gl_account_id, account_code, account_type, is_group, is_active
       FROM herobm_core.gl_accounts
@@ -245,13 +248,46 @@ describe('API E2E — Inventory Ledger Fuzz & Robustness Suite', () => {
       WHERE true
     `;
 
+    await sqlClient`
+      UPDATE herobm_core.app_settings
+      SET inventory_accounting_mode = 'perpetual',
+          inventory_valuation_method = 'weighted_average'
+    `;
+
     // Reload AppConfigService cache to pickup newly configured GL settings
     const appConfig = app.get(AppConfigService);
     await appConfig.reload();
   });
 
   afterAll(async () => {
-    if (sqlClient) await sqlClient.end();
+    if (sqlClient) {
+      const [originalGl] = await sqlClient`
+        SELECT gl_account_id FROM herobm_core.gl_accounts WHERE account_code = '1300' LIMIT 1
+      `;
+      const [originalShrink] = await sqlClient`
+        SELECT gl_account_id FROM herobm_core.gl_accounts WHERE account_code = '5300' LIMIT 1
+      `;
+      if (originalGl && originalShrink) {
+        await sqlClient`
+          UPDATE herobm_core.gl_settings
+          SET 
+            default_inventory_account_id = ${originalGl.gl_account_id}::uuid,
+            default_shrinkage_account_id = ${originalShrink.gl_account_id}::uuid
+          WHERE true
+        `;
+      }
+      try {
+        await sqlClient`
+          UPDATE herobm_core.app_settings
+          SET inventory_accounting_mode = 'periodic'
+        `;
+        const appConfig = app.get(AppConfigService);
+        await appConfig.reload();
+      } catch {
+        // ignore
+      }
+      await sqlClient.end();
+    }
     if (app) await app.close();
   });
 

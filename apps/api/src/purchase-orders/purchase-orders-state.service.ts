@@ -1,3 +1,4 @@
+import Decimal from 'decimal.js';
 import {
   Injectable,
   Inject,
@@ -82,7 +83,7 @@ export class PurchaseOrdersStateService {
       }
 
       const risk = await this.suppliersService.assessRisk(
-        existing.vendorId,
+        existing.vendorId || '',
         db,
       );
       if (risk.isPurchasingBlocked) {
@@ -94,8 +95,8 @@ export class PurchaseOrdersStateService {
 
     if (stateCode === PURCHASE_ORDER_STATE.DRAFT) {
       const anyReceived = existing.lines.some(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-        (l: any) => parseFloat(l.quantityReceived || '0') > 0,
+        (l: { quantityReceived?: string | null }) =>
+          parseFloat(l.quantityReceived || '0') > 0,
       );
       if (anyReceived) {
         throw new BadRequestException(
@@ -118,8 +119,8 @@ export class PurchaseOrdersStateService {
 
     if (stateCode === PURCHASE_ORDER_STATE.CANCELLED) {
       const anyReceived = existing.lines.some(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-        (l: any) => parseFloat(l.quantityReceived || '0') > 0,
+        (l: { quantityReceived?: string | null }) =>
+          parseFloat(l.quantityReceived || '0') > 0,
       );
       if (anyReceived) {
         throw new BadRequestException(
@@ -156,9 +157,7 @@ export class PurchaseOrdersStateService {
           ? await db
               .select({
                 purchaseOrderLineId: purchaseInvoiceLines.purchaseOrderLineId,
-                totalInvoiced:
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-                  sql<string>`COALESCE(SUM(CAST(${purchaseInvoiceLines.quantityInvoiced} AS NUMERIC)), 0)::text` as any,
+                totalInvoiced: sql<string>`COALESCE(SUM(CAST(${purchaseInvoiceLines.quantityInvoiced} AS NUMERIC)), 0)::text`,
               })
               .from(purchaseInvoiceLines)
               .innerJoin(
@@ -180,26 +179,32 @@ export class PurchaseOrdersStateService {
               .groupBy(purchaseInvoiceLines.purchaseOrderLineId)
           : [];
 
-      const invoicedMap = new Map(
-        invoicedRows.map((r) => [
-          r.purchaseOrderLineId,
-          parseFloat(r.totalInvoiced || '0'),
-        ]),
+      const invoicedMap = new Map<string, Decimal>(
+        invoicedRows
+          .filter(
+            (r): r is typeof r & { purchaseOrderLineId: string } =>
+              !!r.purchaseOrderLineId,
+          )
+          .map((r) => [
+            r.purchaseOrderLineId,
+            new Decimal(r.totalInvoiced || '0'),
+          ]),
       );
 
       for (const line of receivedLines) {
-        const received = parseFloat(line.quantityReceived || '0');
-        const invoiced = invoicedMap.get(line.purchaseOrderLineId) || 0;
-        if (received > invoiced + 0.001) {
+        const received = new Decimal(line.quantityReceived || '0');
+        const invoiced =
+          invoicedMap.get(line.purchaseOrderLineId) || new Decimal(0);
+        if (received.greaterThan(invoiced.plus('0.001'))) {
           throw new BadRequestException(
-            `Cannot close short: Received quantities for product ${line.productNumber} must be fully invoiced first. Received: ${received}, Invoiced: ${invoiced}`,
+            `Cannot close short: Received quantities for product ${line.productNumber} must be fully invoiced first. Received: ${received.toString()}, Invoiced: ${invoiced.toString()}`,
           );
         }
       }
     }
 
     return await db.transaction(async (innerTx: DrizzleDB) => {
-      const updated = await this.updateStateInternal(
+      const updated = await this.changeInternalPurchaseOrderState(
         id,
         stateCode,
         actor,
@@ -269,9 +274,9 @@ export class PurchaseOrdersStateService {
     );
   }
 
-  private async updateStateInternal(
+  private async changeInternalPurchaseOrderState(
     purchaseOrderId: string,
-    newState: string,
+    newState: PurchaseOrderState,
     actor: string,
     tx?: DrizzleDB,
   ) {
@@ -306,8 +311,7 @@ export class PurchaseOrdersStateService {
     const [updated] = await db
       .update(purchaseOrders)
       .set({
-        // eslint-disable-next-line no-restricted-syntax, @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-        stateCode: newState as any,
+        stateCode: newState,
         modifiedOn: new Date(),
       })
       .where(eq(purchaseOrders.purchaseOrderId, purchaseOrderId))
@@ -322,8 +326,7 @@ export class PurchaseOrdersStateService {
     };
 
     if (newState === PURCHASE_ORDER_STATE.ARCHIVED) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-      await emitEvent(db as any, {
+      await emitEvent(db, {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: purchaseOrderId,
         eventType: EventType.ARCHIVED,
@@ -332,8 +335,7 @@ export class PurchaseOrdersStateService {
         actor,
       });
     } else if (existing.stateCode === PURCHASE_ORDER_STATE.ARCHIVED) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-      await emitEvent(db as any, {
+      await emitEvent(db, {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: purchaseOrderId,
         eventType: EventType.UNARCHIVED,
@@ -342,8 +344,7 @@ export class PurchaseOrdersStateService {
         actor,
       });
     } else {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-      await emitEvent(db as any, {
+      await emitEvent(db, {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: purchaseOrderId,
         eventType: EventType.STATUS_CHANGED,

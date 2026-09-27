@@ -237,8 +237,7 @@ export default function UniversalSearch({
                   <span className="material-symbols-outlined text-[14px] text-[var(--accent)]">
                     {TYPE_ICONS[group.type]}
                   </span>
-                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- next-intl dynamic key */}
-                  {t(`types.${group.type}` as any)}
+                  {t(`types.${group.type}` as never)}
                 </div>
                 {group.items.map((item) => {
                   flatIndex++;

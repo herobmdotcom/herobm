@@ -1,3 +1,4 @@
+import { Decimal } from 'decimal.js';
 import { Injectable, Inject } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -91,8 +92,9 @@ export class TaxReportsService {
 
     const salesTaxMap = new Map<string, number>();
     for (const row of salesTaxRows) {
-      const netCredit =
-        parseFloat(row.totalCredit || '0') - parseFloat(row.totalDebit || '0');
+      const netCredit = new Decimal(row.totalCredit || '0')
+        .minus(row.totalDebit || '0')
+        .toNumber();
       salesTaxMap.set(row.glAccountId, netCredit);
     }
 
@@ -122,8 +124,9 @@ export class TaxReportsService {
 
     const purchaseTaxMap = new Map<string, number>();
     for (const row of purchaseTaxRows) {
-      const netDebit =
-        parseFloat(row.totalDebit || '0') - parseFloat(row.totalCredit || '0');
+      const netDebit = new Decimal(row.totalDebit || '0')
+        .minus(row.totalCredit || '0')
+        .toNumber();
       purchaseTaxMap.set(row.glAccountId, netDebit);
     }
 
@@ -146,9 +149,9 @@ export class TaxReportsService {
         ),
       );
 
-    const revenueCredit = parseFloat(revenueAmounts[0]?.totalCredit || '0');
-    const revenueDebit = parseFloat(revenueAmounts[0]?.totalDebit || '0');
-    const totalNetSales = revenueCredit - revenueDebit;
+    const totalNetSales = new Decimal(revenueAmounts[0]?.totalCredit || '0')
+      .minus(revenueAmounts[0]?.totalDebit || '0')
+      .toNumber();
 
     // 4. Calculate Expenses / Purchases if configured
     let totalNetPurchases = 0;
@@ -170,9 +173,9 @@ export class TaxReportsService {
             dateFilter,
           ),
         );
-      const expDebit = parseFloat(expenseAmounts[0]?.totalDebit || '0');
-      const expCredit = parseFloat(expenseAmounts[0]?.totalCredit || '0');
-      totalNetPurchases = expDebit - expCredit;
+      totalNetPurchases = new Decimal(expenseAmounts[0]?.totalDebit || '0')
+        .minus(expenseAmounts[0]?.totalCredit || '0')
+        .toNumber();
     }
 
     // 5. Delegate mathematical aggregation to shared engine

@@ -1,3 +1,4 @@
+import { Decimal } from 'decimal.js';
 import {
   Injectable,
   Inject,
@@ -37,6 +38,7 @@ import {
   PROJECT_LINE_TYPE,
   PROJECT_SOURCE_TYPE,
   computeLinePrice,
+  toDecimal,
 } from '@herobm/shared';
 
 function generateResourceNumber(): string {
@@ -64,7 +66,7 @@ export class ProjectsResourcesService {
         : '0';
 
     if (
-      (!dto.directUnitCost || Number(dto.directUnitCost) === 0) &&
+      (!dto.directUnitCost || new Decimal(dto.directUnitCost).isZero()) &&
       dto.resourceType === RESOURCE_TYPE.CONTRACTOR &&
       dto.vendorId &&
       dto.serviceProductId
@@ -84,13 +86,15 @@ export class ProjectsResourcesService {
         .limit(1);
 
       if (supplierLink && supplierLink.costPrice) {
-        const cost = parseFloat(String(supplierLink.costPrice));
-        if (!isNaN(cost)) {
-          const disc = supplierLink.discountPercent
-            ? parseFloat(String(supplierLink.discountPercent))
-            : 0;
-          const netCost = disc > 0 ? cost * (1 - disc / 100) : cost;
-          directUnitCost = netCost.toFixed(2);
+        const costDec = new Decimal(String(supplierLink.costPrice));
+        if (!costDec.isNaN()) {
+          const discDec = supplierLink.discountPercent
+            ? new Decimal(String(supplierLink.discountPercent))
+            : new Decimal(0);
+          const netCostDec = discDec.gt(0)
+            ? costDec.mul(new Decimal(1).minus(discDec.div(100)))
+            : costDec;
+          directUnitCost = netCostDec.toFixed(2);
         }
       }
     }
@@ -444,29 +448,29 @@ export class ProjectsResourcesService {
     }
 
     // 4. Determine cost and billable price rates
-    const qty = Number(dto.quantity);
+    const qty = toDecimal(dto.quantity).toNumber();
     if (isNaN(qty) || qty <= 0) {
       throw new BadRequestException('Resource quantity must be greater than 0');
     }
 
     const unitCost =
       dto.unitCost !== undefined
-        ? Number(dto.unitCost)
-        : Number(resource.directUnitCost || 0);
+        ? new Decimal(dto.unitCost || 0).toNumber()
+        : new Decimal(resource.directUnitCost || 0).toNumber();
 
     const unitPrice =
       dto.unitPrice !== undefined
-        ? Number(dto.unitPrice)
-        : Number(resource.unitPrice || 0);
+        ? new Decimal(dto.unitPrice || 0).toNumber()
+        : new Decimal(resource.unitPrice || 0).toNumber();
 
     const lineDiscount =
       dto.discountPercentage !== undefined
         ? dto.discountPercentage
         : project.discountPercentage
-          ? parseFloat(project.discountPercentage)
+          ? new Decimal(project.discountPercentage).toNumber()
           : 0;
 
-    const totalCost = qty * unitCost;
+    const totalCost = new Decimal(qty).mul(unitCost).toNumber();
     const computedPrice = computeLinePrice({
       quantity: qty,
       pricePerUnit: unitPrice,
@@ -581,7 +585,7 @@ export class ProjectsResourcesService {
       if (t.resourceId) {
         totalsMap.set(t.resourceId, {
           consumedQuantity: Number(t.consumedQuantity || 0),
-          totalCost: Number(t.totalCost || 0),
+          totalCost: new Decimal(t.totalCost || 0).toNumber(),
         });
       }
     }

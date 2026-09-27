@@ -1,3 +1,4 @@
+import { Decimal } from 'decimal.js';
 import {
   Injectable,
   Inject,
@@ -569,8 +570,8 @@ export class ProjectsService {
     for (const ba of budgetActuals) {
       if (ba.budgetLineId) {
         budgetActualsMap.set(ba.budgetLineId, {
-          actualCost: Number(ba.actualCost || 0),
-          actualRevenue: Number(ba.actualRevenue || 0),
+          actualCost: new Decimal(ba.actualCost || 0).toNumber(),
+          actualRevenue: new Decimal(ba.actualRevenue || 0).toNumber(),
           actualQuantity: Number(ba.actualQuantity || 0),
         });
       }
@@ -582,9 +583,9 @@ export class ProjectsService {
         actualRevenue: 0,
         actualQuantity: 0,
       };
-      const totalPlannedCost = Number(
-        b.totalCost || Number(b.plannedQuantity || 0) * Number(b.unitCost || 0),
-      );
+      const totalPlannedCost = b.totalCost
+        ? new Decimal(b.totalCost).toNumber()
+        : new Decimal(b.plannedQuantity || 0).mul(b.unitCost || 0).toNumber();
       const isOverBudget =
         totalPlannedCost > 0
           ? stats.actualCost > totalPlannedCost

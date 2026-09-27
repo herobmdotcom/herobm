@@ -62,12 +62,14 @@ export function QuantityCell({
       ? parseFloat(String(line.minPurchaseQty))
       : undefined;
   const unitMultiple =
-    line.purchaseUnit !== undefined &&
-    line.purchaseUnit !== null &&
-    line.purchaseUnit !== '' &&
-    !isNaN(Number(line.purchaseUnit))
-      ? parseFloat(String(line.purchaseUnit))
-      : undefined;
+    line.purchaseUomRatio !== undefined && line.purchaseUomRatio !== null && !isNaN(Number(line.purchaseUomRatio)) && Number(line.purchaseUomRatio) > 0
+      ? Number(line.purchaseUomRatio)
+      : (line.purchaseUnit !== undefined &&
+         line.purchaseUnit !== null &&
+         line.purchaseUnit !== '' &&
+         !isNaN(Number(line.purchaseUnit))
+           ? parseFloat(String(line.purchaseUnit))
+           : undefined);
 
   const hasMoq = Boolean(moqVal !== undefined && !isNaN(moqVal) && moqVal > 1);
   const isBelowMoq = Boolean(
@@ -79,6 +81,9 @@ export function QuantityCell({
     (qtyVal <= 0 || (qtyVal % unitMultiple !== 0)),
   );
   const isSupplierQtyWarning = isBelowMoq || isNotMultiple;
+  const unitLabel = line.purchaseUomCode
+    ? (unitMultiple && unitMultiple > 1 ? `${line.purchaseUomCode} (x${unitMultiple})` : line.purchaseUomCode)
+    : line.purchaseUnit;
 
   const hasInventoryWarning = hasGap || isBackordered || hasShortageDirect;
   const hasWarning = hasInventoryWarning || isSupplierQtyWarning;
@@ -149,7 +154,7 @@ export function QuantityCell({
             />
           )}
         </div>
-        {hasMoq || line.purchaseUnit ? (
+        {hasMoq || unitLabel ? (
           <div className="flex items-center gap-1 text-[10px] font-mono leading-tight mt-0.5 whitespace-nowrap">
             {hasMoq && (
               <span
@@ -162,10 +167,10 @@ export function QuantityCell({
                 MOQ: {moqVal}
               </span>
             )}
-            {hasMoq && line.purchaseUnit && (
+            {hasMoq && unitLabel && (
               <span className="text-[var(--text-muted)]">•</span>
             )}
-            {line.purchaseUnit && (
+            {unitLabel && (
               <span
                 className={
                   isNotMultiple
@@ -173,7 +178,7 @@ export function QuantityCell({
                     : 'text-[var(--text-muted)]'
                 }
               >
-                Unit: {line.purchaseUnit}
+                Pack: {unitLabel}
               </span>
             )}
           </div>
@@ -192,7 +197,7 @@ export function QuantityCell({
         {warningIcon}
         {parseFloat(String(line.quantity || '0'))}
       </span>
-      {hasMoq || line.purchaseUnit ? (
+      {hasMoq || unitLabel ? (
         <div className="flex items-center gap-1 text-[10px] font-mono leading-tight mt-0.5 whitespace-nowrap">
           {hasMoq && (
             <span
@@ -205,10 +210,10 @@ export function QuantityCell({
               MOQ: {moqVal}
             </span>
           )}
-          {hasMoq && line.purchaseUnit && (
+          {hasMoq && unitLabel && (
             <span className="text-[var(--text-muted)]">•</span>
           )}
-          {line.purchaseUnit && (
+          {unitLabel && (
             <span
               className={
                 isNotMultiple
@@ -216,7 +221,7 @@ export function QuantityCell({
                   : 'text-[var(--text-muted)]'
               }
             >
-              Unit: {line.purchaseUnit}
+              Pack: {unitLabel}
             </span>
           )}
         </div>

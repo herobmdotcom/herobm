@@ -47,6 +47,9 @@ export interface OrderLineItem {
   warningTitle?: string;
   minPurchaseQty?: string | number | null;
   purchaseUnit?: string | null;
+  purchaseUomId?: string | null;
+  purchaseUomCode?: string | null;
+  purchaseUomRatio?: string | number | null;
   supplierPartNumber?: string | null;
 }
 

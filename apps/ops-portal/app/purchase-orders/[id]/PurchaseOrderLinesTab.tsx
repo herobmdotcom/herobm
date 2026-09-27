@@ -49,8 +49,8 @@ interface PurchaseOrderLinesTabProps {
   activeTab: 'lines' | 'availability' | 'status';
   setActiveTab: (tab: 'lines' | 'availability' | 'status') => void;
   isLinesEditable: boolean;
-  saving: boolean;
-  updateLine: (lineId: string, field: string, value: string | number | boolean | null | undefined) => Promise<void>;
+  saving?: boolean;
+  updateLine: (lineId: string, field: string, value: unknown) => Promise<void>;
   updateLineFields: (lineId: string, payload: Record<string, unknown>) => Promise<void>;
   removeLine: (lineId: string) => void;
   addLineFromProduct: (product: import('@/components/shared/ProductSearchInput').Product) => void;
@@ -59,8 +59,8 @@ interface PurchaseOrderLinesTabProps {
   subtotal: number;
   totalTax: number;
   taxCategories: TaxCategory[];
-  tPurchase: (key: string, args?: Record<string, string | number>) => string;
-  tCommon: (key: string, args?: Record<string, string | number>) => string;
+  tPurchase?: (key: string, args?: Record<string, string | number>) => string;
+  tCommon?: (key: string, args?: Record<string, string | number>) => string;
 }
 
 export default function PurchaseOrderLinesTab({
@@ -82,9 +82,13 @@ export default function PurchaseOrderLinesTab({
   subtotal,
   totalTax,
   taxCategories,
-  tPurchase,
-  tCommon,
+  tPurchase: propTPurchase,
+  tCommon: propTCommon,
 }: PurchaseOrderLinesTabProps) {
+  const tLocalPurchase = useTranslations('purchaseOrders');
+  const tLocalCommon = useTranslations('common');
+  const tPurchase = (key: string, args?: Record<string, string | number>) => propTPurchase ? propTPurchase(key, args) : tLocalPurchase(key as never, args as never);
+  const tCommon = (key: string, args?: Record<string, string | number>) => propTCommon ? propTCommon(key, args) : tLocalCommon(key as never, args as never);
 
   const prevLineCountRef = useRef<number | null>(null);
   useEffect(() => {
@@ -159,21 +163,20 @@ export default function PurchaseOrderLinesTab({
               isSaving={saving}
               allowCatalogDescriptionEdit={false}
               subtotal={subtotal}
-              onUpdateLine={(lineId, field, val) =>
+              onUpdateLine={(lineId: string | number, field: string, val: unknown) =>
                 updateLine(
                   String(lineId),
                   field,
                   val as string | number | boolean | null | undefined
                 )
               }
-              onUpdateLineFields={(lineId, fields) => updateLineFields(String(lineId), fields)}
-              onRemoveLine={(lineId) => removeLine(String(lineId))}
+              onUpdateLineFields={(lineId: string | number, fields: Record<string, unknown>) => updateLineFields(String(lineId), fields)}
+              onRemoveLine={(lineId: string | number) => removeLine(String(lineId))}
             />
           ) : activeTab === 'availability' ? (
             <AvailabilityTab
               lines={order.lines || []}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Safe cast to unified AvailabilityInventoryLevel
-              inventoryData={inventoryData as any}
+              inventoryData={inventoryData}
               inventoryLoading={inventoryLoading}
               targetLocationId={order.deliveryLocationId}
               context="purchase"

@@ -1,3 +1,4 @@
+import { Decimal } from 'decimal.js';
 import { DrizzleDB } from '../drizzle/drizzle.module';
 import { glSettings, glAccounts } from '@herobm/db-schema';
 import { sql, eq } from 'drizzle-orm';
@@ -81,13 +82,13 @@ export async function fetchTrialBalance(
       name: r.name,
       accountType: r.account_type,
       isGroup: r.is_group,
-      openingBalance: parseFloat(r.opening_balance || '0'),
-      periodDebit: parseFloat(r.period_debit || '0'),
-      periodCredit: parseFloat(r.period_credit || '0'),
-      closingBalance: parseFloat(r.closing_balance || '0'),
-      ytdDebit: parseFloat(r.ytd_debit || '0'),
-      ytdCredit: parseFloat(r.ytd_credit || '0'),
-      ytdBalance: parseFloat(r.ytd_balance || '0'),
+      openingBalance: new Decimal(r.opening_balance || '0').toNumber(),
+      periodDebit: new Decimal(r.period_debit || '0').toNumber(),
+      periodCredit: new Decimal(r.period_credit || '0').toNumber(),
+      closingBalance: new Decimal(r.closing_balance || '0').toNumber(),
+      ytdDebit: new Decimal(r.ytd_debit || '0').toNumber(),
+      ytdCredit: new Decimal(r.ytd_credit || '0').toNumber(),
+      ytdBalance: new Decimal(r.ytd_balance || '0').toNumber(),
     }),
   );
 }
@@ -173,9 +174,9 @@ export async function fetchGeneralLedger(
         const openRow = Array.isArray(openBalRes)
           ? openBalRes[0]
           : (openBalRes as { rows: unknown[] })?.rows?.[0];
-        openingBalance = parseFloat(
+        openingBalance = new Decimal(
           (openRow as { opening_balance?: string })?.opening_balance || '0',
-        );
+        ).toNumber();
       }
 
       const summaryConditions: import('drizzle-orm').SQL[] = [
@@ -204,23 +205,30 @@ export async function fetchGeneralLedger(
         ? sumRes[0]
         : (sumRes as { rows: unknown[] })?.rows?.[0];
 
-      const periodDebit = parseFloat(
+      const periodDebit = new Decimal(
         (sumRow as { period_debit?: string })?.period_debit || '0',
-      );
-      const periodCredit = parseFloat(
+      ).toNumber();
+      const periodCredit = new Decimal(
         (sumRow as { period_credit?: string })?.period_credit || '0',
-      );
-      const netMovement = Math.round((periodDebit - periodCredit) * 100) / 100;
-      const closingBalance =
-        Math.round((openingBalance + netMovement) * 100) / 100;
+      ).toNumber();
+      const netMovement = new Decimal(periodDebit)
+        .minus(periodCredit)
+        .toDecimalPlaces(2)
+        .toNumber();
+      const closingBalance = new Decimal(openingBalance)
+        .plus(netMovement)
+        .toDecimalPlaces(2)
+        .toNumber();
 
       accountSummary = {
         accountCode: targetAccount.accountCode,
         accountName: targetAccount.name,
         accountType: targetAccount.accountType,
-        openingBalance: Math.round(openingBalance * 100) / 100,
-        periodDebit: Math.round(periodDebit * 100) / 100,
-        periodCredit: Math.round(periodCredit * 100) / 100,
+        openingBalance: new Decimal(openingBalance)
+          .toDecimalPlaces(2)
+          .toNumber(),
+        periodDebit: new Decimal(periodDebit).toDecimalPlaces(2).toNumber(),
+        periodCredit: new Decimal(periodCredit).toDecimalPlaces(2).toNumber(),
         netMovement,
         closingBalance,
       };
@@ -327,7 +335,9 @@ export async function fetchGeneralLedger(
     createdBy: row.created_by,
     createdOn: row.created_on,
     runningBalance:
-      row.running_balance != null ? parseFloat(row.running_balance) : null,
+      row.running_balance != null
+        ? new Decimal(row.running_balance).toNumber()
+        : null,
   }));
 
   return {

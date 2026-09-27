@@ -43,4 +43,5 @@ module.exports = {
   setupFiles: ['./setup-env.ts'],
   setupFilesAfterEnv: ['./suite-setup.ts'],
   testTimeout: 120000,
+  testSequencer: './jest-sequencer.js',
 };

@@ -27,8 +27,7 @@ import { useSettings } from '@/components/SettingsProvider';
 
 function PurchaseReturnStateBadge({ state }: { state: ValidState }) {
     const t = useTranslations('common.states');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- State key mapping
-    return <span className={`badge badge-${state}`}>{t(state as any)}</span>;
+    return <span className={`badge badge-${state}`}>{t(state as never)}</span>;
 }
 
 interface NewReturnLine {
@@ -147,12 +146,11 @@ export default function ReturnsSection({
                     <span className="material-symbols-outlined">assignment_return</span>
                     {tSales('returnsHeading')}
                 </h3>
-                {!showCreateReturn && [
+                {!showCreateReturn && ([
                     SALES_ORDER_STATE.PICKING,
                     SALES_ORDER_STATE.SHIPPED, 
                     SALES_ORDER_STATE.INVOICED
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type workaround
-                ].includes(order.stateCode as any) && (
+                ] as string[]).includes(order.stateCode) && (
                     <Button
                         variant="secondary" size="sm"
                         onClick={() => setShowCreateReturn(true)}

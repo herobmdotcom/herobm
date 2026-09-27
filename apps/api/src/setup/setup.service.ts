@@ -6,7 +6,12 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
-import { getCountryCode, getErrorMessage } from '@herobm/shared';
+import {
+  getCountryCode,
+  getErrorMessage,
+  parseLocalDate,
+  toInputDateFormat,
+} from '@herobm/shared';
 import { sql } from 'drizzle-orm';
 import {
   appSettings,
@@ -30,7 +35,14 @@ import type { Response } from 'express';
 import { AppConfigService } from '../settings/app-config.service';
 import * as fs from 'fs';
 import * as path from 'path';
-import { eq, getTableColumns, isNotNull, and, lt } from 'drizzle-orm';
+import {
+  eq,
+  getTableColumns,
+  getTableName,
+  isNotNull,
+  and,
+  lt,
+} from 'drizzle-orm';
 import { Readable } from 'stream';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import * as bcrypt from 'bcrypt';
@@ -537,8 +549,7 @@ export class SetupService {
 
     const headers = propToColMap.map((m) => m.colName).join(',');
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic query builder
-    let query: any = this.db.select().from(registryEntry.table);
+    let query = this.db.select().from(registryEntry.table).$dynamic();
     const stateCol = (tableCols as unknown as Record<string, unknown>)[
       'stateCode'
     ];
@@ -573,9 +584,7 @@ export class SetupService {
     }
 
     // Direct audit recording for CSV export downloads
-    const schemaTableName =
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic table name
-      (registryEntry.table as any)[Symbol.for('drizzle:Name')] || tableName;
+    const schemaTableName = getTableName(registryEntry.table) || tableName;
     await this.db.insert(systemEvents).values({
       entityType: 'system',
       entityId: '00000000-0000-0000-0000-000000000000',
@@ -644,10 +653,8 @@ export class SetupService {
     return { jobId };
   }
 
-  // @herobm-skip-audit
   private async runCsvCore(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    entry: any,
+    entry: CsvRegistryEntry,
     strategy: string,
     file: Express.Multer.File,
     jobId: string,
@@ -717,7 +724,12 @@ export class SetupService {
         const colDef = (
           tableCols as Record<
             string,
-            { primary?: boolean; hasDefault?: boolean }
+            {
+              primary?: boolean;
+              hasDefault?: boolean;
+              dataType?: string;
+              columnType?: string;
+            }
           >
         )[propKey];
         const val =
@@ -758,6 +770,35 @@ export class SetupService {
           ) {
             dbRecord[propKey] = parsePhone(dbRecord[propKey] as string | null);
           }
+          const colMeta = colDef as unknown as {
+            dataType?: string;
+            columnType?: string;
+          };
+          const isDateColumn =
+            colMeta?.dataType === 'date' ||
+            colMeta?.columnType === 'PgTimestamp' ||
+            colMeta?.columnType === 'PgDate' ||
+            colName.endsWith('_date') ||
+            colName.endsWith('_on') ||
+            colName.endsWith('_at') ||
+            colName === 'date' ||
+            propKey.endsWith('Date') ||
+            propKey.endsWith('On') ||
+            propKey.endsWith('At');
+
+          if (isDateColumn && typeof dbRecord[propKey] === 'string') {
+            const parsed = parseLocalDate(dbRecord[propKey]);
+            if (parsed) {
+              if (
+                colMeta?.columnType === 'PgDate' &&
+                colMeta?.dataType === 'string'
+              ) {
+                dbRecord[propKey] = toInputDateFormat(parsed);
+              } else {
+                dbRecord[propKey] = parsed;
+              }
+            }
+          }
         }
       }
       records.push(dbRecord);
@@ -787,7 +828,7 @@ export class SetupService {
         ) || entry.uniqueKey;
 
       const conflictTarget =
-        entry.table[uniqueKeyProp] ||
+        (entry.table as unknown as Record<string, unknown>)[uniqueKeyProp] ||
         (tableCols as Record<string, unknown>)[uniqueKeyProp];
 
       if ((strategy === 'upsert' || strategy === 'ignore') && !conflictTarget) {
@@ -817,14 +858,20 @@ export class SetupService {
           }
         }
 
-        await this.db.insert(entry.table).values(batch).onConflictDoUpdate({
-          target: conflictTarget,
-          set: updateSet,
-        });
+        await this.db
+          .insert(entry.table)
+          .values(batch)
+          .onConflictDoUpdate({
+            target: conflictTarget as never,
+            set: updateSet,
+          });
       } else if (strategy === 'ignore') {
-        await this.db.insert(entry.table).values(batch).onConflictDoNothing({
-          target: conflictTarget,
-        });
+        await this.db
+          .insert(entry.table)
+          .values(batch)
+          .onConflictDoNothing({
+            target: conflictTarget as never,
+          });
       } else {
         await this.db.insert(entry.table).values(batch);
       }
@@ -839,8 +886,8 @@ export class SetupService {
     this.log(jobId, 'DATA IMPORT COMPLETED SUCCESSFULLY');
 
     // Emit a single event for the entire CSV import
-    const tableName =
-      entry.table[Symbol.for('drizzle:Name')] || 'unknown_table'; // @sync-ignore
+    const tableName = getTableName(entry.table) || 'unknown_table';
+    // @sync-ignore
     await emitEvent(this.db as unknown as Parameters<typeof emitEvent>[0], {
       entityType: EntityType.SYSTEM,
       entityId: '00000000-0000-0000-0000-000000000000',

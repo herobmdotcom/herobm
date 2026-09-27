@@ -29219,6 +29219,10 @@
           "purchaseUnit": {
             "type": "string"
           },
+          "purchaseUomId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "isPreferred": {
             "type": "boolean"
           },
@@ -29885,6 +29889,18 @@
           },
           "purchaseUnit": {
             "type": "string",
+            "nullable": true
+          },
+          "purchaseUomId": {
+            "type": "string",
+            "nullable": true
+          },
+          "purchaseUomCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "purchaseUomRatio": {
+            "type": "number",
             "nullable": true
           }
         },
@@ -39291,11 +39307,7 @@
           "taxCategoryId": {
             "type": "string"
           }
-        },
-        "required": [
-          "quantity",
-          "pricePerUnit"
-        ]
+        }
       },
       "CreatePurchaseOrderDto": {
         "type": "object",
@@ -39405,6 +39417,18 @@
             "nullable": true
           },
           "quantityReceived": {
+            "type": "string",
+            "nullable": true
+          },
+          "minPurchaseQty": {
+            "type": "string",
+            "nullable": true
+          },
+          "purchaseUnit": {
+            "type": "string",
+            "nullable": true
+          },
+          "supplierPartNumber": {
             "type": "string",
             "nullable": true
           }

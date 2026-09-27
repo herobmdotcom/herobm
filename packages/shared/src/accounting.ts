@@ -1,3 +1,5 @@
+import Decimal from 'decimal.js';
+
 export const GL_ACCOUNT_TYPE = {
   ASSET: 'asset',
   LIABILITY: 'liability',
@@ -119,35 +121,42 @@ export interface AgedTotals {
  * Total Outstanding is calculated as the sum of all aging buckets to ensure it perfectly adds up.
  */
 export function calculateAgedTotals(balances: AgedBalanceRow[]): AgedTotals {
-  const totals = balances.reduce<AgedTotals>(
-    (acc, row) => {
-      acc.current += row.current || 0;
-      acc.days1To30 += row.days1To30 || 0;
-      acc.days31To60 += row.days31To60 || 0;
-      acc.days61To90 += row.days61To90 || 0;
-      acc.days90Plus += row.days90Plus || 0;
-      return acc;
-    },
-    { current: 0, days1To30: 0, days31To60: 0, days61To90: 0, days90Plus: 0, totalOutstanding: 0 }
-  );
+  let current = new Decimal(0);
+  let days1To30 = new Decimal(0);
+  let days31To60 = new Decimal(0);
+  let days61To90 = new Decimal(0);
+  let days90Plus = new Decimal(0);
+
+  for (const row of balances) {
+    current = current.plus(row.current || 0);
+    days1To30 = days1To30.plus(row.days1To30 || 0);
+    days31To60 = days31To60.plus(row.days31To60 || 0);
+    days61To90 = days61To90.plus(row.days61To90 || 0);
+    days90Plus = days90Plus.plus(row.days90Plus || 0);
+  }
 
   // Round values to 2 decimal places to avoid floating point drift
-  const current = Math.round(totals.current * 100) / 100;
-  const days1To30 = Math.round(totals.days1To30 * 100) / 100;
-  const days31To60 = Math.round(totals.days31To60 * 100) / 100;
-  const days61To90 = Math.round(totals.days61To90 * 100) / 100;
-  const days90Plus = Math.round(totals.days90Plus * 100) / 100;
+  const roundedCurrent = current.toDecimalPlaces(2);
+  const roundedDays1To30 = days1To30.toDecimalPlaces(2);
+  const roundedDays31To60 = days31To60.toDecimalPlaces(2);
+  const roundedDays61To90 = days61To90.toDecimalPlaces(2);
+  const roundedDays90Plus = days90Plus.toDecimalPlaces(2);
 
   // Total outstanding is explicitly the sum of the buckets
-  const totalOutstanding = Math.round((current + days1To30 + days31To60 + days61To90 + days90Plus) * 100) / 100;
+  const totalOutstanding = roundedCurrent
+    .plus(roundedDays1To30)
+    .plus(roundedDays31To60)
+    .plus(roundedDays61To90)
+    .plus(roundedDays90Plus)
+    .toDecimalPlaces(2);
 
   return {
-    current,
-    days1To30,
-    days31To60,
-    days61To90,
-    days90Plus,
-    totalOutstanding,
+    current: roundedCurrent.toNumber(),
+    days1To30: roundedDays1To30.toNumber(),
+    days31To60: roundedDays31To60.toNumber(),
+    days61To90: roundedDays61To90.toNumber(),
+    days90Plus: roundedDays90Plus.toNumber(),
+    totalOutstanding: totalOutstanding.toNumber(),
   };
 }
 
@@ -168,9 +177,9 @@ export function computeAccountNetBalance(
   debit: number | string | null | undefined,
   credit: number | string | null | undefined,
 ): number {
-  const d = Math.round(Number(debit || 0) * 100) / 100;
-  const c = Math.round(Number(credit || 0) * 100) / 100;
-  return Math.round((d - c) * 100) / 100;
+  const d = new Decimal(debit || 0).toDecimalPlaces(2);
+  const c = new Decimal(credit || 0).toDecimalPlaces(2);
+  return d.minus(c).toDecimalPlaces(2).toNumber();
 }
 
 export interface RunningBalanceInputLine {
@@ -199,37 +208,37 @@ export function computeRunningBalances<T extends RunningBalanceInputLine>(
   lines: (T & { runningBalance: number })[];
   summary: AccountPeriodSummary;
 } {
-  const initial = Math.round(Number(openingBalance || 0) * 100) / 100;
+  const initial = new Decimal(openingBalance || 0).toDecimalPlaces(2);
   let running = initial;
-  let periodDebit = 0;
-  let periodCredit = 0;
+  let periodDebit = new Decimal(0);
+  let periodCredit = new Decimal(0);
 
   const resultLines = lines.map((line) => {
-    const d = Math.round(Number(line.debit || 0) * 100) / 100;
-    const c = Math.round(Number(line.credit || 0) * 100) / 100;
-    periodDebit += d;
-    periodCredit += c;
-    running = Math.round((running + d - c) * 100) / 100;
+    const d = new Decimal(line.debit || 0).toDecimalPlaces(2);
+    const c = new Decimal(line.credit || 0).toDecimalPlaces(2);
+    periodDebit = periodDebit.plus(d);
+    periodCredit = periodCredit.plus(c);
+    running = running.plus(d).minus(c).toDecimalPlaces(2);
 
     return {
       ...line,
-      runningBalance: running,
+      runningBalance: running.toNumber(),
     };
   });
 
-  const roundedPeriodDebit = Math.round(periodDebit * 100) / 100;
-  const roundedPeriodCredit = Math.round(periodCredit * 100) / 100;
-  const netMovement = Math.round((roundedPeriodDebit - roundedPeriodCredit) * 100) / 100;
-  const closingBalance = Math.round((initial + netMovement) * 100) / 100;
+  const roundedPeriodDebit = periodDebit.toDecimalPlaces(2);
+  const roundedPeriodCredit = periodCredit.toDecimalPlaces(2);
+  const netMovement = roundedPeriodDebit.minus(roundedPeriodCredit).toDecimalPlaces(2);
+  const closingBalance = initial.plus(netMovement).toDecimalPlaces(2);
 
   return {
     lines: resultLines,
     summary: {
-      openingBalance: initial,
-      periodDebit: roundedPeriodDebit,
-      periodCredit: roundedPeriodCredit,
-      netMovement,
-      closingBalance,
+      openingBalance: initial.toNumber(),
+      periodDebit: roundedPeriodDebit.toNumber(),
+      periodCredit: roundedPeriodCredit.toNumber(),
+      netMovement: netMovement.toNumber(),
+      closingBalance: closingBalance.toNumber(),
     },
   };
 }

@@ -4,6 +4,8 @@
  * across the fulfillment, invoicing, and return lifecycles.
  */
 
+import Decimal from 'decimal.js';
+
 /**
  * Calculates the maximum quantity that can still be invoiced for a sales order line.
  *
@@ -19,7 +21,10 @@ export function getAvailableToInvoice(
   invoicedQty: number,
   refundedQty: number,
 ): number {
-  return Math.max(0, shippedQty - invoicedQty - refundedQty);
+  return Math.max(
+    0,
+    new Decimal(shippedQty).minus(invoicedQty).minus(refundedQty).toNumber(),
+  );
 }
 
 /**
@@ -39,15 +44,21 @@ export function getAvailableToCredit(
   refundedQty: number,
   previouslyCreditedQty: number,
 ): number {
-  const keptQty = Math.max(0, shippedQty - refundedQty);
+  const keptQty = Math.max(
+    0,
+    new Decimal(shippedQty).minus(refundedQty).toNumber(),
+  );
 
   // The total amount the customer has been billed for that they did not keep
-  const totalRequiredCredit = Math.max(0, invoicedQty - keptQty);
+  const requiredCreditQty = Math.max(
+    0,
+    new Decimal(invoicedQty).minus(keptQty).toNumber(),
+  );
 
   // The amount we STILL owe them, after subtracting previous credit notes
   const pendingCredit = Math.max(
     0,
-    totalRequiredCredit - previouslyCreditedQty,
+    new Decimal(requiredCreditQty).minus(previouslyCreditedQty).toNumber(),
   );
 
   return pendingCredit;

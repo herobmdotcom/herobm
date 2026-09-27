@@ -1,3 +1,4 @@
+import Decimal from 'decimal.js';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { BackordersService } from './backorders.service';
 import { TaxResolutionEngine } from '../tax/tax-resolution.engine';
@@ -210,8 +211,24 @@ export class OrdersQueryService {
       .where(eq(backorders.salesOrderId, order.salesOrderId))
       .orderBy(salesOrderLineItems.lineNumber, backorders.createdOn);
 
+    const totalAmount = linesWithUoms
+      .reduce(
+        (acc, line) => acc.plus(new Decimal(line.totalAmount || '0')),
+        new Decimal(0),
+      )
+      .toFixed(2);
+
+    const taxAmount = linesWithUoms
+      .reduce(
+        (acc, line) => acc.plus(new Decimal(line.tax || '0')),
+        new Decimal(0),
+      )
+      .toFixed(2);
+
     return {
       ...order,
+      totalAmount,
+      taxAmount,
       taxProvider:
         this.appConfig.taxProviderMappings()[order.country || ''] || 'internal',
       lines: linesWithUoms,

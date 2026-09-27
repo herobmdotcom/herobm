@@ -10,13 +10,25 @@ import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
 import { getErrorMessage } from '@herobm/shared';
 
+export type EmailOutboxRow = {
+  id: string;
+  status: string;
+  createdAt: string;
+  toAddress?: string;
+  subject?: string;
+  entityType?: string;
+  retries?: number;
+  lastError?: string | null;
+  nextRetryAt?: string | null;
+  processedAt?: string | null;
+};
+
 export default function EmailOutboxDashboard() {
   const t = useTranslations('admin.emailOutbox');
 
   useDocumentTitle(t('title'));
   
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Open API type not perfectly inferred yet
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<EmailOutboxRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [autoRefresh, setAutoRefresh] = useState(false);
@@ -25,7 +37,7 @@ export default function EmailOutboxDashboard() {
   const loadData = async () => {
     try {
       const res = await api.emailControllerListEmails();
-      setData(res.data);
+      setData((res.data || []) as unknown as EmailOutboxRow[]);
       setError('');
     } catch (err: unknown) {
       setError(err instanceof Error ? getErrorMessage(err) : t('errors.loadFailed'));
@@ -159,7 +171,7 @@ export default function EmailOutboxDashboard() {
                     width: 100,
                     render: (email) => {
                       if (email.status === 'failed') {
-                        return <span className="text-red-500 font-bold text-[11px] capitalize" title={email.lastError}>{t('status.failed')}</span>;
+                        return <span className="text-red-500 font-bold text-[11px] capitalize" title={email.lastError ? String(email.lastError) : undefined}>{t('status.failed')}</span>;
                       } else if (email.status === 'sent') {
                         return <span className="text-green-400 font-bold text-[11px] capitalize">{t('status.sent')}</span>;
                       } else if (email.status === 'dismissed') {

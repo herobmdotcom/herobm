@@ -6,7 +6,13 @@ import { useTranslations } from 'next-intl';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import SlideOver from '@/components/shared/SlideOver';
-import { getErrorMessage, computeReturnCreditSummary } from '@herobm/shared';
+import {
+  getErrorMessage,
+  computeReturnCreditSummary,
+  computeLinePrice,
+  toFinancialDecimal,
+  roundMoney,
+} from '@herobm/shared';
 import { DataTable, DataTableColumn } from '@/components/shared/DataTable';
 import { formatAmount } from '@/lib/currency';
 import { reportError } from '@/lib/api';
@@ -27,7 +33,7 @@ interface ReturnLine {
   tax?: string;
 }
 
-interface PurchaseReturnDetails {
+export interface PurchaseReturnDetails {
   returnId: string;
   returnNumber: string;
   orderNumber?: string;
@@ -38,6 +44,16 @@ interface PurchaseReturnDetails {
   lines: ReturnLine[];
 }
 
+export interface ReturnRecordSummary {
+  returnId: string;
+  returnNumber: string;
+  vendorName?: string;
+  vendorId?: string;
+  orderNumber?: string;
+  currencyCode?: string;
+  purchaseOrderId?: string;
+}
+
 export default function ReturnDebitNoteSlideOver({
   isOpen,
   onClose,
@@ -46,8 +62,7 @@ export default function ReturnDebitNoteSlideOver({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Flexible row schema from grid
-  returnRecord: any | null;
+  returnRecord: PurchaseReturnDetails | ReturnRecordSummary | null;
   onSuccess: () => void;
 }) {
   const tCommon = useTranslations('common');
@@ -105,9 +120,11 @@ export default function ReturnDebitNoteSlideOver({
 
   const subtotal = useMemo(() => {
     return lines.reduce((sum, line) => {
-      const qty = parseFloat(line.quantityReturned || '0');
-      const price = parseFloat(line.pricePerUnit || '0');
-      return sum + qty * price;
+      const linePricing = computeLinePrice({
+        quantity: toFinancialDecimal(line.quantityReturned).toNumber(),
+        pricePerUnit: toFinancialDecimal(line.pricePerUnit).toNumber(),
+      });
+      return sum + linePricing.amount;
     }, 0);
   }, [lines]);
 
@@ -124,13 +141,15 @@ export default function ReturnDebitNoteSlideOver({
     setSaving(true);
     try {
       const linesPayload = (fullReturn.lines || []).map((line) => {
-        const price = parseFloat(line.pricePerUnit || '0');
-        const qty = parseFloat(line.quantityReturned || '0');
+        const linePricing = computeLinePrice({
+          quantity: toFinancialDecimal(line.quantityReturned).toNumber(),
+          pricePerUnit: toFinancialDecimal(line.pricePerUnit).toNumber(),
+        });
         return {
           purchaseOrderLineId: line.purchaseOrderLineId,
           quantityInvoiced: line.quantityReturned,
-          pricePerUnit: price.toString(),
-          amount: (qty * price).toFixed(2),
+          pricePerUnit: toFinancialDecimal(line.pricePerUnit).toFixed(2),
+          amount: linePricing.amount.toFixed(2),
         };
       });
 
@@ -246,11 +265,13 @@ export default function ReturnDebitNoteSlideOver({
       width: 120,
       align: 'right',
       render: (line) => {
-        const qty = parseFloat(line.quantityReturned || '0');
-        const price = parseFloat(line.pricePerUnit || '0');
+        const linePricing = computeLinePrice({
+          quantity: toFinancialDecimal(line.quantityReturned).toNumber(),
+          pricePerUnit: toFinancialDecimal(line.pricePerUnit).toNumber(),
+        });
         return (
           <span className="font-semibold tabular-nums">
-            {formatAmount(qty * price, currency)}
+            {formatAmount(linePricing.amount, currency)}
           </span>
         );
       },
@@ -303,7 +324,7 @@ export default function ReturnDebitNoteSlideOver({
       isOpen={isOpen}
       onClose={onClose}
       title="Create Purchase Debit Note"
-      subtitle={`Return: ${returnRecord.returnNumber} · ${returnRecord.vendorName || ''}`}
+      subtitle={`Return: ${returnRecord?.returnNumber || ''} · ${returnRecord?.vendorName || ''}`}
       width="max-w-4xl"
     >
       <div className="space-y-6">
@@ -316,7 +337,7 @@ export default function ReturnDebitNoteSlideOver({
             <div>
               <span className="block text-xs font-medium text-[var(--text-muted)] mb-1">Supplier</span>
               <span className="font-semibold text-[var(--text-primary)]">
-                {fullReturn?.vendorName || returnRecord.vendorName || '—'}
+                {fullReturn?.vendorName || returnRecord?.vendorName || '—'}
               </span>
             </div>
             <div>
@@ -326,15 +347,15 @@ export default function ReturnDebitNoteSlideOver({
                   href={`/purchase-orders/${fullReturn.purchaseOrderId}`}
                   className="text-[var(--accent)] hover:underline font-semibold"
                 >
-                  {fullReturn.orderNumber || returnRecord.orderNumber || '—'}
+                  {fullReturn.orderNumber || returnRecord?.orderNumber || '—'}
                 </Link>
               ) : (
-                <span className="font-semibold">{returnRecord.orderNumber || '—'}</span>
+                <span className="font-semibold">{returnRecord?.orderNumber || '—'}</span>
               )}
             </div>
             <div>
               <span className="block text-xs font-medium text-[var(--text-muted)] mb-1">Return Reference</span>
-              <span className="font-semibold">{returnRecord.returnNumber}</span>
+              <span className="font-semibold">{returnRecord?.returnNumber || '—'}</span>
             </div>
           </div>
         </div>

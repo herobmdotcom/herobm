@@ -21,6 +21,7 @@ import {
 import { AppConfigService } from '../settings/app-config.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
+import Decimal from 'decimal.js';
 import {
   inventoryLevels,
   products,
@@ -65,6 +66,7 @@ import {
   PUTAWAY_STATUS,
   RETURN_STATE,
   BACKORDER_STATE,
+  toDecimal,
 } from '@herobm/shared';
 import {
   isPickableBinSqlCondition,
@@ -75,8 +77,13 @@ import {
 import { BIN_TYPE } from '@herobm/shared';
 import { UomService } from './uom.service';
 import { GlService } from '../gl/gl.service';
-import { getValuationStrategy } from './valuation';
-import { getAccountingStrategy } from './inventory-accounting';
+import {
+  prepareMovementLines,
+  resolveBinsContext,
+  validateNegativeInventory,
+  handleAdjustmentFinancials,
+  MovementLineInput,
+} from './inventory-movement-helpers';
 import { WorkOrdersWriteService } from '../manufacturing/work-orders-write.service';
 import { BackordersService } from '../orders/backorders.service';
 import { ReturnsWriteService } from '../orders/returns-write.service';
@@ -124,22 +131,21 @@ export class InventoryMovementService {
         productId: string;
         binId: string;
         quantity: number;
-        uomCode: string; // <-- strictly required
+        uomCode?: string | null;
+        unitCost?: number | string | null;
+        totalValue?: number | string | null;
+        originalQuantity?: number | null;
       }[];
     },
   ) {
     if (params.lines.length === 0) return;
 
-    // 1. Prepare absolute base quantities for all input lines
-    const processedLines = [];
-    for (const line of params.lines) {
-      const absoluteQty = await this.uomService.calculateAbsoluteBaseQuantity(
-        line.productId,
-        [{ quantity: line.quantity, uomCode: line.uomCode }],
-        tx,
-      );
-      processedLines.push({ ...line, absoluteQuantity: absoluteQty });
-    }
+    // 1. Prepare absolute base quantities, valuation, and UOM metadata (ADV-INV-002)
+    const processedLines = await prepareMovementLines(
+      tx,
+      params.lines,
+      this.uomService,
+    );
 
     // 2. Create Header
     const [entry] = await tx
@@ -154,101 +160,21 @@ export class InventoryMovementService {
       })
       .returning({ entryId: inventoryEntries.entryId });
 
-    // 1b. Resolve Zone and Location for all bins
-    const binIds = [...new Set(params.lines.map((l) => l.binId))];
-    const resolvedBins = await tx
-      .select()
-      .from(bins)
-      .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-      .where(inArray(bins.binId, binIds));
-
-    const binMap = new Map<
-      string,
-      {
-        binId: string;
-        binNumber: string;
-        binType: BIN_TYPE;
-        locationId: string | null;
-        zoneId: string | null;
-      }
-    >(
-      resolvedBins.map((row) => {
-        const b = row.bins;
-        const z = row.zones;
-        return [
-          b.binId,
-          { ...b, locationId: z.locationId, binType: b.binType as BIN_TYPE },
-        ];
-      }),
+    // 3. Resolve Zone and Location for all bins
+    const binMap = await resolveBinsContext(
+      tx,
+      params.lines.map((l) => l.binId),
     );
 
-    // 1c. Enforce negative inventory restriction if not permitted in settings
+    // 4. Enforce negative inventory restriction if not permitted in settings
     if (
       params.allowNegativeInventory !== true &&
       this.appConfig?.allowNegativeInventory?.() !== true
     ) {
-      const deductions = new Map<
-        string,
-        { binId: string; productId: string; totalDeduction: number }
-      >();
-      for (const line of processedLines) {
-        if (line.absoluteQuantity < 0) {
-          const b = binMap.get(line.binId);
-          // Virtual WIP, in-transit, and staging bins are exempt from pre-movement physical stock checks
-          if (
-            b?.binType === BIN_TYPE.WIP ||
-            b?.binType === BIN_TYPE.IN_TRANSIT ||
-            b?.binType === BIN_TYPE.STAGING
-          ) {
-            continue;
-          }
-          const key = `${line.binId}:${line.productId}`;
-          const existing = deductions.get(key);
-          const totalDeduction =
-            (existing?.totalDeduction || 0) + Math.abs(line.absoluteQuantity);
-          deductions.set(key, {
-            binId: line.binId,
-            productId: line.productId,
-            totalDeduction,
-          });
-        }
-      }
-
-      if (deductions.size > 0) {
-        const deductionBinIds = [
-          ...new Set([...deductions.values()].map((d) => d.binId)),
-        ];
-        const currentStocks = await tx
-          .select({
-            binId: binContents.binId,
-            productId: binContents.productId,
-            actualQuantity: binContents.actualQuantity,
-          })
-          .from(binContents)
-          .where(inArray(binContents.binId, deductionBinIds));
-
-        const stockMap = new Map<string, number>();
-        for (const s of currentStocks) {
-          stockMap.set(`${s.binId}:${s.productId}`, Number(s.actualQuantity));
-        }
-
-        for (const {
-          binId,
-          productId,
-          totalDeduction,
-        } of deductions.values()) {
-          const availableQty = stockMap.get(`${binId}:${productId}`) || 0;
-          if (availableQty < totalDeduction) {
-            const b = binMap.get(binId);
-            throw new BadRequestException(
-              `Insufficient stock in bin ${b?.binNumber || binId} for product ${productId}. Available: ${availableQty}, Requested: ${totalDeduction}`,
-            );
-          }
-        }
-      }
+      await validateNegativeInventory(tx, processedLines, binMap);
     }
 
-    // 2. Create Ledger Lines
+    // 5. Create Ledger Lines with immutable valuation & UOM context
     const ledgerPayload = processedLines.map((l) => {
       const b = binMap.get(l.binId);
       if (!b) throw new Error(`Bin ${l.binId} not found in database`);
@@ -259,11 +185,15 @@ export class InventoryMovementService {
         locationId: b.locationId as string,
         zoneId: b.zoneId as string,
         quantity: l.absoluteQuantity.toString(),
+        unitCost: l.unitCost.toString(),
+        totalValue: l.totalValue.toString(),
+        uomId: l.uomCode,
+        originalQuantity: l.originalQuantity.toString(),
       };
     });
     await tx.insert(inventoryLedger).values(ledgerPayload);
 
-    // 4. Update Cache (bin_contents)
+    // 6. Update Cache (bin_contents)
     for (const line of processedLines) {
       await tx
         .insert(binContents)
@@ -282,7 +212,7 @@ export class InventoryMovementService {
         });
     }
 
-    // 5. Cleanup Zero Quantity Cache Entries
+    // 7. Cleanup Zero Quantity Cache Entries
     for (const line of processedLines) {
       await tx
         .delete(binContents)
@@ -290,100 +220,24 @@ export class InventoryMovementService {
           and(
             eq(binContents.binId, line.binId),
             eq(binContents.productId, line.productId),
-            lte(sql`${binContents.actualQuantity}::numeric`, 0),
+            eq(sql`${binContents.actualQuantity}::numeric`, 0),
           ),
         );
     }
 
-    // --- Financial Integration: Post Shrinkage Journal Entry via Accounting Strategy ---
+    // 8. Financial Integration: Post Shrinkage Journal Entry via Accounting Strategy
     if (params.sourceType === 'MANUAL_ADJUST') {
-      const productIds = [...new Set(processedLines.map((l) => l.productId))];
-      if (productIds.length > 0) {
-        const productRows = await tx
-          .select({
-            productId: products.productId,
-            standardCost: products.standardCost,
-            weightedAverageCost: products.weightedAverageCost,
-          })
-          .from(products)
-          .where(inArray(products.productId, productIds));
-
-        const productMap = new Map<
-          string,
-          {
-            productId: string;
-            standardCost: string | null;
-            weightedAverageCost: string | null;
-          }
-        >(productRows.map((p) => [p.productId, p]));
-        const valuationStrategy = getValuationStrategy(
-          this.appConfig.valuationMethod(),
-        );
-
-        let totalShrinkageValue = 0; // Positive means we lost inventory (expense), Negative means we gained inventory (income)
-
-        for (const line of processedLines) {
-          const p = productMap.get(line.productId);
-          if (p) {
-            const cost = valuationStrategy.getCogs(
-              {
-                productId: p.productId,
-                standardCost: p.standardCost || '0',
-                weightedAverageCost: p.weightedAverageCost || '0',
-              },
-              Math.abs(line.absoluteQuantity),
-            );
-
-            if (line.absoluteQuantity > 0) {
-              totalShrinkageValue -= parseFloat(cost); // Gained inventory
-            } else if (line.absoluteQuantity < 0) {
-              totalShrinkageValue += parseFloat(cost); // Lost inventory
-            }
-          }
-        }
-
-        if (Math.abs(totalShrinkageValue) > 0.001) {
-          const accountingStrategy = getAccountingStrategy(
-            this.appConfig.inventoryAccountingMode(),
-            {
-              inventoryAccountId: this.appConfig.defaultInventoryAccountId(),
-              grniAccountId: this.appConfig.defaultGrniAccountId(),
-              cogsAccountId: this.appConfig.defaultCogsAccountId(),
-              shrinkageAccountId: this.appConfig.defaultShrinkageAccountId(),
-              ppvAccountId: this.appConfig.defaultPpvAccountId(),
-            },
-          );
-
-          const direction = totalShrinkageValue > 0 ? 'loss' : 'gain';
-          const adjustmentGl = accountingStrategy.onManualAdjustment(
-            {
-              amount: Number(Math.abs(totalShrinkageValue).toFixed(2)),
-              memo: `Manual Adjustment ${params.entryNumber}`,
-            },
-            direction,
-          );
-
-          if (adjustmentGl) {
-            await this.glService.postJournalEntry(
-              adjustmentGl.lines as Parameters<
-                GlService['postJournalEntry']
-              >[0],
-              {
-                actor: params.userId || 'system',
-                entryDate: new Date().toISOString().slice(0, 10),
-                sourceType: adjustmentGl.sourceType,
-                sourceId: entry.entryId,
-                memo:
-                  params.memo || `Inventory Adjustment ${params.entryNumber}`,
-              },
-              tx,
-            );
-          }
-        }
-      }
+      await handleAdjustmentFinancials(
+        tx,
+        processedLines,
+        params,
+        entry.entryId,
+        this.appConfig,
+        this.glService,
+      );
     }
 
-    // 4. Emit event for ERP sync (and system events audit)
+    // 9. Emit event for ERP sync (and system events audit)
     await emitEvent(tx, {
       entityType: EntityType.INVENTORY_LEDGER,
       entityId: entry.entryId,
@@ -695,7 +549,7 @@ export class InventoryMovementService {
           }
         }
 
-        const qty = parseFloat(lineDto.quantity);
+        const qty = toDecimal(lineDto.quantity).toNumber();
 
         const movements: {
           productId: string;
@@ -714,7 +568,7 @@ export class InventoryMovementService {
 
         // Handle discrepancies
         if (lineDto.newTotalQuantity !== undefined) {
-          const newTotal = parseFloat(lineDto.newTotalQuantity);
+          const newTotal = new Decimal(lineDto.newTotalQuantity || '0');
           const [destBinContent] = await tx
             .select({ actualQuantity: binContents.actualQuantity })
             .from(binContents)
@@ -727,20 +581,20 @@ export class InventoryMovementService {
             .limit(1);
 
           const currentDbQty = destBinContent
-            ? parseFloat(destBinContent.actualQuantity)
-            : 0;
-          const expectedTotal = currentDbQty + qty;
-          const discrepancy = newTotal - expectedTotal;
+            ? new Decimal(destBinContent.actualQuantity || '0')
+            : new Decimal(0);
+          const expectedTotal = currentDbQty.plus(new Decimal(qty));
+          const discrepancy = newTotal.minus(expectedTotal);
 
-          if (Math.abs(discrepancy) > 0.001) {
+          if (discrepancy.abs().gt(0.001)) {
             movements.push({
               productId,
               binId: lineDto.destinationBinId,
-              quantity: discrepancy,
+              quantity: discrepancy.toNumber(),
               uomCode,
             });
             this.logger.warn(
-              `Putaway discrepancy adjustment created. Expected: ${expectedTotal}, Counted: ${newTotal}, Adj: ${discrepancy}`,
+              `Putaway discrepancy adjustment created. Expected: ${expectedTotal.toString()}, Counted: ${newTotal.toString()}, Adj: ${discrepancy.toString()}`,
             );
           }
         }
@@ -779,7 +633,7 @@ export class InventoryMovementService {
                   projectId: transferProjectId,
                   projectTaskId: transferProjectTaskId || undefined,
                   productId,
-                  quantity: Number(lineDto.quantity),
+                  quantity: toDecimal(lineDto.quantity).toNumber(),
                   referenceNumber:
                     referenceNumber ||
                     transferOrderNumber ||
@@ -794,7 +648,7 @@ export class InventoryMovementService {
                   projectId: transferProjectId,
                   projectTaskId: transferProjectTaskId || undefined,
                   productId,
-                  quantity: Number(lineDto.quantity),
+                  quantity: toDecimal(lineDto.quantity).toNumber(),
                   referenceNumber:
                     referenceNumber ||
                     transferOrderNumber ||
@@ -1254,6 +1108,8 @@ export class InventoryMovementService {
   }
 
   async moveStock(dto: import('./dto').MoveStockDto, userId: string) {
+    if (!dto.lines || dto.lines.length === 0) return { success: true };
+
     return await this.db.transaction(async (tx) => {
       const movementLines: {
         productId: string;
@@ -1263,36 +1119,73 @@ export class InventoryMovementService {
       }[] = [];
       const reasonStr = dto.reason || 'Manual stock move';
 
+      // 1. Batch pre-fetch products
+      const productIds = Array.from(new Set(dto.lines.map((l) => l.productId)));
+      const productRows =
+        productIds.length > 0
+          ? await tx
+              .select({
+                productId: products.productId,
+                baseUom: products.baseUom,
+              })
+              .from(products)
+              .where(inArray(products.productId, productIds))
+          : [];
+      const productMap = new Map(productRows.map((p) => [p.productId, p]));
+
+      // 2. Batch pre-fetch bins with zone details
+      const binIds = Array.from(
+        new Set(dto.lines.flatMap((l) => [l.sourceBinId, l.targetBinId])),
+      );
+      const binRows =
+        binIds.length > 0
+          ? await tx
+              .select({
+                binId: bins.binId,
+                binNumber: bins.binNumber,
+                locationId: zones.locationId,
+                zoneCode: zones.code,
+              })
+              .from(bins)
+              .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+              .where(inArray(bins.binId, binIds))
+          : [];
+      const binMap = new Map(binRows.map((b) => [b.binId, b]));
+
+      // 3. Batch pre-fetch source bin contents
+      const sourceBinIds = Array.from(
+        new Set(dto.lines.map((l) => l.sourceBinId)),
+      );
+      const binContentRows =
+        sourceBinIds.length > 0 && productIds.length > 0
+          ? await tx
+              .select({
+                binId: binContents.binId,
+                productId: binContents.productId,
+                actualQuantity: binContents.actualQuantity,
+              })
+              .from(binContents)
+              .where(
+                and(
+                  inArray(binContents.binId, sourceBinIds),
+                  inArray(binContents.productId, productIds),
+                ),
+              )
+          : [];
+
+      // In-memory balance tracker to validate availability and prevent intra-batch double-spending
+      const availableBalanceMap = new Map<string, number>();
+      for (const row of binContentRows) {
+        availableBalanceMap.set(
+          `${row.binId}:${row.productId}`,
+          toDecimal(row.actualQuantity || '0').toNumber(),
+        );
+      }
+
       for (const line of dto.lines) {
-        const [product] = await tx
-          .select({ baseUom: products.baseUom })
-          .from(products)
-          .where(eq(products.productId, line.productId))
-          .limit(1);
-
-        // Fetch source and target bin details
-        const [sourceBinInfo] = await tx
-          .select({
-            binId: bins.binId,
-            binNumber: bins.binNumber,
-            locationId: zones.locationId,
-            zoneCode: zones.code,
-          })
-          .from(bins)
-          .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-          .where(eq(bins.binId, line.sourceBinId))
-          .limit(1);
-
-        const [targetBinInfo] = await tx
-          .select({
-            binId: bins.binId,
-            locationId: zones.locationId,
-            zoneCode: zones.code,
-          })
-          .from(bins)
-          .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-          .where(eq(bins.binId, line.targetBinId))
-          .limit(1);
+        const product = productMap.get(line.productId);
+        const sourceBinInfo = binMap.get(line.sourceBinId);
+        const targetBinInfo = binMap.get(line.targetBinId);
 
         if (!sourceBinInfo) {
           throw new BadRequestException(
@@ -1324,7 +1217,7 @@ export class InventoryMovementService {
         }
 
         const requestedUom = line.uomCode || product?.baseUom || 'EA';
-        const qtyToMove = parseFloat(line.quantity);
+        const qtyToMove = toDecimal(line.quantity).toNumber();
         if (qtyToMove <= 0) {
           throw new BadRequestException(
             'Quantity to move must be greater than zero',
@@ -1337,24 +1230,17 @@ export class InventoryMovementService {
           tx,
         );
 
-        // Verify available quantity in source bin (in base units)
-        const [binContent] = await tx
-          .select({ quantity: binContents.actualQuantity })
-          .from(binContents)
-          .where(
-            and(
-              eq(binContents.binId, line.sourceBinId),
-              eq(binContents.productId, line.productId),
-            ),
-          )
-          .limit(1);
-
-        const availableQty = parseFloat(binContent?.quantity || '0');
-        if (availableQty < absoluteQty) {
+        // Verify available quantity in source bin (in base units) with intra-batch tracking
+        const binKey = `${line.sourceBinId}:${line.productId}`;
+        const currentAvailable = availableBalanceMap.get(binKey) ?? 0;
+        if (currentAvailable < absoluteQty) {
           throw new BadRequestException(
-            `Insufficient stock in source bin. Available: ${availableQty}`,
+            `Insufficient stock in source bin. Available: ${currentAvailable}`,
           );
         }
+
+        // Decrement in-memory tracked balance for this bin/product
+        availableBalanceMap.set(binKey, currentAvailable - absoluteQty);
 
         movementLines.push(
           {
@@ -1414,28 +1300,51 @@ export class InventoryMovementService {
       }[] = [];
       const reasonStr = dto.reason || 'N/A';
 
+      // 1. Batch pre-fetch products
+      const productIds = Array.from(new Set(dto.lines.map((l) => l.productId)));
+      const productRows =
+        productIds.length > 0
+          ? await tx
+              .select({
+                productId: products.productId,
+                baseUom: products.baseUom,
+              })
+              .from(products)
+              .where(inArray(products.productId, productIds))
+          : [];
+      const productMap = new Map(productRows.map((p) => [p.productId, p]));
+
+      // 2. Batch pre-fetch bin contents
+      const binIds = Array.from(new Set(dto.lines.map((l) => l.binId)));
+      const binContentRows =
+        binIds.length > 0 && productIds.length > 0
+          ? await tx
+              .select({
+                binId: binContents.binId,
+                productId: binContents.productId,
+                actualQuantity: binContents.actualQuantity,
+              })
+              .from(binContents)
+              .where(
+                and(
+                  inArray(binContents.binId, binIds),
+                  inArray(binContents.productId, productIds),
+                ),
+              )
+          : [];
+
+      const currentContentMap = new Map<string, number>();
+      for (const row of binContentRows) {
+        currentContentMap.set(
+          `${row.binId}:${row.productId}`,
+          toDecimal(row.actualQuantity || '0').toNumber(),
+        );
+      }
+
       for (const line of dto.lines) {
-        const [product] = await tx
-          .select({ baseUom: products.baseUom })
-          .from(products)
-          .where(eq(products.productId, line.productId))
-          .limit(1);
-
-        const currentContent = await tx
-          .select({ actualQuantity: binContents.actualQuantity })
-          .from(binContents)
-          .where(
-            and(
-              eq(binContents.binId, line.binId),
-              eq(binContents.productId, line.productId),
-            ),
-          )
-          .limit(1);
-
+        const product = productMap.get(line.productId);
         const currentQty =
-          currentContent.length > 0
-            ? Number(currentContent[0].actualQuantity)
-            : 0;
+          currentContentMap.get(`${line.binId}:${line.productId}`) ?? 0;
 
         const requestedUom = line.uomCode || product?.baseUom || 'EA';
         const absoluteNewQty =

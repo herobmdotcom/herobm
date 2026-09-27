@@ -224,6 +224,9 @@ export const productSuppliers = herobmCore.table(
     isPreferred: boolean('is_preferred').notNull(),
     minPurchaseQty: numeric('min_purchase_qty'),
     purchaseUnit: text('purchase_unit'),
+    purchaseUomId: uuid('purchase_uom_id').references(
+      (): any => productUoms.productUomId,
+    ),
     effectiveFrom: timestamp('effective_from', { withTimezone: true }),
     effectiveTo: timestamp('effective_to', { withTimezone: true }),
     stateCode: text('state_code').$type<SupplierState>().notNull(),

@@ -1,3 +1,4 @@
+import { Decimal } from 'decimal.js';
 import { Injectable, Inject, NotFoundException, Logger } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { DRIZZLE } from '../drizzle/drizzle.module';
@@ -21,7 +22,11 @@ import {
 } from './dto/bank-feeds.dto';
 import { parse } from 'csv-parse/sync';
 import { GlService } from './gl.service';
-import { JOURNAL_ENTRY_SOURCE_TYPE } from '@herobm/shared';
+import {
+  JOURNAL_ENTRY_SOURCE_TYPE,
+  parseLocalDate,
+  toInputDateFormat,
+} from '@herobm/shared';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 
@@ -339,20 +344,19 @@ export class BankFeedsService {
         if (amountIdx >= 0 && record[amountIdx]) {
           amountStr = record[amountIdx];
         } else if (debitIdx >= 0 && record[debitIdx]) {
-          amountStr = '-' + record[debitIdx];
+          amountStr = `-${record[debitIdx]}`;
         } else if (creditIdx >= 0 && record[creditIdx]) {
           amountStr = record[creditIdx];
         }
 
         if (!dateStr || !amountStr) continue;
 
-        const amount = parseFloat(amountStr.replace(/[^0-9.-]+/g, ''));
-        let parsedDate = new Date(dateStr);
-        if (isNaN(parsedDate.getTime())) {
-          parsedDate = new Date();
-        }
-
-        const dateIso = parsedDate.toISOString().split('T')[0];
+        const cleanAmountStr = amountStr.replace(/[^0-9.-]+/g, '');
+        if (!cleanAmountStr || cleanAmountStr === '-' || cleanAmountStr === '.')
+          continue;
+        const amount = new Decimal(cleanAmountStr).toNumber();
+        const parsedDate = parseLocalDate(dateStr) || new Date();
+        const dateIso = toInputDateFormat(parsedDate);
 
         const [inserted] = await tx
           .insert(bankStatementLines)
@@ -473,7 +477,7 @@ export class BankFeedsService {
         const desc = line.description || '';
         const lineType = line.type || '';
         const linePayee = line.payee || '';
-        const amount = parseFloat(line.amount);
+        const amount = new Decimal(line.amount).toNumber();
         const dateIso = line.date;
 
         let matchedRule = null;
@@ -540,10 +544,12 @@ export class BankFeedsService {
           if (!matchesDesc || !matchesType || !matchesPayee) continue;
 
           if (rule.amountMin !== null && rule.amountMin !== undefined) {
-            if (amount < parseFloat(String(rule.amountMin))) continue;
+            if (amount < new Decimal(String(rule.amountMin)).toNumber())
+              continue;
           }
           if (rule.amountMax !== null && rule.amountMax !== undefined) {
-            if (amount > parseFloat(String(rule.amountMax))) continue;
+            if (amount > new Decimal(String(rule.amountMax)).toNumber())
+              continue;
           }
 
           matchedRule = rule;

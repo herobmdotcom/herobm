@@ -65,8 +65,7 @@ export class GlModule implements OnModuleInit {
       ],
       resolveData: async (
         id: string,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Context user
-        user: any,
+        user: { role?: string; [key: string]: unknown },
         options?: Record<string, unknown>,
       ) => {
         return (await this.periodCloseAuditService.assembleData(
@@ -93,8 +92,7 @@ export class GlModule implements OnModuleInit {
       ],
       resolveData: async (
         id: string,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Context user
-        user: any,
+        user: { role?: string; [key: string]: unknown },
         options?: Record<string, unknown>,
       ) => {
         return (await this.cashFlowService.assembleData(
@@ -118,8 +116,7 @@ export class GlModule implements OnModuleInit {
       requiredPermissions: [{ resource: SystemResource.GL, action: 'read' }],
       resolveData: async (
         id: string,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Context user
-        user: any,
+        user: { role?: string; [key: string]: unknown },
         options?: Record<string, unknown>,
       ) => {
         return (await this.accountingCodesService.assembleData(

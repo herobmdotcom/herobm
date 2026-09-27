@@ -59,8 +59,7 @@ export class AccountingCodesService {
 
   async assembleData(
     _id?: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Boundary auth user
-    _user?: any,
+    _user?: { role?: string; username?: string; [key: string]: unknown },
     options?: Record<string, unknown>,
   ): Promise<AccountingCodesData> {
     const now = new Date();

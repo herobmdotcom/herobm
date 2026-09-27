@@ -43,9 +43,8 @@ export function FrontendEnrichmentDecorator({
       try {
         setLoadingConfig(true);
         const res = await api.appConfigControllerGet();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-        const config = res.data as any;
-        const mappings = config.enrichmentProviderMappings || {};
+        const config = res.data as { enrichmentProviderMappings?: Record<string, Record<string, string>> } | undefined;
+        const mappings = config?.enrichmentProviderMappings || {};
         const mappedProvider = mappings[field]?.[country];
         
         if (mountedRef.current) {
@@ -95,8 +94,7 @@ export function FrontendEnrichmentDecorator({
             field,
             country,
             query: value,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-          }) as any,
+          }),
           new Promise((resolve) => setTimeout(resolve, 300)) // Ensure spinner is visible for at least 300ms
         ]);
 
@@ -109,7 +107,8 @@ export function FrontendEnrichmentDecorator({
             onEnrich(responseData.data);
           } else {
             setStatus('error');
-            setErrorMsg(responseData?.data?.error || 'Validation failed');
+            const dataObj = responseData?.data as Record<string, unknown> | undefined;
+            setErrorMsg(typeof dataObj?.error === 'string' ? dataObj.error : 'Validation failed');
             lastEnrichedValue.current = value; // Don't retry same invalid value repeatedly
           }
         }

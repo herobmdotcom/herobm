@@ -5,6 +5,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
+import { Decimal } from 'decimal.js';
 import { eq, sql, and, or, desc, inArray } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -26,9 +27,11 @@ import {
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { CreateDebitNoteDto } from './dto';
+import { JournalLineDto } from '../gl/dto';
 import {
   PURCHASE_RETURN_STATE,
   PURCHASE_DEBIT_NOTE_STATE,
+  PurchaseDebitNoteState,
   PURCHASE_DEBIT_NOTE_TRANSITIONS,
   getValidStates,
   JOURNAL_ENTRY_SOURCE_TYPE,
@@ -62,10 +65,9 @@ export class PurchaseDebitNotesService {
       .orderBy(sql`${purchaseDebitNotes.debitNoteNumber} DESC`)
       .limit(1);
 
-    const seq =
-      result.length > 0
-        ? parseInt(result[0].debitNoteNumber.replace(prefix, ''), 10) + 1
-        : 1;
+    const lastNumStr =
+      result.length > 0 ? result[0].debitNoteNumber.replace(prefix, '') : '0';
+    const seq = new Decimal(lastNumStr).plus(1).toNumber();
 
     return `${prefix}${String(seq).padStart(4, '0')}`;
   }
@@ -323,9 +325,9 @@ export class PurchaseDebitNotesService {
 
     const vendorId = po.vendorId;
 
-    let totalAmount = 0;
+    let totalAmountDec = new Decimal(0);
     for (const line of dto.lines) {
-      totalAmount += parseFloat(line.amount);
+      totalAmountDec = totalAmountDec.plus(new Decimal(line.amount || '0'));
     }
 
     const debitNoteNumber = await this.generateDebitNoteNumber();
@@ -339,10 +341,10 @@ export class PurchaseDebitNotesService {
           returnId: dto.returnId,
           purchaseOrderId: ret.purchaseOrderId,
           vendorId: vendorId,
-          totalAmount: totalAmount.toFixed(2),
+          totalAmount: totalAmountDec.toFixed(2),
           taxAmount: dto.taxAmount ?? '0',
           feeAmount: dto.feeAmount ?? '0',
-          outstandingAmount: totalAmount.toFixed(2),
+          outstandingAmount: totalAmountDec.toFixed(2),
           currencyCode: po.currencyCode,
           stateCode: PURCHASE_DEBIT_NOTE_STATE.DRAFT,
           notes: dto.notes,
@@ -459,11 +461,12 @@ export class PurchaseDebitNotesService {
 
     if (!apAcct) throw new BadRequestException('AP account not found');
 
-    let totalDebitAmount = 0;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GL line payload
-    const glLines: any[] = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Debit note lines
-    const dnLineValues: any[] = [];
+    let totalDebitAmountDec = new Decimal(0);
+    const glLines: JournalLineDto[] = [];
+    const dnLineValues: Omit<
+      typeof purchaseDebitNoteLines.$inferInsert,
+      'debitNoteId'
+    >[] = [];
 
     const accountIds = [
       ...new Set(
@@ -484,16 +487,16 @@ export class PurchaseDebitNotesService {
     const accountMap = new Map(accountRows.map((a) => [a.glAccountId, a]));
 
     for (const line of dto.lines) {
-      const amount = parseFloat(line.amount);
-      totalDebitAmount += amount;
+      const amountDec = new Decimal(line.amount);
+      totalDebitAmountDec = totalDebitAmountDec.plus(amountDec);
 
       dnLineValues.push({
         description: line.description,
-        amount: amount.toFixed(2),
+        amount: amountDec.toFixed(2),
         accountId: line.accountId,
         taxCategoryId: line.taxCategoryId ?? null,
         quantityInvoiced: line.quantityInvoiced || '1',
-        pricePerUnit: line.pricePerUnit || amount.toFixed(2),
+        pricePerUnit: line.pricePerUnit || amountDec.toFixed(2),
         taxAmount: line.taxAmount ?? '0',
       });
 
@@ -505,7 +508,7 @@ export class PurchaseDebitNotesService {
         glLines.push({
           accountCode: acct.accountCode,
           debit: 0,
-          credit: amount,
+          credit: amountDec.toNumber(),
           memo: line.description || 'Debit note line',
           costCenterId: suppInfo.costCenterId || undefined,
           activityId: suppInfo.activityId || undefined,
@@ -515,7 +518,7 @@ export class PurchaseDebitNotesService {
 
     glLines.push({
       accountCode: apAcct.accountCode,
-      debit: totalDebitAmount,
+      debit: totalDebitAmountDec.toNumber(),
       credit: 0,
       memo: dto.notes ?? 'Ad-hoc debit note',
       partyType: 'supplier',
@@ -533,10 +536,10 @@ export class PurchaseDebitNotesService {
           debitNoteNumber,
           supplierReferenceNumber: dto.supplierReferenceNumber,
           vendorId,
-          totalAmount: totalDebitAmount.toFixed(2),
+          totalAmount: totalDebitAmountDec.toFixed(2),
           taxAmount: dto.taxAmount ?? '0',
           feeAmount: dto.feeAmount ?? '0',
-          outstandingAmount: totalDebitAmount.toFixed(2),
+          outstandingAmount: totalDebitAmountDec.toFixed(2),
           currencyCode,
           stateCode: PURCHASE_DEBIT_NOTE_STATE.POSTED,
           notes: dto.notes ?? 'Ad-hoc debit note',
@@ -557,8 +560,7 @@ export class PurchaseDebitNotesService {
       }
 
       await this.glService.postJournalEntry(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GL journal lines
-        glLines as any,
+        glLines,
         {
           sourceType: JOURNAL_ENTRY_SOURCE_TYPE.PURCHASE_DEBIT_NOTE,
           sourceId: dn.debitNoteId,
@@ -578,7 +580,7 @@ export class PurchaseDebitNotesService {
           debitNoteNumber,
           supplierId: vendorId,
           supplierName: suppInfo.name,
-          totalDebit: totalDebitAmount.toFixed(2),
+          totalDebit: totalDebitAmountDec.toFixed(2),
         },
         actor,
       });
@@ -610,7 +612,7 @@ export class PurchaseDebitNotesService {
       : [null];
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
-      const updated = await this.changeDebitNoteStateInternal(
+      const updated = await this.changeDebitNoteInternalState(
         debitNoteId,
         PURCHASE_DEBIT_NOTE_STATE.POSTED,
         actor,
@@ -678,10 +680,11 @@ export class PurchaseDebitNotesService {
       );
 
       if (apCode && clearingAccountCode) {
+        const dnTotalDec = new Decimal(dn.totalAmount);
         const glLines = [
           {
             accountCode: apCode,
-            debit: Number(dn.totalAmount),
+            debit: dnTotalDec.toNumber(),
             credit: 0,
             memo: `Debit Note ${dn.debitNoteNumber}`,
             partyType: 'supplier',
@@ -692,7 +695,7 @@ export class PurchaseDebitNotesService {
           {
             accountCode: clearingAccountCode,
             debit: 0,
-            credit: Number(dn.totalAmount),
+            credit: dnTotalDec.toNumber(),
             memo: `Debit Note ${dn.debitNoteNumber}`,
             partyType: 'supplier',
             partyId: po?.vendorId || dn.vendorId || undefined,
@@ -770,10 +773,10 @@ export class PurchaseDebitNotesService {
     if (newState === PURCHASE_DEBIT_NOTE_STATE.POSTED) {
       return this.postDebitNote(debitNoteId, actor);
     }
-    return this.changeDebitNoteStateInternal(debitNoteId, newState, actor, tx);
+    return this.changeDebitNoteInternalState(debitNoteId, newState, actor, tx);
   }
 
-  private async changeDebitNoteStateInternal(
+  private async changeDebitNoteInternalState(
     debitNoteId: string,
     newState: string,
     actor: string,
@@ -828,20 +831,19 @@ export class PurchaseDebitNotesService {
               eq(glJournalLines.journalEntryId, originalEntry.journalEntryId),
             );
 
-          const reversedLines = originalLines.map((line) => ({
+          const reversedLines: JournalLineDto[] = originalLines.map((line) => ({
             accountId: line.glAccountId,
-            debit: parseFloat(line.credit),
-            credit: parseFloat(line.debit),
+            debit: new Decimal(line.credit).toNumber(),
+            credit: new Decimal(line.debit).toNumber(),
             memo: `Cancellation Reversal: ${line.memo}`,
-            costCenterId: line.costCenterId,
-            activityId: line.activityId,
-            partyType: line.partyType,
+            costCenterId: line.costCenterId ?? undefined,
+            activityId: line.activityId ?? undefined,
+            partyType: (line.partyType as 'customer' | 'supplier') || undefined,
             partyId: line.partyId,
           }));
 
           await this.glService.postJournalEntry(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-            reversedLines as any,
+            reversedLines,
             {
               sourceId: debitNoteId,
               sourceType: JOURNAL_ENTRY_SOURCE_TYPE.PURCHASE_DEBIT_NOTE,
@@ -857,8 +859,7 @@ export class PurchaseDebitNotesService {
       const [updated] = await db
         .update(purchaseDebitNotes)
         .set({
-          // eslint-disable-next-line no-restricted-syntax, @typescript-eslint/no-explicit-any -- Dynamic state transition from state machine logic bypasses strict Drizzle schema enums
-          stateCode: newState as any,
+          stateCode: newState as PurchaseDebitNoteState,
           modifiedOn: new Date(),
         })
         .where(eq(purchaseDebitNotes.debitNoteId, debitNoteId))

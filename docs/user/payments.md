@@ -29,6 +29,7 @@ related:
   - "balances"
   - "sales-invoices"
   - "supplier-invoices"
+  - "currency-and-precision"
   - "reconciliations"
 ---
 
@@ -49,9 +50,11 @@ flowchart LR
     C -- Unallocated --> F[Hold as Credit on Customer Account]
 ```
 
-### 1. Allocation Rules
+### 1. Allocation Rules & Exact-Cent Proration
 - When recording a payment, you can allocate funds across one or more open invoices.
+- **Lump-Sum Proration (Hare-Niemeyer Algorithm)**: When distributing a lump-sum deposit, settlement discount, or prepayment proportionally across multiple open invoices, HeroBM utilizes the **Hare-Niemeyer (Largest Remainder) algorithm**. This guarantees that sub-penny fractions are distributed deterministically so that the sum of all line allocations exactly equals 100.00% of the total payment amount without leaving orphaned fractional pennies.
 - Any unallocated funds remain on the customer's account as unapplied credit, ready to be applied against future invoices.
+- See the [Currency, Pricing & Rounding Rules](currency-and-precision) guide for complete mathematical invariants.
 
 ---
 

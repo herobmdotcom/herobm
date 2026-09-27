@@ -118,9 +118,12 @@ export class StocktakesQueryService {
     });
 
     const data = rows.map((r) => {
-      const totalL = r.totalLines || 0;
-      const countedL = r.countedLines || 0;
-      const progress = totalL > 0 ? Math.round((countedL / totalL) * 100) : 0;
+      const allLinesCount = r.totalLines || 0;
+      const completedLinesCount = r.countedLines || 0;
+      const progress =
+        allLinesCount > 0
+          ? Math.round((completedLinesCount / allLinesCount) * 100)
+          : 0;
       const isBlindActive =
         r.stocktake.isBlindCount &&
         (r.stocktake.stateCode === STOCKTAKE_STATE.OPEN ||
@@ -150,8 +153,8 @@ export class StocktakesQueryService {
         submittedOn: r.stocktake.submittedOn,
         cancelledBy: r.stocktake.cancelledBy,
         cancelledAt: r.stocktake.cancelledAt,
-        totalLines: totalL,
-        countedLines: countedL,
+        totalLines: allLinesCount,
+        countedLines: completedLinesCount,
         discrepancyLines: isBlindActive ? null : r.discrepancyLines || 0,
         progressPercentage: progress,
       };
@@ -191,9 +194,12 @@ export class StocktakesQueryService {
       throw new NotFoundException(`Stocktake ${id} not found`);
     }
 
-    const totalL = row.totalLines || 0;
-    const countedL = row.countedLines || 0;
-    const progress = totalL > 0 ? Math.round((countedL / totalL) * 100) : 0;
+    const allLinesCount = row.totalLines || 0;
+    const completedLinesCount = row.countedLines || 0;
+    const progress =
+      allLinesCount > 0
+        ? Math.round((completedLinesCount / allLinesCount) * 100)
+        : 0;
     const isBlindActive =
       row.stocktake.isBlindCount &&
       (row.stocktake.stateCode === STOCKTAKE_STATE.OPEN ||
@@ -223,8 +229,8 @@ export class StocktakesQueryService {
       submittedOn: row.stocktake.submittedOn,
       cancelledBy: row.stocktake.cancelledBy,
       cancelledAt: row.stocktake.cancelledAt,
-      totalLines: totalL,
-      countedLines: countedL,
+      totalLines: allLinesCount,
+      countedLines: completedLinesCount,
       discrepancyLines: isBlindActive ? null : row.discrepancyLines || 0,
       progressPercentage: progress,
     };

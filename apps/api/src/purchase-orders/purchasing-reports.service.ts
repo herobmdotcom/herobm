@@ -11,7 +11,8 @@ import {
   products,
   productGroups,
 } from '@herobm/db-schema';
-import { sql, eq, and, gte, lte, asc } from 'drizzle-orm';
+import { sql, eq, and, gte, lte, asc, SQL } from 'drizzle-orm';
+import type { PgColumn } from 'drizzle-orm/pg-core';
 import {
   getAggregationPeriod,
   getAggregationSql,
@@ -48,8 +49,7 @@ export class PurchasingReportsService implements OnModuleInit {
   private applyDateFilters(
     fromDate?: string,
     toDate?: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    dateField: any = purchaseOrders.createdOn,
+    dateField: PgColumn | SQL = purchaseOrders.createdOn,
   ) {
     const conditions = [];
     if (fromDate) conditions.push(sql`${dateField} >= ${fromDate}::timestamp`);
@@ -68,14 +68,12 @@ export class PurchasingReportsService implements OnModuleInit {
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const drillDown = filters.drillDown as string | undefined;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    const selectCols: any = {
+    const selectCols: Record<string, SQL | PgColumn> = {
       supplierName: sql<string>`coalesce(${organizations.name}, ${suppliers.vendorNumber}, 'Unknown')`,
       orderCount: sql<number>`count(distinct ${purchaseOrders.purchaseOrderId})::int`,
       totalSpend: sql<number>`sum(${purchaseOrderLineItems.totalAmount})::numeric`,
     };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    const groupCols: any[] = [
+    const groupCols: (SQL | PgColumn)[] = [
       suppliers.vendorId,
       organizations.name,
       suppliers.vendorNumber,
@@ -130,15 +128,16 @@ export class PurchasingReportsService implements OnModuleInit {
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const drillDown = filters.drillDown as string | undefined;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    const selectCols: any = {
+    const selectCols: Record<string, SQL | PgColumn> = {
       productNumber: products.productNumber,
       productName: products.name,
       qtyPurchased: sql<number>`sum(${purchaseOrderLineItems.quantity})::numeric`,
       totalSpend: sql<number>`sum(${purchaseOrderLineItems.totalAmount})::numeric`,
     };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    const groupCols: any[] = [products.productNumber, products.name];
+    const groupCols: (SQL | PgColumn)[] = [
+      products.productNumber,
+      products.name,
+    ];
 
     if (drillDown === 'product-group') {
       selectCols.productGroupName = sql<string>`coalesce(${productGroups.name}, 'Unknown')`;
@@ -152,8 +151,7 @@ export class PurchasingReportsService implements OnModuleInit {
       );
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle query builder typing
-    let qb: any = this.db
+    let qb = this.db
       .select(selectCols)
       .from(purchaseOrderLineItems)
       .innerJoin(
@@ -202,14 +200,12 @@ export class PurchasingReportsService implements OnModuleInit {
     const period = getAggregationPeriod(filters);
     const periodSql = getAggregationSql(purchaseOrders.createdOn, period);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    const selectCols: any = {
+    const selectCols: Record<string, SQL | PgColumn> = {
       period: periodSql,
       orderCount: sql<number>`count(distinct ${purchaseOrders.purchaseOrderId})::int`,
       totalSpend: sql<number>`sum(${purchaseOrderLineItems.totalAmount})::numeric`,
     };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    const groupCols: any[] = [periodSql];
+    const groupCols: (SQL | PgColumn)[] = [periodSql];
 
     if (drillDown === 'product-group') {
       selectCols.productGroupName = sql<string>`coalesce(${productGroups.name}, 'Unknown')`;
@@ -223,8 +219,7 @@ export class PurchasingReportsService implements OnModuleInit {
       );
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle query builder typing
-    let qb: any = this.db
+    let qb = this.db
       .select(selectCols)
       .from(purchaseOrderLineItems)
       .innerJoin(
@@ -275,15 +270,13 @@ export class PurchasingReportsService implements OnModuleInit {
     const whereClause = and(...conditions);
     const drillDown = filters.drillDown as string | undefined;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    const selectCols: any = {
+    const selectCols: Record<string, SQL | PgColumn> = {
       poNumber: purchaseOrders.orderNumber,
       supplierName: sql<string>`coalesce(${organizations.name}, ${suppliers.vendorNumber}, 'Unknown')`,
       expectedDate: sql<string>`to_char(${expectedDateField}, 'YYYY-MM-DD')`,
       pendingValue: sql<number>`sum((${purchaseOrderLineItems.quantity} - COALESCE(${purchaseOrderLineItems.quantityReceived}, 0)) * ${purchaseOrderLineItems.pricePerUnit})::numeric`,
     };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    const groupCols: any[] = [
+    const groupCols: (SQL | PgColumn)[] = [
       purchaseOrders.orderNumber,
       suppliers.vendorId,
       organizations.name,

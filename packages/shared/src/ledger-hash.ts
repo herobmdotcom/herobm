@@ -1,4 +1,5 @@
 import * as crypto from 'crypto';
+import Decimal from 'decimal.js';
 
 export const GENESIS_HASH =
   '0000000000000000000000000000000000000000000000000000000000000000';
@@ -33,8 +34,8 @@ export function computeCanonicalPayloadHash(
   const sortedLines = [...payload.lines]
     .map((l) => ({
       glAccountId: l.glAccountId,
-      debit: Number(l.debit || 0).toFixed(2),
-      credit: Number(l.credit || 0).toFixed(2),
+      debit: new Decimal(l.debit || 0).toFixed(2),
+      credit: new Decimal(l.credit || 0).toFixed(2),
       costCenterId: l.costCenterId || null,
       activityId: l.activityId || null,
       partyType: l.partyType || null,
@@ -53,7 +54,7 @@ export function computeCanonicalPayloadHash(
   const canonicalObj = {
     sequenceNumber: payload.sequenceNumber,
     entryNumber: payload.entryNumber,
-    entryDate: payload.entryDate,
+    entryDate: (payload.entryDate || '').split('T')[0],
     sourceType: payload.sourceType,
     sourceId: payload.sourceId || null,
     memo: payload.memo || null,

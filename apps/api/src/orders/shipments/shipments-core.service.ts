@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, sql, desc, and, gte, or, inArray } from 'drizzle-orm';
+import { eq, sql, desc, and, gte, or, inArray, type SQL } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { DRIZZLE } from '../../drizzle/drizzle.module';
 import type { DrizzleDB } from '../../drizzle/drizzle.module';
@@ -400,8 +400,7 @@ export class ShipmentsCoreService {
     limit?: number;
   }) {
     const { days = 30, salesOrderId, limit = 100 } = query;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    const conditions: any[] = [];
+    const conditions: SQL[] = [];
 
     if (days > 0) {
       const cutoffDate = new Date();

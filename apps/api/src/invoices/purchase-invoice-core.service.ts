@@ -1,3 +1,4 @@
+import { Decimal } from 'decimal.js';
 import {
   Injectable,
   Inject,
@@ -92,9 +93,9 @@ export class PurchaseInvoiceCoreService {
       .from(purchaseInvoiceLines)
       .where(eq(purchaseInvoiceLines.invoiceId, invoiceId));
 
-    let lineTotal = 0;
+    let lineTotalDec = new Decimal(0);
     for (const line of lines) {
-      lineTotal += parseFloat(line.amount || '0');
+      lineTotalDec = lineTotalDec.add(new Decimal(line.amount || '0'));
     }
 
     const [invoice] = await tx
@@ -102,15 +103,15 @@ export class PurchaseInvoiceCoreService {
       .from(purchaseInvoices)
       .where(eq(purchaseInvoices.invoiceId, invoiceId));
 
-    const taxAmt = parseFloat(invoice.taxAmount || '0');
-    const newTotal = lineTotal + taxAmt;
+    const taxAmtDec = new Decimal(invoice.taxAmount || '0');
+    const newTotalDec = lineTotalDec.add(taxAmtDec);
 
     // @herobm-skip-audit
     await tx
       .update(purchaseInvoices)
       .set({
-        totalAmount: newTotal.toFixed(2),
-        outstandingAmount: newTotal.toFixed(2),
+        totalAmount: newTotalDec.toFixed(2),
+        outstandingAmount: newTotalDec.toFixed(2),
       })
       .where(eq(purchaseInvoices.invoiceId, invoiceId));
   }
@@ -171,8 +172,8 @@ export class PurchaseInvoiceCoreService {
 
           const reversedLines = originalLines.map((line) => ({
             accountId: line.glAccountId,
-            debit: parseFloat(line.credit),
-            credit: parseFloat(line.debit),
+            debit: new Decimal(line.credit).toNumber(),
+            credit: new Decimal(line.debit).toNumber(),
             memo: `Cancellation Reversal: ${line.memo}`,
             costCenterId: line.costCenterId,
             activityId: line.activityId,

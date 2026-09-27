@@ -13,6 +13,8 @@ import {
   purchaseOrderLineItems,
   locations,
   products,
+  productSuppliers,
+  productUoms,
   uomDictionary,
   taxCategories,
   suppliers,
@@ -333,6 +335,62 @@ describe('PurchaseOrdersService', () => {
         .from(purchaseOrderLineItems)
         .where(eq(purchaseOrderLineItems.purchaseOrderId, poId));
       expect(lines).toHaveLength(1);
+    });
+
+    it('should default unitOfMeasure to supplier purchaseUomCode when supplier has purchaseUomId configured', async () => {
+      const poId = '00000000-0000-4000-8000-000000000104';
+      const uomId = '00000000-0000-4000-8000-000000000099';
+      await pg.db
+        .insert(uomDictionary)
+        .values({ uomCode: 'BOX', description: 'Box of 10', category: 'goods' })
+        .onConflictDoNothing();
+
+      await pg.db.insert(productUoms).values({
+        productUomId: uomId,
+        productId: PROD_ID,
+        uomCode: 'BOX',
+        ratio: '10',
+      });
+
+      await pg.db.insert(productSuppliers).values({
+        productSupplierId: '00000000-0000-4000-8000-000000000088',
+        productId: PROD_ID,
+        vendorId: VENDOR_ID,
+        purchaseUomId: uomId,
+        purchaseUnit: 'BOX',
+        costPrice: '45.00',
+        minPurchaseQty: '10',
+        isPreferred: true,
+        stateCode: SUPPLIER_STATE.ACTIVE,
+        source: 'app',
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(purchaseOrders).values({
+        purchaseOrderId: poId,
+        orderNumber: 'PO-UOM-' + Math.random(),
+        vendorId: VENDOR_ID,
+        deliveryLocationId: LOCATION_ID,
+        currencyCode: 'EUR',
+        stateCode: PURCHASE_ORDER_STATE.DRAFT,
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+        createdBy: 'system',
+      });
+
+      await service.addLine(poId, {
+        productId: PROD_ID,
+        quantity: '20',
+        pricePerUnit: '45',
+      });
+
+      const [line] = await pg.db
+        .select()
+        .from(purchaseOrderLineItems)
+        .where(eq(purchaseOrderLineItems.purchaseOrderId, poId));
+
+      expect(line).toBeDefined();
+      expect(line.unitOfMeasure).toBe('BOX');
     });
 
     it('should throw BadRequestException if adding an inactive product', async () => {

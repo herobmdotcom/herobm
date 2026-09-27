@@ -10,6 +10,7 @@ import {
   normalizeUomCode,
   LineType,
 } from '@herobm/shared';
+import Decimal from 'decimal.js';
 import {
   Injectable,
   Inject,
@@ -114,11 +115,9 @@ export class OrderLinesService {
     const order = await this.ordersQueryService.findOrder(orderId);
 
     if (
-      [
-        SALES_ORDER_STATE.INVOICED,
-        SALES_ORDER_STATE.SHIPPED,
-        SALES_ORDER_STATE.CANCELLED,
-      ].includes(order.stateCode as any) // eslint-disable-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
+      order.stateCode === SALES_ORDER_STATE.INVOICED ||
+      order.stateCode === SALES_ORDER_STATE.SHIPPED ||
+      order.stateCode === SALES_ORDER_STATE.CANCELLED
     ) {
       throw new BadRequestException(
         `Cannot add lines to order in state '${order.stateCode}'`,
@@ -192,7 +191,7 @@ export class OrderLinesService {
       let currentLineNumber = (maxLine[0]?.max ?? 0) + 1;
 
       let isKit = false;
-      const parentPrice = parseFloat(dto.pricePerUnit || '0');
+      const parentPrice = new Decimal(dto.pricePerUnit || '0');
       if (dto.productId) {
         const prodInfo = await this.coreService.lookupProduct(
           dto.productId,
@@ -232,7 +231,9 @@ export class OrderLinesService {
         };
         insertValues.push(parentLine);
       } else if (isKit) {
-        const parentPriceToUse = parentPrice > 0 ? parentPrice.toString() : '0';
+        const parentPriceToUse = parentPrice.gt(0)
+          ? parentPrice.toString()
+          : '0';
         const parentComputed = this.coreService.computeLineAmount(
           dto.quantity,
           parentPriceToUse,
@@ -281,7 +282,7 @@ export class OrderLinesService {
           );
 
           let childPrice = '0';
-          if (parentPrice <= 0) {
+          if (parentPrice.lte(0)) {
             childPrice = comp.listPrice || '0';
           }
 
@@ -396,9 +397,8 @@ export class OrderLinesService {
     const order = await this.ordersQueryService.findOrder(orderId);
 
     if (
-      [SALES_ORDER_STATE.INVOICED, SALES_ORDER_STATE.CANCELLED].includes(
-        order.stateCode as any, // eslint-disable-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
-      )
+      order.stateCode === SALES_ORDER_STATE.INVOICED ||
+      order.stateCode === SALES_ORDER_STATE.CANCELLED
     ) {
       throw new BadRequestException(
         `Cannot add post-confirmation lines to order in state '${order.stateCode}'`,
@@ -464,7 +464,7 @@ export class OrderLinesService {
     let currentLineNumber = (maxLine[0]?.max ?? 0) + 1;
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       let isKit = false;
-      const parentPrice = parseFloat(dto.pricePerUnit || '0');
+      const parentPrice = new Decimal(dto.pricePerUnit || '0');
       if (dto.productId) {
         const prodInfo = await this.coreService.lookupProduct(
           dto.productId,
@@ -505,7 +505,9 @@ export class OrderLinesService {
         };
         insertValues.push(parentLine);
       } else if (isKit) {
-        const parentPriceToUse = parentPrice > 0 ? parentPrice.toString() : '0';
+        const parentPriceToUse = parentPrice.gt(0)
+          ? parentPrice.toString()
+          : '0';
         const parentComputed = this.coreService.computeLineAmount(
           dto.quantity,
           parentPriceToUse,
@@ -556,7 +558,7 @@ export class OrderLinesService {
           );
 
           let childPrice = '0';
-          if (parentPrice <= 0) {
+          if (parentPrice.lte(0)) {
             childPrice = comp.listPrice || '0';
           }
 
@@ -682,20 +684,18 @@ export class OrderLinesService {
       orderId,
     );
 
-    if (
-      [
-        SALES_ORDER_STATE.INVOICED,
-        SALES_ORDER_STATE.SHIPPED,
-        SALES_ORDER_STATE.CANCELLED,
-      ].includes(order.stateCode as any) // eslint-disable-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
-    ) {
+    const isTerminalOrShipped =
+      order.stateCode === SALES_ORDER_STATE.INVOICED ||
+      order.stateCode === SALES_ORDER_STATE.SHIPPED ||
+      order.stateCode === SALES_ORDER_STATE.CANCELLED;
+
+    if (isTerminalOrShipped) {
       const isPostConfLine = existingLine.isPostConfirmation === true;
-      if (
-        !isPostConfLine ||
-        [SALES_ORDER_STATE.INVOICED, SALES_ORDER_STATE.CANCELLED].includes(
-          order.stateCode as any, // eslint-disable-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
-        )
-      ) {
+      const isTerminal =
+        order.stateCode === SALES_ORDER_STATE.INVOICED ||
+        order.stateCode === SALES_ORDER_STATE.CANCELLED;
+
+      if (!isPostConfLine || isTerminal) {
         throw new BadRequestException(
           `Cannot update normal lines on order in state '${order.stateCode}'`,
         );
@@ -768,25 +768,27 @@ export class OrderLinesService {
         .where(eq(salesOrderLineItems.parentLineId, lineId));
 
       if (childLines.length > 0) {
-        const oldParentQty = parseFloat(existingLine.quantity);
-        const newParentQty = parseFloat(quantity);
-        const qtyRatio = oldParentQty !== 0 ? newParentQty / oldParentQty : 0;
+        const oldParentQty = new Decimal(existingLine.quantity || '0');
+        const newParentQty = new Decimal(quantity || '0');
+        const qtyRatio = !oldParentQty.isZero()
+          ? newParentQty.div(oldParentQty)
+          : new Decimal(0);
 
-        const newParentPrice = parseFloat(pricePerUnit);
+        const newParentPrice = new Decimal(pricePerUnit || '0');
 
         for (const child of childLines) {
-          const newChildQty = parseFloat(child.quantity) * qtyRatio;
-          let newChildPrice = parseFloat(child.pricePerUnit);
+          const newChildQty = new Decimal(child.quantity || '0').mul(qtyRatio);
+          let newChildPrice = new Decimal(child.pricePerUnit || '0');
 
           if (dto.pricePerUnit !== undefined) {
-            if (newParentPrice > 0) {
-              newChildPrice = 0;
+            if (newParentPrice.gt(0)) {
+              newChildPrice = new Decimal(0);
             } else {
               const childProd = await this.coreService.lookupProduct(
                 child.productId!,
                 tx,
               );
-              newChildPrice = parseFloat(childProd.listPrice || '0');
+              newChildPrice = new Decimal(childProd.listPrice || '0');
             }
           }
 
@@ -857,20 +859,18 @@ export class OrderLinesService {
       orderId,
     );
 
-    if (
-      [
-        SALES_ORDER_STATE.INVOICED,
-        SALES_ORDER_STATE.SHIPPED,
-        SALES_ORDER_STATE.CANCELLED,
-      ].includes(order.stateCode as any) // eslint-disable-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
-    ) {
+    const isTerminalOrShipped =
+      order.stateCode === SALES_ORDER_STATE.INVOICED ||
+      order.stateCode === SALES_ORDER_STATE.SHIPPED ||
+      order.stateCode === SALES_ORDER_STATE.CANCELLED;
+
+    if (isTerminalOrShipped) {
       const isPostConfLine = existingLine.isPostConfirmation === true;
-      if (
-        !isPostConfLine ||
-        [SALES_ORDER_STATE.INVOICED, SALES_ORDER_STATE.CANCELLED].includes(
-          order.stateCode as any, // eslint-disable-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
-        )
-      ) {
+      const isTerminal =
+        order.stateCode === SALES_ORDER_STATE.INVOICED ||
+        order.stateCode === SALES_ORDER_STATE.CANCELLED;
+
+      if (!isPostConfLine || isTerminal) {
         throw new BadRequestException(
           `Cannot remove normal lines from order in state '${order.stateCode}'`,
         );

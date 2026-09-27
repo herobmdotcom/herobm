@@ -1,3 +1,6 @@
+import { Decimal } from 'decimal.js';
+import { parseLocalDate } from './date';
+
 export interface CalculateEarlyPaymentDiscountInput {
   invoiceDate: Date | string;
   outstandingAmount: string | number;
@@ -26,7 +29,7 @@ export function calculateEarlyPaymentDiscount(
   input: CalculateEarlyPaymentDiscountInput,
 ): EarlyPaymentDiscountResult {
   const discountStr = String(input.earlyPaymentDiscount || '0');
-  const discountPercentage = parseFloat(discountStr);
+  const discountPercentage = new Decimal(discountStr || 0).toNumber();
 
   if (
     discountPercentage <= 0 ||
@@ -41,7 +44,6 @@ export function calculateEarlyPaymentDiscount(
     };
   }
 
-
   if (isNaN(discountPercentage) || discountPercentage <= 0) {
     return {
       isEligible: false,
@@ -51,10 +53,8 @@ export function calculateEarlyPaymentDiscount(
     };
   }
 
-  const invoiceDate = typeof input.invoiceDate === 'string' ? new Date(input.invoiceDate) : input.invoiceDate;
-  const currentDate = input.currentDate 
-    ? (typeof input.currentDate === 'string' ? new Date(input.currentDate) : input.currentDate)
-    : new Date();
+  const invoiceDate = parseLocalDate(input.invoiceDate) || new Date();
+  const currentDate = parseLocalDate(input.currentDate) || new Date();
 
   // Strip time components for accurate day comparison
   const invoiceDay = new Date(invoiceDate.getFullYear(), invoiceDate.getMonth(), invoiceDate.getDate());
@@ -65,18 +65,14 @@ export function calculateEarlyPaymentDiscount(
 
   const isEligible = currentDay.getTime() <= eligibleUntil.getTime();
 
-  const outstanding = typeof input.outstandingAmount === 'string'
-    ? parseFloat(input.outstandingAmount)
-    : input.outstandingAmount;
-
-  // Discount applies to the outstanding balance
-  // E.g., $100.00 outstanding with 2% discount = $2.00
-  const discountAmount = isNaN(outstanding) ? 0 : (outstanding * discountPercentage) / 100;
+  const outstandingDec = new Decimal(input.outstandingAmount || 0);
+  const discountAmountDec = outstandingDec.isNaN()
+    ? new Decimal(0)
+    : outstandingDec.mul(discountPercentage).div(100).toDecimalPlaces(2);
 
   return {
     isEligible,
-    // Round to 2 decimal places to prevent floating point issues
-    discountAmount: Math.round(discountAmount * 100) / 100,
+    discountAmount: discountAmountDec.toNumber(),
     discountPercentage,
     eligibleUntil,
   };

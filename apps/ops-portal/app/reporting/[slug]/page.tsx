@@ -1,4 +1,3 @@
-/* eslint-disable -- Highly dynamic reporting engine rendering requires bypassing strict linting */
 'use client';
 
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
@@ -14,15 +13,66 @@ import {
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import EntityHeader from '@/components/shared/EntityHeader';
 import { AgGridReact } from 'ag-grid-react';
-import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
+import { ColDef, AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
 import { ReportChartViewer } from '@/components/reporting/ReportChartViewer';
-import { DateRangeFilter } from '@/components/reporting/DateRangeFilter';
+import { DateRangeFilter, DateRangeConfig } from '@/components/reporting/DateRangeFilter';
 import { Button } from '@/components/shared/Button';
 import { toast } from 'react-hot-toast';
 import { getErrorMessage } from '@herobm/shared';
 import { reportError } from '@/lib/api';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
+
+interface ReportFilterConfig {
+  name: string;
+  label: string;
+  type: string;
+}
+
+interface ReportDrillDownOption {
+  id: string;
+  label: string;
+  field: string;
+  [key: string]: unknown;
+}
+
+interface ReportChartConfig {
+  type: 'bar' | 'line';
+  xAxisField: string;
+  yAxisField: string;
+  seriesName: string;
+}
+
+interface ReportUiConfig {
+  columns?: ColDef[];
+  filters?: ReportFilterConfig[];
+  drillDownOptions?: ReportDrillDownOption[];
+  chartConfig?: ReportChartConfig;
+}
+
+interface ReportSavedView {
+  id: string;
+  name: string;
+  filters?: Record<string, unknown>;
+  viewMode?: 'grid' | 'chart';
+}
+
+interface DashboardPinnedReport {
+  slug: string;
+  configId: string;
+  name: string;
+}
+
+interface AppDashboardConfig {
+  pinnedReports?: DashboardPinnedReport[];
+  [key: string]: unknown;
+}
+
+interface AppUserSettings {
+  reportConfigs?: Record<string, ReportSavedView[]>;
+  dashboardConfig?: AppDashboardConfig;
+  preferences?: Record<string, unknown>;
+}
 
 export default function ReportViewer() {
   const router = useRouter();
@@ -35,21 +85,19 @@ export default function ReportViewer() {
 
   const [reports, setReports] = useState<BusinessReportResponseDto[]>([]);
   const [reportData, setReportData] = useState<Record<string, unknown>[] | null>(null);
-   
-  const [filteredChartData, setFilteredChartData] = useState<any[] | null>(null);
+  const [filteredChartData, setFilteredChartData] = useState<Record<string, unknown>[] | null>(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'chart'>('grid');
 
-   
-  const [userSettings, setUserSettings] = useState<Record<string, any> | null>(null);
+  const [userSettings, setUserSettings] = useState<AppUserSettings | null>(null);
   const [isSavingView, setIsSavingView] = useState(false);
   const [newViewName, setNewViewName] = useState('');
   const [pinToDashboard, setPinToDashboard] = useState(false);
-  const loadedConfig = configId && userSettings ? (userSettings.reportConfigs?.[slug] || []).find((c: { id: string }) => c.id === configId) : null;
+  const loadedConfig = configId && userSettings ? (userSettings.reportConfigs?.[slug] || []).find((c) => c.id === configId) : null;
 
   useEffect(() => {
     userSettingsControllerGetSettings()
-      .then((res) => setUserSettings(res.data))
+      .then((res) => setUserSettings(res.data as unknown as AppUserSettings))
       .catch((err) => toast.error('Failed to load user settings: ' + getErrorMessage(err)));
   }, []);
 
@@ -73,8 +121,7 @@ export default function ReportViewer() {
     let updatedDashboard = userSettings?.dashboardConfig || {};
     if (pinToDashboard) {
       const pinned = updatedDashboard.pinnedReports || [];
-       
-      if (!pinned.some((p: any) => p.configId === newConfig.id)) {
+      if (!pinned.some((p) => p.configId === newConfig.id)) {
         updatedDashboard = {
           ...updatedDashboard,
           pinnedReports: [...pinned, { slug, configId: newConfig.id, name: `${report?.name} - ${newViewName}` }]
@@ -87,7 +134,7 @@ export default function ReportViewer() {
         reportConfigs: updatedConfigs,
         ...(pinToDashboard && { dashboardConfig: updatedDashboard })
       });
-      setUserSettings(res.data);
+      setUserSettings(res.data as AppUserSettings);
       setIsSavingView(false);
       setNewViewName('');
       setPinToDashboard(false);
@@ -104,18 +151,15 @@ export default function ReportViewer() {
     
     const updatedConfigs = {
       ...currentReportConfigs,
-       
-      [slug]: reportSaves.filter((c: any) => c.id !== idToUnsave)
+      [slug]: reportSaves.filter((c) => c.id !== idToUnsave)
     };
 
     let updatedDashboard = userSettings?.dashboardConfig || {};
     const pinned = updatedDashboard.pinnedReports || [];
-     
-    if (pinned.some((p: any) => p.configId === idToUnsave)) {
+    if (pinned.some((p) => p.configId === idToUnsave)) {
       updatedDashboard = {
         ...updatedDashboard,
-         
-        pinnedReports: pinned.filter((p: any) => p.configId !== idToUnsave)
+        pinnedReports: pinned.filter((p) => p.configId !== idToUnsave)
       };
     }
 
@@ -124,7 +168,7 @@ export default function ReportViewer() {
         reportConfigs: updatedConfigs,
         dashboardConfig: updatedDashboard
       });
-      setUserSettings(res.data);
+      setUserSettings(res.data as AppUserSettings);
       router.push(`/reporting/${slug}`);
       toast.success('Report view removed');
     } catch (err) {
@@ -141,10 +185,9 @@ export default function ReportViewer() {
 
   const syncGridDataToChart = useCallback(() => {
     if (gridRef.current?.api) {
-       
-      const currentData: any[] = [];
+      const currentData: Record<string, unknown>[] = [];
       gridRef.current.api.forEachNodeAfterFilterAndSort((node) => {
-        if (node.data) currentData.push(node.data);
+        if (node.data) currentData.push(node.data as Record<string, unknown>);
       });
       setFilteredChartData(currentData);
     }
@@ -156,8 +199,7 @@ export default function ReportViewer() {
       .catch((err) => toast.error('Failed to load reports: ' + getErrorMessage(err)));
   }, []);
 
-   
-  const report = reports?.find((r: any) => r.slug === slug);
+  const report = reports?.find((r) => r.slug === slug);
 
   useDocumentTitle(
     report
@@ -172,7 +214,7 @@ export default function ReportViewer() {
     setIsLoadingData(true);
     setFilteredChartData(null);
     businessReportsControllerRunReport(slug, { filters: overrideFilters || filters })
-      .then((res) => setReportData(res.data))
+      .then((res) => setReportData(res.data as Record<string, unknown>[]))
       .catch((err) => toast.error('Failed to run report: ' + getErrorMessage(err)))
       .finally(() => setIsLoadingData(false));
   }, [report, slug, filters]);
@@ -186,8 +228,7 @@ export default function ReportViewer() {
       
       if (configId) {
         const reportSaves = userSettings?.reportConfigs?.[slug] || [];
-         
-        const config = reportSaves.find((c: any) => c.id === configId);
+        const config = reportSaves.find((c) => c.id === configId);
         if (config) {
           setFilters(config.filters || {});
           setViewMode(config.viewMode || 'grid');
@@ -207,20 +248,17 @@ export default function ReportViewer() {
     resizable: true,
   }), []);
 
-   
-  const uiConfig = (report?.uiConfig as any) || {};
+  const uiConfig = (report?.uiConfig as unknown as ReportUiConfig) || {};
   const drillDownOptions = uiConfig.drillDownOptions || [];
   const selectedDrillDownId = filters['drillDown'];
   
   const dynamicColumns = useMemo(() => {
-    let cols = [...(uiConfig.columns || [])];
+    const cols = [...(uiConfig.columns || [])];
     if (selectedDrillDownId) {
-       
-      const ddOpt = drillDownOptions.find((o: any) => o.id === selectedDrillDownId);
+      const ddOpt = drillDownOptions.find((o) => o.id === selectedDrillDownId);
       if (ddOpt) {
         // Insert after the first column
-        // Insert after the first column
-        cols.splice(1, 0, ddOpt);
+        cols.splice(1, 0, ddOpt as unknown as ColDef);
       }
     }
     return cols;
@@ -228,10 +266,10 @@ export default function ReportViewer() {
 
   if (!report) return <div className="p-8">Loading report configuration...</div>;
 
-  const salesReports = (reports || []).filter((r: any) => r.slug.startsWith('sales-'));
-  const warehouseReports = (reports || []).filter((r: any) => r.slug.startsWith('inventory-'));
-  const purchasingReports = (reports || []).filter((r: any) => r.slug.startsWith('purchasing-'));
-  const financialReports = (reports || []).filter((r: any) => !r.slug.startsWith('sales-') && !r.slug.startsWith('inventory-') && !r.slug.startsWith('purchasing-'));
+  const salesReports = (reports || []).filter((r) => r.slug.startsWith('sales-'));
+  const warehouseReports = (reports || []).filter((r) => r.slug.startsWith('inventory-'));
+  const purchasingReports = (reports || []).filter((r) => r.slug.startsWith('purchasing-'));
+  const financialReports = (reports || []).filter((r) => !r.slug.startsWith('sales-') && !r.slug.startsWith('inventory-') && !r.slug.startsWith('purchasing-'));
 
   const isSalesActive = slug.startsWith('sales-');
   const isWarehouseActive = slug.startsWith('inventory-');
@@ -256,22 +294,22 @@ export default function ReportViewer() {
                 <option value="" disabled>Load Standard View...</option>
                 {warehouseReports.length > 0 && (
                   <optgroup label="Warehouse">
-                    {warehouseReports.map((r: any) => <option key={r.slug} value={r.slug}>{r.name as string}</option>)}
+                    {warehouseReports.map((r) => <option key={r.slug} value={r.slug}>{r.name}</option>)}
                   </optgroup>
                 )}
                 {salesReports.length > 0 && (
                   <optgroup label="Sales">
-                    {salesReports.map((r: any) => <option key={r.slug} value={r.slug}>{r.name as string}</option>)}
+                    {salesReports.map((r) => <option key={r.slug} value={r.slug}>{r.name}</option>)}
                   </optgroup>
                 )}
                 {purchasingReports.length > 0 && (
                   <optgroup label="Purchasing">
-                    {purchasingReports.map((r: any) => <option key={r.slug} value={r.slug}>{r.name as string}</option>)}
+                    {purchasingReports.map((r) => <option key={r.slug} value={r.slug}>{r.name}</option>)}
                   </optgroup>
                 )}
                 {financialReports.length > 0 && (
                   <optgroup label="Financial">
-                    {financialReports.map((r: any) => <option key={r.slug} value={r.slug}>{r.name as string}</option>)}
+                    {financialReports.map((r) => <option key={r.slug} value={r.slug}>{r.name}</option>)}
                   </optgroup>
                 )}
               </select>
@@ -284,12 +322,10 @@ export default function ReportViewer() {
                 {Object.entries(userSettings?.reportConfigs || {}).map(([rSlug, configs]) => {
                   const r = reports?.find(rep => rep.slug === rSlug);
                   const rName = r ? r.name : rSlug;
-                   
-                  if (!configs || (configs as any[]).length === 0) return null;
+                  if (!configs || configs.length === 0) return null;
                   return (
-                    <optgroup key={rSlug} label={rName as string}>
-                      { }
-                      {(configs as any[]).map((c) => (
+                    <optgroup key={rSlug} label={rName}>
+                      {configs.map((c) => (
                         <option key={c.id} value={`${rSlug}|${c.id}`}>{c.name}</option>
                       ))}
                     </optgroup>
@@ -352,18 +388,15 @@ export default function ReportViewer() {
         <div className="flex flex-wrap items-end gap-4 p-4 border-b border-[var(--border)] bg-[var(--bg-secondary)]">
           {uiConfig.filters && uiConfig.filters.length > 0 && (
             <>
-              { }
-              {uiConfig.filters.some((f: any) => f.name === 'fromDate') && uiConfig.filters.some((f: any) => f.name === 'toDate') && (
+              {uiConfig.filters.some((f) => f.name === 'fromDate') && uiConfig.filters.some((f) => f.name === 'toDate') && (
                 <div className="flex flex-col">
                   <DateRangeFilter 
-                     
-                    value={(filters._dateRange || { mode: 'absolute', from: filters.fromDate, to: filters.toDate }) as any}
+                    value={(filters._dateRange as DateRangeConfig) || { mode: 'absolute', from: filters.fromDate as string | undefined, to: filters.toDate as string | undefined }}
                     onChange={(val) => setFilters({ ...filters, _dateRange: val, fromDate: undefined, toDate: undefined })}
                   />
                 </div>
               )}
-              { }
-              {uiConfig.filters.filter((f: any) => f.name !== 'fromDate' && f.name !== 'toDate').map((f: any) => (
+              {uiConfig.filters.filter((f) => f.name !== 'fromDate' && f.name !== 'toDate').map((f) => (
                 <div key={f.name} className="flex flex-col">
                   <label className="text-[11px] font-bold tracking-wider uppercase mb-1.5 text-[var(--text-muted)]">{f.label}</label>
                   <input 
@@ -389,8 +422,7 @@ export default function ReportViewer() {
                 }}
               >
                 <option value="">None</option>
-                { }
-                {drillDownOptions.map((opt: any) => (
+                {drillDownOptions.map((opt) => (
                   <option key={opt.id} value={opt.id}>{opt.label}</option>
                 ))}
               </select>
@@ -455,9 +487,8 @@ export default function ReportViewer() {
             <div className="h-full w-full">
               <ReportChartViewer 
                 data={filteredChartData || reportData || []}
-                config={uiConfig.chartConfig}
-                 
-                activeDrillDown={drillDownOptions.find((o: any) => o.id === selectedDrillDownId)}
+                config={uiConfig.chartConfig!}
+                activeDrillDown={drillDownOptions.find((o) => o.id === selectedDrillDownId)}
               />
             </div>
           )}

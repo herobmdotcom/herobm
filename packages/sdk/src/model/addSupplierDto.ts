@@ -16,6 +16,7 @@ export interface AddSupplierDto {
   /** @minimum 0 */
   minPurchaseQty?: number;
   purchaseUnit?: string;
+  purchaseUomId?: string;
   isPreferred?: boolean;
   effectiveFrom?: string;
   effectiveTo?: string;

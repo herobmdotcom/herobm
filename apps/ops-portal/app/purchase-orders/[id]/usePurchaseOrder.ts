@@ -343,17 +343,15 @@ export function usePurchaseOrder(id: string) {
         deliveryLocationId: order.deliveryLocationId || '',
         currencyCode: order.currencyCode ?? 'EUR',
         notes: order.notes || undefined,
-        lines: order.lines.map((l) => ({
+        lines: order.lines.map((l): api.CreatePurchaseOrderLineDto => ({
           productId: l.productId || undefined,
-          lineType: l.lineType || undefined,
           productDescription: l.productDescription,
           quantity: String(l.quantity),
           pricePerUnit: String(l.pricePerUnit),
           discountPercentage: String(l.discountPercentage || '0'),
           taxCategoryId: l.taxCategoryId || undefined,
           unitOfMeasure: l.unitOfMeasure || 'EA',
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO compatibility
-        } as any)),
+        })),
       });
       router.push(`/purchase-orders/${newOrder.purchaseOrderId}`);
     } catch (err) {
@@ -363,10 +361,10 @@ export function usePurchaseOrder(id: string) {
     }
   };
 
-  const updateLine = async (lineId: string, field: string, value: string) => {
+  const updateLine = async (lineId: string, field: string, value: unknown) => {
     setSaving(true);
     try {
-      await api.purchaseOrdersControllerUpdateLine(id, lineId, { [field]: value });
+      await api.purchaseOrdersControllerUpdateLine(id, lineId, { [field]: value as string });
       await loadOrder(undefined, false);
     } catch (err) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateLine'));

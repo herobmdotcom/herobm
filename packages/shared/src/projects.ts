@@ -1,3 +1,4 @@
+import Decimal from 'decimal.js';
 import { TRANSFER_ORDER_STATE } from './state-machines';
 
 export const DEFAULT_PROJECT_STAGES: Array<{
@@ -71,9 +72,10 @@ export function calculateProjectStagingAvailableQuantity(
   stagedQty: number,
   returningQty: number,
 ): number {
-  const staged = Number(stagedQty) || 0;
-  const returning = Number(returningQty) || 0;
-  return Math.max(0, staged - returning);
+  const staged = new Decimal(stagedQty || 0);
+  const returning = new Decimal(returningQty || 0);
+  const diff = staged.minus(returning);
+  return diff.greaterThan(0) ? diff.toNumber() : 0;
 }
 
 /**
@@ -121,8 +123,10 @@ export function calculateProjectMaterialsSummary(
     if (!stock) return;
     const prodKey = stock.productId || stock.productNumber || stock.productName || 'unknown';
     const curr = getOrCreate(prodKey, stock.productId, stock.productNumber, stock.productName);
-    const q = Number(stock.actualQuantity || 0);
-    curr.stagedQty += isNaN(q) ? 0 : q;
+    const q = new Decimal(stock.actualQuantity || 0);
+    if (!q.isNaN()) {
+      curr.stagedQty = new Decimal(curr.stagedQty).plus(q).toNumber();
+    }
   });
 
   // 2. Process Transfer Orders (inbound arriving stock & open returning stock)
@@ -144,8 +148,10 @@ export function calculateProjectMaterialsSummary(
         if (!line) return;
         const prodKey = line.productId || line.productNumber || line.productDescription || 'unknown';
         const curr = getOrCreate(prodKey, line.productId, line.productNumber, line.productDescription);
-        const qtyReturning = Number(line.quantity || 0);
-        curr.returningQty += isNaN(qtyReturning) ? 0 : qtyReturning;
+        const qtyReturning = new Decimal(line.quantity || 0);
+        if (!qtyReturning.isNaN()) {
+          curr.returningQty = new Decimal(curr.returningQty).plus(qtyReturning).toNumber();
+        }
       });
     } else {
       // Inbound transfer orders to project staging bin (Arriving stock)
@@ -154,13 +160,14 @@ export function calculateProjectMaterialsSummary(
         const prodKey = line.productId || line.productNumber || line.productDescription || 'unknown';
         const curr = getOrCreate(prodKey, line.productId, line.productNumber, line.productDescription);
 
-        const totalQty = Number(line.quantity || 0);
-        const putawayQty = Number(line.quantityPutaway || 0);
+        const totalQty = new Decimal(line.quantity || 0);
+        const putawayQty = new Decimal(line.quantityPutaway || 0);
 
         // Arriving is whatever has not yet completed putaway into the staging bin
-        let qtyArriving = 0;
+        let qtyArriving = new Decimal(0);
         if (line.quantityPutaway != null) {
-          qtyArriving = Math.max(0, totalQty - putawayQty);
+          const diff = totalQty.minus(putawayQty);
+          qtyArriving = diff.greaterThan(0) ? diff : new Decimal(0);
         } else {
           // Fallback if putaway quantity is not explicitly tracked:
           // If RECEIVED without putaway tracking, assume completed; otherwise entire line is arriving
@@ -169,7 +176,9 @@ export function calculateProjectMaterialsSummary(
           }
         }
 
-        curr.arrivingQty += isNaN(qtyArriving) ? 0 : qtyArriving;
+        if (!qtyArriving.isNaN()) {
+          curr.arrivingQty = new Decimal(curr.arrivingQty).plus(qtyArriving).toNumber();
+        }
       });
     }
   });
@@ -191,26 +200,26 @@ export function calculateProjectMaterialsSummary(
         e.description || 'Material Issue',
       );
 
-      const q = Number(e.quantity || 0);
-      const cost = Number(e.totalCostBase || 0);
-      if (!isNaN(q)) {
+      const q = new Decimal(e.quantity || 0);
+      const cost = new Decimal(e.totalCostBase || 0);
+      if (!q.isNaN()) {
         const desc = e.description || '';
         const isStagedEntry = desc.startsWith('Staged ') || desc.includes('Transfer Staging');
         const isReallocation = desc.startsWith('Reallocated from staging');
         const isReturnEntry = desc.startsWith('Returned ') || desc.includes('Return');
 
-        if (q > 0) {
+        if (q.greaterThan(0)) {
           if (!isStagedEntry && !isReallocation) {
-            curr.consumedQty += q;
+            curr.consumedQty = new Decimal(curr.consumedQty).plus(q).toNumber();
           }
-        } else if (q < 0) {
+        } else if (q.lessThan(0)) {
           if (isReturnEntry) {
-            curr.returnedQty += Math.abs(q);
+            curr.returnedQty = new Decimal(curr.returnedQty).plus(q.abs()).toNumber();
           }
         }
       }
-      if (!isNaN(cost)) {
-        curr.totalCost += cost;
+      if (!cost.isNaN()) {
+        curr.totalCost = new Decimal(curr.totalCost).plus(cost).toDecimalPlaces(2).toNumber();
       }
     }
   });

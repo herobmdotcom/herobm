@@ -77,8 +77,8 @@ export class UpdatePurchaseOrderLineDto {
 
 export class CreatePurchaseOrderDto {
   @IsUUID()
-  @IsNotEmpty()
-  purchaseOrderId!: string;
+  @IsOptional()
+  purchaseOrderId?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -111,6 +111,10 @@ export class CreatePurchaseOrderDto {
   @IsOptional()
   @IsString()
   expectedDate?: string;
+
+  @IsOptional()
+  @IsString()
+  orderDate?: string;
 
   @IsOptional()
   @IsArray()
@@ -279,10 +283,8 @@ export class PurchaseReturnResponseDto {
   createdOn?: Date | null;
   modifiedOn?: Date | null;
   lines?: PurchaseReturnLineResponseDto[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO expansion without typing
-  shipments?: any[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO expansion without typing
-  shipmentLines?: any[];
+  shipments?: Record<string, unknown>[];
+  shipmentLines?: Record<string, unknown>[];
 }
 
 export { EmailDocumentDto } from '../orders/dto';

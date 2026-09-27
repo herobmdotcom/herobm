@@ -7,8 +7,24 @@ import { Button } from '@/components/shared/Button';
 import { ContactCard } from '@/components/shared/ContactCard';
 import { ContactSlideOver } from '@/components/shared/ContactSlideOver';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Temporary type fallback
-export type ContactLinkWithDetails = any;
+export interface ContactDetails {
+  contactId?: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  jobTitle?: string | null;
+  phone?: string | null;
+  mobile?: string | null;
+  email?: string | null;
+  [key: string]: unknown;
+}
+
+export interface ContactLinkWithDetails {
+  id?: string;
+  contact?: ContactDetails | null;
+  primaryFor?: unknown[];
+  roles?: unknown[];
+  [key: string]: unknown;
+}
 
 interface ContactListTabProps {
   entityId: string;
@@ -20,8 +36,7 @@ interface ContactListTabProps {
 export function ContactListTab({ entityId, entityType, contacts, onContactAdded }: ContactListTabProps) {
   const tCommon = useTranslations('common');
   const [isAdding, setIsAdding] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Temporary type fallback
-  const [editingContact, setEditingContact] = useState<any | null>(null);
+  const [editingContact, setEditingContact] = useState<ContactDetails | null>(null);
 
   const handleUnlink = async (contactId: string, contactName: string) => {
     if (!window.confirm(`Are you sure you want to unlink ${contactName}?`)) return;
@@ -101,7 +116,13 @@ export function ContactListTab({ entityId, entityType, contacts, onContactAdded 
                 contact={contact}
                 primaryRoles={roles}
                 onEdit={() => handleEdit(link)}
-                onDelete={() => handleUnlink(contact.contactId, `${contact.firstName} ${contact.lastName}`)}
+                onDelete={() =>
+                  contact.contactId &&
+                  handleUnlink(
+                    contact.contactId,
+                    `${contact.firstName || ''} ${contact.lastName || ''}`.trim(),
+                  )
+                }
                 deleteTitle="Unlink Contact"
               />
             );

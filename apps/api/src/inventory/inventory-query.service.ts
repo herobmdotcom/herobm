@@ -71,6 +71,7 @@ import {
   PUTAWAY_STATUS,
   RETURN_STATE,
   WORK_ORDER_STATE,
+  toDecimal,
 } from '@herobm/shared';
 import {
   isPickableBinSqlCondition,
@@ -304,15 +305,27 @@ export class InventoryQueryService {
     );
     const standardProductIds = standardProducts.map((p) => p.productId);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle results need untyped mapping
-    let rows: any[] = [];
+    interface InventoryLevelRow {
+      inventoryLevelId: string | null;
+      productId: string | null;
+      productNumber: string | null;
+      productName: string | null;
+      locationId: string | null;
+      locationNo: string | null;
+      locationName: string | null;
+      quantityOnHand: string | null;
+      quantityCommitted: string | null;
+      quantityReserved: string | null;
+      quantityOnOrder: string | null;
+    }
+    let rows: InventoryLevelRow[] = [];
     if (standardProductIds.length > 0) {
       const filters = [inArray(inventoryLevels.productId, standardProductIds)];
       if (locationId) {
         filters.push(eq(inventoryLevels.locationId, locationId));
       }
       try {
-        rows = await this.db
+        rows = (await this.db
           .select({
             inventoryLevelId: inventoryLevels.inventoryLevelId,
             productId: inventoryLevels.productId,
@@ -333,15 +346,24 @@ export class InventoryQueryService {
             eq(inventoryLevels.locationId, locations.locationId),
           )
           .where(and(...filters))
-          .orderBy(products.name, locations.code);
+          .orderBy(
+            products.name,
+            locations.code,
+          )) as unknown as InventoryLevelRow[];
       } catch (err) {
         this.logger.error('Error in findByProductIds:', err);
         throw err;
       }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle results need untyped mapping
-    let ledgerBalances: any[] = [];
+    interface LedgerBalanceRow {
+      productId: string;
+      locationId: string;
+      binId: string;
+      binNumber: string;
+      quantityOnHand: string;
+    }
+    let ledgerBalances: LedgerBalanceRow[] = [];
     if (standardProductIds.length > 0) {
       ledgerBalances = await this.db
         .select({
@@ -427,9 +449,11 @@ export class InventoryQueryService {
       (typeof allCompsInventory.data)[0][]
     >();
     for (const inv of allCompsInventory.data) {
-      const list = compsInventoryByProduct.get(inv.productId) || [];
+      const prodId = inv.productId;
+      if (!prodId) continue;
+      const list = compsInventoryByProduct.get(prodId) || [];
       list.push(inv);
-      compsInventoryByProduct.set(inv.productId, list);
+      compsInventoryByProduct.set(prodId, list);
     }
 
     for (const kit of allKits) {
@@ -452,24 +476,26 @@ export class InventoryQueryService {
       for (const compId of compIds) {
         const invList = compsInventoryByProduct.get(compId) || [];
         for (const inv of invList) {
-          if (!inv.locationId) continue;
-          if (!inventoryByLocation[inv.locationId]) {
-            inventoryByLocation[inv.locationId] = {
-              locationId: inv.locationId,
+          const locId = inv.locationId;
+          const prodId = inv.productId;
+          if (!locId || !prodId) continue;
+          if (!inventoryByLocation[locId]) {
+            inventoryByLocation[locId] = {
+              locationId: locId,
               locationNo: inv.locationNo || null,
               locationName: inv.locationName || null,
               compAvailable: {},
             };
           }
-          inventoryByLocation[inv.locationId].compAvailable[inv.productId] =
-            (inventoryByLocation[inv.locationId].compAvailable[inv.productId] ||
-              0) + (Number(inv.quantityAvailable) || 0);
+          inventoryByLocation[locId].compAvailable[prodId] =
+            (inventoryByLocation[locId].compAvailable[prodId] || 0) +
+            (Number(inv.quantityAvailable) || 0);
         }
       }
 
       for (const locId in inventoryByLocation) {
         const locInv = inventoryByLocation[locId];
-        let totalBuildable = Number.MAX_SAFE_INTEGER;
+        let buildableUnits = Number.MAX_SAFE_INTEGER;
 
         for (const c of components) {
           if (!c.childProductId) continue;
@@ -478,14 +504,15 @@ export class InventoryQueryService {
             locInv.compAvailable[c.childProductId] || 0,
           );
           const reqQty =
-            (Number(c.quantity) || 1) / (Number(c.parentQuantity) || 1);
+            (toDecimal(c.quantity).toNumber() || 1) /
+            (toDecimal(c.parentQuantity).toNumber() || 1);
           const buildable = reqQty > 0 ? Math.floor(available / reqQty) : 0;
-          if (buildable < totalBuildable) {
-            totalBuildable = buildable;
+          if (buildable < buildableUnits) {
+            buildableUnits = buildable;
           }
         }
 
-        if (totalBuildable === Number.MAX_SAFE_INTEGER) totalBuildable = 0;
+        if (buildableUnits === Number.MAX_SAFE_INTEGER) buildableUnits = 0;
 
         const existingIndex = mappedRows.findIndex(
           (r) => r.productId === kit.productId && r.locationId === locId,
@@ -497,8 +524,8 @@ export class InventoryQueryService {
           const currAvail = Number(current.quantityAvailable) || 0;
           mappedRows[existingIndex] = {
             ...current,
-            quantityOnHand: String(currOnHand + totalBuildable),
-            quantityAvailable: currAvail + totalBuildable,
+            quantityOnHand: String(currOnHand + buildableUnits),
+            quantityAvailable: currAvail + buildableUnits,
           };
         } else {
           mappedRows.push({
@@ -509,11 +536,11 @@ export class InventoryQueryService {
             locationId: locInv.locationId,
             locationNo: locInv.locationNo,
             locationName: locInv.locationName,
-            quantityOnHand: String(totalBuildable),
+            quantityOnHand: String(buildableUnits),
             quantityCommitted: '0',
             quantityReserved: '0',
             quantityOnOrder: '0',
-            quantityAvailable: totalBuildable,
+            quantityAvailable: buildableUnits,
             binBalances: [],
             alternateProductNumber: null,
             defaultBinNumber: null,
@@ -608,8 +635,12 @@ export class InventoryQueryService {
     }
 
     if (query?.binType) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Casting any to bypass structural string literals
-      filters.push(eq(bins.binType, query.binType as any));
+      filters.push(
+        eq(
+          bins.binType,
+          query.binType as NonNullable<typeof bins.$inferSelect.binType>,
+        ),
+      );
     }
 
     if (query?.hasStock) {
@@ -795,7 +826,7 @@ export class InventoryQueryService {
         .limit(1);
 
       if (content) {
-        currentQuantity = parseFloat(content.actualQuantity);
+        currentQuantity = toDecimal(content.actualQuantity).toNumber();
       }
     }
 
@@ -864,8 +895,12 @@ export class InventoryQueryService {
   ) {
     const conditions = [eq(zones.locationId, locationId)];
     if (binType) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle enum type mismatch workaround
-      conditions.push(eq(bins.binType, binType as any));
+      conditions.push(
+        eq(
+          bins.binType,
+          binType as NonNullable<typeof bins.$inferSelect.binType>,
+        ),
+      );
     }
     if (zoneCode) {
       conditions.push(eq(zones.code, zoneCode));
@@ -977,6 +1012,10 @@ export class InventoryQueryService {
         p.product_number AS "productNumber",
         p.name AS "productName",
         l.quantity::numeric AS "change",
+        l.unit_cost::numeric AS "unitCost",
+        l.total_value::numeric AS "totalValue",
+        l.uom_id AS "uomId",
+        l.original_quantity::numeric AS "originalQuantity",
         COALESCE(inv.qty, 0) AS "onHand",
         e.created_by AS "actor"
       FROM herobm_core.inventory_ledger l
@@ -999,7 +1038,23 @@ export class InventoryQueryService {
     const rows = Array.isArray(result)
       ? result
       : (result as { rows: unknown[] }).rows;
-    return { data: rows };
+    return {
+      data: rows as Array<{
+        entryId: string;
+        date: string;
+        document: string | null;
+        sourceType: string;
+        productNumber: string;
+        productName: string;
+        change: string;
+        unitCost: string;
+        totalValue: string;
+        uomId: string;
+        originalQuantity: string;
+        onHand: string;
+        actor: string | null;
+      }>,
+    };
   }
 
   async getEntryDetails(entryId: string) {
@@ -1029,6 +1084,10 @@ export class InventoryQueryService {
         p.product_number AS "productNumber",
         p.name AS "productName",
         l.quantity::numeric AS "change",
+        l.unit_cost::numeric AS "unitCost",
+        l.total_value::numeric AS "totalValue",
+        l.uom_id AS "uomId",
+        l.original_quantity::numeric AS "originalQuantity",
         b.bin_number AS "binCode",
         loc.name AS "locationName"
       FROM herobm_core.inventory_ledger l
@@ -1047,7 +1106,19 @@ export class InventoryQueryService {
       ...entry,
       relatedDocument,
       relatedParty,
-      lines,
+      lines: lines as Array<{
+        ledgerId: string;
+        productId: string;
+        productNumber: string;
+        productName: string;
+        change: string;
+        unitCost: string;
+        totalValue: string;
+        uomId: string;
+        originalQuantity: string;
+        binCode: string;
+        locationName: string;
+      }>,
     };
   }
 

@@ -23,7 +23,10 @@ import {
   WORK_ORDER_STATE,
   WORK_ORDER_PICK_STATE,
   BIN_TYPE,
+  type PutawayStatus,
+  toDecimal,
 } from '@herobm/shared';
+import Decimal from 'decimal.js';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
@@ -111,23 +114,25 @@ export class WorkOrdersWriteService {
       .from(workOrderComponents)
       .where(eq(workOrderComponents.workOrderId, workOrderId));
 
-    let componentsCost = 0;
+    let componentsCost = new Decimal(0);
     for (const comp of componentsList) {
-      const qty = parseFloat(comp.expectedQuantity || '0');
-      const cost = comp.unitCost ? parseFloat(comp.unitCost) : 0;
-      componentsCost += qty * cost;
+      const qty = new Decimal(comp.expectedQuantity || '0');
+      const cost = comp.unitCost ? new Decimal(comp.unitCost) : new Decimal(0);
+      componentsCost = componentsCost.plus(qty.mul(cost));
     }
 
-    const targetQty = parseFloat(wo?.targetQuantity || '0') || 0;
+    const targetQty = new Decimal(wo?.targetQuantity || '0');
     const unitAssemblyCost = wo?.assemblyCostPerUnit
-      ? parseFloat(wo.assemblyCostPerUnit)
-      : 0;
-    const assemblyTotal = unitAssemblyCost * targetQty;
+      ? new Decimal(wo.assemblyCostPerUnit)
+      : new Decimal(0);
+    const assemblyTotal = unitAssemblyCost.mul(targetQty);
     const additionalCost = wo?.additionalCost
-      ? parseFloat(wo.additionalCost)
-      : 0;
+      ? new Decimal(wo.additionalCost)
+      : new Decimal(0);
 
-    const totalCostNum = componentsCost + assemblyTotal + additionalCost;
+    const totalCostNum = componentsCost
+      .plus(assemblyTotal)
+      .plus(additionalCost);
 
     await tx
       .update(workOrders)
@@ -687,8 +692,7 @@ export class WorkOrdersWriteService {
     await tx
       .update(workOrders)
       .set({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
-        putawayStatus: putawayStatus as any,
+        putawayStatus: putawayStatus as PutawayStatus,
         modifiedOn: new Date(),
       })
       .where(eq(workOrders.workOrderId, workOrderId));
@@ -732,8 +736,9 @@ export class WorkOrdersWriteService {
 
     if (params.components && params.components.length > 0) {
       for (const comp of params.components) {
-        const expectedQty =
-          Number(comp.quantity) * Number(params.targetQuantity);
+        const expectedQty = toDecimal(comp.quantity)
+          .times(toDecimal(params.targetQuantity))
+          .toNumber();
         await tx.insert(workOrderComponents).values({
           workOrderId: wo.workOrderId,
           productId: comp.productId,

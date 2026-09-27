@@ -767,8 +767,7 @@ export class OpportunitiesService {
         createdOn: Date;
       } | null,
       direction,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic query builder type bypass
-      applyWhere: (q: any, c: any, dir: any) => {
+      applyWhere: (q, c, dir) => {
         const op = dir === 'next' ? sql`<` : sql`>`;
         const idOp = dir === 'next' ? sql`>` : sql`<`;
 
@@ -782,8 +781,7 @@ export class OpportunitiesService {
 
         return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
       },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic query builder type bypass
-      applyOrderBy: (q: any, dir: any) => {
+      applyOrderBy: (q, dir) => {
         const sortOrder = dir === 'next' ? desc : asc;
         const idSortOrder = dir === 'next' ? asc : desc;
         return q.orderBy(
@@ -791,8 +789,7 @@ export class OpportunitiesService {
           idSortOrder(opportunities.opportunityId),
         );
       },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic entity row type bypass
-      encodeRow: (item: any) => ({
+      encodeRow: (item) => ({
         opportunityId: item.opportunityId,
         createdOn: item.createdOn,
       }),

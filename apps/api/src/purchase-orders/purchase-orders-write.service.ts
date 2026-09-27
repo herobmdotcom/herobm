@@ -1,3 +1,4 @@
+import Decimal from 'decimal.js';
 import {
   Injectable,
   Inject,
@@ -14,6 +15,7 @@ import {
   suppliers as coreSuppliers,
   products,
   productSuppliers,
+  productUoms,
   locations,
   taxCategories,
   organizations,
@@ -22,6 +24,7 @@ import {
 import { eq, sql, and, inArray } from 'drizzle-orm';
 import {
   PURCHASE_ORDER_STATE,
+  type PurchaseOrderState,
   computeLinePriceForStorage,
   ORGANIZATION_STATE,
   PRODUCT_STATE,
@@ -42,6 +45,12 @@ import { TaxResolutionEngine } from '../tax/tax-resolution.engine';
 import { PurchaseOrdersQueryService } from './purchase-orders-query.service';
 import { BackordersService } from '../orders/backorders.service';
 import { resolvePurchaseTaxForLine } from './purchase-orders-tax.utils';
+import {
+  CreatePurchaseOrderDto,
+  UpdatePurchaseOrderDto,
+  CreatePurchaseOrderLineDto,
+  UpdatePurchaseOrderLineDto,
+} from './dto';
 import {
   resolveSupplierLinePricingAndMoq,
   calculateUpdatedLinePricing,
@@ -66,8 +75,7 @@ export class PurchaseOrdersWriteService {
   private readonly logger = new Logger(PurchaseOrdersWriteService.name);
 
   async resolveTaxForLine(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    tx: any,
+    tx: DrizzleDB,
     vendorId: string,
     productId?: string,
     taxCategoryIdOverride?: string,
@@ -83,8 +91,12 @@ export class PurchaseOrdersWriteService {
     );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-  async create(createDto: any, userId: string) {
+  async create(
+    createDto: CreatePurchaseOrderDto & {
+      lines?: (CreatePurchaseOrderLineDto & { lineType?: string })[];
+    },
+    userId: string,
+  ) {
     return await this.db.transaction(async (tx) => {
       if (!createDto.deliveryLocationId) {
         throw new BadRequestException(
@@ -201,8 +213,7 @@ export class PurchaseOrdersWriteService {
 
         const productMap = new Map(productRows.map((p) => [p.productId, p]));
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-        const lineValues: any[] = [];
+        const lineValues: (typeof purchaseOrderLineItems.$inferInsert)[] = [];
         let index = 0;
         for (const line of createDto.lines) {
           const isComment = line.lineType === LineType.COMMENT;
@@ -283,8 +294,11 @@ export class PurchaseOrdersWriteService {
     });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-  async addLine(orderId: string, lineDto: any, actor: string = 'system') {
+  async addLine(
+    orderId: string,
+    lineDto: CreatePurchaseOrderLineDto & { lineType?: string },
+    actor: string = 'system',
+  ) {
     return await this.db.transaction(async (tx) => {
       await tx
         .select({ id: purchaseOrders.purchaseOrderId })
@@ -300,8 +314,8 @@ export class PurchaseOrdersWriteService {
       }
 
       const maxLine = existing.lines.reduce(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-        (max: number, l: any) => Math.max(max, l.lineNumber || 0),
+        (max: number, l: { lineNumber?: number | null }) =>
+          Math.max(max, l.lineNumber || 0),
         0,
       );
 
@@ -325,6 +339,8 @@ export class PurchaseOrdersWriteService {
             costPrice: string | null;
             minPurchaseQty: string | null;
             purchaseUnit: string | null;
+            purchaseUomId: string | null;
+            purchaseUomCode: string | null;
             discountPercent: string | null;
           }
         | undefined;
@@ -333,7 +349,7 @@ export class PurchaseOrdersWriteService {
         const result = await tx
           .select({ name: products.name, stateCode: products.stateCode })
           .from(products)
-          .where(eq(products.productId, lineDto.productId))
+          .where(eq(products.productId, lineDto.productId!))
           .limit(1);
         product = result[0];
 
@@ -353,13 +369,19 @@ export class PurchaseOrdersWriteService {
             costPrice: productSuppliers.costPrice,
             minPurchaseQty: productSuppliers.minPurchaseQty,
             purchaseUnit: productSuppliers.purchaseUnit,
+            purchaseUomId: productSuppliers.purchaseUomId,
+            purchaseUomCode: productUoms.uomCode,
             discountPercent: productSuppliers.discountPercent,
           })
           .from(productSuppliers)
+          .leftJoin(
+            productUoms,
+            eq(productSuppliers.purchaseUomId, productUoms.productUomId),
+          )
           .where(
             and(
-              eq(productSuppliers.productId, lineDto.productId),
-              eq(productSuppliers.vendorId, existing.vendorId),
+              eq(productSuppliers.productId, lineDto.productId!),
+              eq(productSuppliers.vendorId, existing.vendorId || ''),
             ),
           )
           .limit(1);
@@ -380,7 +402,7 @@ export class PurchaseOrdersWriteService {
         }
         const resolved = await this.resolveTaxForLine(
           tx,
-          existing.vendorId,
+          existing.vendorId || '',
           lineDto.productId,
           lineDto.taxCategoryId,
         );
@@ -398,7 +420,10 @@ export class PurchaseOrdersWriteService {
       const effectiveUom = isComment
         ? null
         : normalizeUomCode(
-            lineDto.unitOfMeasure || supplierInfo?.purchaseUnit || 'EA',
+            lineDto.unitOfMeasure ||
+              supplierInfo?.purchaseUomCode ||
+              supplierInfo?.purchaseUnit ||
+              'EA',
           );
 
       await tx.insert(purchaseOrderLineItems).values({
@@ -439,8 +464,7 @@ export class PurchaseOrdersWriteService {
   async updateLine(
     orderId: string,
     lineId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    lineDto: any,
+    lineDto: UpdatePurchaseOrderLineDto & { lineType?: string },
     actor: string = 'system',
   ) {
     return await this.db.transaction(async (tx) => {
@@ -460,8 +484,8 @@ export class PurchaseOrdersWriteService {
         }
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-      const updateFields: any = {};
+      const updateFields: Partial<typeof purchaseOrderLineItems.$inferInsert> =
+        {};
       if (lineDto.quantity !== undefined)
         updateFields.quantity = lineDto.quantity.toString();
       if (lineDto.pricePerUnit !== undefined)
@@ -482,8 +506,8 @@ export class PurchaseOrdersWriteService {
         lineDto.taxCategoryId !== undefined
       ) {
         const line = existing.lines.find(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-          (l: any) => l.purchaseOrderLineId === lineId,
+          (l: { purchaseOrderLineId?: string }) =>
+            l.purchaseOrderLineId === lineId,
         );
         const isComment =
           (lineDto.lineType ?? line?.lineType) === (LineType.COMMENT as string);
@@ -497,9 +521,9 @@ export class PurchaseOrdersWriteService {
         if (!isComment) {
           const resolved = await this.resolveTaxForLine(
             tx,
-            existing.vendorId,
-            line?.productId,
-            targetGst,
+            existing.vendorId || '',
+            line?.productId ?? undefined,
+            targetGst ?? undefined,
           );
           updateFields.taxCategoryId = resolved.taxCategoryId;
           rate = resolved.rate;
@@ -562,8 +586,13 @@ export class PurchaseOrdersWriteService {
     });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-  async update(id: string, updateDto: any, userId: string) {
+  async update(
+    id: string,
+    updateDto: UpdatePurchaseOrderDto & {
+      lines?: (CreatePurchaseOrderLineDto & { lineType?: string })[];
+    },
+    userId: string,
+  ) {
     return await this.db.transaction(async (tx) => {
       const existing = await this.queryService.findOne(id, tx);
       if (
@@ -602,8 +631,6 @@ export class PurchaseOrdersWriteService {
           vendorId: updateDto.vendorId,
           currencyCode: updateDto.currencyCode,
           notes: updateDto.notes,
-          // eslint-disable-next-line no-restricted-syntax -- External API integration boundaries where exact types are unknown.
-          stateCode: updateDto.stateCode,
           deliveryLocationId: updateDto.deliveryLocationId,
           referenceNumber: updateDto.referenceNumber,
           expectedDate: updateDto.expectedDate
@@ -623,16 +650,15 @@ export class PurchaseOrdersWriteService {
           .where(eq(purchaseOrderLineItems.purchaseOrderId, id));
 
         if (updateDto.lines.length > 0) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-          const lineValues: any[] = [];
+          const lineValues: (typeof purchaseOrderLineItems.$inferInsert)[] = [];
           let index = 0;
           for (const line of updateDto.lines) {
-            const qty = parseFloat(line.quantity || '0');
-            const price = parseFloat(line.pricePerUnit || '0');
-            const disc = parseFloat(line.discountPercentage || '0');
+            const qty = new Decimal(line.quantity || '0').toNumber();
+            const price = new Decimal(line.pricePerUnit || '0').toNumber();
+            const disc = new Decimal(line.discountPercentage || '0').toNumber();
             const { taxCategoryId, rate } = await this.resolveTaxForLine(
               tx,
-              existing.vendorId,
+              existing.vendorId || '',
               line.productId,
               line.taxCategoryId,
             );
@@ -647,8 +673,8 @@ export class PurchaseOrdersWriteService {
               lineNumber: index + 1,
               productId: line.productId,
               productDescription: line.productDescription,
-              quantity: line.quantity.toString(),
-              pricePerUnit: line.pricePerUnit.toString(),
+              quantity: String(line.quantity || '0'),
+              pricePerUnit: String(line.pricePerUnit || '0'),
               unitOfMeasure: line.unitOfMeasure || 'EA',
               amount: pricing.amount,
               tax: pricing.tax,
@@ -780,7 +806,7 @@ export class PurchaseOrdersWriteService {
   async changePurchaseOrderState(
     tx: DrizzleDB,
     poId: string,
-    newState: string,
+    newState: PurchaseOrderState,
     actor: string,
     reason?: string,
   ) {
@@ -802,8 +828,7 @@ export class PurchaseOrdersWriteService {
     await tx
       .update(purchaseOrders)
       .set({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
-        stateCode: newState as any,
+        stateCode: newState,
         modifiedOn: new Date(),
       })
       .where(eq(purchaseOrders.purchaseOrderId, poId));

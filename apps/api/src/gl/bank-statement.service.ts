@@ -1,3 +1,4 @@
+import { Decimal } from 'decimal.js';
 import {
   Injectable,
   Inject,
@@ -271,11 +272,17 @@ export class BankStatementService {
       }
 
       // 3. Verify sums match exactly
-      const sumBank = bLines.reduce((acc, l) => acc + Number(l.amount), 0);
-      const sumJournal = jLines.reduce(
-        (acc, l) => acc + Number(l.debit) - Number(l.credit),
-        0,
+      const sumBankDec = bLines.reduce(
+        (acc, l) => acc.plus(l.amount),
+        new Decimal(0),
       );
+      const sumJournalDec = jLines.reduce(
+        (acc, l) => acc.plus(l.debit).minus(l.credit),
+        new Decimal(0),
+      );
+
+      const sumBank = sumBankDec.toNumber();
+      const sumJournal = sumJournalDec.toNumber();
 
       // Using a small epsilon to avoid floating point precision issues
       if (Math.abs(sumBank - sumJournal) > 0.001) {
@@ -415,8 +422,8 @@ export class BankStatementService {
 
           const jeLines = linesToReverse.map((line) => ({
             accountCode: accMap.get(line.glAccountId)!,
-            debit: Number(line.credit),
-            credit: Number(line.debit),
+            debit: new Decimal(line.credit).toNumber(),
+            credit: new Decimal(line.debit).toNumber(),
             memo: `Reversal of: ${line.memo}`,
           }));
 
@@ -556,12 +563,12 @@ export class BankStatementService {
       createdOn: matchGroup.createdOn,
       bankLines: bLines.map((l) => ({
         ...l,
-        amount: Number(l.amount),
+        amount: new Decimal(l.amount).toNumber(),
       })),
       ledgerLines: jLines.map((l) => ({
         ...l,
-        debit: Number(l.debit),
-        credit: Number(l.credit),
+        debit: new Decimal(l.debit).toNumber(),
+        credit: new Decimal(l.credit).toNumber(),
       })),
     };
   }

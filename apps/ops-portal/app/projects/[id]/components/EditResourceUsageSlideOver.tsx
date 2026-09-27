@@ -6,7 +6,7 @@ import * as api from '@herobm/sdk';
 import SlideOver from '@/components/shared/SlideOver';
 import { Button } from '@/components/shared/Button';
 import { formatAmount } from '@/lib/currency';
-import { RESOURCE_TYPE } from '@herobm/shared';
+import { RESOURCE_TYPE, toFinancialDecimal, roundMoney } from '@herobm/shared';
 import { toast } from 'react-hot-toast';
 import type { ProjectResource } from '../useProject';
 
@@ -151,12 +151,12 @@ export function EditResourceUsageSlideOver({
 
   // Live calculations
   const { totalCost, totalPrice } = useMemo(() => {
-    const qty = parseFloat(quantity) || 0;
-    const cost = parseFloat(unitCost) || 0;
-    const price = parseFloat(unitPrice) || 0;
+    const qtyDec = toFinancialDecimal(quantity);
+    const costDec = toFinancialDecimal(unitCost);
+    const priceDec = toFinancialDecimal(unitPrice);
     return {
-      totalCost: qty * cost,
-      totalPrice: qty * price,
+      totalCost: roundMoney(qtyDec.mul(costDec)).toNumber(),
+      totalPrice: roundMoney(qtyDec.mul(priceDec)).toNumber(),
     };
   }, [quantity, unitCost, unitPrice]);
 

@@ -1,3 +1,4 @@
+import { Decimal } from 'decimal.js';
 import { Injectable, Inject } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -149,7 +150,7 @@ export class GlobalNotesService {
       partyName: r.party_name || '—',
       createdOn: r.created_on,
       notes: r.notes || '',
-      totalAmount: parseFloat(String(r.total_amount || 0)),
+      totalAmount: new Decimal(r.total_amount || 0).toNumber(),
       currencyCode: r.currency_code,
       stateCode: r.state_code,
     }));

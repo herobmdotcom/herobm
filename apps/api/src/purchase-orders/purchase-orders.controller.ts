@@ -1,4 +1,8 @@
-import { SystemResource, DATA_SOURCE_CONTEXT } from '@herobm/shared';
+import {
+  SystemResource,
+  DATA_SOURCE_CONTEXT,
+  PurchaseOrderState,
+} from '@herobm/shared';
 import {
   ApiTags,
   ApiOperation,
@@ -158,8 +162,7 @@ export class PurchaseOrdersController {
   ) {
     return this.purchaseOrdersService.changePurchaseOrderState(
       id,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-      body.stateCode as any,
+      body.stateCode as PurchaseOrderState,
       user.username,
     );
   }
@@ -252,7 +255,9 @@ export class PurchaseOrdersController {
   })
   @ApiOkResponse({ type: PurchaseOrderResponseDto })
   async findOne(@Param('id') id: string): Promise<PurchaseOrderResponseDto> {
-    return this.purchaseOrdersService.findOne(id);
+    return this.purchaseOrdersService.findOne(
+      id,
+    ) as unknown as PurchaseOrderResponseDto;
   }
 
   @Patch(':id')

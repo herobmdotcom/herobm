@@ -7,6 +7,7 @@ import { GlService } from '../gl/gl.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { SuppliersService } from '../suppliers/suppliers.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { Decimal } from 'decimal.js';
 import { AppConfigService } from '../settings/app-config.service';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { AbaGeneratorService } from './aba-generator.service';
@@ -1175,7 +1176,7 @@ describe('PaymentsService', () => {
       );
 
       expect(result).toBeDefined();
-      expect(result.unallocatedAmount).toBe('0');
+      expect(parseFloat(result.unallocatedAmount)).toBe(0);
     });
 
     it('should reject early payment discount if past the allowed days', async () => {
@@ -1586,14 +1587,16 @@ describe('PaymentsService', () => {
       );
     });
     describe('Realized FX on Payments', () => {
-      it('should calculate and book Realized FX Gain/Loss based on invoice rate vs payment rate', async () => {
-        // Create dummy FX accounts
-        const fxGainId = randomUUID();
-        const fxLossId = randomUUID();
+      let fxGainId: string;
+      let fxLossId: string;
+
+      beforeEach(async () => {
+        fxGainId = randomUUID();
+        fxLossId = randomUUID();
         await pg.db.insert(glAccounts).values([
           {
             glAccountId: fxGainId,
-            accountCode: 'FX-GAIN-01',
+            accountCode: `FX-GAIN-${randomUUID().slice(0, 4)}`,
             name: 'FX Gain',
             accountType: 'revenue',
             isGroup: false,
@@ -1604,7 +1607,7 @@ describe('PaymentsService', () => {
           },
           {
             glAccountId: fxLossId,
-            accountCode: 'FX-LOSS-01',
+            accountCode: `FX-LOSS-${randomUUID().slice(0, 4)}`,
             name: 'FX Loss',
             accountType: 'expense',
             isGroup: false,
@@ -1615,13 +1618,11 @@ describe('PaymentsService', () => {
           },
         ] as any);
 
-        // Update GL settings
         await pg.db.update(glSettings).set({
           realisedFxGainAccountId: fxGainId,
           realisedFxLossAccountId: fxLossId,
         });
 
-        // Setup exchange rates
         await pg.db
           .insert(exchangeRates)
           .values([
@@ -1641,7 +1642,9 @@ describe('PaymentsService', () => {
             },
           ])
           .onConflictDoNothing();
+      });
 
+      it('should calculate and book Realized FX Gain/Loss based on invoice rate vs payment rate', async () => {
         // Create a foreign currency sales invoice
         const soId = randomUUID();
         await pg.db.insert(salesOrders).values({
@@ -1728,6 +1731,92 @@ describe('PaymentsService', () => {
         );
         expect(fxGainLine).toBeDefined();
         expect(fxGainLine!.memo).toContain('Realised FX Gain for');
+      });
+
+      it('should perfectly balance sub-penny fractional allocations without floating-point drift (Phase 1 Target)', async () => {
+        // Create a foreign currency sales invoice with difficult fractional numbers
+        const soId = randomUUID();
+        await pg.db.insert(salesOrders).values({
+          salesOrderId: soId,
+          orderNumber: 'SO-FX-DRIFT',
+          customerId,
+          currencyCode: 'EUR',
+          exchangeRate: '1.333333', // Difficult fractional rate
+          fulfillmentLocationId: locationId,
+          stateCode: SALES_ORDER_STATE.SHIPPED,
+          source: 'system',
+          discrepanciesAcknowledged: false,
+        } as any);
+
+        const invId = randomUUID();
+        await pg.db.insert(salesInvoices).values({
+          invoiceId: invId,
+          invoiceNumber: 'INV-FX-DRIFT',
+          salesOrderId: soId,
+          totalAmount: '100.05',
+          outstandingAmount: '100.05',
+          taxAmount: '0',
+          currencyCode: 'EUR',
+          exchangeRate: '1.333333',
+          stateCode: SALES_INVOICE_STATE.INVOICED,
+          source: 'system',
+        } as any);
+
+        // Create a payment splitting it into 3 equal parts
+        const paymentId = randomUUID();
+        const payment = await service.createPaymentEntry(
+          {
+            paymentId,
+            paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
+            partyId: customerId,
+            paymentDate: new Date().toISOString(),
+            modeOfPayment: 'EFT',
+            totalAmount: 33.35,
+            glAccountBank: bankAccountId,
+            currencyCode: 'EUR',
+          },
+          'admin',
+        );
+
+        // Try to allocate exact fraction
+        await service.allocatePayment(
+          payment.paymentId,
+          {
+            allocations: [
+              {
+                referenceType: 'sales_invoice',
+                referenceId: invId,
+                allocatedAmount: 33.35,
+              },
+            ],
+          },
+          'admin',
+        );
+
+        // When the floating point drift occurs, this submit call either throws a double-entry exception
+        // OR the resulting journal lines drift from exactly 0 balance.
+        // Once decimal.js is implemented, this will cleanly pass.
+        await service.submitPaymentEntry(payment.paymentId, 'admin');
+
+        const allEntries = await pg.db
+          .select()
+          .from(glJournalEntries)
+          .where(eq(glJournalEntries.sourceId, payment.paymentId));
+
+        const allLines = await pg.db
+          .select()
+          .from(glJournalLines)
+          .where(
+            eq(glJournalLines.journalEntryId, allEntries[0].journalEntryId),
+          );
+
+        // The exact sum of all debits minus credits MUST be strictly 0, not "close to 0".
+        const netSum = allLines.reduce(
+          (acc, line) =>
+            acc.plus(new Decimal(line.debit).minus(new Decimal(line.credit))),
+          new Decimal(0),
+        );
+        expect(netSum.toNumber()).toBe(0);
       });
     });
   });

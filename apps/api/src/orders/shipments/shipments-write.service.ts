@@ -343,18 +343,11 @@ export class ShipmentsWriteService {
       const customer = await this.customersService.findOne(order.customerId);
       const contacts = customer.contacts || [];
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Customer contact type compatibility
-      let targetContact: any;
-
-      if (dispatchContactId) {
-        targetContact = contacts.find((c) => c.contactId === dispatchContactId);
-      } else {
-        // Default to delivery contact, then purchasing contact, then first with email
-        targetContact =
-          contacts.find((c) => c.primaryFor?.includes('delivery')) ||
+      const targetContact = dispatchContactId
+        ? contacts.find((c) => c.contactId === dispatchContactId)
+        : contacts.find((c) => c.primaryFor?.includes('delivery')) ||
           contacts.find((c) => c.primaryFor?.includes('purchasing')) ||
           contacts.find((c) => !!c.email);
-      }
 
       const targetEmail =
         targetContact?.email?.trim() || customer.emailAddress1?.trim();

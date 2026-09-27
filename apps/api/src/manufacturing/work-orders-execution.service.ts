@@ -12,6 +12,7 @@ import {
   bins,
   binContents,
   zones,
+  products,
 } from '@herobm/db-schema';
 import { eq, and, sql, inArray } from 'drizzle-orm';
 import { isPickableBinCondition } from '../inventory/inventory-math.utils';
@@ -23,11 +24,16 @@ import {
   BIN_TYPE,
   type WorkOrderState,
 } from '@herobm/shared';
+import Decimal from 'decimal.js';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
 import { WorkOrdersQueryService } from './work-orders-query.service';
 import { BackordersService } from '../orders/backorders.service';
+import { AppConfigService } from '../settings/app-config.service';
+import { GlService } from '../gl/gl.service';
+import { getValuationStrategy } from '../inventory/valuation';
+import { getAccountingStrategy } from '../inventory/inventory-accounting';
 
 @Injectable()
 export class WorkOrdersExecutionService {
@@ -38,6 +44,8 @@ export class WorkOrdersExecutionService {
     private readonly queryService: WorkOrdersQueryService,
     @Inject(forwardRef(() => BackordersService))
     private readonly backordersService: BackordersService,
+    private readonly appConfig: AppConfigService,
+    private readonly glService: GlService,
   ) {}
 
   async changeWorkOrderState(
@@ -206,23 +214,29 @@ export class WorkOrdersExecutionService {
     const db = tx || this.db;
     const wo = await this.queryService.findOne(id, db);
 
-    let componentsCost = 0;
+    let componentsCost = new Decimal(0);
     for (const comp of wo.components) {
-      const qty = parseFloat(comp.expectedQuantity || '0');
-      const cost = comp.unitCost ? parseFloat(comp.unitCost) : 0;
-      componentsCost += qty * cost;
+      const qty = new Decimal(comp.expectedQuantity || '0');
+      const cost = comp.unitCost ? new Decimal(comp.unitCost) : new Decimal(0);
+      componentsCost = componentsCost.plus(qty.mul(cost));
     }
 
-    const targetQty = parseFloat(wo.targetQuantity || '0') || 0;
+    const targetQty = new Decimal(wo.targetQuantity || '0');
     const unitAssemblyCost = wo.assemblyCostPerUnit
-      ? parseFloat(wo.assemblyCostPerUnit)
-      : 0;
-    const assemblyTotal = unitAssemblyCost * targetQty;
+      ? new Decimal(wo.assemblyCostPerUnit)
+      : new Decimal(0);
+    const assemblyTotal = unitAssemblyCost.mul(targetQty);
     const additionalCost = wo.additionalCost
-      ? parseFloat(wo.additionalCost)
-      : 0;
+      ? new Decimal(wo.additionalCost)
+      : new Decimal(0);
 
-    const totalCostNum = componentsCost + assemblyTotal + additionalCost;
+    const totalCostNum = componentsCost
+      .plus(assemblyTotal)
+      .plus(additionalCost);
+    const laborAndOverheadCost = assemblyTotal.plus(additionalCost);
+    const finishedProductUnitCost = targetQty.gt(0)
+      ? totalCostNum.div(targetQty).toFixed(4)
+      : '0.0000';
 
     const executeComplete = async (innerTx: DrizzleDB) => {
       await this.changeWorkOrderState(
@@ -277,17 +291,68 @@ export class WorkOrdersExecutionService {
         );
       }
 
+      // --- Financial Integration & Valuation Updates ---
+      // Fetch product to blend WAC before recordInventoryMovement so QOH does not include output yet
+      const valuationMethodCode = this.appConfig.valuationMethod();
+      const valuationStrategy = getValuationStrategy(valuationMethodCode);
+
+      const [stockRow] = await innerTx
+        .select({
+          onHand:
+            sql<number>`COALESCE(SUM(${binContents.actualQuantity}::numeric), 0)`.mapWith(
+              Number,
+            ),
+        })
+        .from(binContents)
+        .where(eq(binContents.productId, wo.productId));
+
+      const currentQoh = stockRow?.onHand || 0;
+
+      const [finishedProduct] = await innerTx
+        .select({
+          productId: products.productId,
+          standardCost: products.standardCost,
+          weightedAverageCost: products.weightedAverageCost,
+        })
+        .from(products)
+        .where(eq(products.productId, wo.productId))
+        .limit(1);
+
+      if (finishedProduct) {
+        const productData = {
+          ...finishedProduct,
+          standardCost: finishedProduct.standardCost || '0',
+          weightedAverageCost: finishedProduct.weightedAverageCost || '0',
+        };
+
+        const valuation = valuationStrategy.onGoodsReceipt(
+          productData,
+          currentQoh,
+          targetQty.toNumber(),
+          finishedProductUnitCost,
+        );
+
+        await innerTx
+          .update(products)
+          .set({ weightedAverageCost: valuation.newWeightedAverageCost })
+          .where(eq(products.productId, wo.productId));
+      }
+
       const movementLines: {
         productId: string;
         binId: string;
         quantity: number;
         uomCode: string;
+        unitCost?: string;
+        originalQuantity?: number;
       }[] = [
         {
           productId: wo.productId,
           binId: buildOutputBinId,
-          quantity: parseFloat(wo.targetQuantity || '0'),
+          quantity: targetQty.toNumber(),
           uomCode: wo.baseUom || 'EA',
+          unitCost: finishedProductUnitCost,
+          originalQuantity: targetQty.toNumber(),
         },
       ];
 
@@ -300,6 +365,7 @@ export class WorkOrdersExecutionService {
               binId: wo.wipBinId,
               quantity: -compQty,
               uomCode: comp.baseUom || 'EA',
+              unitCost: comp.unitCost || undefined,
             });
           }
         }
@@ -314,6 +380,47 @@ export class WorkOrdersExecutionService {
           userId: username || 'system',
           lines: movementLines,
         });
+      }
+
+      // Post Journal Entry via Accounting Strategy
+      const accountingStrategy = getAccountingStrategy(
+        this.appConfig.inventoryAccountingMode(),
+        {
+          inventoryAccountId: this.appConfig.defaultInventoryAccountId(),
+          grniAccountId: this.appConfig.defaultGrniAccountId(),
+          cogsAccountId: this.appConfig.defaultCogsAccountId(),
+          shrinkageAccountId: this.appConfig.defaultShrinkageAccountId(),
+          ppvAccountId: this.appConfig.defaultPpvAccountId(),
+        },
+      );
+
+      const glResult = accountingStrategy.onWorkOrderCompletion({
+        finishedGoodsValue: totalCostNum
+          .toDecimalPlaces(2, Decimal.ROUND_HALF_UP)
+          .toNumber(),
+        componentsCost: componentsCost
+          .toDecimalPlaces(2, Decimal.ROUND_HALF_UP)
+          .toNumber(),
+        laborAndOverheadCost: laborAndOverheadCost
+          .toDecimalPlaces(2, Decimal.ROUND_HALF_UP)
+          .toNumber(),
+        memo: `Work Order Completion ${wo.orderNumber}`,
+        costCenterId: this.appConfig.defaultCostCenterId() || undefined,
+        activityId: this.appConfig.defaultActivityId() || undefined,
+      });
+
+      if (glResult) {
+        await this.glService.postJournalEntry(
+          glResult.lines as Parameters<GlService['postJournalEntry']>[0],
+          {
+            actor: username || 'system',
+            entryDate: new Date().toISOString().slice(0, 10),
+            sourceType: glResult.sourceType,
+            sourceId: id,
+            memo: `Work Order Completion ${wo.orderNumber}`,
+          },
+          innerTx,
+        );
       }
 
       await emitEvent(innerTx, {

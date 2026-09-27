@@ -1,5 +1,5 @@
 import { Module, forwardRef, Inject, OnModuleInit } from '@nestjs/common';
-import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
+import { DATA_SOURCE_CONTEXT, formatReportDate } from '@herobm/shared';
 import { sql } from 'drizzle-orm';
 import { purchaseOrders, purchaseOrderReturns } from '@herobm/db-schema';
 import { DRIZZLE } from '../drizzle/drizzle.module';
@@ -87,14 +87,15 @@ export class PurchaseOrdersModule implements OnModuleInit {
           },
           homeCurrency,
         );
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic report header extension
-        const header = data.header as any;
+        const header = data.header as Record<string, unknown>;
         header.supplierName = order.vendorName || '';
         header.supplierReference = order.referenceNumber || '';
         header.referenceNumber = order.referenceNumber || '';
         if (order.expectedDate) {
-          header.expectedDate = new Date(order.expectedDate).toLocaleDateString(
-            'en-IE',
+          header.expectedDate = formatReportDate(
+            order.expectedDate,
+            undefined,
+            '',
           );
         }
         const customText =
@@ -102,8 +103,8 @@ export class PurchaseOrdersModule implements OnModuleInit {
           (options?.quoteIntroText as string);
         if (customText) {
           data.customPdfText = customText;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy report template compatibility
-          (data as any).quoteIntroText = customText;
+          (data as unknown as Record<string, unknown>).quoteIntroText =
+            customText;
         }
         return data as unknown as Record<string, unknown>;
       },

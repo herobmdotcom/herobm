@@ -6,8 +6,13 @@ import * as api from '@herobm/sdk';
 import SlideOver from '@/components/shared/SlideOver';
 import { Button } from '@/components/shared/Button';
 import { formatAmount } from '@/lib/currency';
-import { PROJECT_TASK_STATE, getErrorMessage } from '@herobm/shared';
 import { toast } from 'react-hot-toast';
+import {
+  PROJECT_TASK_STATE,
+  getErrorMessage,
+  toFinancialDecimal,
+  roundMoney,
+} from '@herobm/shared';
 
 interface ConsumeProjectExpenseSlideOverProps {
   isOpen: boolean;
@@ -94,13 +99,17 @@ export function ConsumeProjectExpenseSlideOver({
 
   // Live Calculations for live financial banner
   const { totalCost, totalRevenue, marginPercent } = useMemo(() => {
-    const qty = parseFloat(quantity) || 0;
-    const cost = parseFloat(unitCost) || 0;
-    const price = parseFloat(unitPrice) || 0;
-    const tCost = qty * cost;
-    const tRev = qty * price;
-    const margin = tRev > 0 ? ((tRev - tCost) / tRev) * 100 : 0;
-    return { totalCost: tCost, totalRevenue: tRev, marginPercent: margin };
+    const qtyDec = toFinancialDecimal(quantity);
+    const costDec = toFinancialDecimal(unitCost);
+    const priceDec = toFinancialDecimal(unitPrice);
+    const tCostDec = qtyDec.mul(costDec);
+    const tRevDec = qtyDec.mul(priceDec);
+    const margin = tRevDec.gt(0) ? tRevDec.minus(tCostDec).div(tRevDec).mul(100).toNumber() : 0;
+    return {
+      totalCost: roundMoney(tCostDec).toNumber(),
+      totalRevenue: roundMoney(tRevDec).toNumber(),
+      marginPercent: margin,
+    };
   }, [quantity, unitCost, unitPrice]);
 
   // Budget Headroom calculations

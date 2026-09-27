@@ -15,10 +15,47 @@ import {
 } from '@herobm/db-schema';
 import { CUSTOMER_STATE } from '@herobm/shared';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
+import { AppConfigService } from '../src/settings/app-config.service';
 
 describe('Inventory & GL Lifecycle (e2e)', () => {
   let app: INestApplication;
   let adminToken: string;
+
+  async function pollForGlEntry(sourceId: string, retries = 5, delay = 50) {
+    for (let i = 0; i < retries; i++) {
+      const glRes = await request(app.getHttpServer())
+        .get(`/api/gl/journal-entries?sourceId=${sourceId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+      const entry = glRes.body.data?.[0];
+      if (entry) return entry;
+      await new Promise((r) => setTimeout(r, delay));
+    }
+
+    // Diagnostic
+    const appConfig = app.get(AppConfigService);
+    console.error('POLL FAILED FOR:', sourceId);
+    console.error(
+      'appConfig.inventoryAccountingMode:',
+      appConfig.inventoryAccountingMode(),
+    );
+    console.error(
+      'appConfig.defaultCogsAccountId:',
+      appConfig.defaultCogsAccountId(),
+    );
+    const db = app.get(DRIZZLE);
+    const dbGl = await db.execute(
+      sql`SELECT * FROM herobm_core.gl_settings LIMIT 1`,
+    );
+    console.error('DB gl_settings:', dbGl);
+    const rawJe = await db.execute(
+      sql`SELECT * FROM herobm_core.gl_journal_entries WHERE source_id = ${sourceId}::uuid`,
+    );
+    console.error('Raw DB entries for sourceId:', rawJe);
+
+    throw new Error(`Failed to find GL entry for sourceId ${sourceId}`);
+  }
+
   let vendorId: string;
   let customerId: string;
   let productId: string;
@@ -65,14 +102,12 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
       ) || customers.body.data[0];
     customerId = activeCustomer.customerId;
 
-    console.log('Setup: Getting vendors...');
     const vendors = await request(app.getHttpServer())
       .get('/api/suppliers?limit=1')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     vendorId = vendors.body.data[0].vendorId;
 
-    console.log('Setup: Getting locations...');
     const locations = await request(app.getHttpServer())
       .get('/api/inventory/locations')
       .set('Authorization', `Bearer ${adminToken}`)
@@ -81,27 +116,55 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
       locations.body.find((l: any) => l.code === 'MAIN') || locations.body[0];
     locationId = mainLoc.locationId;
 
-    console.log('Setup: Getting GL accounts from API...');
     const bankAccountsRes = await request(app.getHttpServer())
       .get('/api/gl/accounts')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    console.log('Setup: Got GL accounts');
 
-    const bankLeaves: any[] = [];
+    const allLeaves: any[] = [];
     const bankWalk = (nodes: any[]) => {
       for (const node of nodes) {
-        if (!node.isGroup) bankLeaves.push(node);
+        if (!node.isGroup) allLeaves.push(node);
         if (node.children) bankWalk(node.children);
       }
     };
     bankWalk(bankAccountsRes.body);
 
+    const findAccount = (code: string, fallbackType?: string) => {
+      const found =
+        allLeaves.find((a) => a.accountCode === code) ||
+        (fallbackType
+          ? allLeaves.find((a) => a.accountType === fallbackType)
+          : null);
+      if (!found) {
+        throw new Error(
+          `Could not find GL account with code ${code} or type ${fallbackType}`,
+        );
+      }
+      return found.glAccountId;
+    };
+
     const bankAccount =
-      bankLeaves.find((a) => a.accountCode === '1021') ||
-      bankLeaves.find((a) => a.accountType === 'Bank') ||
-      bankLeaves[0];
+      allLeaves.find((a) => a.accountCode === '1021') ||
+      allLeaves.find((a) => a.accountType === 'Bank') ||
+      allLeaves[0];
     bankAccountId = bankAccount.glAccountId;
+
+    const apId = findAccount('2100', 'Payable');
+    const arId = findAccount('1100', 'Receivable');
+    const invId = findAccount('1300', 'Stock');
+    const grniId = findAccount('2150', 'Liability');
+    const ppvId = findAccount('5400', 'Cost of Goods Sold');
+    const cogsId = findAccount('5100', 'Cost of Goods Sold');
+
+    accounts = {
+      ap: apId,
+      ar: arId,
+      inventory: invId,
+      grni: grniId,
+      ppv: ppvId,
+      cogs: cogsId,
+    };
 
     const taxCatRes = await request(app.getHttpServer())
       .get('/api/tax-categories')
@@ -111,21 +174,29 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
       taxCatRes.body[0];
     taxCategoryId = gstCat?.taxCategoryId;
 
-    console.log('Setup: Getting GL Settings...');
-    // Fetch GL Settings to get default accounts
+    // Fetch GL Settings to get default base currency
     const settingsRes = await request(app.getHttpServer())
       .get('/api/gl/settings')
       .set('Authorization', `Bearer ${adminToken}`)
-      .expect((res) => {
-        if (res.status !== 200)
-          console.error('Settings Fetch Error:', res.body);
-      })
       .expect(200);
     const settings = settingsRes.body;
     baseCurrency = settings.baseCurrency || 'AUD';
-    console.log('Setup: Got GL Settings, baseCurrency:', baseCurrency);
 
     const db = app.get(DRIZZLE);
+    await db.execute(
+      sql`UPDATE herobm_core.gl_settings SET 
+        default_ap_account_id = ${apId}::uuid,
+        default_ar_account_id = ${arId}::uuid,
+        default_inventory_account_id = ${invId}::uuid,
+        default_grni_account_id = ${grniId}::uuid,
+        default_ppv_account_id = ${ppvId}::uuid,
+        default_cogs_account_id = ${cogsId}::uuid`,
+    );
+    await db.execute(
+      sql`UPDATE herobm_core.app_settings SET 
+        inventory_accounting_mode = 'perpetual',
+        inventory_valuation_method = 'weighted_average'`,
+    );
     await db.execute(
       sql`UPDATE herobm_core.customers SET currency_code = ${baseCurrency} WHERE customer_id = ${customerId}`,
     );
@@ -133,16 +204,9 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
       sql`UPDATE herobm_core.suppliers SET currency_code = ${baseCurrency} WHERE vendor_id = ${vendorId}`,
     );
 
-    accounts = {
-      ap: settings.defaultApAccountId,
-      ar: settings.defaultArAccountId,
-      inventory: settings.defaultInventoryAccountId,
-      grni: settings.defaultGrniAccountId,
-      ppv: settings.defaultPpvAccountId,
-      cogs: settings.defaultCogsAccountId,
-    };
+    const appConfig = app.get(AppConfigService);
+    await appConfig.reload();
 
-    console.log('Setup: Verifying accounts exist...');
     // Verify all required accounts exist
     const missing = Object.entries(accounts)
       .filter(([, id]) => !id)
@@ -150,8 +214,6 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
     if (missing.length > 0) {
       throw new Error(`Missing default GL account for: ${missing.join(', ')}`);
     }
-
-    console.log('Setup: Creating Product...');
 
     // 3. Create a fresh product
     const productRes = await request(app.getHttpServer())
@@ -173,9 +235,6 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
     productId = productRes.body.productId;
     productNumber = productRes.body.productNumber;
 
-    console.log('Setup: Product created with ID:', productId);
-
-    console.log('Setup: Linking supplier to product...');
     const linkRes = await request(app.getHttpServer())
       .post(`/api/products/${productId}/suppliers`)
       .set('Authorization', `Bearer ${adminToken}`)
@@ -184,11 +243,20 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
         costPrice: '10.00',
       });
 
-    console.log('Setup: Link supplier response status:', linkRes.status);
     expect(linkRes.status).toBe(201);
   }, 120_000);
 
   afterAll(async () => {
+    try {
+      const db = app.get(DRIZZLE);
+      await db.execute(
+        sql`UPDATE herobm_core.app_settings SET inventory_accounting_mode = 'periodic'`,
+      );
+      const appConfig = app.get(AppConfigService);
+      await appConfig.reload();
+    } catch {
+      // ignore
+    }
     await app.close();
   });
 
@@ -202,14 +270,6 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
 
   it('Step 1: Purchase Order Creation', async () => {
     poId = crypto.randomUUID();
-    console.log(
-      'Step 1: Starting PO creation with vendorId:',
-      vendorId,
-      'productId:',
-      productId,
-      'poId:',
-      poId,
-    );
     const poRes = await request(app.getHttpServer())
       .post('/api/purchase-orders')
       .set('Authorization', `Bearer ${adminToken}`)
@@ -251,10 +311,13 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
       .post('/api/goods-received')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        purchaseOrderId: poId,
         vendorId,
         locationId,
         packingSlipNumber: 'LIFE-PACK-1',
-        lines: [{ productId, quantityReceived: '10' }],
+        lines: [
+          { purchaseOrderLineId: poLineId, productId, quantityReceived: '10' },
+        ],
       });
 
     if (grnRes.status !== 201) console.error('Step 2 GRN error:', grnRes.body);
@@ -262,12 +325,7 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
     receiptId = grnRes.body.goodsReceivedId;
 
     // Verify GL Journal
-    const glRes = await request(app.getHttpServer())
-      .get(`/api/gl/journal-entries?sourceId=${receiptId}`)
-      .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-
-    const entrySummary = glRes.body.data?.[0];
+    const entrySummary = await pollForGlEntry(receiptId);
     expect(entrySummary).toBeDefined();
 
     const glDetailRes = await request(app.getHttpServer())
@@ -286,14 +344,6 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
       (l: any) => l.accountId === accounts.grni,
     );
     expect(parseFloat(grniLine.credit)).toBe(100);
-
-    const invRes = await request(app.getHttpServer())
-      .get(`/api/inventory/by-products?productIds=${productId}`)
-      .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-    const level = invRes.body.find((l: any) => l.locationId === locationId) ||
-      invRes.body[0] || { quantityOnHand: 0 };
-    console.log('QOH after Step 2:', level?.quantityOnHand);
   });
 
   it('Step 3: Putaway (Receiving to Storage)', async () => {
@@ -366,13 +416,8 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
-    console.log('invRes.body:', invRes.body);
     const level = invRes.body.find((l: any) => l.locationId === locationId) ||
       invRes.body[0] || { quantityOnHand: 0 };
-    const binsLog = await request(app.getHttpServer())
-      .get(`/api/inventory/bins`)
-      .set('Authorization', `Bearer ${adminToken}`);
-    console.log('Bins after putaway:', binsLog.body.data);
     expect(parseFloat(level.quantityOnHand)).toBe(10);
   });
 
@@ -419,12 +464,7 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
       .expect(200);
 
     // Verify GL Journal
-    const glRes = await request(app.getHttpServer())
-      .get(`/api/gl/journal-entries?sourceId=${invoiceId}`)
-      .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-
-    const entrySummary = glRes.body.data[0];
+    const entrySummary = await pollForGlEntry(invoiceId);
     expect(entrySummary).toBeDefined();
 
     const glDetailRes = await request(app.getHttpServer())
@@ -434,9 +474,6 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
 
     const entry = glDetailRes.body;
     expect(entry.lines).toBeDefined();
-
-    console.log('Journal Entry Lines:', JSON.stringify(entry.lines, null, 2));
-    console.log('Looking for accounts:', accounts);
 
     const apLine = entry.lines.find((l: any) => l.accountId === accounts.ap);
     if (!apLine) throw new Error('AP line not found');
@@ -483,12 +520,7 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
     const paymentId = payRes.body.paymentId;
 
     // Verify GL
-    const glRes = await request(app.getHttpServer())
-      .get(`/api/gl/journal-entries?sourceId=${paymentId}`)
-      .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-
-    const entrySummary = glRes.body.data[0];
+    const entrySummary = await pollForGlEntry(paymentId);
     expect(entrySummary).toBeDefined();
 
     const glDetailRes = await request(app.getHttpServer())
@@ -579,13 +611,7 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
 
     // Verify GL (COGS Debit 50, Inventory Credit 50)
     // Shipment GL entries use shipmentId
-    const glRes = await request(app.getHttpServer())
-      .get(`/api/gl/journal-entries?sourceId=${shipRes.body.shipmentId}`)
-      .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-
-    const entrySummary = glRes.body.data[0];
-    expect(entrySummary).toBeDefined();
+    const entrySummary = await pollForGlEntry(shipRes.body.shipmentId);
 
     const glDetailRes = await request(app.getHttpServer())
       .get(`/api/gl/journal-entries/${entrySummary.journalEntryId}`)
@@ -596,7 +622,6 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
     const cogsLine = entry.lines.find(
       (l: any) => l.accountId === accounts.cogs,
     );
-    console.log('Shipment Journal Entry:', JSON.stringify(entry, null, 2));
     expect(parseFloat(cogsLine.debit)).toBe(50);
 
     const inventoryLine = entry.lines.find(
@@ -614,12 +639,7 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
 
     salesInvoiceId = invRes.body.invoiceId;
 
-    const glRes = await request(app.getHttpServer())
-      .get(`/api/gl/journal-entries?sourceId=${salesInvoiceId}`)
-      .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-
-    const entrySummary = glRes.body.data[0];
+    const entrySummary = await pollForGlEntry(salesInvoiceId);
     expect(entrySummary).toBeDefined();
 
     const glDetailRes = await request(app.getHttpServer())
@@ -629,7 +649,6 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
 
     const entry = glDetailRes.body;
     expect(entry.lines).toBeDefined();
-    console.log('Invoice Journal Entry:', JSON.stringify(entry, null, 2));
     const arLine = entry.lines.find((l: any) => l.accountId === accounts.ar);
     expect(parseFloat(arLine.debit)).toBe(137.5); // 5 * $25 + 10% tax
   });
@@ -660,12 +679,7 @@ describe('Inventory & GL Lifecycle (e2e)', () => {
 
     const paymentId = payRes.body.paymentId;
 
-    const glRes = await request(app.getHttpServer())
-      .get(`/api/gl/journal-entries?sourceId=${paymentId}`)
-      .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-
-    const entrySummary = glRes.body.data[0];
+    const entrySummary = await pollForGlEntry(paymentId);
     expect(entrySummary).toBeDefined();
 
     const glDetailRes = await request(app.getHttpServer())

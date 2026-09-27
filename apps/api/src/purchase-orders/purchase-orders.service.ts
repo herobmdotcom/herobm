@@ -7,7 +7,13 @@ import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import type { PaginationQuery } from '../common/pagination';
 import type { PurchaseOrderState } from '@herobm/shared';
-import type { UpdatePurchasingSettingsDto } from './dto';
+import type {
+  CreatePurchaseOrderDto,
+  UpdatePurchaseOrderDto,
+  CreatePurchaseOrderLineDto,
+  UpdatePurchaseOrderLineDto,
+  UpdatePurchasingSettingsDto,
+} from './dto';
 
 import { PurchaseOrdersQueryService } from './purchase-orders-query.service';
 import { PurchaseOrdersStateService } from './purchase-orders-state.service';
@@ -26,8 +32,12 @@ export class PurchaseOrdersService {
     private readonly writeService: PurchaseOrdersWriteService,
   ) {}
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-  async create(createDto: any, userId: string) {
+  async create(
+    createDto: CreatePurchaseOrderDto & {
+      lines?: (CreatePurchaseOrderLineDto & { lineType?: string })[];
+    },
+    userId: string,
+  ) {
     return this.writeService.create(createDto, userId);
   }
 
@@ -35,8 +45,7 @@ export class PurchaseOrdersService {
     return this.queryService.findAll(query);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-  async findOne(id: string, tx: any = undefined) {
+  async findOne(id: string, tx?: DrizzleDB) {
     return this.queryService.findOne(id, tx);
   }
 
@@ -64,16 +73,18 @@ export class PurchaseOrdersService {
     return this.stateService.unarchive(id, actor);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-  async addLine(orderId: string, lineDto: any, actor: string = 'system') {
+  async addLine(
+    orderId: string,
+    lineDto: CreatePurchaseOrderLineDto & { lineType?: string },
+    actor: string = 'system',
+  ) {
     return this.writeService.addLine(orderId, lineDto, actor);
   }
 
   async updateLine(
     orderId: string,
     lineId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    lineDto: any,
+    lineDto: UpdatePurchaseOrderLineDto & { lineType?: string },
     actor: string = 'system',
   ) {
     return this.writeService.updateLine(orderId, lineId, lineDto, actor);
@@ -83,8 +94,13 @@ export class PurchaseOrdersService {
     return this.writeService.removeLine(orderId, lineId, actor);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-  async update(id: string, updateDto: any, userId: string) {
+  async update(
+    id: string,
+    updateDto: UpdatePurchaseOrderDto & {
+      lines?: (CreatePurchaseOrderLineDto & { lineType?: string })[];
+    },
+    userId: string,
+  ) {
     return this.writeService.update(id, updateDto, userId);
   }
 
@@ -97,8 +113,7 @@ export class PurchaseOrdersService {
   }
 
   async resolveTaxForLine(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    tx: any,
+    tx: DrizzleDB,
     vendorId: string,
     productId?: string,
     taxCategoryIdOverride?: string,

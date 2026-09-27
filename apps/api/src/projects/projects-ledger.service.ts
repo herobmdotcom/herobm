@@ -1,3 +1,4 @@
+import { Decimal } from 'decimal.js';
 import {
   Injectable,
   Inject,
@@ -36,6 +37,7 @@ import {
   PROJECT_SOURCE_TYPE,
   ProjectLedgerEntryType,
   computeLinePrice,
+  toDecimal,
 } from '@herobm/shared';
 
 @Injectable()
@@ -322,22 +324,22 @@ export class ProjectsLedgerService {
       throw new BadRequestException('Expense quantity must be greater than 0');
     }
 
-    const unitCost = Number(dto.unitCost || 0);
+    const unitCost = new Decimal(dto.unitCost || 0).toNumber();
     const unitPrice =
       dto.unitBillablePrice !== undefined
-        ? Number(dto.unitBillablePrice)
+        ? new Decimal(dto.unitBillablePrice).toNumber()
         : dto.unitPrice !== undefined
-          ? Number(dto.unitPrice)
+          ? new Decimal(dto.unitPrice).toNumber()
           : unitCost;
 
     const lineDiscount =
       dto.discountPercentage !== undefined
         ? dto.discountPercentage
         : project.discountPercentage
-          ? parseFloat(project.discountPercentage)
+          ? new Decimal(project.discountPercentage).toNumber()
           : 0;
 
-    const totalCost = qty * unitCost;
+    const totalCost = new Decimal(qty).mul(unitCost).toNumber();
     const computedPrice = computeLinePrice({
       quantity: qty,
       pricePerUnit: unitPrice,
@@ -474,8 +476,8 @@ export class ProjectsLedgerService {
 
     const quantity =
       dto.quantity !== undefined
-        ? Number(dto.quantity)
-        : Number(existing.quantity || 0);
+        ? toDecimal(dto.quantity).toNumber()
+        : toDecimal(existing.quantity).toNumber();
 
     if (isNaN(quantity) || quantity <= 0) {
       throw new BadRequestException('Quantity must be greater than 0');
@@ -483,22 +485,22 @@ export class ProjectsLedgerService {
 
     const unitCost =
       dto.unitCost !== undefined
-        ? Number(dto.unitCost)
-        : Number(existing.unitCostBase || 0);
+        ? new Decimal(dto.unitCost || 0).toNumber()
+        : new Decimal(existing.unitCostBase || 0).toNumber();
 
     const unitPrice =
       dto.unitPrice !== undefined
-        ? Number(dto.unitPrice)
-        : Number(existing.unitPriceBase || 0);
+        ? new Decimal(dto.unitPrice || 0).toNumber()
+        : new Decimal(existing.unitPriceBase || 0).toNumber();
 
     const lineDiscount =
       dto.discountPercentage !== undefined
         ? dto.discountPercentage
         : existing.discountPercentage
-          ? parseFloat(existing.discountPercentage)
+          ? new Decimal(existing.discountPercentage).toNumber()
           : 0;
 
-    const totalCost = quantity * unitCost;
+    const totalCost = new Decimal(quantity).mul(unitCost).toNumber();
     const computedPrice = computeLinePrice({
       quantity: quantity,
       pricePerUnit: unitPrice,

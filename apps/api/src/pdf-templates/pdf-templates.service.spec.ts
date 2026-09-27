@@ -347,6 +347,34 @@ describe('PdfTemplatesService', () => {
       expect(writtenJson._org.logoFile).toBeUndefined();
     });
 
+    it('should include address, email, and phone in _org when tenantSettings are configured', async () => {
+      await pg.db.insert(tenantSettings).values({
+        name: 'HeroBM Test Corp',
+        addressLine1: '100 Innovation Way',
+        city: 'Melbourne',
+        state: 'VIC',
+        postCode: '3000',
+        country: 'Australia',
+        email: 'support@herobm.com',
+        phone: '+61 3 9000 0000',
+        website: 'https://herobm.com',
+      });
+
+      const result = await service.renderPreview('body', { test: true });
+      expect(result).toBeDefined();
+
+      const jsonCalls = (fs.writeFileSync as jest.Mock).mock.calls.filter(
+        (call) => typeof call[0] === 'string' && call[0].endsWith('.json'),
+      );
+      const writeCall = jsonCalls[jsonCalls.length - 1];
+      expect(writeCall).toBeDefined();
+      const writtenJson = JSON.parse(writeCall[1]);
+      expect(writtenJson._org).toBeDefined();
+      expect(writtenJson._org.addressLine1).toBe('100 Innovation Way');
+      expect(writtenJson._org.email).toBe('support@herobm.com');
+      expect(writtenJson._org.phone).toBe('+61 3 9000 0000');
+    });
+
     it('should invoke execFile with explicit argument arrays without shell interpolation (BL-062)', async () => {
       await service.renderPreview('test template', { customerName: 'Acme' });
 

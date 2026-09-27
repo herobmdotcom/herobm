@@ -23,7 +23,7 @@ import { useFinancialReportPeriod } from '@/hooks/useFinancialReportPeriod';
 function fmt(amount: number): string {
   const isNeg = amount < 0;
   const abs = Math.abs(amount);
-  const formatted = abs.toLocaleString('en-US', {
+  const formatted = abs.toLocaleString(undefined, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });

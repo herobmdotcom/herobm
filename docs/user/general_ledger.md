@@ -35,6 +35,7 @@ related:
   - "balances"
   - "payments"
   - "reconciliations"
+  - "currency-and-precision"
 ---
 
 # General Ledger & Chart of Accounts
@@ -57,6 +58,8 @@ HeroBM natively supports importing Chart of Accounts structured in the **ERPNext
 ---
 
 ## Double-Entry Accounting Invariants & Validation
+
+Postings to the General Ledger are governed by the platform's **[5-Tier Precision Architecture](currency-and-precision)**: operational numbers calculate at 28 decimal places internally and post to GL journal lines rounded to the base currency's legal minor unit (2 decimal places for standard currencies).
 
 ### 1. The Zero-Sum Invariant Rule
 Every journal transaction in HeroBM is verified before persistence:

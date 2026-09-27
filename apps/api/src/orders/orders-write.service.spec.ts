@@ -1534,4 +1534,66 @@ describe('OrdersWriteService', () => {
       expect(lines).toHaveLength(0); // Children should be deleted too
     });
   });
+
+  describe('Fractional Total Summation Verification (Phase 2 Target)', () => {
+    it('creates an order with fractional lines and calculates exact base and foreign totals without drift', async () => {
+      // We set up a situation where line quantities and prices are highly fractional,
+      // compounded by an exchange rate. We verify that the header totals exactly match
+      // the sum of the lines mathematically.
+
+      const customer = await createTestCustomer(pg.db);
+      const product1 = await createTestProduct(pg.db);
+      const product2 = await createTestProduct(pg.db);
+
+      // Using an exchange rate that causes repeating decimals
+      await pg.db
+        .insert(exchangeRates)
+        .values({
+          currencyCode: 'EUR',
+          currencyName: 'Euro',
+          buyRate: '1.234567',
+          sellRate: '1.234567',
+          effectiveDate: new Date('2020-01-01'),
+        })
+        .onConflictDoNothing();
+
+      const createDto = {
+        customerId: customer.customerId,
+        fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
+        currencyCode: 'EUR',
+        lines: [
+          {
+            productId: product1.productId,
+            quantity: 3,
+            pricePerUnit: 33.33, // 3 * 33.33 = 99.99
+            discountPercentage: 0,
+            taxCategoryId: TAX_DEFAULT.taxCategoryId,
+          },
+          {
+            productId: product2.productId,
+            quantity: 7,
+            pricePerUnit: 14.28, // 7 * 14.28 = 99.96
+            discountPercentage: 0,
+            taxCategoryId: TAX_DEFAULT.taxCategoryId,
+          },
+        ],
+      };
+
+      const order = await service.create(createDto as any, 'admin');
+
+      // The raw mathematical sum of lines should be exactly 199.95.
+      // At 10% tax, the tax is exactly 19.995, rounded to 20.00.
+      // Total amount should be 219.95 exactly.
+      // Base amount = 219.95 * 1.234567 = 271.5420... -> 271.54.
+
+      const savedOrder = await service.findOne(order.salesOrderId);
+      expect(savedOrder.totalAmount).toBe('219.95');
+      expect(savedOrder.taxAmount).toBe('20.00');
+
+      // Floating point math currently evaluates base totals improperly because of cumulative parseFloat.
+      // Once decimal.js is implemented, we can strictly assert:
+      const expectedBase = Number((219.95 * 1.234567).toFixed(2));
+      expect(Number(savedOrder.baseTotalAmount)).toBe(expectedBase);
+    });
+  });
 });

@@ -24,7 +24,7 @@ import {
   parsePagination,
   withCursorPagination,
 } from '../common/pagination';
-import { PURCHASE_ORDER_STATE } from '@herobm/shared';
+import { PURCHASE_ORDER_STATE, type PurchaseOrderState } from '@herobm/shared';
 
 export interface UnifiedPurchaseOrderRow {
   id: string;
@@ -110,11 +110,13 @@ export class PurchaseOrdersQueryService {
 
     if (states && states.length > 0) {
       if (states.length === 1) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-        conditions.push(eq(purchaseOrders.stateCode, states[0] as any));
+        conditions.push(
+          eq(purchaseOrders.stateCode, states[0] as PurchaseOrderState),
+        );
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-        conditions.push(inArray(purchaseOrders.stateCode, states as any[]));
+        conditions.push(
+          inArray(purchaseOrders.stateCode, states as PurchaseOrderState[]),
+        );
       }
     }
 
@@ -347,8 +349,7 @@ export class PurchaseOrdersQueryService {
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-  async findOne(id: string, tx: any = this.db) {
+  async findOne(id: string, tx: DrizzleDB = this.db) {
     const rawOrder = await tx
       .select()
       .from(purchaseOrders)
@@ -366,18 +367,14 @@ export class PurchaseOrdersQueryService {
       )
       .where(eq(purchaseOrders.purchaseOrderId, id))
       .limit(1)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-      .then((res: any[]) => res[0]);
+      .then((res) => res[0]);
 
     if (!rawOrder) {
       throw new NotFoundException(`Purchase Order ${id} not found`);
     }
 
     const poEntity = rawOrder.purchase_orders || rawOrder;
-    const vendorName =
-      rawOrder.organizations?.name ||
-      rawOrder.suppliers?.name ||
-      poEntity.vendorId;
+    const vendorName = rawOrder.organizations?.name || poEntity.vendorId;
     const locationName =
       rawOrder.locations?.name || poEntity.deliveryLocationId;
 
@@ -398,8 +395,7 @@ export class PurchaseOrdersQueryService {
       .where(eq(purchaseOrderLineItems.purchaseOrderId, id))
       .orderBy(purchaseOrderLineItems.lineNumber);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    const lines = rawLines.map((r: any) => {
+    const lines = rawLines.map((r) => {
       const lineEntity = r.purchase_order_lines || r;
       return {
         ...lineEntity,
@@ -412,11 +408,9 @@ export class PurchaseOrdersQueryService {
     const productIds: string[] = Array.from(
       new Set(
         lines
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-          .map((l: any) => l.productId as string | null)
+          .map((l) => l.productId)
           .filter(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-            (id: any): id is string =>
+            (id): id is string =>
               id !== null && id !== '00000000-0000-4000-8000-000000000000',
           ),
       ),
@@ -443,8 +437,7 @@ export class PurchaseOrdersQueryService {
       }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    const linesWithUoms = lines.map((line: any) => {
+    const linesWithUoms = lines.map((line) => {
       const supp = allProductSuppliers.find(
         (s) => s.productId === line.productId,
       );
@@ -475,8 +468,7 @@ export class PurchaseOrdersQueryService {
       expectedDate: order.expectedDate,
       salesOrderId: order.purchaseOrderId,
       source: 'app' as const,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-      lines: linesWithUoms.map((l: any) => ({
+      lines: linesWithUoms.map((l) => ({
         ...l,
         salesOrderLineId: l.purchaseOrderLineId,
       })),

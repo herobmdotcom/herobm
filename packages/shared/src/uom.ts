@@ -1,3 +1,5 @@
+import Decimal from 'decimal.js';
+
 export interface ProductUom {
   uomCode: string;
   ratio: string | number;
@@ -61,12 +63,11 @@ export function calculateUomPriceAdjustment(
   oldRatio: number,
   newRatio: number
 ): number {
-  const price = typeof oldPricePerUnit === 'string' ? parseFloat(oldPricePerUnit) : oldPricePerUnit;
-  if (!price || price === 0) return 0;
-  if (oldRatio === 0) return 0;
+  const price = new Decimal(oldPricePerUnit || 0);
+  if (price.isZero() || !oldRatio) return 0;
 
   // New Base Price = (Price / Old Ratio) * New Ratio
-  return (price / oldRatio) * newRatio;
+  return price.div(oldRatio).mul(newRatio).toNumber();
 }
 
 const EACH_ALIASES = new Set(['EA', 'EACH', 'EACHES', 'PC', 'PCS', 'PIECE', 'PIECES']);

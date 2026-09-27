@@ -85,14 +85,21 @@ export default function ProductSelect({
       viewUrl={viewUrl}
       viewUrlTitle={viewUrlTitle}
       onSearch={async (term) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO query parameter bypass
-        const queryParams: any = { q: term, limit: 10 };
-        if (productType) {
-          queryParams.productType = productType;
+        const res = await api.productsControllerFindAll({
+          q: term,
+          limit: 10,
+          productType: productType || undefined,
+        });
+        const responseData = res.data as unknown;
+        if (
+          typeof responseData === 'object' &&
+          responseData !== null &&
+          'data' in responseData &&
+          Array.isArray((responseData as { data: unknown }).data)
+        ) {
+          return (responseData as { data: Product[] }).data;
         }
-        const res = await api.productsControllerFindAll(queryParams);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type structure bypass
-        return (res.data as any)?.data || res.data || [];
+        return Array.isArray(responseData) ? (responseData as Product[]) : [];
       }}
       onChange={onChange}
       getKey={(p) => p.productId}

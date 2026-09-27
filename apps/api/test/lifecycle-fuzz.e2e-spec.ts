@@ -23,6 +23,7 @@ import {
   purchaseInvoiceLines,
 } from '@herobm/db-schema';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
+import { AppConfigService } from '../src/settings/app-config.service';
 
 describe('API E2E — End-to-End Cross-Ledger Lifecycle Fuzz Suite', () => {
   let app: INestApplication;
@@ -181,9 +182,30 @@ describe('API E2E — End-to-End Cross-Ledger Lifecycle Fuzz Suite', () => {
       VALUES (${binId}::uuid, ${binNum}, ${zoneId}::uuid, 'storage', 'test', 'system')
     `;
     storageBinId = binId;
+
+    await sqlClient`
+      UPDATE herobm_core.app_settings
+      SET inventory_accounting_mode = 'perpetual',
+          inventory_valuation_method = 'weighted_average'
+    `;
+
+    const appConfig = app.get(AppConfigService);
+    await appConfig.reload();
   }, 120000);
 
   afterAll(async () => {
+    try {
+      if (sqlClient) {
+        await sqlClient`
+          UPDATE herobm_core.app_settings
+          SET inventory_accounting_mode = 'periodic'
+        `;
+        const appConfig = app.get(AppConfigService);
+        await appConfig.reload();
+      }
+    } catch {
+      // ignore
+    }
     if (sqlClient) await sqlClient.end();
     if (app) await app.close();
   });

@@ -1,6 +1,18 @@
 import { Injectable, Inject } from '@nestjs/common';
 import type { OnModuleInit } from '@nestjs/common';
-import { eq, ilike, or, sql, inArray, and, asc, desc } from 'drizzle-orm';
+import {
+  eq,
+  ilike,
+  or,
+  sql,
+  inArray,
+  and,
+  asc,
+  desc,
+  type SQL,
+  type AnyColumn,
+} from 'drizzle-orm';
+import type { PgColumn } from 'drizzle-orm/pg-core';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -121,8 +133,7 @@ export class OrdersService implements OnModuleInit {
       inArray(salesOrders.stateCode, [
         SALES_ORDER_STATE.SHIPPED,
         SALES_ORDER_STATE.INVOICED,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Bypass strict array type check for inArray operator
-      ] as any[]),
+      ]),
     );
     return conditions;
   }
@@ -131,16 +142,14 @@ export class OrdersService implements OnModuleInit {
     const conditions = this.getSalesPerformanceConditions(filters);
     const drillDown = filters.drillDown as string | undefined;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle select configuration
-    const selectCols: any = {
+    const selectCols: Record<string, SQL | PgColumn> = {
       customerId: coreAccounts.customerId,
       customerName: sql<string>`coalesce(${organizations.name}, ${coreAccounts.customerNumber}, 'Unknown')`,
       orderCount: sql<number>`count(distinct ${salesOrders.salesOrderId})::integer`,
       totalSales: sql<number>`coalesce(sum(${salesOrderLineItems.totalAmount}::numeric), 0)::float`,
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle group-by configuration
-    const groupCols: any[] = [
+    const groupCols: (SQL | PgColumn)[] = [
       coreAccounts.customerId,
       organizations.name,
       coreAccounts.customerNumber,
@@ -197,8 +206,7 @@ export class OrdersService implements OnModuleInit {
     const conditions = this.getSalesPerformanceConditions(filters);
     const drillDown = filters.drillDown as string | undefined;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle select configuration
-    const selectCols: any = {
+    const selectCols: Record<string, SQL | PgColumn> = {
       productId: products.productId,
       productNumber: products.productNumber,
       productName: products.name,
@@ -206,8 +214,7 @@ export class OrdersService implements OnModuleInit {
       totalSales: sql<number>`coalesce(sum(${salesOrderLineItems.totalAmount}::numeric), 0)::float`,
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle group-by configuration
-    const groupCols: any[] = [
+    const groupCols: (SQL | PgColumn)[] = [
       products.productId,
       products.productNumber,
       products.name,
@@ -229,8 +236,7 @@ export class OrdersService implements OnModuleInit {
       groupCols.push(salesOrders.source);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle query builder typing
-    let qb: any = this.db
+    let qb = this.db
       .select(selectCols)
       .from(salesOrderLineItems)
       .innerJoin(
@@ -262,16 +268,17 @@ export class OrdersService implements OnModuleInit {
     const conditions = this.getSalesPerformanceConditions(filters);
     const drillDown = filters.drillDown as string | undefined;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle select configuration
-    const selectCols: any = {
+    const selectCols: Record<string, SQL | PgColumn> = {
       productGroupId: productGroups.productGroupId,
       productGroupName: sql<string>`coalesce(${productGroups.name}, 'Unassigned')`,
       quantitySold: sql<number>`coalesce(sum(${salesOrderLineItems.quantity}::numeric), 0)::float`,
       totalSales: sql<number>`coalesce(sum(${salesOrderLineItems.totalAmount}::numeric), 0)::float`,
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle group-by configuration
-    const groupCols: any[] = [productGroups.productGroupId, productGroups.name];
+    const groupCols: (SQL | PgColumn)[] = [
+      productGroups.productGroupId,
+      productGroups.name,
+    ];
 
     if (drillDown === 'product') {
       selectCols.productName = sql<string>`coalesce(${products.name}, 'Unknown')`;
@@ -292,8 +299,7 @@ export class OrdersService implements OnModuleInit {
       groupCols.push(salesOrders.source);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle query builder typing
-    let qb: any = this.db
+    let qb = this.db
       .select(selectCols)
       .from(salesOrderLineItems)
       .innerJoin(
@@ -331,17 +337,13 @@ export class OrdersService implements OnModuleInit {
     const period = getAggregationPeriod(filters);
     const periodSql = getAggregationSql(salesOrders.createdOn, period);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    const selectCols: any = {
+    const selectCols: Record<string, SQL | PgColumn> = {
       period: periodSql,
       orderCount: sql<number>`count(distinct ${salesOrders.salesOrderId})::integer`,
       totalSales: sql<number>`coalesce(sum(${salesOrderLineItems.totalAmount}::numeric), 0)::float`,
     };
 
-    const groupCols: (
-      | import('drizzle-orm').SQL
-      | import('drizzle-orm/pg-core').PgColumn
-    )[] = [periodSql];
+    const groupCols: (SQL | PgColumn)[] = [periodSql];
 
     if (drillDown === 'product') {
       selectCols.productName = sql<string>`coalesce(${products.name}, 'Unknown')`;
@@ -361,8 +363,7 @@ export class OrdersService implements OnModuleInit {
       groupCols.push(salesOrders.source);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle query builder typing
-    let qb: any = this.db
+    let qb = this.db
       .select(selectCols)
       .from(salesOrders)
       .leftJoin(
@@ -418,8 +419,7 @@ export class OrdersService implements OnModuleInit {
         SALES_INVOICE_STATE.INVOICED,
         SALES_INVOICE_STATE.PARTIALLY_PAID,
         SALES_INVOICE_STATE.PAID,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Bypass strict array type check for inArray operator
-      ] as any[]),
+      ]),
     );
     return conditions;
   }
@@ -431,17 +431,13 @@ export class OrdersService implements OnModuleInit {
     const dateExpr = sql`coalesce(${salesInvoices.invoiceDate}, ${salesInvoices.createdOn})`;
     const periodSql = getAggregationSql(dateExpr, period);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    const selectCols: any = {
+    const selectCols: Record<string, SQL | PgColumn> = {
       period: periodSql,
       invoiceCount: sql<number>`count(distinct ${salesInvoices.invoiceId})::integer`,
       totalInvoiced: sql<number>`coalesce(sum(${salesInvoiceLines.amount}::numeric), 0)::float`,
     };
 
-    const groupCols: (
-      | import('drizzle-orm').SQL
-      | import('drizzle-orm/pg-core').PgColumn
-    )[] = [periodSql];
+    const groupCols: (SQL | PgColumn)[] = [periodSql];
 
     if (drillDown === 'product') {
       selectCols.productName = sql<string>`coalesce(${products.name}, 'Unknown')`;
@@ -459,8 +455,7 @@ export class OrdersService implements OnModuleInit {
       );
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle query builder typing
-    let qb: any = this.db
+    let qb = this.db
       .select(selectCols)
       .from(salesInvoices)
       .leftJoin(
@@ -511,20 +506,14 @@ export class OrdersService implements OnModuleInit {
     const conditions = this.getSalesPerformanceConditions(filters);
     const drillDown = filters.drillDown as string | undefined;
 
-    const selectCols: Record<
-      string,
-      import('drizzle-orm').SQL | import('drizzle-orm/pg-core').PgColumn
-    > = {
+    const selectCols: Record<string, SQL | PgColumn> = {
       createdBy: sql<string>`COALESCE(${salesOrders.createdBy}, 'System')`,
       source: salesOrders.source,
       orderCount: sql<number>`count(distinct ${salesOrders.salesOrderId})::integer`,
       totalSales: sql<number>`coalesce(sum(${salesOrderLineItems.totalAmount}::numeric), 0)::float`,
     };
 
-    const groupCols: (
-      | import('drizzle-orm').SQL
-      | import('drizzle-orm/pg-core').PgColumn
-    )[] = [
+    const groupCols: (SQL | PgColumn)[] = [
       sql`COALESCE(${salesOrders.createdBy}, 'System')`,
       salesOrders.source,
     ];
@@ -811,28 +800,25 @@ export class OrdersService implements OnModuleInit {
     const productQuantityShippedMap = new Map<string, number>();
 
     if (orderIds.length > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic aggregation select
-      const selectObject: any = {
-        salesOrderId: salesOrderLineItems.salesOrderId,
-        total: sql<string>`COALESCE(SUM(${salesOrderLineItems.totalAmount}::numeric), 0)::text`,
-      };
-
-      if (productId) {
-        selectObject.prodQty =
-          sql<number>`COALESCE(SUM(CASE WHEN ${salesOrderLineItems.productId} = ${productId} THEN ${salesOrderLineItems.quantity} ELSE 0 END), 0)`.mapWith(
-            Number,
-          );
-        selectObject.prodQtyShipped = sql<number>`COALESCE((
-          SELECT SUM(sl.quantity_shipped)
-          FROM herobm_core.sales_order_shipment_lines sl
-          JOIN herobm_core.sales_order_lines sol ON sol.sales_order_line_id = sl.sales_order_line_id
-          WHERE sol.sales_order_id = "herobm_core"."sales_order_lines"."sales_order_id"
-            AND sol.product_id = ${productId}
-        ), 0)`.mapWith(Number);
-      }
-
       const totals = await this.db
-        .select(selectObject)
+        .select({
+          salesOrderId: salesOrderLineItems.salesOrderId,
+          total: sql<string>`COALESCE(SUM(${salesOrderLineItems.totalAmount}::numeric), 0)::text`,
+          prodQty: productId
+            ? sql<number>`COALESCE(SUM(CASE WHEN ${salesOrderLineItems.productId} = ${productId} THEN ${salesOrderLineItems.quantity} ELSE 0 END), 0)`.mapWith(
+                Number,
+              )
+            : sql<number>`0`.mapWith(Number),
+          prodQtyShipped: productId
+            ? sql<number>`COALESCE((
+                SELECT SUM(sl.quantity_shipped)
+                FROM herobm_core.sales_order_shipment_lines sl
+                JOIN herobm_core.sales_order_lines sol ON sol.sales_order_line_id = sl.sales_order_line_id
+                WHERE sol.sales_order_id = "herobm_core"."sales_order_lines"."sales_order_id"
+                  AND sol.product_id = ${productId}
+              ), 0)`.mapWith(Number)
+            : sql<number>`0`.mapWith(Number),
+        })
         .from(salesOrderLineItems)
         .where(inArray(salesOrderLineItems.salesOrderId, orderIds))
         .groupBy(salesOrderLineItems.salesOrderId);

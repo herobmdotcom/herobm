@@ -7,6 +7,7 @@ import { customers, pipelineJobs, systemEvents } from '@herobm/db-schema';
 import { BadRequestException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { CUSTOMER_STATE } from '@herobm/shared';
+import { Readable } from 'stream';
 
 function createMockCsvFile(
   csvContent: string,
@@ -19,8 +20,7 @@ function createMockCsvFile(
     fieldname: 'file',
     encoding: '7bit',
     size: Buffer.byteLength(csvContent, 'utf-8'),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Mock stream
-    stream: null as any,
+    stream: Readable.from(Buffer.from(csvContent, 'utf-8')),
     destination: '',
     filename,
     path: '',
@@ -31,8 +31,10 @@ describe('CSV Import Engine (Unit)', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
   let service: SetupService;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic DB instance in test
-  async function waitForJob(jobId: string, maxMs = 5000): Promise<any> {
+  async function waitForJob(
+    jobId: string,
+    maxMs = 5000,
+  ): Promise<typeof pipelineJobs.$inferSelect> {
     const start = Date.now();
     while (Date.now() - start < maxMs) {
       const [job] = await pg.db
@@ -284,6 +286,64 @@ describe('CSV Import Engine (Unit)', () => {
         .where(eq(customers.customerNumber, 'CUST-EMPTY-1'));
       expect(record.notes).toBeNull();
       expect(record.priceTier).toBeNull();
+    });
+
+    it('should normalize international DD/MM/YYYY date strings into valid database dates', async () => {
+      const csv = [
+        'customer_number,state_code,currency_code,override_credit_hold_until,source',
+        'CUST-DATE-1,active,AUD,31/12/2026,manual',
+      ].join('\n');
+
+      const file = createMockCsvFile(csv);
+      const { jobId } = await service.executeCsv('customers', 'insert', file);
+
+      const job = await waitForJob(jobId);
+      expect(job.status).toBe('done');
+
+      const [record] = await pg.db
+        .select()
+        .from(customers)
+        .where(eq(customers.customerNumber, 'CUST-DATE-1'));
+      expect(record).toBeDefined();
+      expect(record.overrideCreditHoldUntil).toBeDefined();
+      const storedDate = new Date(record.overrideCreditHoldUntil!);
+      expect(storedDate.getFullYear()).toBe(2026);
+      expect(storedDate.getMonth()).toBe(11); // December
+      expect(storedDate.getDate()).toBe(31);
+    });
+
+    it('should normalize Excel serial date strings and dash formats into valid database dates', async () => {
+      const csv = [
+        'customer_number,state_code,currency_code,override_credit_hold_until,source',
+        'CUST-DATE-EXCEL,active,AUD,45427,manual',
+        'CUST-DATE-DASH,active,AUD,15-05-2026,manual',
+      ].join('\n');
+
+      const file = createMockCsvFile(csv);
+      const { jobId } = await service.executeCsv('customers', 'insert', file);
+
+      const job = await waitForJob(jobId);
+      expect(job.status).toBe('done');
+
+      const [excelRec] = await pg.db
+        .select()
+        .from(customers)
+        .where(eq(customers.customerNumber, 'CUST-DATE-EXCEL'));
+      expect(excelRec).toBeDefined();
+      const excelDate = new Date(excelRec.overrideCreditHoldUntil!);
+      expect(excelDate.getFullYear()).toBe(2024);
+      expect(excelDate.getMonth()).toBe(4); // May
+      expect(excelDate.getDate()).toBe(15);
+
+      const [dashRec] = await pg.db
+        .select()
+        .from(customers)
+        .where(eq(customers.customerNumber, 'CUST-DATE-DASH'));
+      expect(dashRec).toBeDefined();
+      const dashDate = new Date(dashRec.overrideCreditHoldUntil!);
+      expect(dashDate.getFullYear()).toBe(2026);
+      expect(dashDate.getMonth()).toBe(4); // May
+      expect(dashDate.getDate()).toBe(15);
     });
   });
 

@@ -78,10 +78,17 @@ export default function SupplierSelect({
       viewUrl={viewUrl}
       viewUrlTitle={viewUrlTitle}
       onSearch={async (term) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type structure bypass
-        const res = await api.suppliersControllerFindAll({ q: term, limit: 10 } as any);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type structure bypass
-        return (res.data as any)?.data || res.data || [];
+        const res = await api.suppliersControllerFindAll({ q: term, limit: 10 });
+        const responseData = res.data as unknown;
+        if (
+          typeof responseData === 'object' &&
+          responseData !== null &&
+          'data' in responseData &&
+          Array.isArray((responseData as { data: unknown }).data)
+        ) {
+          return (responseData as { data: Supplier[] }).data;
+        }
+        return Array.isArray(responseData) ? (responseData as Supplier[]) : [];
       }}
       onChange={onChange}
       getKey={(s) => s.vendorId}

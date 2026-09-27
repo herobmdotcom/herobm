@@ -1,3 +1,4 @@
+import Decimal from 'decimal.js';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { taxCategories, appSettings } from '@herobm/db-schema';
 import { eq, inArray } from 'drizzle-orm';
@@ -49,7 +50,7 @@ export async function resolvePurchaseTaxForLine(
       if (catRows.length > 0) {
         return {
           taxCategoryId: catRows[0].taxCategoryId,
-          rate: parseFloat(catRows[0].rate ?? '0'),
+          rate: new Decimal(catRows[0].rate ?? '0').toNumber(),
         };
       }
     } catch {
@@ -72,7 +73,7 @@ export async function resolvePurchaseTaxForLine(
     if (catRows.length > 0) {
       return {
         taxCategoryId: catRows[0].taxCategoryId,
-        rate: parseFloat(catRows[0].rate ?? '0'),
+        rate: new Decimal(catRows[0].rate ?? '0').toNumber(),
       };
     }
   }
@@ -88,7 +89,7 @@ export async function resolvePurchaseTaxForLine(
   if (fallbacks.length > 0) {
     return {
       taxCategoryId: fallbacks[0].taxCategoryId,
-      rate: parseFloat(fallbacks[0].rate ?? '0'),
+      rate: new Decimal(fallbacks[0].rate ?? '0').toNumber(),
     };
   }
 
@@ -96,7 +97,7 @@ export async function resolvePurchaseTaxForLine(
   if (anyCat.length > 0) {
     return {
       taxCategoryId: anyCat[0].taxCategoryId,
-      rate: parseFloat(anyCat[0].rate ?? '0'),
+      rate: new Decimal(anyCat[0].rate ?? '0').toNumber(),
     };
   }
 

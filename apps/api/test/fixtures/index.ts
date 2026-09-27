@@ -21,6 +21,7 @@ import {
   PurchaseOrderState,
   SalesInvoiceState,
   ShipmentState,
+  ProductState,
   SALES_ORDER_STATE,
   RETURN_STATE,
   PURCHASE_ORDER_STATE,
@@ -72,6 +73,7 @@ export async function createTestProduct(
     weightedAverageCost?: string;
     listPrice?: string;
     salesTaxCategoryId?: string;
+    stateCode?: ProductState;
   },
 ) {
   const productId = uuidv4();
@@ -92,7 +94,7 @@ export async function createTestProduct(
     weightedAverageCost: opts?.weightedAverageCost || '10.00',
     listPrice: opts?.listPrice || '0.00',
     salesTaxCategoryId: opts?.salesTaxCategoryId,
-    stateCode: PRODUCT_STATE.ACTIVE,
+    stateCode: opts?.stateCode || PRODUCT_STATE.ACTIVE,
     source: 'app',
     createdBy: 'system',
   });

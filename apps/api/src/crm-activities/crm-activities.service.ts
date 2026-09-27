@@ -348,8 +348,7 @@ export class CrmActivitiesService {
         activityId: string;
       } | null,
       direction,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle pagination requires loose typing
-      applyWhere: (q: any, c: any, dir: any) => {
+      applyWhere: (q, c, dir) => {
         if (isDueDateSort) {
           const op = dir === 'next' ? sql`>` : sql`<`;
           const idOp = dir === 'next' ? sql`>` : sql`<`;
@@ -383,8 +382,7 @@ export class CrmActivitiesService {
         );
         return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
       },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle pagination requires loose typing
-      applyOrderBy: (q: any, dir: any) => {
+      applyOrderBy: (q, dir) => {
         if (isDueDateSort) {
           return q.orderBy(
             dir === 'next'
@@ -402,8 +400,7 @@ export class CrmActivitiesService {
           idFn(crmActivities.activityId),
         );
       },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle pagination requires loose typing
-      encodeRow: (row: any) => {
+      encodeRow: (row) => {
         if (isDueDateSort) {
           return {
             dueDate: row.dueDate ? new Date(row.dueDate).toISOString() : null,

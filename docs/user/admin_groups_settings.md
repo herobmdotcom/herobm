@@ -48,6 +48,7 @@ related:
   - "supplier-invoices"
   - "balances"
   - "general-ledger"
+  - "currency-and-precision"
   - "dynamic-reporting"
 ---
 
@@ -160,8 +161,8 @@ Controls how the system responds when a customer's total financial exposure (unp
 ---
 
 ### 3. Financial Settings (`/admin/settings/financial`)
-* **Base Currency & Multi-Currency**: Sets the primary operating currency (`baseCurrency`) and exchange rate revaluation parameters.
-* **Control Accounts**: Default AR, AP, GRNI Clearing, Inventory Asset, Tax clearing, and Expense accounts.
+* **Base Currency & Multi-Currency**: Sets the primary operating functional currency (`baseCurrency`) and foreign currency conversion rules. All foreign exchange rates are maintained at **8 decimal places** of precision to eliminate sub-penny valuation drift. See [Currency, Pricing & Rounding Rules](currency-and-precision) for full details.
+* **Control Accounts**: Default AR, AP, GRNI Clearing, Inventory Asset, Tax clearing, and Penny Rounding / Exchange Gain-Loss accounts.
 * **Chart of Accounts Import**: Upload and deploy standard ERPNext JSON Chart of Accounts definitions.
 * **Cost Centers & Activities**: Multidimensional cost allocation hierarchies.
 * **FX Revaluation**: Period-end unrealized exchange rate adjustments executed via the GL engine (`POST /api/gl/fx-revaluation/commit`).

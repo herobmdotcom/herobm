@@ -275,7 +275,6 @@ export default function ProductDetailPage() {
             <div id="info-section" className="card lg:col-span-3">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="section-heading !mb-0">
-                  {/* eslint-disable-next-line i18next/no-literal-string -- Complex UI state, DTO typing, or Material Icon */}
                   <span className="material-symbols-outlined">badge</span>
                   {t('products.cards.identity')}
                 </h3>
@@ -736,10 +735,8 @@ export default function ProductDetailPage() {
           <div className="pt-4 mt-4">
             <InlineSettingsTable
               title={<span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">{t('products.packagingConversions')}</span>}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon
-              data={(product as any).productUoms || []}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon
-              rowKey={(row: any) => row.productUomId}
+              data={(product as { productUoms?: Array<{ productUomId: string; uomCode: string; ratio: string | number; barcode?: string | null }> }).productUoms || []}
+              rowKey={(row) => row.productUomId}
               columns={[
                 {
                   key: 'uomCode',
@@ -767,8 +764,7 @@ export default function ProductDetailPage() {
                   disabled: true
                 }
               ]}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon
-              onSave={async (row: any, isNew: boolean) => {
+              onSave={async (row, isNew: boolean) => {
                 if (isNew) {
                   await api.productsControllerAddUom(id as string, {
                     uomCode: row.uomCode,
@@ -780,14 +776,12 @@ export default function ProductDetailPage() {
                   // Not supported by API
                 }
               }}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon
-              onDelete={async (row: any) => {
+              onDelete={async (row) => {
                 await api.productsControllerRemoveUom(id as string, row.productUomId);
                 toast.success(t('products.toast.conversionRemoved'));
                 await loadProduct();
               }}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon
-              onAdd={() => ({ uomCode: '', ratio: 1, barcode: '' } as any)}
+              onAdd={() => ({ productUomId: '', uomCode: '', ratio: 1, barcode: '' })}
               canEdit={() => false}
               canDelete={() => isEditable}
               addLabel={t('products.addConversion')}
@@ -853,8 +847,7 @@ export default function ProductDetailPage() {
 
         {/* Activity Timeline */}
         <div id="activity-section" className="card">
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon */}
-          <ActivityTimeline events={(product as any).events || []} />
+          <ActivityTimeline events={(product as { events?: import('@/components/shared/ActivityTimeline').TimelineEvent[] }).events || []} />
         </div>
 
       </div>

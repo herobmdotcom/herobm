@@ -1,3 +1,4 @@
+import { Decimal } from 'decimal.js';
 import {
   Injectable,
   Inject,
@@ -32,6 +33,7 @@ import {
   PROJECT_SOURCE_TYPE,
   PROJECT_TASK_STATE,
   computeLinePrice,
+  toDecimal,
 } from '@herobm/shared';
 
 function generateStockEntryNumber(prefix: string): string {
@@ -118,21 +120,23 @@ export class ProjectsInventoryService {
       // Determine unit cost and billable price
       const unitCost =
         dto.unitCost !== undefined
-          ? dto.unitCost
-          : Number(
+          ? new Decimal(dto.unitCost).toNumber()
+          : new Decimal(
               product.standardCost ||
                 product.weightedAverageCost ||
                 product.tradePrice ||
                 0,
-            );
+            ).toNumber();
       const unitPrice =
         dto.unitPrice !== undefined
-          ? dto.unitPrice
-          : Number(product.listPrice || unitCost * 1.3);
+          ? new Decimal(dto.unitPrice).toNumber()
+          : new Decimal(
+              product.listPrice || new Decimal(unitCost).mul(1.3).toNumber(),
+            ).toNumber();
 
       let lineDiscount = 0;
       if (dto.discountPercentage !== undefined) {
-        lineDiscount = Number(dto.discountPercentage);
+        lineDiscount = toDecimal(dto.discountPercentage).toNumber();
       } else if (dto.budgetLineId) {
         const [bl] = await tx
           .select({ discountPercentage: projectBudgetLines.discountPercentage })
@@ -140,17 +144,17 @@ export class ProjectsInventoryService {
           .where(eq(projectBudgetLines.budgetLineId, dto.budgetLineId))
           .limit(1);
         if (bl && bl.discountPercentage) {
-          lineDiscount = Number(bl.discountPercentage);
+          lineDiscount = toDecimal(bl.discountPercentage).toNumber();
         } else if (project.discountPercentage) {
-          lineDiscount = Number(project.discountPercentage);
+          lineDiscount = toDecimal(project.discountPercentage).toNumber();
         }
       } else if (project.discountPercentage) {
-        lineDiscount = Number(project.discountPercentage);
+        lineDiscount = toDecimal(project.discountPercentage).toNumber();
       }
 
-      const totalCost = Number(dto.quantity) * unitCost;
+      const totalCost = new Decimal(dto.quantity).mul(unitCost).toNumber();
       const computedPrice = computeLinePrice({
-        quantity: Number(dto.quantity),
+        quantity: toDecimal(dto.quantity).toNumber(),
         pricePerUnit: unitPrice,
         discountPercentage: lineDiscount,
         taxRate: 0,
@@ -173,6 +177,7 @@ export class ProjectsInventoryService {
               binId: binId,
               quantity: -Math.abs(dto.quantity),
               uomCode: product.baseUom || 'EA',
+              unitCost: String(unitCost),
             },
           ],
         });
@@ -330,26 +335,29 @@ export class ProjectsInventoryService {
           .limit(1);
 
         if (lastIssue) {
-          if (unitCost === undefined) unitCost = Number(lastIssue.unitCostBase);
+          if (unitCost === undefined)
+            unitCost = new Decimal(lastIssue.unitCostBase || 0).toNumber();
           if (unitPrice === undefined)
-            unitPrice = Number(lastIssue.unitPriceBase);
+            unitPrice = new Decimal(lastIssue.unitPriceBase || 0).toNumber();
         }
       }
 
       if (unitCost === undefined) {
-        unitCost = Number(
+        unitCost = new Decimal(
           product.standardCost ||
             product.weightedAverageCost ||
             product.tradePrice ||
             0,
-        );
+        ).toNumber();
       }
       if (unitPrice === undefined) {
-        unitPrice = Number(product.listPrice || unitCost * 1.3);
+        unitPrice = new Decimal(
+          product.listPrice || new Decimal(unitCost).mul(1.3).toNumber(),
+        ).toNumber();
       }
 
-      const totalCost = Number(dto.quantity) * unitCost;
-      const totalPrice = Number(dto.quantity) * unitPrice;
+      const totalCost = new Decimal(dto.quantity).mul(unitCost).toNumber();
+      const totalPrice = new Decimal(dto.quantity).mul(unitPrice).toNumber();
 
       // 1. Stock Return Movement via InventoryMovementService
       const entryNumber = generateStockEntryNumber('STK-PRJ-RETURN');
@@ -368,6 +376,7 @@ export class ProjectsInventoryService {
               binId: dto.binId,
               quantity: Math.abs(dto.quantity),
               uomCode: product.baseUom || 'EA',
+              unitCost: String(unitCost),
             },
           ],
         });
@@ -440,11 +449,11 @@ export class ProjectsInventoryService {
       .where(eq(projectBudgetLines.projectId, projectId));
 
     const totalBudgetCost = budgetLines.reduce(
-      (sum, l) => sum + Number(l.totalCost || 0),
+      (sum, l) => new Decimal(sum).plus(l.totalCost || 0).toNumber(),
       0,
     );
     const totalBudgetPrice = budgetLines.reduce(
-      (sum, l) => sum + Number(l.totalPrice || 0),
+      (sum, l) => new Decimal(sum).plus(l.totalPrice || 0).toNumber(),
       0,
     );
 
@@ -466,47 +475,83 @@ export class ProjectsInventoryService {
     let totalBilledPrice = 0;
 
     for (const l of actualLines) {
-      const cost = Number(l.totalCostBase || 0);
-      const price = Number(l.totalPriceBase || 0);
+      const cost = new Decimal(l.totalCostBase || 0);
+      const price = new Decimal(l.totalPriceBase || 0);
 
-      totalActualCost += cost;
-      totalBillablePrice += price;
+      totalActualCost = new Decimal(totalActualCost).plus(cost).toNumber();
+      totalBillablePrice = new Decimal(totalBillablePrice)
+        .plus(price)
+        .toNumber();
       if (l.isBilled) {
-        totalBilledPrice += price;
+        totalBilledPrice = new Decimal(totalBilledPrice).plus(price).toNumber();
       }
 
       if (l.lineType === PROJECT_LINE_TYPE.RESOURCE) {
-        laborActualCost += cost;
+        laborActualCost = new Decimal(laborActualCost).plus(cost).toNumber();
       } else if (l.lineType === PROJECT_LINE_TYPE.ITEM) {
-        materialActualCost += cost;
+        materialActualCost = new Decimal(materialActualCost)
+          .plus(cost)
+          .toNumber();
       } else if (l.lineType === PROJECT_LINE_TYPE.EXPENSE) {
-        expenseActualCost += cost;
+        expenseActualCost = new Decimal(expenseActualCost)
+          .plus(cost)
+          .toNumber();
       }
     }
 
-    const costVariance = totalBudgetCost - totalActualCost;
+    const costVariance = new Decimal(totalBudgetCost)
+      .minus(totalActualCost)
+      .toNumber();
     const estimatedMarginPercent =
       totalBudgetPrice > 0
-        ? ((totalBudgetPrice - totalBudgetCost) / totalBudgetPrice) * 100
+        ? new Decimal(totalBudgetPrice)
+            .minus(totalBudgetCost)
+            .div(totalBudgetPrice)
+            .mul(100)
+            .toNumber()
         : 0;
     const actualMarginPercent =
       totalBillablePrice > 0
-        ? ((totalBillablePrice - totalActualCost) / totalBillablePrice) * 100
+        ? new Decimal(totalBillablePrice)
+            .minus(totalActualCost)
+            .div(totalBillablePrice)
+            .mul(100)
+            .toNumber()
         : 0;
 
     return {
       projectId,
-      totalBudgetCost: Number(totalBudgetCost.toFixed(2)),
-      totalBudgetPrice: Number(totalBudgetPrice.toFixed(2)),
-      totalActualCost: Number(totalActualCost.toFixed(2)),
-      totalBillablePrice: Number(totalBillablePrice.toFixed(2)),
-      totalBilledPrice: Number(totalBilledPrice.toFixed(2)),
-      costVariance: Number(costVariance.toFixed(2)),
-      estimatedMarginPercent: Number(estimatedMarginPercent.toFixed(1)),
-      actualMarginPercent: Number(actualMarginPercent.toFixed(1)),
-      laborActualCost: Number(laborActualCost.toFixed(2)),
-      materialActualCost: Number(materialActualCost.toFixed(2)),
-      expenseActualCost: Number(expenseActualCost.toFixed(2)),
+      totalBudgetCost: new Decimal(totalBudgetCost)
+        .toDecimalPlaces(2)
+        .toNumber(),
+      totalBudgetPrice: new Decimal(totalBudgetPrice)
+        .toDecimalPlaces(2)
+        .toNumber(),
+      totalActualCost: new Decimal(totalActualCost)
+        .toDecimalPlaces(2)
+        .toNumber(),
+      totalBillablePrice: new Decimal(totalBillablePrice)
+        .toDecimalPlaces(2)
+        .toNumber(),
+      totalBilledPrice: new Decimal(totalBilledPrice)
+        .toDecimalPlaces(2)
+        .toNumber(),
+      costVariance: new Decimal(costVariance).toDecimalPlaces(2).toNumber(),
+      estimatedMarginPercent: new Decimal(estimatedMarginPercent)
+        .toDecimalPlaces(1)
+        .toNumber(),
+      actualMarginPercent: new Decimal(actualMarginPercent)
+        .toDecimalPlaces(1)
+        .toNumber(),
+      laborActualCost: new Decimal(laborActualCost)
+        .toDecimalPlaces(2)
+        .toNumber(),
+      materialActualCost: new Decimal(materialActualCost)
+        .toDecimalPlaces(2)
+        .toNumber(),
+      expenseActualCost: new Decimal(expenseActualCost)
+        .toDecimalPlaces(2)
+        .toNumber(),
     };
   }
 
@@ -542,20 +587,22 @@ export class ProjectsInventoryService {
     let unitPrice = params.unitPrice;
 
     if (unitCost === undefined) {
-      unitCost = Number(
+      unitCost = new Decimal(
         product.standardCost ||
           product.weightedAverageCost ||
           product.tradePrice ||
           0,
-      );
+      ).toNumber();
     }
     if (unitPrice === undefined) {
-      unitPrice = Number(product.listPrice || unitCost * 1.3);
+      unitPrice = new Decimal(
+        product.listPrice || new Decimal(unitCost).mul(1.3).toNumber(),
+      ).toNumber();
     }
 
     const qty = Math.abs(params.quantity);
-    const totalCost = qty * unitCost;
-    const totalPrice = qty * unitPrice;
+    const totalCost = new Decimal(qty).mul(unitCost).toNumber();
+    const totalPrice = new Decimal(qty).mul(unitPrice).toNumber();
 
     let taskTaskId = params.projectTaskId;
     if (!taskTaskId) {
@@ -680,27 +727,30 @@ export class ProjectsInventoryService {
         .limit(1);
 
       if (lastIssue) {
-        if (unitCost === undefined) unitCost = Number(lastIssue.unitCostBase);
+        if (unitCost === undefined)
+          unitCost = new Decimal(lastIssue.unitCostBase || 0).toNumber();
         if (unitPrice === undefined)
-          unitPrice = Number(lastIssue.unitPriceBase);
+          unitPrice = new Decimal(lastIssue.unitPriceBase || 0).toNumber();
       }
     }
 
     if (unitCost === undefined) {
-      unitCost = Number(
+      unitCost = new Decimal(
         product.standardCost ||
           product.weightedAverageCost ||
           product.tradePrice ||
           0,
-      );
+      ).toNumber();
     }
     if (unitPrice === undefined) {
-      unitPrice = Number(product.listPrice || unitCost * 1.3);
+      unitPrice = new Decimal(
+        product.listPrice || new Decimal(unitCost).mul(1.3).toNumber(),
+      ).toNumber();
     }
 
     const qty = Math.abs(params.quantity);
-    const totalCost = qty * unitCost;
-    const totalPrice = qty * unitPrice;
+    const totalCost = new Decimal(qty).mul(unitCost).toNumber();
+    const totalPrice = new Decimal(qty).mul(unitPrice).toNumber();
 
     let taskTaskId = params.projectTaskId;
     if (!taskTaskId) {

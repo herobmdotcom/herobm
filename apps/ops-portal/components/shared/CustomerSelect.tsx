@@ -109,13 +109,19 @@ export default function CustomerSelect({
           });
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type structure bypass
-        const res = await api.customersControllerFindAll({ q: term, limit: 10 } as any);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type structure bypass
-        const dataArray = (res.data as any)?.data || res.data || [];
+        const res = await api.customersControllerFindAll({ q: term, limit: 10 });
+        const responseData = res.data as unknown;
+        const dataArray: Customer[] =
+          typeof responseData === 'object' &&
+          responseData !== null &&
+          'data' in responseData &&
+          Array.isArray((responseData as { data: unknown }).data)
+            ? (responseData as { data: Customer[] }).data
+            : Array.isArray(responseData)
+              ? (responseData as Customer[])
+              : [];
         const filtered = excludeId
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type structure bypass
-          ? dataArray.filter((c: any) => c.customerId !== excludeId)
+          ? dataArray.filter((c) => c.customerId !== excludeId)
           : dataArray;
 
         filtered.forEach((c: Customer) => {

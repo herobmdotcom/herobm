@@ -11,6 +11,7 @@ import {
   productDefaultBins,
   productGroups,
   productSuppliers,
+  productUoms,
   suppliers,
   organizations,
   zones,
@@ -19,6 +20,7 @@ import { eq, and, sql, desc, isNotNull, inArray, or, ilike } from 'drizzle-orm';
 import { calculateAvailableQuantity } from '@herobm/shared';
 import { calculateSuggestedRestockQuantity } from './inventory-math.utils';
 import { AppConfigService } from '../settings/app-config.service';
+import Decimal from 'decimal.js';
 
 @Injectable()
 export class DemandQueryService {
@@ -188,10 +190,21 @@ export class DemandQueryService {
           Number,
         ),
         purchaseUnit: productSuppliers.purchaseUnit,
+        purchaseUomId: productSuppliers.purchaseUomId,
+        purchaseUomCode: productUoms.uomCode,
+        purchaseUomRatio: sql<
+          number | null
+        >`CASE WHEN ${productUoms.ratio} IS NOT NULL THEN CAST(${productUoms.ratio} AS numeric) ELSE NULL END`.mapWith(
+          Number,
+        ),
         isPreferred: productSuppliers.isPreferred,
       })
       .from(productSuppliers)
       .innerJoin(suppliers, eq(productSuppliers.vendorId, suppliers.vendorId))
+      .leftJoin(
+        productUoms,
+        eq(productSuppliers.purchaseUomId, productUoms.productUomId),
+      )
       .leftJoin(
         organizations,
         eq(suppliers.organizationId, organizations.organizationId),
@@ -207,7 +220,7 @@ export class DemandQueryService {
 
     const restockItems = [];
     let totalSuggestedUnits = 0;
-    let totalEstimatedCost = 0;
+    let totalEstimatedCost = new Decimal(0);
 
     for (const row of rows) {
       const inv = invMap.get(`${row.productId}_${row.locationId}`) || {
@@ -233,12 +246,12 @@ export class DemandQueryService {
       });
 
       if (suggestedQty > 0) {
-        const unitCost = sup?.costPrice ?? row.standardCost ?? 0;
+        const unitCost = new Decimal(sup?.costPrice ?? row.standardCost ?? 0);
         const effectiveSuggested = suggestedQty;
-        const estCost = effectiveSuggested * unitCost;
+        const estCost = unitCost.mul(new Decimal(effectiveSuggested));
 
         totalSuggestedUnits += effectiveSuggested;
-        totalEstimatedCost += estCost;
+        totalEstimatedCost = totalEstimatedCost.plus(estCost);
 
         restockItems.push({
           id: `${row.productId}_${row.locationId}_${row.binId}`,
@@ -272,6 +285,9 @@ export class DemandQueryService {
           currencyCode: sup?.currencyCode || this.appConfig.homeCurrency(),
           minPurchaseQty: sup?.minPurchaseQty || null,
           purchaseUnit: sup?.purchaseUnit || null,
+          purchaseUomId: sup?.purchaseUomId || null,
+          purchaseUomCode: sup?.purchaseUomCode || null,
+          purchaseUomRatio: sup?.purchaseUomRatio || null,
         });
       }
     }
@@ -281,7 +297,9 @@ export class DemandQueryService {
       summary: {
         totalItems: restockItems.length,
         totalSuggestedUnits,
-        totalEstimatedCost: Math.round(totalEstimatedCost * 100) / 100,
+        totalEstimatedCost: totalEstimatedCost
+          .toDecimalPlaces(2, Decimal.ROUND_HALF_UP)
+          .toNumber(),
       },
     };
   }

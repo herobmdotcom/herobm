@@ -1,6 +1,12 @@
 import { OrdersQueryService } from '../orders/orders-query.service';
 import { SalesQuoteData } from './sales-quote.service';
-import { computeOrderTotals, LineType } from '@herobm/shared';
+import {
+  computeOrderTotals,
+  LineType,
+  formatReportDate,
+  formatReportDateTime,
+  toDecimal,
+} from '@herobm/shared';
 
 /**
  * Shared helper for resolving order detail and assembling report data.
@@ -65,13 +71,15 @@ export function assembleOrderData(
   fallbackCurrency: string,
 ): SalesQuoteData {
   const lines = orderDetail.lines.map((l) => {
-    const qty = parseFloat(l.quantity);
-    const price = parseFloat(l.pricePerUnit);
-    const disc = parseFloat(l.discountPercentage || '0');
+    const qty = toDecimal(l.quantity).toNumber();
+    const price = toDecimal(l.pricePerUnit).toNumber();
+    const disc = toDecimal(l.discountPercentage).toNumber();
 
     let taxRate = 0;
-    if (parseFloat(l.amount || '0') > 0 && parseFloat(l.tax || '0') > 0) {
-      taxRate = (parseFloat(l.tax!) / parseFloat(l.amount!)) * 100;
+    const lAmountDec = toDecimal(l.amount);
+    const lTaxDec = toDecimal(l.tax);
+    if (lAmountDec.greaterThan(0) && lTaxDec.greaterThan(0)) {
+      taxRate = lTaxDec.div(lAmountDec).times(100).toNumber();
     }
 
     const CUSTOM_LINE_ID = '00000000-0000-4000-8000-000000000000';
@@ -105,9 +113,7 @@ export function assembleOrderData(
       projectNumber: orderDetail.projectNumber || '',
       customerName: orderDetail.customerName || '',
       customerOrderNumber: orderDetail.customerOrderNumber || '',
-      orderDate: orderDetail.createdOn
-        ? new Date(orderDetail.createdOn).toLocaleDateString('en-IE')
-        : '',
+      orderDate: formatReportDate(orderDetail.createdOn, undefined, ''),
       currencyCode: orderDetail.currencyCode || fallbackCurrency,
       name: orderDetail.name || '',
     },
@@ -117,12 +123,6 @@ export function assembleOrderData(
       totalTax: totals.totalTax,
       totalAmount: totals.totalAmount,
     },
-    generatedAt:
-      new Date().toLocaleDateString('en-IE') +
-      ' ' +
-      new Date().toLocaleTimeString('en-IE', {
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
+    generatedAt: formatReportDateTime(new Date()),
   };
 }

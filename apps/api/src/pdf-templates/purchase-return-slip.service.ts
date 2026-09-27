@@ -13,6 +13,7 @@ import {
   products,
   glSettings,
 } from '@herobm/db-schema';
+import { formatReportDate } from '@herobm/shared';
 
 export interface PurchaseReturnSlipData {
   header: {
@@ -166,9 +167,11 @@ export class PurchaseReturnSlipService {
     const customText =
       (options?.customPdfText as string) || (options?.quoteIntroText as string);
 
-    const returnDateStr = ret.createdOn
-      ? new Date(ret.createdOn).toLocaleDateString('en-IE')
-      : new Date().toLocaleDateString('en-IE');
+    const returnDateStr = formatReportDate(
+      ret.createdOn || new Date(),
+      undefined,
+      '—',
+    );
 
     return {
       header: {

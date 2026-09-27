@@ -195,7 +195,7 @@ describe('SalesInvoiceService', () => {
         {
           provide: TaxCategoriesService,
           useValue: {
-            getById: jest.fn().mockResolvedValue({ rate: '0.1' }),
+            getById: jest.fn().mockResolvedValue({ rate: '10' }),
           },
         },
         {
@@ -1169,6 +1169,81 @@ describe('SalesInvoiceService', () => {
         .where(eq(projectLedgerEntries.ledgerId, entry.ledgerId));
       expect(ledgerRow.isBilled).toBe(false);
       expect(ledgerRow.salesInvoiceLineId).toBeNull();
+    });
+  });
+  describe('Fractional Double-Entry Verification (Immunized)', () => {
+    it('creates a perfectly balanced multi-line invoice without floating point drift', async () => {
+      const serviceProdId = '00000000-0000-4000-8000-000000000f98';
+      await pg.db.insert(products).values({
+        productId: serviceProdId,
+        productNumber: 'SRV-FRAC',
+        name: 'Service Frac',
+        baseUom: 'EA',
+        productType: 'service',
+        stateCode: PRODUCT_STATE.ACTIVE,
+        source: 'app',
+        structureType: 'standard',
+        createdBy: 'system',
+      });
+
+      // Simulate difficult fractional prices (e.g., 3 units at 33.33)
+      const soId = '00000000-0000-4000-8000-000000000f99';
+      await pg.db.insert(salesOrders).values({
+        salesOrderId: soId,
+        orderNumber: 'SO-FRAC-001',
+        customerId: CUSTOMER_ID,
+        fulfillmentLocationId: LOCATION_ID,
+        currencyCode: 'AUD',
+        stateCode: SALES_ORDER_STATE.CONFIRMED,
+        baseTotalAmount: '0',
+        exchangeRate: '1',
+        discrepanciesAcknowledged: false,
+        source: 'app',
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(salesOrderLineItems).values([
+        {
+          salesOrderLineId: '00000000-0000-4000-8000-000000000f91',
+          salesOrderId: soId,
+          lineNumber: 1,
+          productId: serviceProdId,
+          quantity: '3',
+          pricePerUnit: '33.33', // 3 * 33.33 = 99.99
+          taxCategoryId: TAX_CAT_ID, // 10% = 9.999 -> 10.00
+          discountPercentage: '0',
+          amount: '99.99',
+          totalAmount: '109.99',
+          tax: '10.00',
+          fulfillmentLocationId: LOCATION_ID,
+          quantityPicked: '0',
+          isPostConfirmation: false,
+        },
+        {
+          salesOrderLineId: '00000000-0000-4000-8000-000000000f92',
+          salesOrderId: soId,
+          lineNumber: 2,
+          productId: serviceProdId,
+          quantity: '7',
+          pricePerUnit: '14.28', // 7 * 14.28 = 99.96
+          taxCategoryId: TAX_CAT_ID, // 10% = 9.996 -> 10.00
+          discountPercentage: '0',
+          amount: '99.96',
+          totalAmount: '109.96',
+          tax: '10.00',
+          fulfillmentLocationId: LOCATION_ID,
+          quantityPicked: '0',
+          isPostConfirmation: false,
+        },
+      ]);
+
+      const result = await service.createInvoice(soId, {}, 'test_user');
+
+      // 99.99 + 99.96 = 199.95
+      // Tax: 10.00 + 10.00 = 20.00
+      // Total: 219.95 exactly.
+      expect(Number(result.totalAmount)).toBe(219.95);
+      expect(Number(result.taxAmount)).toBe(20);
     });
   });
 });

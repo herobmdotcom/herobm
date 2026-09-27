@@ -6,6 +6,7 @@ import { GlService } from '../gl/gl.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { Decimal } from 'decimal.js';
 import { AppConfigService } from '../settings/app-config.service';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
@@ -172,6 +173,89 @@ describe('PurchaseInvoiceService', () => {
       structureType: 'standard',
       createdBy: 'system',
     });
+
+    await pg.db
+      .insert(glAccounts)
+      .values([
+        {
+          glAccountId: '00000000-0000-4000-8000-0000000000a1',
+          accountCode: 'gl-ap',
+          name: 'AP',
+          accountType: 'liability',
+          isGroup: false,
+          isSystem: false,
+          isBankAccount: false,
+          isActive: true,
+          currencyCode: 'AUD',
+        },
+        {
+          glAccountId: '00000000-0000-4000-8000-0000000000a2',
+          accountCode: 'gl-tax',
+          name: 'Tax',
+          accountType: 'liability',
+          isGroup: false,
+          isSystem: false,
+          isBankAccount: false,
+          isActive: true,
+          currencyCode: 'AUD',
+        },
+        {
+          glAccountId: '00000000-0000-4000-8000-0000000000a3',
+          accountCode: 'gl-grni',
+          name: 'GRNI',
+          accountType: 'liability',
+          isGroup: false,
+          isSystem: false,
+          isBankAccount: false,
+          isActive: true,
+          currencyCode: 'AUD',
+        },
+        {
+          glAccountId: '00000000-0000-4000-8000-0000000000a4',
+          accountCode: 'gl-expense',
+          name: 'Expense',
+          accountType: 'expense',
+          isGroup: false,
+          isSystem: false,
+          isBankAccount: false,
+          isActive: true,
+          currencyCode: 'AUD',
+        },
+        {
+          glAccountId: '00000000-0000-4000-8000-0000000000a5',
+          accountCode: 'gl-ppv',
+          name: 'PPV',
+          accountType: 'expense',
+          isGroup: false,
+          isSystem: false,
+          isBankAccount: false,
+          isActive: true,
+          currencyCode: 'AUD',
+        },
+        {
+          glAccountId: '00000000-0000-4000-8000-0000000000a6',
+          accountCode: 'gl-fx-gain',
+          name: 'FX Gain',
+          accountType: 'revenue',
+          isGroup: false,
+          isSystem: false,
+          isBankAccount: false,
+          isActive: true,
+          currencyCode: 'AUD',
+        },
+        {
+          glAccountId: '00000000-0000-4000-8000-0000000000a7',
+          accountCode: 'gl-fx-loss',
+          name: 'FX Loss',
+          accountType: 'expense',
+          isGroup: false,
+          isSystem: false,
+          isBankAccount: false,
+          isActive: true,
+          currencyCode: 'AUD',
+        },
+      ])
+      .onConflictDoNothing();
   });
 
   beforeEach(async () => {
@@ -179,10 +263,13 @@ describe('PurchaseInvoiceService', () => {
 
     mockGlService = {
       getSettings: jest.fn().mockResolvedValue({
-        defaultApAccountId: 'gl-ap',
-        defaultPurchaseTaxAccountId: 'gl-tax',
-        defaultGrniAccountId: 'gl-grni',
-        defaultExpenseAccountId: 'gl-expense',
+        defaultApAccountId: '00000000-0000-4000-8000-0000000000a1',
+        defaultPurchaseTaxAccountId: '00000000-0000-4000-8000-0000000000a2',
+        defaultGrniAccountId: '00000000-0000-4000-8000-0000000000a3',
+        defaultExpenseAccountId: '00000000-0000-4000-8000-0000000000a4',
+        defaultPpvAccountId: '00000000-0000-4000-8000-0000000000a5',
+        realisedFxGainAccountId: '00000000-0000-4000-8000-0000000000a6',
+        realisedFxLossAccountId: '00000000-0000-4000-8000-0000000000a7',
       }),
       postJournalEntry: jest
         .fn()
@@ -300,63 +387,66 @@ describe('PurchaseInvoiceService', () => {
 
       // Schemas are statically imported
 
-      await pg.db.insert(glAccounts).values([
-        {
-          glAccountId: '00000000-0000-4000-8000-0000000000a1',
-          accountCode: 'gl-ap',
-          name: 'AP',
-          accountType: 'liability',
-          isGroup: false,
-          isSystem: false,
-          isBankAccount: false,
-          isActive: true,
-          currencyCode: 'AUD',
-        },
-        {
-          glAccountId: '00000000-0000-4000-8000-0000000000a2',
-          accountCode: 'gl-tax',
-          name: 'Tax',
-          accountType: 'liability',
-          isGroup: false,
-          isSystem: false,
-          isBankAccount: false,
-          isActive: true,
-          currencyCode: 'AUD',
-        },
-        {
-          glAccountId: '00000000-0000-4000-8000-0000000000a3',
-          accountCode: 'gl-grni',
-          name: 'GRNI',
-          accountType: 'liability',
-          isGroup: false,
-          isSystem: false,
-          isBankAccount: false,
-          isActive: true,
-          currencyCode: 'AUD',
-        },
-        {
-          glAccountId: '00000000-0000-4000-8000-0000000000a4',
-          accountCode: 'gl-expense',
-          name: 'Expense',
-          accountType: 'expense',
-          isGroup: false,
-          isSystem: false,
-          isBankAccount: false,
-          isActive: true,
-          currencyCode: 'AUD',
-        },
-        {
-          glAccountId: '00000000-0000-4000-8000-0000000000a5',
-          accountCode: 'gl-ppv',
-          name: 'PPV',
-          accountType: 'expense',
-          isGroup: false,
-          isSystem: false,
-          isBankAccount: false,
-          isActive: true,
-          currencyCode: 'AUD',
-        },
-      ]);
+      await pg.db
+        .insert(glAccounts)
+        .values([
+          {
+            glAccountId: '00000000-0000-4000-8000-0000000000a1',
+            accountCode: 'gl-ap',
+            name: 'AP',
+            accountType: 'liability',
+            isGroup: false,
+            isSystem: false,
+            isBankAccount: false,
+            isActive: true,
+            currencyCode: 'AUD',
+          },
+          {
+            glAccountId: '00000000-0000-4000-8000-0000000000a2',
+            accountCode: 'gl-tax',
+            name: 'Tax',
+            accountType: 'liability',
+            isGroup: false,
+            isSystem: false,
+            isBankAccount: false,
+            isActive: true,
+            currencyCode: 'AUD',
+          },
+          {
+            glAccountId: '00000000-0000-4000-8000-0000000000a3',
+            accountCode: 'gl-grni',
+            name: 'GRNI',
+            accountType: 'liability',
+            isGroup: false,
+            isSystem: false,
+            isBankAccount: false,
+            isActive: true,
+            currencyCode: 'AUD',
+          },
+          {
+            glAccountId: '00000000-0000-4000-8000-0000000000a4',
+            accountCode: 'gl-expense',
+            name: 'Expense',
+            accountType: 'expense',
+            isGroup: false,
+            isSystem: false,
+            isBankAccount: false,
+            isActive: true,
+            currencyCode: 'AUD',
+          },
+          {
+            glAccountId: '00000000-0000-4000-8000-0000000000a5',
+            accountCode: 'gl-ppv',
+            name: 'PPV',
+            accountType: 'expense',
+            isGroup: false,
+            isSystem: false,
+            isBankAccount: false,
+            isActive: true,
+            currencyCode: 'AUD',
+          },
+        ])
+        .onConflictDoNothing();
 
       // Create Goods Received
       await pg.db.insert(goodsReceived).values({
@@ -733,6 +823,122 @@ describe('PurchaseInvoiceService', () => {
         );
         expect(unresolveRes).toEqual({ success: true });
       });
+    });
+  });
+
+  describe('Fractional Double-Entry Verification (Immunized)', () => {
+    it('creates a perfectly balanced multi-line purchase invoice without compound FX variance drift', async () => {
+      // Create PO
+      const poId = '00000000-0000-4000-8000-000000000d99';
+      await pg.db.insert(purchaseOrders).values({
+        purchaseOrderId: poId,
+        orderNumber: 'PO-FRAC-001',
+        vendorId: VENDOR_ID,
+        deliveryLocationId: LOCATION_ID,
+        currencyCode: 'EUR',
+        stateCode: PURCHASE_ORDER_STATE.RECEIVED,
+        baseTotalAmount: '0',
+        exchangeRate: '1.233333',
+        source: 'app',
+        createdBy: 'system',
+      } as any);
+
+      await pg.db.insert(purchaseOrderLineItems).values({
+        purchaseOrderLineId: '00000000-0000-4000-8000-000000000d98',
+        purchaseOrderId: poId,
+        productId: PRODUCT_ID,
+        quantity: '10',
+        pricePerUnit: '10.00',
+        amount: '100.00',
+        baseAmount: '0',
+        quantityReceived: '10',
+        quantityInvoiced: '0',
+        lineNumber: 1,
+      } as any);
+
+      // Create Goods Received
+      await pg.db.insert(goodsReceived).values({
+        goodsReceivedId: '00000000-0000-4000-8000-000000000d97',
+        receiptNumber: 'REC-123',
+        locationId: LOCATION_ID,
+        vendorId: VENDOR_ID,
+        packingSlipNumber: 'PACK-123',
+        stateCode: GOODS_RECEIVED_STATE.RECEIVED,
+        createdBy: 'system',
+      });
+
+      await pg.db.insert(goodsReceivedLines).values({
+        goodsReceivedLineId: '00000000-0000-4000-8000-000000000d96',
+        goodsReceivedId: '00000000-0000-4000-8000-000000000d97',
+        productId: PRODUCT_ID,
+        quantityReceived: '10',
+        unitCost: '10.00',
+        purchaseOrderLineId: '00000000-0000-4000-8000-000000000d98',
+        matchStatus: MATCH_STATUS.MATCHED,
+        putawayStatus: PUTAWAY_STATUS.PENDING_PUTAWAY,
+      });
+
+      // Create Invoice at different fractional rate
+      const invoiceId = '00000000-0000-4000-8000-000000000d95';
+      await pg.db.insert(purchaseInvoices).values({
+        invoiceId,
+        invoiceNumber: 'PI-FRAC-001',
+        purchaseOrderId: poId,
+        vendorId: VENDOR_ID,
+        totalAmount: '100.00',
+        taxAmount: '0.00',
+        currencyCode: 'EUR',
+        exchangeRate: '1.555555',
+        stateCode: PURCHASE_INVOICE_STATE.DRAFT,
+        outstandingAmount: '0',
+        baseTotalAmount: '0',
+        baseOutstandingAmount: '0',
+        createdBy: 'system',
+      } as any);
+
+      const invoiceLineId = '00000000-0000-4000-8000-000000000d94';
+      await pg.db.insert(purchaseInvoiceLines).values({
+        invoiceLineId,
+        invoiceId,
+        productId: PRODUCT_ID,
+        quantityInvoiced: '10',
+        pricePerUnit: '10.00',
+        amount: '100.00',
+        matchStatus: MATCH_STATUS.UNMATCHED,
+        lineNumber: 1,
+      } as any);
+
+      await pg.db.transaction(async (tx) => {
+        await service.resolveInvoiceLine(
+          invoiceLineId,
+          '00000000-0000-4000-8000-000000000d98',
+          'admin',
+          tx,
+        );
+      });
+
+      // Post the invoice
+      await service.postInvoice(invoiceId, 'admin');
+
+      const invoice = await pg.db
+        .select()
+        .from(purchaseInvoices)
+        .where(eq(purchaseInvoices.invoiceId, invoiceId))
+        .then((r) => r[0]);
+      expect(invoice.stateCode).toBe(PURCHASE_INVOICE_STATE.INVOICED);
+
+      expect(mockGlService.postJournalEntry).toHaveBeenCalled();
+      const journalPayload =
+        mockGlService.postJournalEntry!.mock.calls.at(-1)![0];
+
+      const netSum = journalPayload.reduce(
+        (acc: Decimal, line: any) =>
+          acc.plus(
+            new Decimal(line.debit || 0).minus(new Decimal(line.credit || 0)),
+          ),
+        new Decimal(0),
+      );
+      expect(netSum.toNumber()).toBe(0);
     });
   });
 });

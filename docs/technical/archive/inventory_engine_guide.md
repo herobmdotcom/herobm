@@ -55,12 +55,12 @@ The method does three things in the same transaction:
 2.  Inserts the `inventory_ledger` lines (converting numeric quantities to string literals to prevent precision loss in JS).
 3.  Emits an `INVENTORY_ENTRY_CREATED` event to the outbox for external listeners (e.g., Elasticsearch indexing, analytical syncs).
 
-## Valuation Cache (`quantityOnHand`)
+## Valuation Cache & Stock Levels
 
-While the ledger stores immutable facts about stock movement, doing a `SUM()` over millions of rows on every API request is too slow. HeroBM uses a **Valuation Cache** pattern on the `products` table.
+While the ledger stores immutable facts about stock movement, doing a `SUM()` over millions of rows on every API request is too slow. HeroBM uses a **Valuation Projection** pattern on the `products` table alongside a fast `bin_contents` cache.
 
 > [!NOTE]
-> The `quantityOnHand` column on the `products` table is a **cache**. It is only updated on goods receipt/return events for the purpose of Standard Cost and Weighted Average Cost (WAC) calculations.
+> Valuation projections (`weightedAverageCost` and `standardCost`) are maintained directly on the `products` table. Current physical stock balances (`quantityOnHand`) are derived dynamically from the `bin_contents` fast cache / `inventory_levels` CTE view rather than a denormalized column on `products`.
 
 ### Why Not Just Compute WAC From Ledger? 
 
@@ -70,7 +70,7 @@ The formula is:
 New WAC = [(Old Qty * Old WAC) + (Receipt Qty * Receipt Unit Cost)] / (Old Qty + Receipt Qty)
 ```
 
-The `Old Qty` needs to be fetched instantaneously within the same database transaction. The `products.quantityOnHand` counter acts as this instant lookup.
+The `Old Qty` is fetched instantaneously within the same database transaction by querying the sum of `bin_contents.actual_quantity` for the product.
 
 ## Fulfillment Lifecycle (Sales Orders)
 

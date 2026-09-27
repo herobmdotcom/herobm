@@ -10,6 +10,7 @@ import {
   organizations,
 } from '@herobm/db-schema';
 import { AppConfigService } from '../settings/app-config.service';
+import { formatReportDate, toDecimal, formatMoneyString } from '@herobm/shared';
 
 export interface CustomerPaymentReceiptData {
   header: {
@@ -151,27 +152,23 @@ export class CustomerPaymentReceiptService {
       .where(eq(paymentAllocations.paymentId, paymentId))
       .orderBy(asc(salesInvoices.invoiceDate));
 
-    let totalGross = 0;
-    let totalDiscount = 0;
+    let totalGross = toDecimal(0);
+    let totalDiscount = toDecimal(0);
 
     const lines = allocations.map((alloc) => {
       const gross = alloc.totalAmount
-        ? parseFloat(alloc.totalAmount)
-        : parseFloat(alloc.allocatedAmount || '0');
+        ? toDecimal(alloc.totalAmount)
+        : toDecimal(alloc.allocatedAmount);
       const discount = alloc.discountAmount
-        ? parseFloat(alloc.discountAmount)
-        : 0;
-      const allocated = parseFloat(alloc.allocatedAmount || '0');
+        ? toDecimal(alloc.discountAmount)
+        : toDecimal(0);
+      const allocated = toDecimal(alloc.allocatedAmount);
 
-      totalGross += gross;
-      totalDiscount += discount;
+      totalGross = totalGross.plus(gross);
+      totalDiscount = totalDiscount.plus(discount);
 
-      const invDateStr = alloc.invoiceDate
-        ? new Date(alloc.invoiceDate).toLocaleDateString('en-IE')
-        : '—';
-      const dueDateStr = alloc.dueDate
-        ? new Date(alloc.dueDate).toLocaleDateString('en-IE')
-        : '—';
+      const invDateStr = formatReportDate(alloc.invoiceDate, undefined, '—');
+      const dueDateStr = formatReportDate(alloc.dueDate, undefined, '—');
 
       return {
         invoiceDate: invDateStr,
@@ -179,18 +176,16 @@ export class CustomerPaymentReceiptService {
         customerOrderNumber: alloc.customerOrderNumber || '—',
         dueDate: dueDateStr,
         grossAmount: gross.toFixed(2),
-        discountAmount: discount > 0 ? discount.toFixed(2) : '0.00',
+        discountAmount: discount.greaterThan(0) ? discount.toFixed(2) : '0.00',
         allocatedAmount: allocated.toFixed(2),
       };
     });
 
-    const totalPaid = parseFloat(pmt.totalAmount || '0');
-    const unallocated = parseFloat(pmt.unallocatedAmount || '0');
+    const totalPaid = toDecimal(pmt.totalAmount).toNumber();
+    const unallocated = toDecimal(pmt.unallocatedAmount).toNumber();
     const now = new Date();
 
-    const pmtDateStr = pmt.paymentDate
-      ? new Date(pmt.paymentDate).toLocaleDateString('en-IE')
-      : now.toLocaleDateString('en-IE');
+    const pmtDateStr = formatReportDate(pmt.paymentDate || now, undefined, '—');
 
     const customText =
       (options?.customPdfText as string) || (options?.quoteIntroText as string);

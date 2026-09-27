@@ -149,8 +149,7 @@ export class CashFlowService {
 
   async assembleData(
     idOrDateRange: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Boundary auth user
-    user?: any,
+    user?: { role?: string; username?: string; [key: string]: unknown },
     options?: Record<string, unknown>,
   ): Promise<CashFlowStatementData> {
     const now = new Date();
@@ -223,7 +222,8 @@ export class CashFlowService {
       .substring(0, 16)
       .toUpperCase();
 
-    const actor = user?.username || user?.email || 'admin';
+    const actor =
+      (user?.username as string) || (user?.email as string) || 'admin';
     const customPdfText = options?.customPdfText as string | undefined;
 
     return {

@@ -129,7 +129,7 @@ export default tseslint.config(
         {
           // ADV-050: State Machine Enforcement
           // Prevents raw mutations of stateCode outside of official change[Entity]State helpers.
-          selector: "MethodDefinition[key.name!=/^change.*State$/] CallExpression[callee.property.name='set'] Property[key.name='stateCode']",
+          selector: "MethodDefinition[key.name!=/^(change|update).*State.*$/] CallExpression[callee.property.name='set'] Property[key.name='stateCode']",
           message: "ADV-050: Raw stateCode mutations are forbidden. You must use or create a change[Entity]State() helper method to ensure state machine validation."
         },
         {
@@ -151,6 +151,11 @@ export default tseslint.config(
           // ADV-053: Direct console.* calls prohibited in API services
           selector: "ClassDeclaration[id.name=/.*Service$/] CallExpression[callee.object.name='console'][callee.property.name=/^(log|warn|error|info|debug)$/]",
           message: "ADV-053: Direct console.* calls are prohibited in API services. Inject and use a NestJS Logger instance for structured and file-persisted logging."
+        },
+        {
+          // ADV-220: Centralized Date Formatting
+          selector: "CallExpression[callee.property.name=/^(toLocaleDateString|toLocaleTimeString)$/]",
+          message: "ADV-220: Do not call .toLocaleDateString() or .toLocaleTimeString() directly. Use formatLocalDate() or formatReportDateTime() from '@herobm/shared'."
         }
       ]
     },

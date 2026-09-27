@@ -1,3 +1,5 @@
+import Decimal from 'decimal.js';
+
 /**
  * Pure Single-Source Accounting Calculation Engine
  *
@@ -56,46 +58,46 @@ export interface PureSalesInvoiceAccountingResult {
 export function calculateSalesInvoiceFinancials(
   input: PureSalesInvoiceAccountingInput,
 ): PureSalesInvoiceAccountingResult {
-  let subtotal = 0;
-  let taxTotal = 0;
+  let subtotal = new Decimal(0);
+  let taxTotal = new Decimal(0);
   const journalLines: PureJournalLine[] = [];
 
-  const rate = input.exchangeRate > 0 ? input.exchangeRate : 1;
+  const rate = new Decimal(input.exchangeRate > 0 ? input.exchangeRate : 1);
 
   for (const line of input.lines) {
-    const net = Math.round(line.netAmount * 100) / 100;
-    const tax = Math.round((line.taxAmount || 0) * 100) / 100;
+    const net = new Decimal(line.netAmount || 0).toDecimalPlaces(2);
+    const tax = new Decimal(line.taxAmount || 0).toDecimalPlaces(2);
 
-    subtotal += net;
-    taxTotal += tax;
+    subtotal = subtotal.plus(net);
+    taxTotal = taxTotal.plus(tax);
 
-    const baseNet = Math.round(net * rate * 100) / 100;
+    const baseNet = net.mul(rate).toDecimalPlaces(2);
 
     // Revenue Credit
     journalLines.push({
       accountCode: line.revenueAccountCode,
       debit: 0,
-      credit: baseNet,
+      credit: baseNet.toNumber(),
       foreignDebit: 0,
-      foreignCredit: net,
+      foreignCredit: net.toNumber(),
       foreignCurrencyCode: input.currencyCode,
-      exchangeRate: rate,
+      exchangeRate: rate.toNumber(),
       memo: line.description || `Revenue: ${input.invoiceNumber}`,
       costCenterId: line.costCenterId || input.costCenterId,
       activityId: line.activityId || input.activityId,
     });
 
     // Sales Tax Credit (if tax applies)
-    if (tax > 0 && line.salesTaxAccountCode) {
-      const baseTax = Math.round(tax * rate * 100) / 100;
+    if (tax.greaterThan(0) && line.salesTaxAccountCode) {
+      const baseTax = tax.mul(rate).toDecimalPlaces(2);
       journalLines.push({
         accountCode: line.salesTaxAccountCode,
         debit: 0,
-        credit: baseTax,
+        credit: baseTax.toNumber(),
         foreignDebit: 0,
-        foreignCredit: tax,
+        foreignCredit: tax.toNumber(),
         foreignCurrencyCode: input.currencyCode,
-        exchangeRate: rate,
+        exchangeRate: rate.toNumber(),
         memo: `Sales Tax: ${input.invoiceNumber}`,
         costCenterId: line.costCenterId || input.costCenterId,
         activityId: line.activityId || input.activityId,
@@ -103,20 +105,20 @@ export function calculateSalesInvoiceFinancials(
     }
   }
 
-  subtotal = Math.round(subtotal * 100) / 100;
-  taxTotal = Math.round(taxTotal * 100) / 100;
-  const grandTotal = Math.round((subtotal + taxTotal) * 100) / 100;
-  const baseGrandTotal = Math.round(grandTotal * rate * 100) / 100;
+  const roundedSubtotal = subtotal.toDecimalPlaces(2);
+  const roundedTaxTotal = taxTotal.toDecimalPlaces(2);
+  const grandTotal = roundedSubtotal.plus(roundedTaxTotal).toDecimalPlaces(2);
+  const baseGrandTotal = grandTotal.mul(rate).toDecimalPlaces(2);
 
   // AR Debit (Header Total)
   journalLines.unshift({
     accountCode: input.arAccountCode,
-    debit: baseGrandTotal,
+    debit: baseGrandTotal.toNumber(),
     credit: 0,
-    foreignDebit: grandTotal,
+    foreignDebit: grandTotal.toNumber(),
     foreignCredit: 0,
     foreignCurrencyCode: input.currencyCode,
-    exchangeRate: rate,
+    exchangeRate: rate.toNumber(),
     memo: `Accounts Receivable: ${input.invoiceNumber}`,
     partyType: 'customer',
     partyId: input.customerId,
@@ -125,10 +127,10 @@ export function calculateSalesInvoiceFinancials(
   });
 
   return {
-    subtotal,
-    taxTotal,
-    grandTotal,
-    baseGrandTotal,
+    subtotal: roundedSubtotal.toNumber(),
+    taxTotal: roundedTaxTotal.toNumber(),
+    grandTotal: grandTotal.toNumber(),
+    baseGrandTotal: baseGrandTotal.toNumber(),
     journalLines,
   };
 }

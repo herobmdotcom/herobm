@@ -10,7 +10,7 @@ import {
   salesInvoices,
   glAccounts,
 } from '@herobm/db-schema';
-import { SALES_INVOICE_STATE } from '@herobm/shared';
+import { SALES_INVOICE_STATE, formatReportDate } from '@herobm/shared';
 
 export interface CustomerOverdueNoticeData {
   header: {
@@ -179,14 +179,12 @@ export class CustomerOverdueNoticeService {
           days90Plus += outstanding;
         }
 
-        const invDateStr = inv.invoiceDate
-          ? new Date(inv.invoiceDate).toLocaleDateString('en-IE')
-          : inv.createdOn
-            ? new Date(inv.createdOn).toLocaleDateString('en-IE')
-            : '—';
-        const dueDateStr = inv.dueDate
-          ? new Date(inv.dueDate).toLocaleDateString('en-IE')
-          : '—';
+        const invDateStr = formatReportDate(
+          inv.invoiceDate || inv.createdOn,
+          undefined,
+          '—',
+        );
+        const dueDateStr = formatReportDate(inv.dueDate, undefined, '—');
 
         overdueLines.push({
           invoiceDate: invDateStr,
@@ -254,7 +252,7 @@ export class CustomerOverdueNoticeService {
         customerName: cust.name || '—',
         billingAddress: billingAddressParts.join(', '),
         customerContact: '',
-        noticeDate: now.toLocaleDateString('en-IE'),
+        noticeDate: formatReportDate(now, undefined, '—'),
         paymentTerms: cust.termsDescription || cust.termsCode || '30 Days',
         creditLimit: cust.creditLimit?.toString() || '',
         currencyCode: cust.currencyCode || this.appConfig.homeCurrency(),

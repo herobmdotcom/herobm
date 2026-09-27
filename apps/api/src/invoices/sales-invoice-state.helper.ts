@@ -1,3 +1,4 @@
+import { Decimal } from 'decimal.js';
 import { BadRequestException, Logger, NotFoundException } from '@nestjs/common';
 import { eq, and } from 'drizzle-orm';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -9,11 +10,13 @@ import {
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { GlService } from '../gl/gl.service';
+import { JournalLineDto } from '../gl/dto';
 import { evaluateLifecycleRules } from '../orders/order-lifecycle-rules';
 import { unbillProjectInvoiceHelper } from '../projects/projects-billing.service';
 import {
   JOURNAL_ENTRY_SOURCE_TYPE,
   SALES_INVOICE_STATE,
+  type SalesInvoiceState,
   SALES_INVOICE_TRANSITIONS,
   getValidStates,
 } from '@herobm/shared';
@@ -77,16 +80,18 @@ export async function changeSalesInvoiceStateHelper(
             eq(glJournalLines.journalEntryId, originalEntry.journalEntryId),
           );
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-        const reversedLines: any[] = originalLines.map((line) => ({
+        const reversedLines: JournalLineDto[] = originalLines.map((line) => ({
           accountId: line.glAccountId,
-          debit: parseFloat(line.credit),
-          credit: parseFloat(line.debit),
+          debit: new Decimal(line.credit).toNumber(),
+          credit: new Decimal(line.debit).toNumber(),
           memo: `Cancellation Reversal: ${line.memo}`,
-          costCenterId: line.costCenterId,
-          activityId: line.activityId,
-          partyType: line.partyType,
-          partyId: line.partyId,
+          costCenterId: line.costCenterId || undefined,
+          activityId: line.activityId || undefined,
+          partyType:
+            line.partyType === 'customer' || line.partyType === 'supplier'
+              ? line.partyType
+              : undefined,
+          partyId: line.partyId || undefined,
         }));
 
         await glService.postJournalEntry(
@@ -106,8 +111,7 @@ export async function changeSalesInvoiceStateHelper(
     const [updated] = await activeDb
       .update(salesInvoices) // @herobm-skip-audit
       .set({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- State codes often differ slightly from the strict Drizzle enums
-        stateCode: newState as any,
+        stateCode: newState as SalesInvoiceState,
         modifiedOn: new Date(),
       })
       .where(eq(salesInvoices.invoiceId, invoiceId))

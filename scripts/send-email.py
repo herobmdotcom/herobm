@@ -9,20 +9,36 @@ import sys
 import json
 import urllib.request
 import argparse
+import socket
+import os
 
 def main():
     parser = argparse.ArgumentParser(description="Send email via exe.dev gateway")
     parser.add_argument("--to", required=True, help="Recipient email address")
     parser.add_argument("--subject", required=True, help="Email subject")
+    parser.add_argument("--source", "--host", dest="source", help="Source VM / host name")
     args = parser.parse_args()
 
     # Read the entire body from stdin
     body = sys.stdin.read()
 
+    source = args.source or os.environ.get("BACKUP_SOURCE_NAME") or os.environ.get("HEROBM_INSTANCE_NAME")
+    if not source and not args.subject.startswith("["):
+        try:
+            source = socket.gethostname()
+        except Exception:
+            source = None
+
+    subject = args.subject
+    if source and not subject.startswith("["):
+        clean_source = source.strip()
+        if clean_source:
+            subject = f"[{clean_source}] {subject}"
+
     url = "http://169.254.169.254/gateway/email/send"
     payload = {
         "to": args.to,
-        "subject": args.subject,
+        "subject": subject,
         "body": body
     }
 

@@ -301,7 +301,6 @@ export default function RolesPage() {
                 <div className="border border-[var(--border)] rounded p-4 bg-[var(--bg-secondary)]">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-4">
-                      {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                       <span className="material-symbols-outlined text-muted">badge</span>
                       <input 
                         type="text" 

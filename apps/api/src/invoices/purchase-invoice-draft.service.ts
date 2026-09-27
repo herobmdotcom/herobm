@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+import { Decimal } from 'decimal.js';
 import {
   Injectable,
   Inject,
@@ -142,9 +143,9 @@ export class PurchaseInvoiceDraftService {
         invoiceDate || new Date(),
       );
 
-      const baseTotalAmount = (
-        parseFloat(dto.totalAmount.toString()) * fx.rate
-      ).toFixed(2);
+      const baseTotalAmount = new Decimal(dto.totalAmount)
+        .mul(fx.rate)
+        .toFixed(2);
 
       const [invoice] = await tx
         .insert(purchaseInvoices)
@@ -174,8 +175,8 @@ export class PurchaseInvoiceDraftService {
 
       if (dto.lines && dto.lines.length > 0) {
         const linesToInsert = dto.lines.map((l) => {
-          const qty = parseFloat(String(l.quantityInvoiced || '0'));
-          const price = parseFloat(String(l.pricePerUnit || '0'));
+          const qty = new Decimal(l.quantityInvoiced || '0').toNumber();
+          const price = new Decimal(l.pricePerUnit || '0').toNumber();
           const pricing = computeLinePriceForStorage({
             quantity: qty,
             pricePerUnit: price,
@@ -319,16 +320,16 @@ export class PurchaseInvoiceDraftService {
         updateData.glAccountId = dto.glAccountId;
       if (dto.productId !== undefined) updateData.productId = dto.productId;
 
-      let qty = parseFloat(line.quantityInvoiced);
-      let price = parseFloat(line.pricePerUnit);
+      let qty = new Decimal(line.quantityInvoiced).toNumber();
+      let price = new Decimal(line.pricePerUnit).toNumber();
 
       if (dto.quantityInvoiced !== undefined) {
         updateData.quantityInvoiced = String(dto.quantityInvoiced);
-        qty = parseFloat(String(dto.quantityInvoiced));
+        qty = new Decimal(dto.quantityInvoiced).toNumber();
       }
       if (dto.pricePerUnit !== undefined) {
         updateData.pricePerUnit = String(dto.pricePerUnit);
-        price = parseFloat(String(dto.pricePerUnit));
+        price = new Decimal(dto.pricePerUnit).toNumber();
       }
 
       if (
@@ -430,8 +431,8 @@ export class PurchaseInvoiceDraftService {
       if (invoice.stateCode !== PURCHASE_INVOICE_STATE.DRAFT)
         throw new BadRequestException('Only draft invoice lines can be added');
 
-      const qty = parseFloat(String(dto.quantityInvoiced || '1'));
-      const price = parseFloat(String(dto.pricePerUnit || '0'));
+      const qty = new Decimal(dto.quantityInvoiced || '1').toNumber();
+      const price = new Decimal(dto.pricePerUnit || '0').toNumber();
       const pricing = computeLinePriceForStorage({
         quantity: qty,
         pricePerUnit: price,
@@ -500,8 +501,7 @@ export class PurchaseInvoiceDraftService {
   ) {
     const fullInvoice = await this.core.findOne(invoiceId, tx);
     if (!fullInvoice) throw new NotFoundException('Invoice not found');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- We use any[] for lines here due to union complexity, but it's isolated
-    const invoice = fullInvoice as typeof fullInvoice & { lines: any[] };
+    const invoice = fullInvoice;
 
     const allowed = PURCHASE_INVOICE_TRANSITIONS[invoice.stateCode] || [];
     if (!allowed.includes(newState)) {
@@ -521,7 +521,7 @@ export class PurchaseInvoiceDraftService {
         if (
           line.matchStatus !== MATCH_STATUS.MATCHED &&
           !line.purchaseOrderLineId &&
-          parseFloat(line.amount || '0') > 0
+          new Decimal(line.amount || '0').gt(0)
         ) {
           discrepancies.push({
             type: 'unplanned_line',
@@ -532,18 +532,18 @@ export class PurchaseInvoiceDraftService {
           line.matchStatus === MATCH_STATUS.MATCHED &&
           line.purchaseOrderLineId
         ) {
-          const billedQty = parseFloat(line.quantityInvoiced || '0');
-          const poReceived = parseFloat(line.poLineQuantityReceived || '0');
-          const billedPrice = parseFloat(line.pricePerUnit || '0');
-          const poPrice = parseFloat(line.poLinePricePerUnit || '0');
+          const billedQtyDec = new Decimal(line.quantityInvoiced || '0');
+          const poReceivedDec = new Decimal(line.poLineQuantityReceived || '0');
+          const billedPriceDec = new Decimal(line.pricePerUnit || '0');
+          const poPriceDec = new Decimal(line.poLinePricePerUnit || '0');
 
-          if (Math.abs(billedPrice - poPrice) > 0.001) {
+          if (billedPriceDec.minus(poPriceDec).abs().gt(0.001)) {
             discrepancies.push({
               type: 'price_variance',
               message: `Line ${idx + 1} price variance.`,
             });
           }
-          if (billedQty > poReceived) {
+          if (billedQtyDec.gt(poReceivedDec)) {
             discrepancies.push({
               type: 'quantity_variance',
               message: `Line ${idx + 1} quantity variance.`,

@@ -24,6 +24,9 @@ import {
   SALES_ORDER_PICK_STATE,
   TRANSFER_ORDER_PICK_STATE,
   formatPickBarcode,
+  formatReportDate,
+  formatReportDateTime,
+  toDecimal,
 } from '@herobm/shared';
 
 // ─── Data shapes ────────────────────────────────────────────────────────────
@@ -355,7 +358,12 @@ export class PickingSlipService {
     const pickedMap = new Map<string, number>();
     for (const p of picks) {
       const key = `${p.lineId}_${p.productId ?? ''}`;
-      pickedMap.set(key, (pickedMap.get(key) || 0) + parseFloat(p.quantity));
+      pickedMap.set(
+        key,
+        toDecimal(pickedMap.get(key) || 0)
+          .plus(toDecimal(p.quantity))
+          .toNumber(),
+      );
     }
 
     // 3. Resolve On-Hand Stock (for backorder logic)
@@ -371,7 +379,10 @@ export class PickingSlipService {
 
       for (const row of invRows) {
         if (row.productId) {
-          onHandMap.set(row.productId, parseFloat(row.quantityOnHand ?? '0'));
+          onHandMap.set(
+            row.productId,
+            toDecimal(row.quantityOnHand).toNumber(),
+          );
         }
       }
     }
@@ -381,11 +392,11 @@ export class PickingSlipService {
     const backOrderLines: BackOrderLine[] = [];
 
     for (const line of lines) {
-      const ordered = parseFloat(line.quantity);
+      const ordered = toDecimal(line.quantity).toNumber();
       const key = `${line.lineId}_${line.productId ?? ''}`;
       const picked =
         pickedMap.get(key) ?? pickedMap.get(`${line.lineId}_`) ?? 0; // Fallback for picks missing productId in old code
-      const toPick = ordered - picked;
+      const toPick = toDecimal(ordered).minus(picked).toNumber();
       const CUSTOM_LINE_ID = '00000000-0000-4000-8000-000000000000';
       const isCustomLine = line.productId === CUSTOM_LINE_ID;
       const productCode = isCustomLine
@@ -434,20 +445,12 @@ export class PickingSlipService {
         orderNumber: header.orderNumber ?? '',
         customerName: header.customerName ?? '',
         customerOrderNumber: header.customerOrderNumber ?? '',
-        orderDate: header.createdOn
-          ? new Date(header.createdOn).toLocaleDateString('en-IE')
-          : '',
+        orderDate: formatReportDate(header.createdOn, undefined, ''),
         locationName: header.locationName ?? '',
       },
       pickingLines,
       backOrderLines,
-      generatedAt:
-        new Date().toLocaleDateString('en-IE') +
-        ' ' +
-        new Date().toLocaleTimeString('en-IE', {
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
+      generatedAt: formatReportDateTime(new Date()),
     };
   }
 }

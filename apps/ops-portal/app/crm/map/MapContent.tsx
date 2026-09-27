@@ -2,7 +2,7 @@
 'use client';
 import { reportError } from '@/lib/api';
 import { toast } from 'react-hot-toast';
-import { getErrorMessage, formatAmount } from '@herobm/shared';
+import { getErrorMessage, formatAmount, formatLocalDate, parseLocalDate } from '@herobm/shared';
 import * as api from '@herobm/sdk';
 
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
@@ -131,11 +131,11 @@ const formatYearMonth = (dateStr?: unknown) => {
   if (!dateStr || (typeof dateStr !== 'string' && typeof dateStr !== 'number' && !(dateStr instanceof Date))) {
     return { yearKey: 'other', monthKey: 'other', yearLabel: 'Other Orders', monthLabel: 'Other Orders' };
   }
-  const d = new Date(dateStr as string | number | Date);
-  if (isNaN(d.getTime())) return { yearKey: 'other', monthKey: 'other', yearLabel: 'Other Orders', monthLabel: 'Other Orders' };
-  const year = d.getUTCFullYear();
-  const month = d.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
-  const monthNum = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const d = parseLocalDate(dateStr as string | number | Date);
+  if (!d) return { yearKey: 'other', monthKey: 'other', yearLabel: 'Other Orders', monthLabel: 'Other Orders' };
+  const year = d.getFullYear();
+  const month = formatLocalDate(d, { month: 'short' });
+  const monthNum = String(d.getMonth() + 1).padStart(2, '0');
   return {
     yearKey: String(year),
     monthKey: `${year}-${monthNum}`,

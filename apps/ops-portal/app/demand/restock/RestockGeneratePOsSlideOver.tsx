@@ -58,7 +58,7 @@ export default function RestockGeneratePOsSlideOver({
       items.forEach((item) => {
         initial[item.id] = {
           vendorId: item.vendorId || undefined,
-          vendorName: item.vendorName || t('unassigned'),
+          vendorName: item.vendorName || '',
           costPrice: item.costPrice || 0,
           currencyCode: item.currencyCode || 'USD',
           quantity: item.restockQty > 0 ? item.restockQty : item.suggestedRestockQty,
@@ -66,7 +66,7 @@ export default function RestockGeneratePOsSlideOver({
       });
       setLineOverrides(initial);
     }
-  }, [isOpen, items, t]);
+  }, [isOpen, items]);
 
   const activeItems = useMemo(() => {
     return items.filter((item) => !excludedIds.has(item.id));
@@ -408,13 +408,15 @@ export default function RestockGeneratePOsSlideOver({
                             ? item.currentCost
                             : parseFloat(String(item.currentCost || '0')) || 0;
                         const lineTotal = numQty * numCost;
-                        const numUnit =
-                          item.purchaseUnit !== undefined &&
-                          item.purchaseUnit !== null &&
-                          item.purchaseUnit !== '' &&
-                          !isNaN(Number(item.purchaseUnit))
-                            ? parseFloat(String(item.purchaseUnit))
-                            : undefined;
+                        const numRatio =
+                          item.purchaseUomRatio != null && !isNaN(Number(item.purchaseUomRatio)) && Number(item.purchaseUomRatio) > 0
+                            ? Number(item.purchaseUomRatio)
+                            : (item.purchaseUnit !== undefined &&
+                               item.purchaseUnit !== null &&
+                               item.purchaseUnit !== '' &&
+                               !isNaN(Number(item.purchaseUnit))
+                                 ? parseFloat(String(item.purchaseUnit))
+                                 : undefined);
                         const hasMoq = Boolean(
                           item.minPurchaseQty && item.minPurchaseQty > 1,
                         );
@@ -423,11 +425,14 @@ export default function RestockGeneratePOsSlideOver({
                             (numQty <= 0 || numQty < (item.minPurchaseQty || 0)),
                         );
                         const isNotMultiple = Boolean(
-                          numUnit &&
-                            numUnit > 1 &&
-                            (numQty <= 0 || numQty % numUnit !== 0),
+                          numRatio &&
+                            numRatio > 1 &&
+                            (numQty <= 0 || numQty % numRatio !== 0),
                         );
                         const hasQtyWarning = isBelowMoq || isNotMultiple;
+                        const unitLabel = item.purchaseUomCode
+                          ? (numRatio && numRatio > 1 ? `${item.purchaseUomCode} (x${numRatio})` : item.purchaseUomCode)
+                          : item.purchaseUnit;
 
                         return (
                           <tr
@@ -484,7 +489,7 @@ export default function RestockGeneratePOsSlideOver({
                                       : 'border-[var(--border)] focus:border-[var(--accent)]'
                                   }`}
                                 />
-                                {hasMoq || item.purchaseUnit ? (
+                                {hasMoq || unitLabel ? (
                                   <div className="flex items-center gap-1 text-[10px] font-mono leading-none whitespace-nowrap">
                                     {hasMoq && (
                                       <span
@@ -497,12 +502,12 @@ export default function RestockGeneratePOsSlideOver({
                                         MOQ: {item.minPurchaseQty}
                                       </span>
                                     )}
-                                    {hasMoq && item.purchaseUnit && (
+                                    {hasMoq && unitLabel && (
                                       <span className="text-[var(--text-muted)]">
                                         •
                                       </span>
                                     )}
-                                    {item.purchaseUnit && (
+                                    {unitLabel && (
                                       <span
                                         className={
                                           isNotMultiple
@@ -510,7 +515,7 @@ export default function RestockGeneratePOsSlideOver({
                                             : 'text-[var(--text-muted)]'
                                         }
                                       >
-                                        Unit: {item.purchaseUnit}
+                                        Pack: {unitLabel}
                                       </span>
                                     )}
                                   </div>

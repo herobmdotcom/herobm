@@ -4,10 +4,12 @@ import { TaxResolutionEngine } from '../tax/tax-resolution.engine';
 import {
   InventoryGap,
   SALES_ORDER_STATE,
+  type SalesOrderState,
   CUSTOMER_STATE,
   PRODUCT_STATE,
   getErrorMessage,
 } from '@herobm/shared';
+import Decimal from 'decimal.js';
 import {
   Injectable,
   Inject,
@@ -184,9 +186,10 @@ export class OrderStateService {
           'Order must have a delivery address to be confirmed',
         );
       }
-      let orderTotal = 0;
+      let orderTotal = new Decimal(0);
       orderLines.forEach((lv) => {
-        if (lv.totalAmount) orderTotal += parseFloat(lv.totalAmount);
+        if (lv.totalAmount)
+          orderTotal = orderTotal.plus(new Decimal(lv.totalAmount));
       });
       // A status change to quoted, confirmed, or allocated constitutes a review process
       // Skip the credit check if we are transitioning backwards (e.g. from confirmed back to quoted)
@@ -195,7 +198,7 @@ export class OrderStateService {
       ) {
         await this.coreService.assertAccountStanding(
           existing.customerId,
-          orderTotal,
+          orderTotal.toNumber(),
           newState === SALES_ORDER_STATE.QUOTED ? 'quote' : 'confirm',
           undefined,
           existing.creditHoldOverrideAt,
@@ -239,8 +242,7 @@ export class OrderStateService {
       const [updated] = await tx
         .update(salesOrders)
         .set({
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle string/enum mismatch
-          stateCode: newState as any,
+          stateCode: newState as SalesOrderState,
           discrepanciesAcknowledged:
             discrepanciesAcknowledged !== undefined
               ? discrepanciesAcknowledged
@@ -343,13 +345,16 @@ export class OrderStateService {
     const freightLines = lines.filter((l) => l.productType === 'freight');
     const taxableLines = lines.filter((l) => l.productType !== 'freight');
 
-    const shippingTotal = freightLines.reduce((sum, l) => {
-      const qty = parseFloat(l.quantity || '0');
-      const unitPrice = parseFloat(l.pricePerUnit || '0');
-      const discountPct = parseFloat(l.discountPercentage || '0');
-      const discountAmt = unitPrice * (discountPct / 100) * qty;
-      return sum + qty * unitPrice - discountAmt;
-    }, 0);
+    const shippingTotal = freightLines
+      .reduce((sum, l) => {
+        const qty = new Decimal(l.quantity || '0');
+        const unitPrice = new Decimal(l.pricePerUnit || '0');
+        const discountPct = new Decimal(l.discountPercentage || '0');
+        const discountAmt = unitPrice.mul(discountPct.div(100)).mul(qty);
+        const lineNet = qty.mul(unitPrice).minus(discountAmt);
+        return sum.plus(lineNet);
+      }, new Decimal(0))
+      .toNumber();
 
     const payload = {
       from_country: org.country || 'US',
@@ -364,10 +369,10 @@ export class OrderStateService {
       to_street: customer.billingAddressLine1,
       shipping: shippingTotal,
       line_items: taxableLines.map((l) => {
-        const qty = parseFloat(l.quantity || '0');
-        const unitPrice = parseFloat(l.pricePerUnit || '0');
-        const discountPct = parseFloat(l.discountPercentage || '0');
-        const discountAmt = unitPrice * (discountPct / 100) * qty;
+        const qty = new Decimal(l.quantity || '0');
+        const unitPrice = new Decimal(l.pricePerUnit || '0');
+        const discountPct = new Decimal(l.discountPercentage || '0');
+        const discountAmt = unitPrice.mul(discountPct.div(100)).mul(qty);
         const payloadLine: {
           id: string;
           product_identifier: string | null;
@@ -380,9 +385,9 @@ export class OrderStateService {
           id: l.salesOrderLineId,
           product_identifier: l.productNumber,
           description: l.productDescription,
-          quantity: qty,
-          unit_price: unitPrice,
-          discount: discountAmt,
+          quantity: qty.toNumber(),
+          unit_price: unitPrice.toNumber(),
+          discount: discountAmt.toNumber(),
         };
         if (l.externalTaxCode) {
           payloadLine.product_tax_code = l.externalTaxCode;
@@ -423,8 +428,8 @@ export class OrderStateService {
           }
         }
 
-        const amt = parseFloat(l.amount || '0');
-        const totalAmount = (amt + taxAmt).toFixed(2);
+        const amt = new Decimal(l.amount || '0');
+        const totalAmount = amt.plus(new Decimal(taxAmt)).toFixed(2);
         await tx
           .update(salesOrderLineItems)
           .set({ tax: taxAmt.toString(), totalAmount })

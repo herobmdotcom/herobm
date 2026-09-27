@@ -6,6 +6,7 @@ import {
   NotFoundException,
   Logger,
 } from '@nestjs/common';
+import { Decimal } from 'decimal.js';
 import { eq, sql, and, inArray } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -158,11 +159,13 @@ export class PaymentsPostingService {
       }
 
       // 3. Post GL Journal Entry
-      const amount = parseFloat(payment.totalAmount || '0');
-      const paymentRate = parseFloat(payment.exchangeRate || '1');
-      const baseAmount = payment.baseTotalAmount
-        ? parseFloat(payment.baseTotalAmount)
-        : amount * paymentRate;
+      const amountDec = new Decimal(payment.totalAmount || '0');
+      const paymentRateDec = new Decimal(payment.exchangeRate || '1');
+      const baseAmountDec = payment.baseTotalAmount
+        ? new Decimal(payment.baseTotalAmount)
+        : amountDec
+            .mul(paymentRateDec)
+            .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
 
       // Fetch allocations early to compute base equivalents at invoice rates
       const draftAllocations = await tx
@@ -170,41 +173,93 @@ export class PaymentsPostingService {
         .from(paymentAllocations)
         .where(eq(paymentAllocations.paymentId, paymentId));
 
-      let totalDiscountForeign = 0;
-      let totalAllocatedForeign = 0;
-      let totalAllocatedBaseAtInvoiceRate = 0;
-      let totalDiscountBaseAtInvoiceRate = 0;
+      const salesInvoiceIds = Array.from(
+        new Set(
+          draftAllocations
+            .filter((a) => a.referenceType === 'sales_invoice')
+            .map((a) => a.referenceId),
+        ),
+      );
+      const purchaseInvoiceIds = Array.from(
+        new Set(
+          draftAllocations
+            .filter((a) => a.referenceType === 'purchase_invoice')
+            .map((a) => a.referenceId),
+        ),
+      );
 
-      for (const alloc of draftAllocations) {
-        const discountAmt = parseFloat(alloc.discountAmount || '0');
-        const allocAmt = parseFloat(alloc.allocatedAmount || '0');
-        totalDiscountForeign += discountAmt;
-        totalAllocatedForeign += allocAmt;
+      const exchangeRateMap = new Map<string, Decimal>();
 
-        let invoiceRate = paymentRate;
-        if (alloc.referenceType === 'sales_invoice') {
-          const [inv] = await tx
-            .select({ exchangeRate: salesInvoices.exchangeRate })
-            .from(salesInvoices)
-            .where(eq(salesInvoices.invoiceId, alloc.referenceId));
-          if (inv?.exchangeRate) invoiceRate = parseFloat(inv.exchangeRate);
-        } else if (alloc.referenceType === 'purchase_invoice') {
-          const [inv] = await tx
-            .select({ exchangeRate: purchaseInvoices.exchangeRate })
-            .from(purchaseInvoices)
-            .where(eq(purchaseInvoices.invoiceId, alloc.referenceId));
-          if (inv?.exchangeRate) invoiceRate = parseFloat(inv.exchangeRate);
+      if (salesInvoiceIds.length > 0) {
+        const salesInvs = await tx
+          .select({
+            invoiceId: salesInvoices.invoiceId,
+            exchangeRate: salesInvoices.exchangeRate,
+          })
+          .from(salesInvoices)
+          .where(inArray(salesInvoices.invoiceId, salesInvoiceIds));
+
+        for (const inv of salesInvs) {
+          if (inv.exchangeRate) {
+            exchangeRateMap.set(inv.invoiceId, new Decimal(inv.exchangeRate));
+          }
         }
-
-        totalAllocatedBaseAtInvoiceRate += allocAmt * invoiceRate;
-        totalDiscountBaseAtInvoiceRate += discountAmt * invoiceRate;
       }
 
-      const unallocatedForeign = amount - totalAllocatedForeign;
-      const unallocatedBase = unallocatedForeign * paymentRate;
+      if (purchaseInvoiceIds.length > 0) {
+        const purchaseInvs = await tx
+          .select({
+            invoiceId: purchaseInvoices.invoiceId,
+            exchangeRate: purchaseInvoices.exchangeRate,
+          })
+          .from(purchaseInvoices)
+          .where(inArray(purchaseInvoices.invoiceId, purchaseInvoiceIds));
 
-      const totalControlBase =
-        totalAllocatedBaseAtInvoiceRate + unallocatedBase;
+        for (const inv of purchaseInvs) {
+          if (inv.exchangeRate) {
+            exchangeRateMap.set(inv.invoiceId, new Decimal(inv.exchangeRate));
+          }
+        }
+      }
+
+      let totalDiscountForeignDec = new Decimal(0);
+      let totalAllocatedForeignDec = new Decimal(0);
+      let totalAllocatedBaseAtInvoiceRateDec = new Decimal(0);
+      let totalDiscountBaseAtInvoiceRateDec = new Decimal(0);
+
+      for (const alloc of draftAllocations) {
+        const discountAmtDec = new Decimal(alloc.discountAmount || '0');
+        const allocAmtDec = new Decimal(alloc.allocatedAmount || '0');
+        totalDiscountForeignDec = totalDiscountForeignDec.plus(discountAmtDec);
+        totalAllocatedForeignDec = totalAllocatedForeignDec.plus(allocAmtDec);
+
+        const invoiceRateDec =
+          exchangeRateMap.get(alloc.referenceId) || paymentRateDec;
+
+        totalAllocatedBaseAtInvoiceRateDec =
+          totalAllocatedBaseAtInvoiceRateDec.plus(
+            allocAmtDec
+              .mul(invoiceRateDec)
+              .toDecimalPlaces(2, Decimal.ROUND_HALF_UP),
+          );
+        totalDiscountBaseAtInvoiceRateDec =
+          totalDiscountBaseAtInvoiceRateDec.plus(
+            discountAmtDec
+              .mul(invoiceRateDec)
+              .toDecimalPlaces(2, Decimal.ROUND_HALF_UP),
+          );
+      }
+
+      const unallocatedForeignDec = amountDec.minus(totalAllocatedForeignDec);
+      const unallocatedBaseDec = unallocatedForeignDec
+        .mul(paymentRateDec)
+        .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+
+      const totalControlBaseDec =
+        totalAllocatedBaseAtInvoiceRateDec.plus(unallocatedBaseDec);
+      const totalControlBaseWithDiscountDec = totalControlBaseDec.plus(
+        totalDiscountBaseAtInvoiceRateDec,
+      );
 
       const isReceipt = (
         [
@@ -217,7 +272,7 @@ export class PaymentsPostingService {
       const settings = await this.glService.getSettings(tx);
 
       let discountAccountId: string | null = null;
-      if (totalDiscountForeign > 0) {
+      if (totalDiscountForeignDec.greaterThan(0)) {
         discountAccountId = isReceipt
           ? settings?.defaultDiscountsGivenAccountId || null
           : settings?.defaultDiscountsReceivedAccountId || null;
@@ -235,155 +290,159 @@ export class PaymentsPostingService {
       const linePartyId =
         (linePartyType ? payment.partyId : undefined) ?? undefined;
 
-      let totalDebits = 0;
-      let totalCredits = 0;
+      let totalDebits = new Decimal(0);
+      let totalCredits = new Decimal(0);
 
       if (isReceipt) {
         // Receipt: Debit Bank, Credit Offset (AR / Direct)
         lines.push({
           accountId: payment.glAccountBank,
-          debit: baseAmount,
+          debit: baseAmountDec.toNumber(),
           credit: 0,
-          foreignDebit: amount,
+          foreignDebit: amountDec.toNumber(),
           foreignCredit: 0,
           foreignCurrencyCode: payment.currencyCode,
-          exchangeRate: paymentRate,
+          exchangeRate: paymentRateDec.toNumber(),
           memo: `Payment ${payment.paymentNumber}`,
         });
-        totalDebits += baseAmount;
+        totalDebits = totalDebits.plus(baseAmountDec);
 
-        if (totalDiscountForeign > 0 && discountAccountId) {
+        if (totalDiscountForeignDec.greaterThan(0) && discountAccountId) {
           lines.push({
             accountId: discountAccountId,
-            debit: totalDiscountBaseAtInvoiceRate,
+            debit: totalDiscountBaseAtInvoiceRateDec.toNumber(),
             credit: 0,
-            foreignDebit: totalDiscountForeign,
+            foreignDebit: totalDiscountForeignDec.toNumber(),
             foreignCredit: 0,
             foreignCurrencyCode: payment.currencyCode,
-            exchangeRate: paymentRate, // It's an approximation for UI, the base amount matters more
+            exchangeRate: paymentRateDec.toNumber(), // It's an approximation for UI, the base amount matters more
             memo: `Early Payment Discount for ${payment.paymentNumber}`,
           });
-          totalDebits += totalDiscountBaseAtInvoiceRate;
+          totalDebits = totalDebits.plus(totalDiscountBaseAtInvoiceRateDec);
         }
 
         if (payLines.length > 0) {
           // Note: payLines currently don't use foreign currency logic in the schema, we assume they are base or at payment rate
           for (const pl of payLines) {
-            const plAmount = parseFloat(pl.amount);
-            const plBase = plAmount * paymentRate;
-            const isDebit = plAmount < 0;
-            const absPlBase = Math.abs(plBase);
+            const plAmountDec = new Decimal(pl.amount);
+            const plBaseDec = plAmountDec
+              .mul(paymentRateDec)
+              .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+            const isDebit = plAmountDec.isNegative();
+            const absPlBaseDec = plBaseDec.abs();
             lines.push({
               accountId: pl.glAccountId,
-              debit: isDebit ? absPlBase : 0,
-              credit: !isDebit ? absPlBase : 0,
-              foreignDebit: isDebit ? Math.abs(plAmount) : 0,
-              foreignCredit: !isDebit ? Math.abs(plAmount) : 0,
+              debit: isDebit ? absPlBaseDec.toNumber() : 0,
+              credit: !isDebit ? absPlBaseDec.toNumber() : 0,
+              foreignDebit: isDebit ? plAmountDec.abs().toNumber() : 0,
+              foreignCredit: !isDebit ? plAmountDec.abs().toNumber() : 0,
               foreignCurrencyCode: payment.currencyCode,
-              exchangeRate: paymentRate,
+              exchangeRate: paymentRateDec.toNumber(),
               memo: pl.memo || `Payment ${payment.paymentNumber}`,
               partyType: linePartyType,
               partyId: linePartyId,
             });
-            if (isDebit) totalDebits += absPlBase;
-            else totalCredits += absPlBase;
+            if (isDebit) totalDebits = totalDebits.plus(absPlBaseDec);
+            else totalCredits = totalCredits.plus(absPlBaseDec);
           }
         } else {
           lines.push({
             accountId: controlAccountId ?? undefined,
             debit: 0,
-            credit: totalControlBase + totalDiscountBaseAtInvoiceRate,
+            credit: totalControlBaseWithDiscountDec.toNumber(),
             foreignDebit: 0,
-            foreignCredit: amount + totalDiscountForeign,
+            foreignCredit: amountDec.plus(totalDiscountForeignDec).toNumber(),
             foreignCurrencyCode: payment.currencyCode,
-            exchangeRate: paymentRate,
+            exchangeRate: paymentRateDec.toNumber(),
             memo: `Payment ${payment.paymentNumber}`,
             partyType: linePartyType,
             partyId: linePartyId,
           });
-          totalCredits += totalControlBase + totalDiscountBaseAtInvoiceRate;
+          totalCredits = totalCredits.plus(totalControlBaseWithDiscountDec);
         }
       } else {
         // Payment: Credit Bank, Debit Offset (AP / Direct)
         lines.push({
           accountId: payment.glAccountBank,
           debit: 0,
-          credit: baseAmount,
+          credit: baseAmountDec.toNumber(),
           foreignDebit: 0,
-          foreignCredit: amount,
+          foreignCredit: amountDec.toNumber(),
           foreignCurrencyCode: payment.currencyCode,
-          exchangeRate: paymentRate,
+          exchangeRate: paymentRateDec.toNumber(),
           memo: `Payment ${payment.paymentNumber}`,
         });
-        totalCredits += baseAmount;
+        totalCredits = totalCredits.plus(baseAmountDec);
 
-        if (totalDiscountForeign > 0 && discountAccountId) {
+        if (totalDiscountForeignDec.greaterThan(0) && discountAccountId) {
           lines.push({
             accountId: discountAccountId,
             debit: 0,
-            credit: totalDiscountBaseAtInvoiceRate,
+            credit: totalDiscountBaseAtInvoiceRateDec.toNumber(),
             foreignDebit: 0,
-            foreignCredit: totalDiscountForeign,
+            foreignCredit: totalDiscountForeignDec.toNumber(),
             foreignCurrencyCode: payment.currencyCode,
-            exchangeRate: paymentRate,
+            exchangeRate: paymentRateDec.toNumber(),
             memo: `Early Payment Discount for ${payment.paymentNumber}`,
           });
-          totalCredits += totalDiscountBaseAtInvoiceRate;
+          totalCredits = totalCredits.plus(totalDiscountBaseAtInvoiceRateDec);
         }
 
         if (payLines.length > 0) {
           for (const pl of payLines) {
-            const plAmount = parseFloat(pl.amount);
-            const plBase = plAmount * paymentRate;
-            const isDebit = plAmount > 0;
-            const absPlBase = Math.abs(plBase);
+            const plAmountDec = new Decimal(pl.amount);
+            const plBaseDec = plAmountDec
+              .mul(paymentRateDec)
+              .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+            const isDebit = plAmountDec.isPositive();
+            const absPlBaseDec = plBaseDec.abs();
             lines.push({
               accountId: pl.glAccountId,
-              debit: isDebit ? absPlBase : 0,
-              credit: !isDebit ? absPlBase : 0,
-              foreignDebit: isDebit ? Math.abs(plAmount) : 0,
-              foreignCredit: !isDebit ? Math.abs(plAmount) : 0,
+              debit: isDebit ? absPlBaseDec.toNumber() : 0,
+              credit: !isDebit ? absPlBaseDec.toNumber() : 0,
+              foreignDebit: isDebit ? plAmountDec.abs().toNumber() : 0,
+              foreignCredit: !isDebit ? plAmountDec.abs().toNumber() : 0,
               foreignCurrencyCode: payment.currencyCode,
-              exchangeRate: paymentRate,
+              exchangeRate: paymentRateDec.toNumber(),
               memo: pl.memo || `Payment ${payment.paymentNumber}`,
               partyType: linePartyType,
               partyId: linePartyId,
             });
-            if (isDebit) totalDebits += absPlBase;
-            else totalCredits += absPlBase;
+            if (isDebit) totalDebits = totalDebits.plus(absPlBaseDec);
+            else totalCredits = totalCredits.plus(absPlBaseDec);
           }
         } else {
           lines.push({
             accountId: controlAccountId ?? undefined,
-            debit: totalControlBase + totalDiscountBaseAtInvoiceRate,
+            debit: totalControlBaseWithDiscountDec.toNumber(),
             credit: 0,
-            foreignDebit: amount + totalDiscountForeign,
+            foreignDebit: amountDec.plus(totalDiscountForeignDec).toNumber(),
             foreignCredit: 0,
             foreignCurrencyCode: payment.currencyCode,
-            exchangeRate: paymentRate,
+            exchangeRate: paymentRateDec.toNumber(),
             memo: `Payment ${payment.paymentNumber}`,
             partyType: linePartyType,
             partyId: linePartyId,
           });
-          totalDebits += totalControlBase + totalDiscountBaseAtInvoiceRate;
+          totalDebits = totalDebits.plus(totalControlBaseWithDiscountDec);
         }
       }
 
       // Calculate FX Variance
-      const fxVariance = totalDebits - totalCredits;
-      if (Math.abs(fxVariance) > 0.005) {
+      const fxVarianceDec = totalDebits.minus(totalCredits);
+      if (fxVarianceDec.abs().greaterThan(0.0001)) {
         if (!fxGainAccountId || !fxLossAccountId) {
           throw new BadRequestException(
             'Realised FX Gain/Loss accounts are not configured in GL Settings.',
           );
         }
 
-        if (fxVariance > 0) {
+        if (fxVarianceDec.greaterThan(0)) {
           // Debits > Credits -> We need a Credit to balance -> FX Gain
           lines.push({
             accountId: fxGainAccountId,
             debit: 0,
-            credit: fxVariance,
+            credit: fxVarianceDec.toNumber(),
             foreignDebit: 0,
             foreignCredit: 0,
             foreignCurrencyCode: payment.currencyCode,
@@ -394,7 +453,7 @@ export class PaymentsPostingService {
           // Credits > Debits -> We need a Debit to balance -> FX Loss
           lines.push({
             accountId: fxLossAccountId,
-            debit: Math.abs(fxVariance),
+            debit: fxVarianceDec.abs().toNumber(),
             credit: 0,
             foreignDebit: 0,
             foreignCredit: 0,
@@ -522,7 +581,7 @@ export class PaymentsPostingService {
           bsb,
           accountNumber: account,
           accountName: name,
-          amount: parseFloat(p.totalAmount),
+          amount: new Decimal(p.totalAmount || '0'),
           traceBsb: meta.bsb || '000-000',
           traceAccountNumber: meta.accountNumber || '000000',
           remitterName: meta.abaUserName,
@@ -651,7 +710,7 @@ export class PaymentsPostingService {
           routingNumber: routing,
           accountNumber: account,
           accountName: name,
-          amount: parseFloat(p.totalAmount),
+          amount: new Decimal(p.totalAmount || '0'),
           reference: p.paymentNumber,
         };
       });

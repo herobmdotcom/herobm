@@ -79,6 +79,7 @@ describe('PurchaseReturnsService', () => {
         systemBaseCurrency: 'EUR',
       }),
       inventoryAccountingMode: () => 'perpetual',
+      valuationMethod: () => 'weighted_average',
       defaultInventoryAccountId: () => 'inv-acc',
       defaultGrniAccountId: () => 'grni-acc',
       defaultCogsAccountId: () => 'cogs-acc',
@@ -530,6 +531,7 @@ describe('PurchaseReturnsService', () => {
       expect(inventoryCall.lines).toHaveLength(1);
       expect(inventoryCall.lines[0].quantity).toBe(-5);
       expect(inventoryCall.lines[0].binId).toBe(supplierReturnsBinId);
+      expect(inventoryCall.lines[0].unitCost).toBe('10');
 
       expect(mockGlService.postJournalEntry).toHaveBeenCalledTimes(1);
       const glCallLines = mockGlService.postJournalEntry.mock.calls[0][0];
@@ -540,6 +542,12 @@ describe('PurchaseReturnsService', () => {
       expect(
         glCallLines.find((l: any) => l.accountId === 'inv-acc').credit,
       ).toBe(50);
+
+      const [updatedProd] = await pg.db
+        .select()
+        .from(products)
+        .where(eq(products.productId, PROD_ID));
+      expect(updatedProd.weightedAverageCost).toBeDefined();
     });
 
     it('should throw an error if the return is not STAGED', async () => {
@@ -649,7 +657,14 @@ describe('PurchaseReturnsService', () => {
         binId: supplierReturnsBinId,
         quantity: 5,
         uomCode: 'EA',
+        unitCost: '10',
       });
+
+      const [updatedProd] = await pg.db
+        .select()
+        .from(products)
+        .where(eq(products.productId, PROD_ID));
+      expect(Number(updatedProd.weightedAverageCost)).toBeCloseTo(10, 2);
     });
   });
 });

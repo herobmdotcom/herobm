@@ -42,6 +42,7 @@ import {
   WORK_ORDER_STATE,
   WORK_ORDER_PICK_STATE,
   formatPickBarcode,
+  toDecimal,
 } from '@herobm/shared';
 import { PickingBarcodeDto } from './dto';
 
@@ -191,12 +192,15 @@ export class PickingQueryService {
       if (pick.stateCode !== SALES_ORDER_PICK_STATE.CANCELLED) {
         const key = `${pick.salesOrderLineId}_${pick.productId}`;
         const current = pickedMap.get(key) || 0;
-        pickedMap.set(key, current + parseFloat(pick.quantity));
+        pickedMap.set(
+          key,
+          toDecimal(current).plus(toDecimal(pick.quantity)).toNumber(),
+        );
       }
     }
 
     const summary = lines.map((line) => {
-      const ordered = parseFloat(line.quantity);
+      const ordered = toDecimal(line.quantity).toNumber();
       const isStocked =
         Boolean(line.productId) &&
         (!line.productType || line.productType === 'inventory');
@@ -218,10 +222,10 @@ export class PickingQueryService {
         : [];
 
       const availableBins = filterPickableBins(productLocationBins)
-        .sort(
-          (a, b) =>
-            parseFloat(String(b.onHand || 0)) -
-            parseFloat(String(a.onHand || 0)),
+        .sort((a, b) =>
+          toDecimal(b.onHand || 0)
+            .minus(toDecimal(a.onHand || 0))
+            .toNumber(),
         )
         .map((b) => ({
           binId: b.binId,
@@ -250,7 +254,7 @@ export class PickingQueryService {
       };
     });
 
-    const filteredSummary = summary.filter((s) => parseFloat(s.quantity) > 0);
+    const filteredSummary = summary.filter((s) => toDecimal(s.quantity).gt(0));
     const activeStockedLines = filteredSummary.filter(
       (s) =>
         Boolean(s.productId) &&
@@ -327,9 +331,9 @@ export class PickingQueryService {
     const summary = await this.getPickingSummary(orderId);
 
     const unpicked = summary.lines.filter((l) => {
-      const ordered = parseFloat(l.quantity);
-      const picked = parseFloat(l.quantityPicked ?? '0');
-      return picked < ordered;
+      const ordered = toDecimal(l.quantity);
+      const picked = toDecimal(l.quantityPicked ?? '0');
+      return picked.lt(ordered);
     });
 
     if (unpicked.length > 0) {
@@ -348,9 +352,9 @@ export class PickingQueryService {
 
     const unshipped = summary.lines.filter((l) => {
       if (!l.isPhysical) return false;
-      const ordered = parseFloat(l.quantity);
-      const shipped = parseFloat(l.quantityShipped ?? '0');
-      return shipped < ordered;
+      const ordered = toDecimal(l.quantity);
+      const shipped = toDecimal(l.quantityShipped ?? '0');
+      return shipped.lt(ordered);
     });
 
     if (unshipped.length > 0) {
@@ -832,15 +836,15 @@ export class PickingQueryService {
         Number(typeof query === 'object' ? query?.limit : 20) || 20,
       ),
     );
-    const total = filteredQueue.length;
-    const totalPages = Math.ceil(total / limit) || 1;
+    const itemCount = filteredQueue.length;
+    const totalPages = Math.ceil(itemCount / limit) || 1;
     const startIndex = (page - 1) * limit;
     const paginatedData = filteredQueue.slice(startIndex, startIndex + limit);
 
     return {
       data: paginatedData,
       meta: {
-        total,
+        total: itemCount,
         page,
         limit,
         totalPages,

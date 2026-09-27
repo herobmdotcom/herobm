@@ -88,9 +88,9 @@ export class GlobalReturnsService {
     }
 
     const finalQuery = sql`${baseQuery} ${filterSql} ${orderSql} LIMIT ${limit} OFFSET ${offset}`;
-    const countQuery = sql`SELECT COUNT(*) as total FROM (${baseQuery} ${filterSql}) as c`;
+    const countQuery = sql`SELECT COUNT(*) as count FROM (${baseQuery} ${filterSql}) as c`;
 
-    const [rows, [{ total }]] = await Promise.all([
+    const [rows, [{ count }]] = await Promise.all([
       this.db.execute(finalQuery),
       this.db.execute(countQuery),
     ]);
@@ -98,7 +98,7 @@ export class GlobalReturnsService {
     return {
       data: rows,
       meta: {
-        total: Number(total),
+        total: Number(count),
         page: query.page || 1,
         limit,
       },

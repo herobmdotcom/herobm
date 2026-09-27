@@ -13,8 +13,7 @@ interface KitComponentSlideOverProps {
   onClose: () => void;
   productId: string;
   componentId?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-  existingData?: Record<string, any>;
+  existingData?: Record<string, unknown>;
   onSaved: () => void;
 }
 
@@ -41,21 +40,44 @@ export const KitComponentSlideOver: React.FC<KitComponentSlideOverProps> = ({
   useEffect(() => {
     if (isOpen) {
       if (existingData) {
+        const childProdId = (existingData.childProductId as string) || '';
+        const childName =
+          (existingData.name as string) ||
+          (existingData.productNumber as string) ||
+          childProdId;
         setDto({
-          childProductId: existingData.childProductId,
-          childProductName: existingData.name || existingData.productNumber || existingData.childProductId,
-          parentQuantity: existingData.parentQuantity?.toString() || '1',
-          quantity: existingData.quantity?.toString() || '1',
-          sequenceNumber: existingData.sequenceNumber?.toString() || '1',
-          fractionalBehavior: existingData.fractionalBehavior || 'ALLOW_FRACTIONAL',
+          childProductId: childProdId,
+          childProductName: childName,
+          parentQuantity:
+            existingData.parentQuantity != null
+              ? String(existingData.parentQuantity)
+              : '1',
+          quantity:
+            existingData.quantity != null
+              ? String(existingData.quantity)
+              : '1',
+          sequenceNumber:
+            existingData.sequenceNumber != null
+              ? String(existingData.sequenceNumber)
+              : '1',
+          fractionalBehavior:
+            (existingData.fractionalBehavior as string) || 'ALLOW_FRACTIONAL',
         });
       } else {
         // Fetch existing components to determine next sequence number
         api.productsControllerGetComponents(productId)
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-          .then((res: any) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-            const maxSeq = res.data?.reduce((max: number, c: any) => Math.max(max, c.sequenceNumber || 0), 0) || 0;
+          .then((res) => {
+            const rawData = res.data as unknown;
+            const comps: Array<{ sequenceNumber?: number | string | null }> = Array.isArray(rawData)
+              ? (rawData as Array<{ sequenceNumber?: number | string | null }>)
+              : (rawData && typeof rawData === 'object' && Array.isArray((rawData as { data?: unknown[] }).data))
+                ? ((rawData as { data: Array<{ sequenceNumber?: number | string | null }> }).data)
+                : [];
+            const maxSeq =
+              comps.reduce(
+                (max: number, c) => Math.max(max, Number(c.sequenceNumber) || 0),
+                0,
+              ) || 0;
             setDto({
               childProductId: '',
               childProductName: '',

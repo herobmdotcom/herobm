@@ -72,11 +72,13 @@ export interface CalculatedTaxSummary {
   categories: CalculatedTaxCategory[];
 }
 
+import { Decimal } from 'decimal.js';
+
 /**
  * Helper to round to 2 decimal places with floating point safety.
  */
-function round2(val: number): number {
-  return Number(Math.round(Number(val + 'e2')) + 'e-2');
+function round2(val: number | string | Decimal): number {
+  return new Decimal(val || 0).toDecimalPlaces(2).toNumber();
 }
 
 /**
@@ -86,7 +88,7 @@ export function calculateTaxNetPosition(
   outputTax: number,
   inputTax: number,
 ): { netTaxLiability: number; netStatus: TaxNetStatus } {
-  const netTaxLiability = round2(outputTax - inputTax);
+  const netTaxLiability = round2(new Decimal(outputTax).minus(inputTax));
   const netStatus: TaxNetStatus =
     netTaxLiability > 0.001
       ? 'payable'
@@ -118,11 +120,11 @@ export function calculateGenericTaxSummary(
     mapOrObj: Map<string, number> | Record<string, number>,
   ): number => {
     if (mapOrObj instanceof Map) {
-      let sum = 0;
-      for (const v of mapOrObj.values()) sum += v;
-      return sum;
+      let sum = new Decimal(0);
+      for (const v of mapOrObj.values()) sum = sum.plus(v || 0);
+      return sum.toNumber();
     }
-    return Object.values(mapOrObj).reduce((sum, v) => sum + (v || 0), 0);
+    return Object.values(mapOrObj).reduce((sum, v) => sum.plus(v || 0), new Decimal(0)).toNumber();
   };
 
   const totalOutputTax = round2(getSum(input.salesTaxByAccount));
@@ -133,7 +135,7 @@ export function calculateGenericTaxSummary(
   );
 
   const totalNetSales = round2(input.totalNetSales);
-  const totalGrossSales = round2(totalNetSales + totalOutputTax);
+  const totalGrossSales = round2(new Decimal(totalNetSales).plus(totalOutputTax));
   const totalNetPurchases = round2(input.totalNetPurchases || 0);
 
   const categories: CalculatedTaxCategory[] = [];
@@ -141,7 +143,7 @@ export function calculateGenericTaxSummary(
   let aggregatedTaxablePurchases = 0;
 
   for (const cat of input.categories) {
-    const rateNum = parseFloat(String(cat.rate || '0')) || 0;
+    const rateNum = new Decimal(String(cat.rate || '0')).toNumber() || 0;
     const catSalesTax = cat.salesGlAccountId
       ? getAmount(input.salesTaxByAccount, cat.salesGlAccountId)
       : 0;
@@ -150,13 +152,17 @@ export function calculateGenericTaxSummary(
       : 0;
 
     const salesBase =
-      rateNum > 0 ? round2(catSalesTax / (rateNum / 100)) : 0;
+      rateNum > 0
+        ? round2(new Decimal(catSalesTax).div(new Decimal(rateNum).div(100)))
+        : 0;
     const purchaseBase =
-      rateNum > 0 ? round2(catPurchaseTax / (rateNum / 100)) : 0;
+      rateNum > 0
+        ? round2(new Decimal(catPurchaseTax).div(new Decimal(rateNum).div(100)))
+        : 0;
 
     if (cat.type === 'tax_applies') {
-      aggregatedTaxableSales += salesBase;
-      aggregatedTaxablePurchases += purchaseBase;
+      aggregatedTaxableSales = new Decimal(aggregatedTaxableSales).plus(salesBase).toNumber();
+      aggregatedTaxablePurchases = new Decimal(aggregatedTaxablePurchases).plus(purchaseBase).toNumber();
     }
 
     categories.push({
@@ -169,7 +175,7 @@ export function calculateGenericTaxSummary(
       outputTax: round2(catSalesTax),
       purchaseBase,
       inputTax: round2(catPurchaseTax),
-      netTax: round2(catSalesTax - catPurchaseTax),
+      netTax: round2(new Decimal(catSalesTax).minus(catPurchaseTax)),
     });
   }
 
@@ -198,7 +204,7 @@ export function calculateGenericTaxSummary(
       Math.max(0, totalNetSales),
     ),
   );
-  const exemptSales = round2(Math.max(0, totalNetSales - taxableSales));
+  const exemptSales = round2(Math.max(0, new Decimal(totalNetSales).minus(taxableSales).toNumber()));
   const taxablePurchases = round2(
     aggregatedTaxablePurchases > 0
       ? aggregatedTaxablePurchases
@@ -295,14 +301,14 @@ export function buildStatutoryReportBoxes(
 
   switch (reportType) {
     case 'au_bas': {
-      const roundedGrossSales = Math.round(totalGrossSales);
-      const roundedGstSales = Math.round(totalOutputTax);
-      const roundedGstPurchases = Math.round(totalInputTax);
+      const roundedGrossSales = new Decimal(totalGrossSales).round().toNumber();
+      const roundedGstSales = new Decimal(totalOutputTax).round().toNumber();
+      const roundedGstPurchases = new Decimal(totalInputTax).round().toNumber();
       const w1 = 0;
       const w2 = 0;
-      const totalOwedToAto = roundedGstSales + w2;
+      const totalOwedToAto = new Decimal(roundedGstSales).plus(w2).toNumber();
       const totalOwedByAto = roundedGstPurchases;
-      const netAmount = Math.abs(totalOwedToAto - totalOwedByAto);
+      const netAmount = new Decimal(totalOwedToAto).minus(totalOwedByAto).abs().toNumber();
 
       return [
         {
@@ -367,11 +373,11 @@ export function buildStatutoryReportBoxes(
     case 'uk_vat': {
       const box1 = round2(totalOutputTax);
       const box2 = 0;
-      const box3 = round2(box1 + box2);
+      const box3 = round2(new Decimal(box1).plus(box2));
       const box4 = round2(totalInputTax);
-      const box5 = round2(Math.abs(box3 - box4));
-      const box6 = Math.round(totalNetSales);
-      const box7 = Math.round(totalNetPurchases);
+      const box5 = round2(new Decimal(box3).minus(box4).abs());
+      const box6 = new Decimal(totalNetSales).round().toNumber();
+      const box7 = new Decimal(totalNetPurchases).round().toNumber();
       const box8 = 0;
       const box9 = 0;
 
@@ -449,14 +455,14 @@ export function buildStatutoryReportBoxes(
     }
 
     case 'sg_gst': {
-      const stdSupplies = Math.round(taxableSales);
-      const zeroSupplies = Math.round(exemptSales);
+      const stdSupplies = new Decimal(taxableSales).round().toNumber();
+      const zeroSupplies = new Decimal(exemptSales).round().toNumber();
       const exemptSupplies = 0;
-      const totalSupplies = stdSupplies + zeroSupplies + exemptSupplies;
-      const taxablePurchasesAmt = Math.round(taxablePurchases);
-      const outputTaxDue = Math.round(totalOutputTax);
-      const inputTaxClaimed = Math.round(totalInputTax);
-      const netGst = Math.abs(outputTaxDue - inputTaxClaimed);
+      const totalSupplies = new Decimal(stdSupplies).plus(zeroSupplies).plus(exemptSupplies).toNumber();
+      const taxablePurchasesAmt = new Decimal(taxablePurchases).round().toNumber();
+      const outputTaxDue = new Decimal(totalOutputTax).round().toNumber();
+      const inputTaxClaimed = new Decimal(totalInputTax).round().toNumber();
+      const netGst = new Decimal(outputTaxDue).minus(inputTaxClaimed).abs().toNumber();
 
       return [
         {
@@ -519,13 +525,13 @@ export function buildStatutoryReportBoxes(
     }
 
     case 'nz_gst': {
-      const box5 = Math.round(totalGrossSales);
-      const box6 = Math.round(exemptSales);
-      const box7 = Math.round(taxableSales);
-      const box8 = Math.round(totalOutputTax);
-      const box9 = Math.round(totalNetPurchases + totalInputTax);
-      const box11 = Math.round(totalInputTax);
-      const box12 = Math.abs(box8 - box11);
+      const box5 = new Decimal(totalGrossSales).round().toNumber();
+      const box6 = new Decimal(exemptSales).round().toNumber();
+      const box7 = new Decimal(taxableSales).round().toNumber();
+      const box8 = new Decimal(totalOutputTax).round().toNumber();
+      const box9 = new Decimal(totalNetPurchases).plus(totalInputTax).round().toNumber();
+      const box11 = new Decimal(totalInputTax).round().toNumber();
+      const box12 = new Decimal(box8).minus(box11).abs().toNumber();
 
       return [
         {
@@ -581,15 +587,15 @@ export function buildStatutoryReportBoxes(
     }
 
     case 'de_ustva': {
-      const cat19 = categories.find((c) => Math.round(c.rate) === 19);
-      const cat7 = categories.find((c) => Math.round(c.rate) === 7);
-      const zg81Base = cat19 ? cat19.salesBase : Math.round(taxableSales);
-      const zg81Tax = cat19 ? cat19.outputTax : Math.round(totalOutputTax);
+      const cat19 = categories.find((c) => new Decimal(c.rate).round().equals(19));
+      const cat7 = categories.find((c) => new Decimal(c.rate).round().equals(7));
+      const zg81Base = cat19 ? cat19.salesBase : new Decimal(taxableSales).round().toNumber();
+      const zg81Tax = cat19 ? cat19.outputTax : new Decimal(totalOutputTax).round().toNumber();
       const zg86Base = cat7 ? cat7.salesBase : 0;
       const zg86Tax = cat7 ? cat7.outputTax : 0;
-      const zg41 = Math.round(exemptSales);
-      const zg66 = Math.round(totalInputTax);
-      const zg83 = Math.abs(Math.round(totalOutputTax) - zg66);
+      const zg41 = new Decimal(exemptSales).round().toNumber();
+      const zg66 = new Decimal(totalInputTax).round().toNumber();
+      const zg83 = new Decimal(totalOutputTax).round().minus(zg66).abs().toNumber();
 
       return [
         {
@@ -597,14 +603,14 @@ export function buildStatutoryReportBoxes(
           code: 'Zg 81',
           description:
             'Steuerpflichtige Umsätze zum Steuersatz von 19 % (Bemessungsgrundlage)',
-          amount: Math.round(zg81Base),
+          amount: new Decimal(zg81Base).round().toNumber(),
           section: 'Lieferungen & Leistungen',
         },
         {
           id: 'ZG_81_TAX',
           code: 'Zg 81 Steuer',
           description: 'Steuer zu 19 %',
-          amount: Math.round(zg81Tax),
+          amount: new Decimal(zg81Tax).round().toNumber(),
           section: 'Lieferungen & Leistungen',
         },
         {
@@ -612,14 +618,14 @@ export function buildStatutoryReportBoxes(
           code: 'Zg 86',
           description:
             'Steuerpflichtige Umsätze zum ermäßigten Steuersatz von 7 % (Bemessungsgrundlage)',
-          amount: Math.round(zg86Base),
+          amount: new Decimal(zg86Base).round().toNumber(),
           section: 'Lieferungen & Leistungen',
         },
         {
           id: 'ZG_86_TAX',
           code: 'Zg 86 Steuer',
           description: 'Steuer zu 7 %',
-          amount: Math.round(zg86Tax),
+          amount: new Decimal(zg86Tax).round().toNumber(),
           section: 'Lieferungen & Leistungen',
         },
         {
@@ -649,12 +655,12 @@ export function buildStatutoryReportBoxes(
     }
 
     case 'us_sales_tax': {
-      const grossSales = Math.round(totalGrossSales);
-      const nonTaxable = Math.round(exemptSales);
-      const taxable = Math.round(taxableSales);
-      const taxCollected = Math.round(totalOutputTax);
+      const grossSales = new Decimal(totalGrossSales).round().toNumber();
+      const nonTaxable = new Decimal(exemptSales).round().toNumber();
+      const taxable = new Decimal(taxableSales).round().toNumber();
+      const taxCollected = new Decimal(totalOutputTax).round().toNumber();
       const useTax = 0;
-      const totalDue = taxCollected + useTax;
+      const totalDue = new Decimal(taxCollected).plus(useTax).toNumber();
 
       return [
         {

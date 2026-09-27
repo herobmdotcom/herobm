@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown. */
-
 import React, { useState, useEffect, useMemo } from 'react';
 import SlideOver from '@/components/shared/SlideOver';
 import { formatLocalDate } from '@/lib/date';
@@ -55,14 +53,14 @@ export function PaymentRunGeneratorSlideOver({
     setFetching(true);
     
     api.paymentsControllerGetPaymentRunCandidates({ targetDate })
-      .then((res: any) => {
+      .then((res) => {
         if (!isCurrent) return;
         const data = res.data || [];
         setCandidates(data);
         
         // Default selection: everything "Due this week"
         const initialSelected = new Set<string>();
-        data.forEach((c: any) => {
+        data.forEach((c) => {
           if (c.isDueSoon) {
             initialSelected.add(c.invoiceId);
           }
@@ -70,7 +68,7 @@ export function PaymentRunGeneratorSlideOver({
         setSelectedInvoiceIds(initialSelected);
         setBudgetAmount(''); // clear budget when target date changes
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         if (!isCurrent) return;
         toast.error('Failed to load candidates: ' + getErrorMessage(err));
       })

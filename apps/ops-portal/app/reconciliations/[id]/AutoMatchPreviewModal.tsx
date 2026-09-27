@@ -65,12 +65,11 @@ export default function AutoMatchPreviewModal({
         dryRun: false,
         ignoredStatementLineIds: ignoredLineIds.length > 0 ? ignoredLineIds : undefined
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-      const data = res.data as any;
-      if (data.autoMatchedCount > 0 || data.smartMatchedCount > 0) {
+      const data = res.data as { autoMatchedCount?: number; smartMatchedCount?: number };
+      if ((data.autoMatchedCount || 0) > 0 || (data.smartMatchedCount || 0) > 0) {
         const msgs = [];
-        if (data.autoMatchedCount > 0) msgs.push(`${data.autoMatchedCount} rules`);
-        if (data.smartMatchedCount > 0) msgs.push(`${data.smartMatchedCount} smart matches`);
+        if ((data.autoMatchedCount || 0) > 0) msgs.push(`${data.autoMatchedCount} rules`);
+        if ((data.smartMatchedCount || 0) > 0) msgs.push(`${data.smartMatchedCount} smart matches`);
         toast.success(`Auto-matched: ${msgs.join(', ')}`);
         onConfirmSuccess();
       } else {

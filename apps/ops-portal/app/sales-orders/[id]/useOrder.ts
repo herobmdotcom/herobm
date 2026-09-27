@@ -60,9 +60,8 @@ export function useOrder(id: string) {
     useEffect(() => {
         api.inventoryControllerFindAllLocations()
             .then((res) => {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-                const payload = (res as any).data;
-                const arr = Array.isArray(payload) ? payload : (payload?.data || []);
+                const payload = res.data;
+                const arr = Array.isArray(payload) ? payload : (payload && typeof payload === 'object' && 'data' in payload && Array.isArray((payload as { data: unknown[] }).data) ? (payload as { data: api.InventoryLocationResponseDto[] }).data : []);
                 setLocations(arr as api.InventoryLocationResponseDto[]);
             })
             .catch((err) => reportError(err, 'Locations_Fetch'));
@@ -322,11 +321,10 @@ export function useOrder(id: string) {
             toast.success(tToast('orderMovedTo', { state: tCommon(`states.${newState}` as Parameters<typeof tCommon>[0]) }));
             await loadOrder(undefined, false);
         } catch (err: unknown) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-            const anyErr = err as any;
-            const isApiError = anyErr && (anyErr.status === 409 || anyErr.name === 'ApiError');
-            if (isApiError && anyErr.data?.message === 'INVENTORY_GAP') {
-                return anyErr.data.gaps;
+            const apiErr = err as { status?: number; name?: string; data?: { message?: string; gaps?: unknown } } | null;
+            const isApiError = apiErr && (apiErr.status === 409 || apiErr.name === 'ApiError');
+            if (isApiError && apiErr.data?.message === 'INVENTORY_GAP') {
+                return apiErr.data.gaps;
             }
             setError(err instanceof Error ? err.message : tCommon('errors.failedToChangeState'));
             throw err;
@@ -377,10 +375,10 @@ export function useOrder(id: string) {
 
 
 
-    const updateLine = async (lineId: string, field: string, value: string) => {
+    const updateLine = async (lineId: string, field: string, value: unknown) => {
         setSaving(true);
         try {
-            await api.ordersControllerUpdateLine(id, lineId, { [field]: value });
+            await api.ordersControllerUpdateLine(id, lineId, { [field]: value as string });
             await loadOrder(undefined, false);
         } catch (err) {
             setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateLine'));

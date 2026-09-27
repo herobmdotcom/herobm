@@ -1,6 +1,6 @@
 {
   "name": "@herobm/shared",
-  "version": "1.2.0",
+  "version": "1.2.2",
   "description": "HeroBM: Shared domain models, types, enums, and calculation utilities",
   "private": true,
   "author": "Norbe Systems <support@herobm.com>",
@@ -38,6 +38,7 @@
   "dependencies": {
     "@opentelemetry/api": "^1.9.1",
     "country-to-currency": "^2.0.3",
+    "decimal.js": "^10.4.3",
     "i18n-iso-countries": "^7.14.0"
   }
 }

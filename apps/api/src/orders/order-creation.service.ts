@@ -10,6 +10,7 @@ import {
   normalizeUomCode,
   LineType,
 } from '@herobm/shared';
+import Decimal from 'decimal.js';
 import {
   Injectable,
   Inject,
@@ -335,7 +336,7 @@ export class OrderCreationService {
         }
 
         let isKit = false;
-        const parentPrice = parseFloat(line.pricePerUnit || '0');
+        const parentPrice = new Decimal(line.pricePerUnit || '0');
         if (line.productId) {
           const prodInfo = await this.coreService.lookupProduct(
             line.productId,
@@ -352,8 +353,9 @@ export class OrderCreationService {
         const parentLineId = randomUUID();
 
         if (isKit) {
-          const parentPriceToUse =
-            parentPrice > 0 ? parentPrice.toString() : '0';
+          const parentPriceToUse = parentPrice.gt(0)
+            ? parentPrice.toString()
+            : '0';
           const parentComputed = this.coreService.computeLineAmount(
             line.quantity,
             parentPriceToUse,
@@ -367,9 +369,9 @@ export class OrderCreationService {
               : parentComputed.tax;
           const providedTotalAmount =
             lineTax.taxProvider !== 'internal' && line.tax != null
-              ? (
-                  parseFloat(parentComputed.amount) + parseFloat(providedTax)
-                ).toFixed(2)
+              ? new Decimal(parentComputed.amount)
+                  .plus(new Decimal(providedTax))
+                  .toFixed(2)
               : parentComputed.totalAmount;
 
           lineValues.push({
@@ -412,7 +414,7 @@ export class OrderCreationService {
             );
 
             let childPrice = '0';
-            if (parentPrice <= 0) {
+            if (parentPrice.lte(0)) {
               childPrice = comp.listPrice || '0';
             }
 
@@ -463,9 +465,9 @@ export class OrderCreationService {
               : computed.tax;
           const providedTotalAmount =
             lineTax.taxProvider !== 'internal' && line.tax != null
-              ? (parseFloat(computed.amount) + parseFloat(providedTax)).toFixed(
-                  2,
-                )
+              ? new Decimal(computed.amount)
+                  .plus(new Decimal(providedTax))
+                  .toFixed(2)
               : computed.totalAmount;
 
           lineValues.push({
@@ -489,14 +491,20 @@ export class OrderCreationService {
         }
       }
 
-      // Assert Credit / State Safety before saving
-      let orderTotal = 0;
+      let orderTotal = new Decimal(0);
       lineValues.forEach(
-        (lv) => (orderTotal += parseFloat(lv.totalAmount || '0')),
+        (lv) =>
+          (orderTotal = orderTotal.plus(new Decimal(lv.totalAmount || '0'))),
       );
+
+      const baseTotalAmount = orderTotal
+        .mul(new Decimal(fx.rate.toString()))
+        .toDecimalPlaces(2, Decimal.ROUND_HALF_UP)
+        .toString();
+
       await this.coreService.assertAccountStanding(
         dto.customerId,
-        orderTotal,
+        orderTotal.toNumber(),
         'create',
         tx,
       );
@@ -504,6 +512,11 @@ export class OrderCreationService {
       if (lineValues.length > 0) {
         await tx.insert(salesOrderLineItems).values(lineValues);
       }
+
+      await tx
+        .update(salesOrders)
+        .set({ baseTotalAmount })
+        .where(eq(salesOrders.salesOrderId, order.salesOrderId));
 
       const [customerObj] = await tx
         .select({ name: organizations.name })

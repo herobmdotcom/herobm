@@ -1,4 +1,4 @@
-import { SystemResource } from '@herobm/shared';
+import { SystemResource, toDecimal } from '@herobm/shared';
 import {
   Controller,
   Get,
@@ -107,7 +107,7 @@ export class TransfersController {
       id,
       lineId,
       body.binId,
-      parseFloat(body.quantity),
+      toDecimal(body.quantity).toNumber(),
       user.username,
     );
   }

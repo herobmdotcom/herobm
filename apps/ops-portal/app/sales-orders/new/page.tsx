@@ -740,8 +740,8 @@ export default function NewOrderPage() {
             isEditable={true}
             subtotal={subtotal}
             totalTax={totalTax}
-            onUpdateLine={(keyOrIdx, field, val) => updateLine(keyOrIdx as number, field as keyof LineItem, String(val))}
-            onUpdateLineFields={(keyOrIdx, fields) =>
+            onUpdateLine={(keyOrIdx: string | number, field: string, val: unknown) => updateLine(keyOrIdx as number, field as keyof LineItem, String(val))}
+            onUpdateLineFields={(keyOrIdx: string | number, fields: Record<string, unknown>) =>
               setLines((prev) =>
                 prev.map((l, i) =>
                   l.key === keyOrIdx || String(l.key) === String(keyOrIdx) || i === Number(keyOrIdx)
@@ -750,7 +750,7 @@ export default function NewOrderPage() {
                 ),
               )
             }
-            onRemoveLine={(keyOrIdx) => removeLine(keyOrIdx as number)}
+            onRemoveLine={(keyOrIdx: string | number) => removeLine(keyOrIdx as number)}
           />
           <div id="new-order-lines-bottom" className="h-px w-full" />
         </div>
@@ -822,8 +822,7 @@ export default function NewOrderPage() {
                   <div>
                     <PhoneInput
                       international
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-                      defaultCountry={customerCountry as any}
+                      defaultCountry={customerCountry as import('react-phone-number-input').Country}
                       className="input w-full flex items-center px-2 border border-[var(--border)] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--accent)]"
                       value={parseInitialPhone(deliveryPhone)}
                       onChange={(value) => setDeliveryPhone(value || '')}

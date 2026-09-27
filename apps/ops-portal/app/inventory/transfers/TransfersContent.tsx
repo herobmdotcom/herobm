@@ -45,9 +45,8 @@ export default function TransfersContent() {
       width: 120,
       valueFormatter: (params: { value: unknown }) => {
         if (!params.value) return '';
-        const s = String(params.value).toLowerCase();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-        return tStates.has(s as any) ? tStates(s as any) : String(params.value);
+        const s = String(params.value).toLowerCase() as Parameters<typeof tStates>[0];
+        return tStates.has(s) ? tStates(s) : String(params.value);
       },
     },
     { field: 'notes', headerName: tTransfers('columns.notes'), width: 200 },

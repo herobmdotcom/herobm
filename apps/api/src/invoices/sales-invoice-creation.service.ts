@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+import { Decimal } from 'decimal.js';
 import {
   Injectable,
   Inject,
@@ -6,7 +7,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, sql, and } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -15,7 +16,6 @@ import {
   salesInvoiceLines,
   salesOrderLineItems,
   customers,
-  glAccounts,
   products as coreProducts,
   customerGroups,
   productGroups,
@@ -39,9 +39,9 @@ import { getCommittedPerLine } from '../orders/shipment-helpers';
 import { evaluateLifecycleRules } from '../orders/order-lifecycle-rules';
 import {
   computeLinePrice,
-  JOURNAL_ENTRY_SOURCE_TYPE,
   isStockedProductLine,
   RETURN_STATE,
+  toDecimal,
 } from '@herobm/shared';
 import { AppConfigService } from '../settings/app-config.service';
 import { OrganizationService } from '../settings/organization.service';
@@ -51,11 +51,16 @@ import {
   SALES_INVOICE_STATE,
   SALES_ORDER_STATE,
   SalesOrderState,
-  getErrorMessage,
 } from '@herobm/shared';
 import { getAvailableToInvoice } from '../orders/order-math.utils';
 import { generateInvoiceNumber } from './sales-invoice-utils';
 import { changeSalesInvoiceStateHelper } from './sales-invoice-state.helper';
+import {
+  calculateBaseTotalAmount,
+  postSalesInvoiceGlJournal,
+  RevenueGroup,
+} from './sales-invoice-gl.helper';
+import { recordExternalSalesInvoiceTaxTransaction } from './sales-invoice-tax.helper';
 
 @Injectable()
 export class SalesInvoiceCreationService {
@@ -318,21 +323,14 @@ export class SalesInvoiceCreationService {
     // 3. Compute the strictly typed AR payload bounds natively
     let rawTotal = 0;
     let rawTax = 0;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle insert types
-    const invoiceLineValues: any[] = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle insert types
-    const outboxLineDetails: any[] = [];
+    const invoiceLineValues: Omit<
+      typeof salesInvoiceLines.$inferInsert,
+      'invoiceId'
+    >[] = [];
+    const outboxLineDetails: Record<string, unknown>[] = [];
 
     // Revenue GL Routing tallies — keyed by composite (customerId|costCenterId|activityId)
-    const revenueGroups = new Map<
-      string,
-      {
-        customerId: string;
-        amount: number;
-        costCenterId: string | null;
-        activityId: string | null;
-      }
-    >();
+    const revenueGroups = new Map<string, RevenueGroup>();
     const taxGroups = new Map<string, number>(); // glAccountId -> amount
     let defaultRevenue = 0;
     let defaultRevenueCostCenterId: string | null = null;
@@ -343,7 +341,7 @@ export class SalesInvoiceCreationService {
     let totalInvoicingNow = 0;
 
     for (const line of orderLines) {
-      const orderedQty = parseFloat(line.quantity);
+      const orderedQty = toDecimal(line.quantity).toNumber();
       totalOrderedQty += orderedQty;
 
       const prevInvoicedQty = invoicedQtyByLine.get(line.salesOrderLineId) || 0;
@@ -396,15 +394,15 @@ export class SalesInvoiceCreationService {
 
       totalInvoicingNow += qtyToInvoice;
 
-      const price = parseFloat(line.pricePerUnit);
-      const disc = parseFloat(line.discountPercentage || '0');
+      const price = new Decimal(line.pricePerUnit).toNumber();
+      const disc = new Decimal(line.discountPercentage || '0').toNumber();
 
       let taxRate = 0;
       let lineSalesTaxAcctId: string | null = null;
       if (line.taxCategoryId) {
         try {
           const cat = await this.taxService.getById(line.taxCategoryId);
-          taxRate = parseFloat(cat.rate || '0');
+          taxRate = new Decimal(cat.rate || '0').toNumber();
           lineSalesTaxAcctId = cat.salesGlAccountId || null;
         } catch (err: unknown) {
           const isNotFound =
@@ -437,7 +435,10 @@ export class SalesInvoiceCreationService {
           lineSalesTaxAcctId ||
           this.appConfig.defaultSalesTaxAccountId() ||
           'fallback';
-        taxGroups.set(effTaxGl, (taxGroups.get(effTaxGl) || 0) + pricing.tax);
+        taxGroups.set(
+          effTaxGl,
+          new Decimal(taxGroups.get(effTaxGl) || 0).add(pricing.tax).toNumber(),
+        );
       }
 
       const sysDefaultRevAcct = this.appConfig.defaultRevenueAccountId();
@@ -529,11 +530,7 @@ export class SalesInvoiceCreationService {
 
     const totalAmount = rawTotal;
     const taxAmount = rawTax;
-    const combinedTotal = totalAmount + taxAmount;
-
-    // Check strict transition bound tolerance cleanly using floating point fallback mathematically
-    const isFullyInvoiced =
-      totalInvoicedSoFar + totalInvoicingNow >= totalOrderedQty - 0.001;
+    const combinedTotal = new Decimal(totalAmount).add(taxAmount).toNumber();
 
     // 4. Begin transactional generation (invoice + GL posting are atomic)
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
@@ -554,7 +551,14 @@ export class SalesInvoiceCreationService {
         order.currencyCode,
         invoiceDate,
       );
-      const baseTotalAmount = (combinedTotal * fx.rate).toFixed(2);
+
+      const fxRateDec = new Decimal(fx.rate);
+      const baseTotalAmount = calculateBaseTotalAmount(
+        revenueGroups,
+        defaultRevenue,
+        taxGroups,
+        fxRateDec,
+      );
 
       const [invoice] = await tx
         .insert(salesInvoices)
@@ -624,269 +628,46 @@ export class SalesInvoiceCreationService {
       });
 
       // D. Post GL journal entry (atomic with invoice creation)
-      const settings = await this.glService.getSettings(tx);
-      const effectiveArAccountId =
-        customerArAccountId || settings?.defaultArAccountId;
-
-      if (!effectiveArAccountId) {
-        throw new BadRequestException(
-          'Cannot create invoice: Accounts Receivable account (defaultArAccountId) is not configured in GL Settings. Please configure it in Admin → Settings → Financial.',
-        );
-      }
-
-      // Collect all distinct Customer IDs logically needed
-      const distinctAccountIds = new Set<string>();
-      distinctAccountIds.add(effectiveArAccountId);
-      if (settings?.defaultSalesTaxAccountId)
-        distinctAccountIds.add(settings.defaultSalesTaxAccountId);
-      for (const acctId of taxGroups.keys()) {
-        if (acctId !== 'fallback') {
-          distinctAccountIds.add(acctId);
-        }
-      }
-      if (settings?.defaultRevenueAccountId)
-        distinctAccountIds.add(settings.defaultRevenueAccountId);
-      for (const group of revenueGroups.values()) {
-        distinctAccountIds.add(group.customerId);
-      }
-
-      const settingsIds = Array.from(distinctAccountIds).filter(Boolean);
-
-      const glAcct = glAccounts;
-      const acctRows =
-        settingsIds.length > 0
-          ? await tx
-              .select({
-                glAccountId: glAcct.glAccountId,
-                accountCode: glAcct.accountCode,
-              })
-              .from(glAcct)
-              .where(
-                sql`${glAcct.glAccountId} IN (${sql.join(
-                  settingsIds.map((id) => sql`${id}`),
-                  sql`, `,
-                )})`,
-              )
-          : [];
-
-      const idToCode = new Map(
-        acctRows.map((a) => [a.glAccountId, a.accountCode]),
-      );
-
-      const arCode = idToCode.get(effectiveArAccountId);
-      if (!arCode) {
-        throw new BadRequestException(
-          `Cannot create invoice: Accounts Receivable account '${effectiveArAccountId}' not found in Chart of Accounts.`,
-        );
-      }
-
-      const defaultRevenueCode = settings?.defaultRevenueAccountId
-        ? idToCode.get(settings.defaultRevenueAccountId)
-        : null;
-
-      const taxCode = settings?.defaultSalesTaxAccountId
-        ? idToCode.get(settings.defaultSalesTaxAccountId)
-        : null;
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries
-      const glLines: any[] = [
-        {
-          accountCode: arCode,
-          debit: combinedTotal * fx.rate,
-          credit: 0,
-          foreignCurrency: order.currencyCode,
-          foreignDebit: combinedTotal,
-          foreignCredit: 0,
-          memo: `AR: ${invoiceNumber}`,
-          partyType: 'customer',
-          partyId: order.customerId,
-          costCenterId:
-            customerCostCenterId ||
-            this.appConfig.defaultCostCenterId() ||
-            undefined,
-          activityId:
-            customerActivityId ||
-            this.appConfig.defaultActivityId() ||
-            undefined,
-        },
-      ];
-
-      for (const group of revenueGroups.values()) {
-        let code = idToCode.get(group.customerId);
-        if (!code && defaultRevenueCode) {
-          code = defaultRevenueCode;
-        }
-
-        if (!code && group.amount > 0) {
-          throw new BadRequestException(
-            `Cannot create invoice: Revenue account '${group.customerId}' not found in Chart of Accounts.`,
-          );
-        }
-
-        if (code && group.amount > 0) {
-          glLines.push({
-            accountCode: code,
-            debit: 0,
-            credit: group.amount * fx.rate,
-            foreignCurrency: order.currencyCode,
-            foreignDebit: 0,
-            foreignCredit: group.amount,
-            memo: `Revenue: ${invoiceNumber}`,
-            costCenterId: group.costCenterId || undefined,
-            activityId: group.activityId || undefined,
-          });
-        }
-      }
-
-      if (defaultRevenue > 0) {
-        if (!defaultRevenueCode) {
-          throw new BadRequestException(
-            'Cannot create invoice: Default Revenue account (defaultRevenueAccountId) is not configured in GL Settings. Please configure it in Admin → Settings → Financial.',
-          );
-        }
-
-        glLines.push({
-          accountCode: defaultRevenueCode,
-          debit: 0,
-          credit: defaultRevenue * fx.rate,
-          foreignCurrency: order.currencyCode,
-          foreignDebit: 0,
-          foreignCredit: defaultRevenue,
-          memo: `Revenue: ${invoiceNumber}`,
-          costCenterId: defaultRevenueCostCenterId || undefined,
-          activityId: defaultRevenueActivityId || undefined,
-        });
-      }
-
-      for (const [acctId, taxAmt] of taxGroups.entries()) {
-        if (taxAmt > 0) {
-          let effectiveTaxCode =
-            acctId !== 'fallback' ? idToCode.get(acctId) : taxCode;
-          if (!effectiveTaxCode && taxCode) {
-            effectiveTaxCode = taxCode;
-          }
-
-          if (!effectiveTaxCode) {
-            throw new BadRequestException(
-              'Cannot create invoice: Sales Tax account (defaultSalesTaxAccountId) is not configured in GL Settings. Please configure it in Admin → Settings → Financial.',
-            );
-          }
-
-          glLines.push({
-            accountCode: effectiveTaxCode,
-            debit: 0,
-            credit: taxAmt * fx.rate,
-            foreignCurrency: order.currencyCode,
-            foreignDebit: 0,
-            foreignCredit: taxAmt,
-            memo: `GST: ${invoiceNumber}`,
-          });
-        }
-      }
-
-      if (combinedTotal > 0) {
-        if (glLines.length < 2) {
-          throw new BadRequestException(
-            'Cannot create invoice: Failed to construct balancing GL journal entry lines. Please verify that Default Accounts Receivable, Default Revenue, and Default Sales Tax accounts are configured in Admin → Settings → Financial.',
-          );
-        }
-
-        await this.glService.postJournalEntry(
-          glLines,
-          {
-            sourceType: JOURNAL_ENTRY_SOURCE_TYPE.SALES_INVOICE,
-            sourceId: invoice.invoiceId,
-            memo: `Sales invoice ${invoiceNumber} for order ${order.orderNumber}`,
-            actor,
-          },
-          tx,
-        );
-
-        this.logger.log(`GL journal posted for sales invoice ${invoiceNumber}`);
-      }
+      await postSalesInvoiceGlJournal({
+        tx,
+        glService: this.glService,
+        appConfig: this.appConfig,
+        logger: this.logger,
+        customerArAccountId,
+        customerCostCenterId,
+        customerActivityId,
+        revenueGroups,
+        defaultRevenue,
+        defaultRevenueCostCenterId,
+        defaultRevenueActivityId,
+        taxGroups,
+        fxRateDec,
+        currencyCode: order.currencyCode,
+        customerId: order.customerId,
+        orderNumber: order.orderNumber,
+        combinedTotal,
+        invoiceNumber,
+        invoiceId: invoice.invoiceId,
+        actor,
+      });
 
       // E. Record Transaction in External Engine if applicable
-      const mappings = this.appConfig.taxProviderMappings();
-      const orderTaxProvider =
-        mappings[billingAddressCountry || 'US'] || 'internal';
-
-      if (
-        orderTaxProvider &&
-        orderTaxProvider !== 'internal' &&
-        !orderTaxProvider.endsWith('-error')
-      ) {
-        const org = await this.organizationService.get();
-
-        const freightLines = outboxLineDetails.filter(
-          (l) => l.productType === 'freight',
-        );
-        const taxableLines = outboxLineDetails.filter(
-          (l) => l.productType !== 'freight',
-        );
-
-        const shippingTotal = freightLines.reduce((sum, l) => {
-          const discountAmt =
-            l.pricePerUnit * (l.discountPercentage / 100) * l.quantity;
-          return sum + l.quantity * l.pricePerUnit - discountAmt;
-        }, 0);
-
-        const payload = {
-          transaction_id: invoice.invoiceId,
-          transaction_date: new Date().toISOString(),
-          amount: totalAmount,
-          shipping: shippingTotal,
-          sales_tax: taxAmount,
-          from_country: org.country || 'US',
-          from_zip: org.postCode,
-          from_state: org.state,
-          from_city: org.city,
-          from_street: org.addressLine1,
-          to_country: billingAddressCountry || undefined,
-          to_zip: billingAddressPostalCode || undefined,
-          to_state: billingAddressStateOrProvince || undefined,
-          to_city: billingAddressCity || undefined,
-          to_street: billingAddressLine1 || undefined,
-          line_items: taxableLines.map((l) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries
-            const payloadLine: any = {
-              id: l.salesOrderLineId,
-              product_identifier: l.productNumber,
-              description: l.productDescription,
-              quantity: l.quantity,
-              unit_price: l.pricePerUnit,
-              discount:
-                l.pricePerUnit * (l.discountPercentage / 100) * l.quantity,
-              sales_tax: l.tax,
-            };
-            if (l.externalTaxCode) {
-              payloadLine.product_tax_code = l.externalTaxCode;
-            }
-            return payloadLine;
-          }),
-        };
-        try {
-          const enrichRes = await this.enrichmentService.recordTransaction(
-            orderTaxProvider,
-            payload,
-          );
-          if (!enrichRes.isValid) {
-            throw new BadRequestException(
-              `Tax provider rejected transaction: ${String(enrichRes.data?.error)}`,
-            );
-          }
-          this.logger.log(
-            `Transaction recorded in ${orderTaxProvider} for invoice ${invoiceNumber}`,
-          );
-        } catch (e: unknown) {
-          this.logger.error(
-            `Failed to record transaction in ${orderTaxProvider}`,
-            e,
-          );
-          throw new BadRequestException(
-            `Failed to record transaction in ${orderTaxProvider}: ${getErrorMessage(e)}`,
-          );
-        }
-      }
+      await recordExternalSalesInvoiceTaxTransaction({
+        appConfig: this.appConfig,
+        organizationService: this.organizationService,
+        enrichmentService: this.enrichmentService,
+        logger: this.logger,
+        invoiceId: invoice.invoiceId,
+        invoiceNumber,
+        totalAmount,
+        taxAmount,
+        outboxLineDetails,
+        billingAddressCountry,
+        billingAddressPostalCode,
+        billingAddressStateOrProvince,
+        billingAddressCity,
+        billingAddressLine1,
+      });
 
       return invoicedInvoice;
     });

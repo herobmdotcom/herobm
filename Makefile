@@ -1,4 +1,4 @@
-.PHONY: help help-install fast-install check-postgres-logs up-db down-db up-portal-api down-portal-api up-portal-api-nginx down-portal-api-nginx up-nginx down-nginx build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke clean-legacy-containers clean-db rebuild-db-keep-raw clean-db-keep-extract init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract elt-report report import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-docs-webhooks dev-docs-all dev-docs-audit check-docs dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-packages-unit test-api-cov test-api-e2e test-portal-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init backup-destination backup-setup backup-run backup-now backup-restore typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint lint-portal verify-i18n clean-build install-prereqs setup-python install-npm bootstrap verify-db verify-all verify-fast verify-api verify-portal verify-pipeline test-pipeline test-abm test-odoo check-all test-deps test-unit test-single test-changed test-structural query-drizzle query-postgres test-heavy test-data test-all build-all clean-dev demo-help demo-auth demo-sales-order demo-crm bump-version release
+.PHONY: help help-install fast-install check-postgres-logs up-db down-db up-portal-api down-portal-api up-portal-api-nginx down-portal-api-nginx up-nginx down-nginx build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke clean-legacy-containers clean-db rebuild-db-keep-raw clean-db-keep-extract init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract elt-report report import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-docs-webhooks dev-docs-all dev-docs-audit check-docs dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-packages-unit test-api-cov test-api-e2e test-portal-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init backup-destination backup-setup backup-run backup-now backup-restore typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint lint-portal verify-i18n clean-build install-prereqs setup-python install-npm bootstrap verify-db verify-all verify-fast verify-api verify-portal verify-pipeline test-pipeline test-abm test-odoo check-all test-deps test-unit test-single test-changed test-structural query-drizzle query-postgres query-git git-safe git-ro git-query test-heavy test-data test-all build-all clean-dev demo-help demo-auth demo-sales-order demo-crm bump-version release
 
 
 define HELP_TEXT
@@ -29,9 +29,9 @@ Database & Migrations:
   make rebuild-db-keep-raw - Alias for clean-db
 
 Backup & Recovery:
-  make backup-destination [DEST=...] - Configure cloud storage destination (rclone)
-  make backup-setup [CRON=...] [EMAIL=...] - Configure automated recurring backup schedule
-  make backup-run                    - Trigger an immediate database backup
+  make backup-destination [DEST=...] [SOURCE=...] - Configure cloud storage destination (rclone)
+  make backup-setup [CRON=...] [EMAIL=...] [SOURCE=...] - Configure automated recurring backup schedule
+  make backup-run [SOURCE=...]       - Trigger an immediate database backup
   make backup-restore FILE=<path>   - Restore database from a backup file
 
 Code Generation:
@@ -79,6 +79,10 @@ Verification & Quality Gates:
    make demo-auth      - Interactive browser to authenticate and store session profile
    make demo-sales-order - Generate automated human-actor Sales Order flow video
    make demo-crm       - Generate automated human-actor CRM showcase video (Dark Mode)
+
+Codebase & Git Inspection:
+  make query-git [ARGS="..."] - Safe read-only git command executor (grep, ls-files, diff, status, log, blame)
+  make git-safe [ARGS="..."]  - Alias for query-git
 =========================================
 endef
 export HELP_TEXT
@@ -596,8 +600,8 @@ rebuild-worker:
 	$(COMPOSE_CMD) ps
 
 build-images:
-	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v1.2.0-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_custom-api:latest -f Dockerfile.api .
-	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v1.2.0-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
+	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v1.2.2-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_custom-api:latest -f Dockerfile.api .
+	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v1.2.2-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
 	$(if $(wildcard Dockerfile.pipeline),podman build -t localhost/herobm_pipeline-runner:latest -f Dockerfile.pipeline .,)
 	podman build -t localhost/outbox-worker:latest -f Dockerfile.worker .
 
@@ -678,13 +682,13 @@ init: init-db migrate seed
 # --- Backup & Recovery ---
 
 backup-destination:
-	$(SETUP_BACKUP_CMD) --destination $(if $(DEST),--dest "$(DEST)") $(if $(EFFECTIVE_PROFILE),--profile $(EFFECTIVE_PROFILE)) $(if $(DRY_RUN),--dry-run) $(if $(TEST),--test)
+	$(SETUP_BACKUP_CMD) --destination $(if $(DEST),--dest "$(DEST)") $(if $(SOURCE),--source "$(SOURCE)") $(if $(EFFECTIVE_PROFILE),--profile $(EFFECTIVE_PROFILE)) $(if $(DRY_RUN),--dry-run) $(if $(TEST),--test)
 
 backup-setup:
-	$(SETUP_BACKUP_CMD) --backup $(if $(CRON),--cron "$(CRON)") $(if $(DAILY),--daily) $(if $(WEEKLY),--weekly) $(if $(EMAIL),--email "$(EMAIL)") $(if $(EFFECTIVE_PROFILE),--profile $(EFFECTIVE_PROFILE)) $(if $(DRY_RUN),--dry-run) $(if $(RUN_NOW),--run-now)
+	$(SETUP_BACKUP_CMD) --backup $(if $(CRON),--cron "$(CRON)") $(if $(DAILY),--daily) $(if $(WEEKLY),--weekly) $(if $(EMAIL),--email "$(EMAIL)") $(if $(SOURCE),--source "$(SOURCE)") $(if $(EFFECTIVE_PROFILE),--profile $(EFFECTIVE_PROFILE)) $(if $(DRY_RUN),--dry-run) $(if $(RUN_NOW),--run-now)
 
 backup-run:
-	$(BACKUP_DB_CMD) $(if $(EFFECTIVE_PROFILE),--profile $(EFFECTIVE_PROFILE))
+	$(BACKUP_DB_CMD) $(if $(EFFECTIVE_PROFILE),--profile $(EFFECTIVE_PROFILE)) $(if $(SOURCE),--source "$(SOURCE)")
 
 backup-now: backup-run
 
@@ -875,6 +879,13 @@ query-drizzle:
 
 query-postgres:
 	cd apps/api && $(NPX) tsx tools/query_pg.ts ../tmp/query.sql
+
+query-git:
+	@$(NPX) tsx tools/query_git.ts $(ARGS)
+
+git-safe: query-git
+git-ro: query-git
+git-query: query-git
 
 test-heavy: $(if $(or $(SKIP_STRUCTURAL),$(UI_ONLY),$(REUSE)),,test-structural)
 	@$(TEST_HEAVY_CMD)

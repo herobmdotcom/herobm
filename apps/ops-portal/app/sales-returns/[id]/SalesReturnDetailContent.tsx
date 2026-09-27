@@ -29,8 +29,7 @@ import { useSettings } from '@/components/SettingsProvider';
 
 function PurchaseReturnStateBadge({ state }: { state: ValidState }) {
     const t = useTranslations('common.states');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- State key mapping
-    return <span className={`badge badge-${state}`}>{t(state as any)}</span>;
+    return <span className={`badge badge-${state}`}>{t(state as never)}</span>;
 }
 
 export default function SalesReturnDetailContent({ id }: { id: string }) {

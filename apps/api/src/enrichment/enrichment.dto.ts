@@ -8,9 +8,7 @@ export class EnrichmentPayloadDto {
   })
   @IsOptional()
   @IsObject()
-  // Dynamic payload from unknown downstream providers cannot be strictly typed.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-  payload?: Record<string, any>;
+  payload?: Record<string, unknown>;
 }
 
 export class UpdateEnrichmentConfigDto {

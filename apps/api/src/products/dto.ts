@@ -45,6 +45,10 @@ export class AddSupplierDto {
   purchaseUnit?: string;
 
   @IsOptional()
+  @IsUUID('4')
+  purchaseUomId?: string;
+
+  @IsOptional()
   @IsBoolean()
   isPreferred?: boolean;
 
@@ -449,15 +453,15 @@ export class AddProductComponentDto {
 
   @ApiProperty({
     required: false,
-    enum: ['allow_fractional', 'round_up', 'round_down', 'round_nearest'],
+    enum: ['allow_fractional', 'round_up', 'round_down', 'force_multiple'],
   })
   @IsOptional()
-  @IsEnum(['allow_fractional', 'round_up', 'round_down', 'round_nearest'])
+  @IsEnum(['allow_fractional', 'round_up', 'round_down', 'force_multiple'])
   fractionalBehavior?:
     | 'allow_fractional'
     | 'round_up'
     | 'round_down'
-    | 'round_nearest';
+    | 'force_multiple';
 }
 
 export class UpdateProductComponentDto {
@@ -478,15 +482,15 @@ export class UpdateProductComponentDto {
 
   @ApiProperty({
     required: false,
-    enum: ['allow_fractional', 'round_up', 'round_down', 'round_nearest'],
+    enum: ['allow_fractional', 'round_up', 'round_down', 'force_multiple'],
   })
   @IsOptional()
-  @IsEnum(['allow_fractional', 'round_up', 'round_down', 'round_nearest'])
+  @IsEnum(['allow_fractional', 'round_up', 'round_down', 'force_multiple'])
   fractionalBehavior?:
     | 'allow_fractional'
     | 'round_up'
     | 'round_down'
-    | 'round_nearest';
+    | 'force_multiple';
 }
 
 export class EmptyBodyDto {}

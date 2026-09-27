@@ -33,7 +33,7 @@ export interface AvailabilityLineItem {
 export interface AvailabilityInventoryLevel {
   inventoryLevelId?: string;
   productId: string;
-  locationId: string;
+  locationId?: string;
   locationNo?: string;
   locationName?: string;
   quantityOnHand?: number | string | null;

@@ -113,6 +113,27 @@
       "when": 1790243229931,
       "tag": "0015_remove_project_wip_method",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1790333669313,
+      "tag": "0016_add_supplier_purchase_uom_fk",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1790390000000,
+      "tag": "0017_refactor_inventory_levels_view",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790370004066,
+      "tag": "0018_inventory_ledger_valuation_and_uom",
+      "breakpoints": true
     }
   ]
 }

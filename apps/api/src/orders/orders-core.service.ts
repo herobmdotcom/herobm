@@ -8,6 +8,7 @@ import {
   PRODUCT_STATE,
   getErrorMessage,
 } from '@herobm/shared';
+import Decimal from 'decimal.js';
 import {
   Injectable,
   Inject,
@@ -154,9 +155,9 @@ export class OrdersCoreService {
     taxRate: number,
   ): { amount: string; tax: string; totalAmount: string } {
     return computeLinePriceForStorage({
-      quantity: parseFloat(quantity),
-      pricePerUnit: parseFloat(pricePerUnit),
-      discountPercentage: parseFloat(discountPercentage || '0'),
+      quantity: new Decimal(quantity || '0').toNumber(),
+      pricePerUnit: new Decimal(pricePerUnit || '0').toNumber(),
+      discountPercentage: new Decimal(discountPercentage || '0').toNumber(),
       taxRate: taxRate,
     });
   }
@@ -207,7 +208,7 @@ export class OrdersCoreService {
         const cat = await this.taxService.getById(resolvedTaxCategoryId, tx);
         return {
           taxCategoryId: cat.taxCategoryId,
-          rate: parseFloat(cat.rate ?? '0'),
+          rate: new Decimal(cat.rate ?? '0').toNumber(),
           taxProvider,
         };
       } catch (err: unknown) {
@@ -226,7 +227,7 @@ export class OrdersCoreService {
       const defaultGst = await this.taxService.getDefaultSalesTax(tx);
       return {
         taxCategoryId: defaultGst.taxCategoryId,
-        rate: parseFloat(defaultGst.rate ?? '0'),
+        rate: new Decimal(defaultGst.rate ?? '0').toNumber(),
         taxProvider,
       };
     } catch {

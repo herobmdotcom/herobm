@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+import { Decimal } from 'decimal.js';
 import {
   Injectable,
   Inject,
@@ -30,6 +31,7 @@ import {
   resolveEffectiveEarlyPaymentDiscount,
 } from '../customers/credit-control.utils';
 import { GlService } from '../gl/gl.service';
+import { JournalLineDto } from '../gl/dto';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { computeLinePrice, JOURNAL_ENTRY_SOURCE_TYPE } from '@herobm/shared';
 import { AppConfigService } from '../settings/app-config.service';
@@ -279,7 +281,7 @@ export class SalesInvoiceProjectService {
         if (line.taxCategoryId) {
           try {
             const cat = await this.taxService.getById(line.taxCategoryId);
-            taxRate = parseFloat(cat.rate || '0');
+            taxRate = new Decimal(cat.rate || '0').toNumber();
             taxAccountId = cat.salesGlAccountId || null;
           } catch (err: unknown) {
             const isNotFound =
@@ -320,7 +322,9 @@ export class SalesInvoiceProjectService {
           const effectiveTaxKey = taxAccountId || 'fallback';
           taxGroups.set(
             effectiveTaxKey,
-            (taxGroups.get(effectiveTaxKey) || 0) + computedTax,
+            new Decimal(taxGroups.get(effectiveTaxKey) || 0)
+              .add(computedTax)
+              .toNumber(),
           );
         }
 
@@ -389,14 +393,16 @@ export class SalesInvoiceProjectService {
 
       const totalAmount = rawTotal;
       const taxAmount = rawTax;
-      const combinedTotal = totalAmount + taxAmount;
+      const combinedTotalDec = new Decimal(totalAmount).add(taxAmount);
+      const combinedTotal = combinedTotalDec.toNumber();
 
       const fx = await getExchangeRateForCurrency(
         db,
         project.currencyCode,
         invoiceDate,
       );
-      const baseTotalAmount = (combinedTotal * fx.rate).toFixed(2);
+      const fxRateDec = new Decimal(fx.rate);
+      const baseTotalAmount = combinedTotalDec.mul(fxRateDec).toFixed(2);
 
       const invoiceId = randomUUID();
       const [invoice] = await db
@@ -508,13 +514,12 @@ export class SalesInvoiceProjectService {
         ? idToCode.get(settings.defaultSalesTaxAccountId)
         : null;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries
-      const glLines: any[] = [
+      const glLines: JournalLineDto[] = [
         {
           accountCode: arCode,
-          debit: combinedTotal * fx.rate,
+          debit: new Decimal(combinedTotal).mul(fxRateDec).toNumber(),
           credit: 0,
-          foreignCurrency: project.currencyCode,
+          foreignCurrencyCode: project.currencyCode,
           foreignDebit: combinedTotal,
           foreignCredit: 0,
           memo: `AR: ${invoiceNumber} (Project ${project.projectNumber})`,
@@ -547,8 +552,8 @@ export class SalesInvoiceProjectService {
           glLines.push({
             accountCode: code,
             debit: 0,
-            credit: group.amount * fx.rate,
-            foreignCurrency: project.currencyCode,
+            credit: new Decimal(group.amount).mul(fxRateDec).toNumber(),
+            foreignCurrencyCode: project.currencyCode,
             foreignDebit: 0,
             foreignCredit: group.amount,
             memo: `Revenue: ${invoiceNumber} (Project ${project.projectNumber})`,
@@ -568,8 +573,8 @@ export class SalesInvoiceProjectService {
         glLines.push({
           accountCode: defaultRevenueCode,
           debit: 0,
-          credit: defaultRevenue * fx.rate,
-          foreignCurrency: project.currencyCode,
+          credit: new Decimal(defaultRevenue).mul(fxRateDec).toNumber(),
+          foreignCurrencyCode: project.currencyCode,
           foreignDebit: 0,
           foreignCredit: defaultRevenue,
           memo: `Revenue: ${invoiceNumber} (Default)`,
@@ -595,8 +600,8 @@ export class SalesInvoiceProjectService {
           glLines.push({
             accountCode: effectiveTaxCode,
             debit: 0,
-            credit: taxAmt * fx.rate,
-            foreignCurrency: project.currencyCode,
+            credit: new Decimal(taxAmt).mul(fxRateDec).toNumber(),
+            foreignCurrencyCode: project.currencyCode,
             foreignDebit: 0,
             foreignCredit: taxAmt,
             memo: `GST: ${invoiceNumber}`,

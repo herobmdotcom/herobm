@@ -81,9 +81,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           setApp(appResult.value.data as unknown as AppSettings);
         }
       } catch (err: unknown) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-        const anyErr = err as any;
-        if (anyErr.message !== 'Not authenticated' && anyErr.status !== 401 && anyErr.status !== 403) {
+        const errorObj = err as { message?: string; status?: number } | null;
+        if (errorObj?.message !== 'Not authenticated' && errorObj?.status !== 401 && errorObj?.status !== 403) {
           reportError(err, 'SettingsProvider');
         }
       } finally {

@@ -1,3 +1,4 @@
+import { Decimal } from 'decimal.js';
 import {
   Injectable,
   NotFoundException,
@@ -103,7 +104,7 @@ export class ReconciliationService {
       );
 
     const openingBalance = openingRes[0]?.total
-      ? Number(openingRes[0].total)
+      ? new Decimal(openingRes[0].total).toNumber()
       : 0;
 
     // Calculate cleared balance (sum of all lines linked to THIS reconciliation)
@@ -118,16 +119,18 @@ export class ReconciliationService {
       .where(eq(glJournalLines.reconciliationId, id));
 
     const clearedBalance = clearedRes[0]?.total
-      ? Number(clearedRes[0].total)
+      ? new Decimal(clearedRes[0].total).toNumber()
       : 0;
 
     return {
       ...rec,
-      statementBalance: Number(rec.statementBalance),
+      statementBalance: new Decimal(rec.statementBalance).toNumber(),
       openingBalance,
       clearedBalance,
-      variance:
-        Number(rec.statementBalance) - (openingBalance + clearedBalance),
+      variance: new Decimal(rec.statementBalance)
+        .minus(openingBalance)
+        .minus(clearedBalance)
+        .toNumber(),
     };
   }
 
@@ -235,8 +238,8 @@ export class ReconciliationService {
 
     const mappedLines = lines.map((line) => ({
       ...line,
-      debit: Number(line.debit),
-      credit: Number(line.credit),
+      debit: new Decimal(line.debit || 0).toNumber(),
+      credit: new Decimal(line.credit || 0).toNumber(),
       isCleared: Boolean(line.isCleared),
     }));
 
@@ -335,13 +338,14 @@ export class ReconciliationService {
     if (!lines.length) throw new NotFoundException('Journal line not found');
     const targetLine = lines[0];
 
-    const lineTotal =
-      Number(targetLine.debit || 0) + Number(targetLine.credit || 0);
-    const isDebit = Number(targetLine.debit || 0) > 0;
+    const debitDec = new Decimal(targetLine.debit || 0);
+    const creditDec = new Decimal(targetLine.credit || 0);
+    const lineTotal = debitDec.plus(creditDec).toNumber();
+    const isDebit = debitDec.gt(0);
 
     if (isCleared && amount !== undefined && amount < lineTotal) {
       // PERFORM SPLIT — GL entry + line linking are atomic
-      const remainingAmount = lineTotal - amount;
+      const remainingAmount = new Decimal(lineTotal).minus(amount).toNumber();
 
       const baseMemo = targetLine.memo ? targetLine.memo : '';
 

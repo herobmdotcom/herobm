@@ -114,8 +114,7 @@ export default function RulesEnginePage() {
         partyId: row.partyId || undefined,
         memo: row.memo || undefined,
         priority: 10
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-      } as any);
+      } as api.CreateReconciliationRuleDto);
       toast.success(t('ruleCreated') || 'Rule created');
     } else {
       await api.bankFeedsControllerUpdateRule(row.ruleId, {
@@ -134,15 +133,13 @@ export default function RulesEnginePage() {
         partyId: row.partyId || undefined,
         memo: row.memo || undefined,
         priority: 10
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-      } as any);
+      } as api.UpdateReconciliationRuleDto);
       toast.success(t('ruleUpdated') || 'Rule updated');
     }
     await loadData();
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-  const handleDeleteRule = async (row: any) => {
+  const handleDeleteRule = async (row: { ruleId: string }) => {
     if (!confirm('Are you sure you want to delete this rule?')) return;
     try {
       await api.bankFeedsControllerDeleteRule(row.ruleId);
@@ -164,8 +161,7 @@ export default function RulesEnginePage() {
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-  const bankAccs = glAccounts.filter(a => (a as any).isBankAccount);
+  const bankAccs = glAccounts.filter(a => (a as { isBankAccount?: boolean }).isBankAccount || a.accountType?.toLowerCase() === 'bank');
 
   const handleOpenAdd = () => {
     setEditingRule({ 
@@ -176,13 +172,12 @@ export default function RulesEnginePage() {
     setIsModalOpen(true);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-  const handleOpenEdit = (rule: any) => {
+  const handleOpenEdit = (rule: api.ReconciliationRuleResponseDto) => {
     setEditingRule({ 
       ...rule, 
       glAccountIds: rule.glAccountIds || [],
-      amountMin: rule.amountMin ?? '', 
-      amountMax: rule.amountMax ?? '' 
+      amountMin: rule.amountMin ? String(rule.amountMin) : '', 
+      amountMax: rule.amountMax ? String(rule.amountMax) : '' 
     });
     setIsModalOpen(true);
   };

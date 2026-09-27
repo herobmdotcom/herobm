@@ -1,3 +1,4 @@
+import { Decimal } from 'decimal.js';
 import { Injectable, BadRequestException, Inject } from '@nestjs/common';
 import { GlService } from './gl.service';
 import {
@@ -52,7 +53,10 @@ export class FxRevaluationService {
       const ratesByCurrency = new Map<string, number>();
       for (const r of activeRates) {
         if (!ratesByCurrency.has(r.currencyCode)) {
-          ratesByCurrency.set(r.currencyCode, parseFloat(r.buyRate));
+          ratesByCurrency.set(
+            r.currencyCode,
+            new Decimal(r.buyRate).toNumber(),
+          );
         }
       }
 
@@ -110,8 +114,14 @@ export class FxRevaluationService {
           memo,
         });
 
-        totalRevalDebits += debitControl + debitFx;
-        totalRevalCredits += creditControl + creditFx;
+        totalRevalDebits = new Decimal(totalRevalDebits)
+          .plus(debitControl)
+          .plus(debitFx)
+          .toNumber();
+        totalRevalCredits = new Decimal(totalRevalCredits)
+          .plus(creditControl)
+          .plus(creditFx)
+          .toNumber();
       };
 
       // 2. Revalue AP (Purchase Invoices)
@@ -138,11 +148,14 @@ export class FxRevaluationService {
         const monthEndRate = ratesByCurrency.get(inv.currencyCode);
         if (!monthEndRate) continue; // skip if no rate available
 
-        const origRate = parseFloat(inv.exchangeRate);
-        const outstanding = parseFloat(inv.outstandingAmount);
+        const origRateDec = new Decimal(inv.exchangeRate);
+        const outstandingDec = new Decimal(inv.outstandingAmount);
 
         // AP is a liability. Loss if rate drops
-        const variance = (origRate - monthEndRate) * outstanding;
+        const variance = origRateDec
+          .minus(monthEndRate)
+          .mul(outstandingDec)
+          .toNumber();
 
         const controlAccount = settings.defaultApAccountId;
         if (controlAccount) {
@@ -153,7 +166,7 @@ export class FxRevaluationService {
             inv.vendorId,
             inv.currencyCode,
             `Unrealised FX Revaluation - AP Invoice ${inv.invoiceNumber}`,
-            outstanding,
+            outstandingDec.toNumber(),
             monthEndRate,
           );
         }
@@ -190,11 +203,14 @@ export class FxRevaluationService {
         const monthEndRate = ratesByCurrency.get(inv.currencyCode);
         if (!monthEndRate) continue;
 
-        const origRate = parseFloat(inv.exchangeRate);
-        const outstanding = parseFloat(inv.outstandingAmount);
+        const origRateDec = new Decimal(inv.exchangeRate);
+        const outstandingDec = new Decimal(inv.outstandingAmount);
 
         // AR is an asset. Gain if rate rises
-        const variance = (monthEndRate - origRate) * outstanding;
+        const variance = new Decimal(monthEndRate)
+          .minus(origRateDec)
+          .mul(outstandingDec)
+          .toNumber();
 
         const controlAccount = settings.defaultArAccountId;
         if (controlAccount) {
@@ -205,7 +221,7 @@ export class FxRevaluationService {
             inv.customerId,
             inv.currencyCode,
             `Unrealised FX Revaluation - AR Invoice ${inv.invoiceNumber}`,
-            outstanding,
+            outstandingDec.toNumber(),
             monthEndRate,
           );
         }
@@ -252,13 +268,16 @@ export class FxRevaluationService {
         const monthEndRate = ratesByCurrency.get(grni.currencyCode);
         if (!monthEndRate) continue;
 
-        const origRate = parseFloat(grni.exchangeRate);
-        const qty = parseFloat(grni.quantityReceived);
-        const unitCost = parseFloat(grni.unitCost);
-        const foreignAmount = qty * unitCost;
+        const origRateDec = new Decimal(grni.exchangeRate);
+        const qtyDec = new Decimal(grni.quantityReceived);
+        const unitCostDec = new Decimal(grni.unitCost);
+        const foreignAmountDec = qtyDec.mul(unitCostDec);
 
         // GRNI is a liability.
-        const variance = (origRate - monthEndRate) * foreignAmount;
+        const variance = origRateDec
+          .minus(monthEndRate)
+          .mul(foreignAmountDec)
+          .toNumber();
 
         const controlAccount = settings.defaultGrniAccountId;
         if (controlAccount) {
@@ -269,7 +288,7 @@ export class FxRevaluationService {
             grni.vendorId,
             grni.currencyCode,
             `Unrealised FX Revaluation - GRNI ${grni.receiptNumber}`,
-            foreignAmount,
+            foreignAmountDec.toNumber(),
             monthEndRate,
           );
         }
@@ -305,7 +324,7 @@ export class FxRevaluationService {
       });
     }
 
-    if (Math.abs(totalDebits - totalCredits) > 0.01) {
+    if (new Decimal(totalDebits).minus(totalCredits).abs().gt(0.01)) {
       throw new BadRequestException('Journal entry lines do not balance.');
     }
 

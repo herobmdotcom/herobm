@@ -8,8 +8,7 @@ import {
   Inject,
   forwardRef,
 } from '@nestjs/common';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
 import {
   salesOrders,
   salesOrderLineItems,
@@ -39,14 +38,24 @@ import {
   WORK_ORDER_STATE,
   CUSTOM_LINE_ID,
   isStockedProductLine,
+  toDecimal,
+  calculateInventoryGaps,
+  type InventoryGap,
+  type PurchaseOrderState,
 } from '@herobm/shared';
-import { calculateInventoryGaps } from '@herobm/shared';
-import type { InventoryGap, PurchaseOrderState } from '@herobm/shared';
 
 import { AppConfigService } from '../settings/app-config.service';
 import { InventoryQueryService } from '../inventory/inventory-query.service';
 import { WorkOrdersWriteService } from '../manufacturing/work-orders-write.service';
 import { PurchaseOrdersWriteService } from '../purchase-orders/purchase-orders-write.service';
+import {
+  executeUnlinkDemandForPoLine,
+  executeUnlinkDemandForPurchaseOrder,
+  executeCancelDemandForSalesOrder,
+  executeCancelDemandForWorkOrder,
+  executeLinkDemandToTransferOrder,
+  executeUnlinkDemandForTransferOrder,
+} from './backorders-helpers';
 
 @Injectable()
 export class BackordersService {
@@ -302,9 +311,9 @@ export class BackordersService {
       const availablePoLines = draftPoLines
         .map((line) => ({
           ...line,
-          availableQty:
-            Number(line.quantity) -
-            (allocationMap.get(line.purchaseOrderLineId) || 0),
+          availableQty: toDecimal(line.quantity)
+            .minus(allocationMap.get(line.purchaseOrderLineId) || 0)
+            .toNumber(),
         }))
         .filter((line) => line.availableQty > 0);
 
@@ -312,7 +321,7 @@ export class BackordersService {
 
       // 3. Greedily map Demand to available PO capacity
       for (let demand of openDemands) {
-        let remainingQty = Number(demand.quantity);
+        let remainingQty = toDecimal(demand.quantity).toNumber();
         let currentDemandId = demand.backorderId;
 
         // Find available lines for this product
@@ -733,7 +742,7 @@ export class BackordersService {
         const allocated = allocationMap.get(line.purchaseOrderLineId) || 0;
         return {
           ...line,
-          availableQty: Number(line.quantity) - allocated,
+          availableQty: toDecimal(line.quantity).minus(allocated).toNumber(),
         };
       })
       .filter((line) => line.availableQty > 0);
@@ -765,7 +774,7 @@ export class BackordersService {
           HttpStatus.BAD_REQUEST,
         );
 
-      const demandQty = Number(demand.quantity);
+      const demandQty = toDecimal(demand.quantity).toNumber();
       if (quantityToLink <= 0 || quantityToLink > demandQty) {
         throw new HttpException('Invalid quantity', HttpStatus.BAD_REQUEST);
       }
@@ -805,8 +814,8 @@ export class BackordersService {
         .from(backorders)
         .where(eq(backorders.purchaseOrderLineId, purchaseOrderLineId));
 
-      const allocated = Number(existingAlloc?.allocated || 0);
-      const available = Number(poLine.quantity) - allocated;
+      const allocated = toDecimal(existingAlloc?.allocated).toNumber();
+      const available = toDecimal(poLine.quantity).minus(allocated).toNumber();
 
       if (quantityToLink > available) {
         throw new HttpException(
@@ -1112,11 +1121,36 @@ export class BackordersService {
         ),
       );
 
+    const salesOrderIds = Array.from(
+      new Set(
+        awaitingBackorders
+          .map((bo) => bo.salesOrderId)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    );
+
+    const salesOrderMap = new Map<string, string>();
+    if (salesOrderIds.length > 0) {
+      const orders = await tx
+        .select({
+          salesOrderId: salesOrders.salesOrderId,
+          orderNumber: salesOrders.orderNumber,
+        })
+        .from(salesOrders)
+        .where(inArray(salesOrders.salesOrderId, salesOrderIds));
+
+      for (const order of orders) {
+        if (order.orderNumber) {
+          salesOrderMap.set(order.salesOrderId, order.orderNumber);
+        }
+      }
+    }
+
     let receiptRemaining = receivedQuantity;
 
     for (const bo of awaitingBackorders) {
       if (receiptRemaining <= 0) break;
-      const boQty = parseFloat(bo.quantity);
+      const boQty = toDecimal(bo.quantity).toNumber();
 
       if (receiptRemaining >= boQty) {
         // Fully fulfilled — transition entire backorder
@@ -1151,16 +1185,13 @@ export class BackordersService {
           .returning();
 
         if (bo.salesOrderId) {
-          const [order] = await tx
-            .select({ orderNumber: salesOrders.orderNumber })
-            .from(salesOrders)
-            .where(eq(salesOrders.salesOrderId, bo.salesOrderId));
+          const orderNumber = salesOrderMap.get(bo.salesOrderId);
 
           await emitEvent(tx, {
             entityType: EntityType.SALES_ORDER,
             entityId: bo.salesOrderId,
             eventType: EventType.STATUS_CHANGED,
-            entityDisplayName: order?.orderNumber || 'Sales Order',
+            entityDisplayName: orderNumber || 'Sales Order',
             actor,
             payload: {
               entity: 'backorder',
@@ -1210,46 +1241,12 @@ export class BackordersService {
     purchaseOrderLineId: string,
     actor: string,
   ): Promise<void> {
-    const lineDemands = await tx
-      .select({
-        backorderId: backorders.backorderId,
-        purchaseOrderId: backorders.purchaseOrderId,
-        salesOrderId: backorders.salesOrderId,
-      })
-      .from(backorders)
-      .where(eq(backorders.purchaseOrderLineId, purchaseOrderLineId));
-
-    if (lineDemands.length === 0) return;
-
-    for (const bo of lineDemands) {
-      await this.changeBackorderState(
-        bo.backorderId,
-        BACKORDER_STATE.PENDING_SUPPLY,
-        actor,
-        tx,
-        {
-          purchaseOrderId: null,
-          purchaseOrderLineId: null,
-        },
-      );
-
-      if (bo.purchaseOrderId) {
-        const [po] = await tx
-          .select({ orderNumber: purchaseOrders.orderNumber })
-          .from(purchaseOrders)
-          .where(eq(purchaseOrders.purchaseOrderId, bo.purchaseOrderId));
-
-        // @herobm-skip-audit - DB write is performed by changeBackorderState, emitting cross-entity event here
-        await emitEvent(tx, {
-          entityType: EntityType.PURCHASE_ORDER,
-          entityId: bo.purchaseOrderId,
-          eventType: EventType.DEMAND_UNALLOCATED,
-          entityDisplayName: po?.orderNumber || 'Purchase Order',
-          actor,
-          payload: { backorderId: bo.backorderId, purchaseOrderLineId },
-        });
-      }
-    }
+    return executeUnlinkDemandForPoLine(
+      tx,
+      purchaseOrderLineId,
+      actor,
+      this.changeBackorderState.bind(this),
+    );
   }
 
   /**
@@ -1260,38 +1257,12 @@ export class BackordersService {
     purchaseOrderId: string,
     actor: string,
   ): Promise<void> {
-    const poDemands = await tx
-      .select({
-        backorderId: backorders.backorderId,
-        salesOrderId: backorders.salesOrderId,
-      })
-      .from(backorders)
-      .where(eq(backorders.purchaseOrderId, purchaseOrderId));
-
-    for (const bo of poDemands) {
-      await this.changeBackorderState(
-        bo.backorderId,
-        BACKORDER_STATE.PENDING_SUPPLY,
-        actor,
-        tx,
-        {
-          purchaseOrderId: null,
-          purchaseOrderLineId: null,
-        },
-      );
-
-      if (bo.salesOrderId) {
-        // @herobm-skip-audit - DB write is performed by changeBackorderState, emitting cross-entity event here
-        await emitEvent(tx, {
-          entityType: EntityType.SALES_ORDER,
-          entityId: bo.salesOrderId,
-          eventType: EventType.DEMAND_UNALLOCATED,
-          entityDisplayName: `Sales Order`,
-          payload: { backorderId: bo.backorderId },
-          actor,
-        });
-      }
-    }
+    return executeUnlinkDemandForPurchaseOrder(
+      tx,
+      purchaseOrderId,
+      actor,
+      this.changeBackorderState.bind(this),
+    );
   }
 
   /**
@@ -1302,29 +1273,12 @@ export class BackordersService {
     salesOrderId: string,
     actor: string,
   ): Promise<void> {
-    const list = await tx
-      .select({ backorderId: backorders.backorderId })
-      .from(backorders)
-      .where(eq(backorders.salesOrderId, salesOrderId));
-
-    for (const bo of list) {
-      await this.changeBackorderState(
-        bo.backorderId,
-        BACKORDER_STATE.CANCELLED,
-        actor,
-        tx,
-      );
-    }
-
-    // @herobm-skip-audit - DB write is performed by changeBackorderState, emitting cross-entity event here
-    await emitEvent(tx, {
-      entityType: EntityType.SALES_ORDER,
-      entityId: salesOrderId,
-      eventType: EventType.STATUS_CHANGED,
-      entityDisplayName: 'Sales Order',
+    return executeCancelDemandForSalesOrder(
+      tx,
+      salesOrderId,
       actor,
-      payload: { reason: 'sales_order_cancelled_backorders_cancelled' },
-    });
+      this.changeBackorderState.bind(this),
+    );
   }
 
   /**
@@ -1389,29 +1343,12 @@ export class BackordersService {
     workOrderId: string,
     actor: string,
   ): Promise<void> {
-    const list = await tx
-      .select({ backorderId: backorders.backorderId })
-      .from(backorders)
-      .where(eq(backorders.demandWorkOrderId, workOrderId));
-
-    for (const bo of list) {
-      await this.changeBackorderState(
-        bo.backorderId,
-        BACKORDER_STATE.CANCELLED,
-        actor,
-        tx,
-      );
-    }
-
-    // @herobm-skip-audit - DB write is performed by changeBackorderState, emitting cross-entity event here
-    await emitEvent(tx, {
-      entityType: EntityType.WORK_ORDER,
-      entityId: workOrderId,
-      eventType: EventType.STATUS_CHANGED,
-      entityDisplayName: 'Work Order',
+    return executeCancelDemandForWorkOrder(
+      tx,
+      workOrderId,
       actor,
-      payload: { reason: 'work_order_cancelled_backorders_cancelled' },
-    });
+      this.changeBackorderState.bind(this),
+    );
   }
 
   /**
@@ -1424,26 +1361,14 @@ export class BackordersService {
     transferOrderLineId: string,
     actor: string,
   ): Promise<void> {
-    await this.changeBackorderState(
-      backorderId,
-      BACKORDER_STATE.AWAITING_RECEIPT,
-      actor,
+    return executeLinkDemandToTransferOrder(
       tx,
-      {
-        transferOrderId,
-        transferOrderLineId,
-      },
-    );
-
-    // @herobm-skip-audit - DB write is performed by changeBackorderState, emitting cross-entity event here
-    await emitEvent(tx, {
-      entityType: EntityType.TRANSFER_ORDER,
-      entityId: transferOrderId,
-      eventType: EventType.DEMAND_ALLOCATED,
-      entityDisplayName: 'Transfer Order',
+      backorderId,
+      transferOrderId,
+      transferOrderLineId,
       actor,
-      payload: { backorderId, transferOrderLineId },
-    });
+      this.changeBackorderState.bind(this),
+    );
   }
 
   /**
@@ -1454,32 +1379,11 @@ export class BackordersService {
     transferOrderId: string,
     actor: string,
   ): Promise<void> {
-    const list = await tx
-      .select({ backorderId: backorders.backorderId })
-      .from(backorders)
-      .where(eq(backorders.transferOrderId, transferOrderId));
-
-    for (const bo of list) {
-      await this.changeBackorderState(
-        bo.backorderId,
-        BACKORDER_STATE.PENDING_SUPPLY,
-        actor,
-        tx,
-        {
-          transferOrderId: null,
-          transferOrderLineId: null,
-        },
-      );
-    }
-
-    // @herobm-skip-audit - DB write is performed by changeBackorderState, emitting cross-entity event here
-    await emitEvent(tx, {
-      entityType: EntityType.TRANSFER_ORDER,
-      entityId: transferOrderId,
-      eventType: EventType.DEMAND_UNALLOCATED,
-      entityDisplayName: 'Transfer Order',
+    return executeUnlinkDemandForTransferOrder(
+      tx,
+      transferOrderId,
       actor,
-      payload: { transferOrderId },
-    });
+      this.changeBackorderState.bind(this),
+    );
   }
 }

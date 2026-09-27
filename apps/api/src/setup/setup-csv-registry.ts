@@ -1,12 +1,11 @@
-import { is, getTableColumns } from 'drizzle-orm';
+import { is, getTableColumns, getTableName } from 'drizzle-orm';
 import { PgTable } from 'drizzle-orm/pg-core';
 import * as schema from '@herobm/db-schema';
 
 export interface CsvRegistryEntry {
   id: string;
   name: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle PgTable with generic columns
-  table: PgTable<any>;
+  table: PgTable;
   uniqueKey: string;
 }
 
@@ -74,8 +73,7 @@ export function formatTableName(tableName: string): string {
     .join(' ');
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic column inspection across arbitrary schema tables
-export function resolveUniqueKey(table: PgTable<any>): string {
+export function resolveUniqueKey(table: PgTable): string {
   const cols = getTableColumns(table);
   const colList = Object.values(cols) as unknown as Array<{
     name: string;
@@ -118,13 +116,8 @@ export function buildCsvRegistry(): CsvRegistryEntry[] {
       continue;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle PgTable instance
-    const table = val as PgTable<any>;
-    const tableName =
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle internal symbol extraction
-      (table as any)[Symbol.for('drizzle:Name')] ||
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle internal config extraction
-      (table as any)._?.name;
+    const table = val as PgTable;
+    const tableName = getTableName(table);
 
     if (!tableName || typeof tableName !== 'string') {
       continue;

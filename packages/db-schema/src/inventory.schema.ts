@@ -14,7 +14,7 @@ import {
   PUTAWAY_STATUS,
   StocktakeState,
 } from '@herobm/shared';
-import { products } from './products.schema';
+import { products, uomDictionary } from './products.schema';
 import { projects, projectTasks } from './projects.schema';
 
 // ---------------------------------------------------------------------------
@@ -144,6 +144,10 @@ export const inventoryLedger = herobmCore.table(
       .notNull()
       .references(() => zones.zoneId),
     quantity: numeric('quantity').notNull(),
+    unitCost: numeric('unit_cost'),
+    totalValue: numeric('total_value'),
+    uomId: text('uom_id').references(() => uomDictionary.uomCode),
+    originalQuantity: numeric('original_quantity'),
   },
   (t) => ({
     productLocationIdx: index('idx_inventory_ledger_product_location').on(

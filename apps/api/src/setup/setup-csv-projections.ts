@@ -68,8 +68,7 @@ export const CUSTOMERS_EXTENDED: CsvExportProjection = {
     'notes',
   ],
   execute: async (db: DrizzleDB, options: ExportCsvQueryDto) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic query builder
-    let query: any = db
+    let query = db
       .select({
         customer_number: customers.customerNumber,
         customer_name: organizations.name,
@@ -114,7 +113,8 @@ export const CUSTOMERS_EXTENDED: CsvExportProjection = {
       .leftJoin(
         taxPositions,
         eq(customers.taxPositionId, taxPositions.taxPositionId),
-      );
+      )
+      .$dynamic();
 
     if (!options.includeArchived) {
       query = query.where(sql`${customers.stateCode} != 'archived'`);
@@ -162,8 +162,7 @@ export const SUPPLIERS_EXTENDED: CsvExportProjection = {
     'notes',
   ],
   execute: async (db: DrizzleDB, options: ExportCsvQueryDto) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic query builder
-    let query: any = db
+    let query = db
       .select({
         vendor_number: suppliers.vendorNumber,
         supplier_name: organizations.name,
@@ -204,7 +203,8 @@ export const SUPPLIERS_EXTENDED: CsvExportProjection = {
       .leftJoin(
         taxPositions,
         eq(suppliers.taxPositionId, taxPositions.taxPositionId),
-      );
+      )
+      .$dynamic();
 
     if (!options.includeArchived) {
       query = query.where(sql`${suppliers.stateCode} != 'archived'`);
@@ -246,8 +246,7 @@ export const PRODUCTS_EXTENDED: CsvExportProjection = {
     'notes',
   ],
   execute: async (db: DrizzleDB, options: ExportCsvQueryDto) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic query builder
-    let query: any = db
+    let query = db
       .select({
         product_number: products.productNumber,
         name: products.name,
@@ -271,7 +270,8 @@ export const PRODUCTS_EXTENDED: CsvExportProjection = {
         productGroups,
         eq(products.productGroupId, productGroups.productGroupId),
       )
-      .leftJoin(uomDictionary, eq(products.baseUom, uomDictionary.uomCode));
+      .leftJoin(uomDictionary, eq(products.baseUom, uomDictionary.uomCode))
+      .$dynamic();
 
     if (!options.includeArchived) {
       query = query.where(sql`${products.stateCode} != 'archived'`);
@@ -319,8 +319,7 @@ export const SALES_ORDERS_EXTENDED: CsvExportProjection = {
     'shipping_notes',
   ],
   execute: async (db: DrizzleDB, options: ExportCsvQueryDto) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic query builder
-    let query: any = db
+    let query = db
       .select({
         order_number: salesOrders.orderNumber,
         name: salesOrders.name,
@@ -354,7 +353,8 @@ export const SALES_ORDERS_EXTENDED: CsvExportProjection = {
       .leftJoin(
         locations,
         eq(salesOrders.fulfillmentLocationId, locations.locationId),
-      );
+      )
+      .$dynamic();
 
     if (!options.includeArchived) {
       query = query.where(sql`${salesOrders.stateCode} != 'archived'`);
@@ -397,8 +397,7 @@ export const PROJECTS_EXTENDED: CsvExportProjection = {
     'created_by',
   ],
   execute: async (db: DrizzleDB, options: ExportCsvQueryDto) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic query builder
-    let query: any = db
+    let query = db
       .select({
         project_number: projects.projectNumber,
         name: projects.name,
@@ -427,7 +426,8 @@ export const PROJECTS_EXTENDED: CsvExportProjection = {
         opportunities,
         eq(projects.opportunityId, opportunities.opportunityId),
       )
-      .leftJoin(users, eq(projects.projectManagerId, users.userId));
+      .leftJoin(users, eq(projects.projectManagerId, users.userId))
+      .$dynamic();
 
     if (!options.includeArchived) {
       query = query.where(sql`${projects.stateCode} != 'cancelled'`);

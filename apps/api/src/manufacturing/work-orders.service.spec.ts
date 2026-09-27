@@ -39,6 +39,7 @@ describe('WorkOrdersService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
   let service: WorkOrdersService;
   let inventoryMovementService: InventoryMovementService;
+  let glService: GlService;
 
   let testProductId: string;
   let testCompProductId1: string;
@@ -191,13 +192,32 @@ describe('WorkOrdersService', () => {
             defaultFulfillmentLocationId: jest
               .fn()
               .mockReturnValue(testLocationId),
+            valuationMethod: jest.fn().mockReturnValue('weighted_average'),
+            inventoryAccountingMode: jest.fn().mockReturnValue('perpetual'),
+            defaultInventoryAccountId: jest
+              .fn()
+              .mockReturnValue('11111111-1111-1111-1111-111111111111'),
+            defaultGrniAccountId: jest
+              .fn()
+              .mockReturnValue('22222222-2222-2222-2222-222222222222'),
+            defaultCogsAccountId: jest
+              .fn()
+              .mockReturnValue('33333333-3333-3333-3333-333333333333'),
+            defaultShrinkageAccountId: jest
+              .fn()
+              .mockReturnValue('44444444-4444-4444-4444-444444444444'),
+            defaultPpvAccountId: jest
+              .fn()
+              .mockReturnValue('55555555-5555-5555-5555-555555555555'),
+            defaultCostCenterId: jest.fn().mockReturnValue(undefined),
+            defaultActivityId: jest.fn().mockReturnValue(undefined),
           },
         },
         {
           provide: GlService,
           useValue: {
             getSettings: jest.fn().mockResolvedValue(null),
-            postJournalEntry: jest.fn(),
+            postJournalEntry: jest.fn().mockResolvedValue(undefined),
           },
         },
         {
@@ -261,6 +281,7 @@ describe('WorkOrdersService', () => {
     inventoryMovementService = module.get<InventoryMovementService>(
       InventoryMovementService,
     );
+    glService = module.get<GlService>(GlService);
   });
 
   describe('findAll', () => {
@@ -585,6 +606,103 @@ describe('WorkOrdersService', () => {
       expect(completed.stateCode).toBe(WORK_ORDER_STATE.COMPLETED);
       expect(completed.completedQuantity).toBe('4');
       expect(completed.totalCost).toBe('145.00');
+    });
+
+    it('should capitalize production costs into product WAC, record unit cost on inventory ledger, and post GL journal entry on build completion (ADV-216)', async () => {
+      // Set initial product WAC = 10.00 and standard cost = 10.00
+      await pg.db
+        .update(products)
+        .set({
+          weightedAverageCost: '10.0000',
+          standardCost: '10.0000',
+        })
+        .where(eq(products.productId, testProductId));
+
+      const dto = {
+        productId: testProductId,
+        targetQuantity: '2',
+        locationId: testLocationId,
+        wipBinId: testWipBinId,
+        outputBinId: testOutputBinId,
+        assemblyCostPerUnit: '5.00',
+        additionalCost: '10.00',
+        components: [
+          {
+            productId: testCompProductId1,
+            expectedQuantity: '8',
+            unitCost: '5.00',
+          },
+          {
+            productId: testCompProductId2,
+            expectedQuantity: '4',
+            unitCost: '2.50',
+          },
+        ],
+      };
+      // Component cost: 8*5 + 4*2.5 = 50.00
+      // Assembly cost: 2 * 5.00 = 10.00
+      // Additional cost: 10.00
+      // Total cost: 70.00
+      // Unit cost for 2 units = 35.00
+      // Pre-build QOH = 0 -> New WAC = (0*10 + 2*35)/2 = 35.0000
+      const wo = await service.create(dto, 'user1');
+      await service.release(wo.workOrderId, 'user1');
+
+      const completed = await service.completeBuild(
+        wo.workOrderId,
+        undefined,
+        'user1',
+      );
+      expect(completed.stateCode).toBe(WORK_ORDER_STATE.COMPLETED);
+      expect(completed.completedQuantity).toBe('2');
+      expect(completed.totalCost).toBe('70.00');
+
+      // 1. Assert product WAC was updated to 35.0000
+      const [updatedProd] = await pg.db
+        .select()
+        .from(products)
+        .where(eq(products.productId, testProductId));
+      expect(updatedProd.weightedAverageCost).toBe('35.0000');
+
+      // 3. Assert GL posting was invoked with DR Finished Goods (70.00), CR Components (50.00), CR Labor/Overhead (20.00)
+      // 3. Assert GL posting was invoked with DR Finished Goods (70.00), CR Components (50.00), CR Labor/Overhead (20.00)
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- Test mock assertion
+      const glMockCalls = jest.mocked(glService.postJournalEntry).mock.calls;
+      expect(glMockCalls.length).toBeGreaterThan(0);
+      const lastCall = glMockCalls[glMockCalls.length - 1];
+      expect(lastCall[0]).toEqual([
+        {
+          accountId: '11111111-1111-1111-1111-111111111111',
+          debit: 70,
+          credit: 0,
+          memo: `Work Order Completion ${wo.orderNumber}`,
+          costCenterId: undefined,
+          activityId: undefined,
+        },
+        {
+          accountId: '11111111-1111-1111-1111-111111111111',
+          debit: 0,
+          credit: 50,
+          memo: `Work Order Completion ${wo.orderNumber} - Components consumed`,
+          costCenterId: undefined,
+          activityId: undefined,
+        },
+        {
+          accountId: '33333333-3333-3333-3333-333333333333',
+          debit: 0,
+          credit: 20,
+          memo: `Work Order Completion ${wo.orderNumber} - Labor & overhead capitalized`,
+          costCenterId: undefined,
+          activityId: undefined,
+        },
+      ]);
+      expect(lastCall[1]).toEqual(
+        expect.objectContaining({
+          actor: 'user1',
+          sourceId: wo.workOrderId,
+          memo: `Work Order Completion ${wo.orderNumber}`,
+        }),
+      );
     });
 
     it('should track full Picking Queue inventory flow: create -> release (creates pick tasks) -> pickComponent (moves stock from storage bin to WIP bin) -> completeBuild (consumes WIP & credits output) -> putaway', async () => {

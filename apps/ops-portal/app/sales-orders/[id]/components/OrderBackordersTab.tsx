@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { routes } from '@/lib/routes';
 import { formatLocalDate } from '@/lib/date';
 import StateBadge from '@/components/StateBadge';
+import type { ValidState } from '@/types/states';
 import type { OrderDetail } from '../types';
 
 interface OrderBackordersTabProps {
@@ -18,10 +19,8 @@ export function OrderBackordersTab({ order }: OrderBackordersTabProps) {
     return (
         <div>
             <DataTable
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Props
-                data={(order.backorders || []) as any[]}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Local iteratee
-                keyExtractor={(bo: any, idx: number) => bo.salesOrderLineId || bo.purchaseOrderId || idx}
+                data={order.backorders || []}
+                keyExtractor={(bo, idx) => bo.salesOrderLineId || bo.purchaseOrderId || idx}
                 emptyMessage={tSales('noBackordersFound')}
                 columns={[
                     { header: tSales('columns.lineNumber'), width: 48, align: 'center' },
@@ -31,8 +30,7 @@ export function OrderBackordersTab({ order }: OrderBackordersTabProps) {
                     { header: tSales('columns.poStatus') },
                     { header: tSales('columns.demandDate') },
                 ]}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Local iteratee
-                renderCustomRow={(bo: any, bo_idx: number) => {
+                renderCustomRow={(bo, bo_idx) => {
                     const isPo = !!bo.purchaseOrderId;
                     const isTo = !!bo.transferOrderId;
                     const isAllocated = isPo || isTo;
@@ -50,7 +48,7 @@ export function OrderBackordersTab({ order }: OrderBackordersTabProps) {
                             <td>
                                 {isAllocated ? (
                                     <Link 
-                                        href={isPo ? routes.purchaseOrders.detail(bo.purchaseOrderId) : routes.inventory.transfers.detail(bo.transferOrderId)}
+                                        href={isPo ? routes.purchaseOrders.detail(bo.purchaseOrderId!) : routes.inventory.transfers.detail(bo.transferOrderId!)}
                                         className="text-[var(--accent)] font-medium hover:underline"
                                     >
                                         {displayOrderNumber}
@@ -68,7 +66,7 @@ export function OrderBackordersTab({ order }: OrderBackordersTabProps) {
                             </td>
                             <td>
                                 {isAllocated ? (
-                                    <StateBadge state={(isPo ? bo.purchaseOrderState : bo.transferOrderState) || 'DRAFT'} />
+                                    <StateBadge state={((isPo ? bo.purchaseOrderState : bo.transferOrderState) || 'DRAFT') as ValidState} />
                                 ) : (
                                     <span className="text-gray-400">—</span>
                                 )}
@@ -77,8 +75,7 @@ export function OrderBackordersTab({ order }: OrderBackordersTabProps) {
                         </tr>
                     );
                 }}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Local iteratee
-                mobileCard={(bo: any) => {
+                mobileCard={(bo) => {
                     const isPo = !!bo.purchaseOrderId;
                     const isTo = !!bo.transferOrderId;
                     const isAllocated = isPo || isTo;
@@ -97,7 +94,7 @@ export function OrderBackordersTab({ order }: OrderBackordersTabProps) {
                                 <MobileCardField label={tSales('columns.allocatedTo')} value={
                                     isAllocated ? (
                                         <Link 
-                                            href={isPo ? routes.purchaseOrders.detail(bo.purchaseOrderId) : routes.inventory.transfers.detail(bo.transferOrderId)}
+                                            href={isPo ? routes.purchaseOrders.detail(bo.purchaseOrderId!) : routes.inventory.transfers.detail(bo.transferOrderId!)}
                                             className="text-[var(--accent)] font-medium hover:underline"
                                         >
                                             {displayOrderNumber}
@@ -118,7 +115,7 @@ export function OrderBackordersTab({ order }: OrderBackordersTabProps) {
                                 } />
                                 <MobileCardField label={tSales('columns.poStatus')} value={
                                     isAllocated ? (
-                                        <StateBadge state={(isPo ? bo.purchaseOrderState : bo.transferOrderState) || 'DRAFT'} />
+                                        <StateBadge state={((isPo ? bo.purchaseOrderState : bo.transferOrderState) || 'DRAFT') as ValidState} />
                                     ) : (
                                         <span className="text-gray-400">—</span>
                                     )

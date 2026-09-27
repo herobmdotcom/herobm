@@ -1,3 +1,4 @@
+import { Decimal } from 'decimal.js';
 import {
   Injectable,
   Inject,
@@ -73,7 +74,7 @@ export class ExchangeRatesService {
     // Both rates are units per 1 EUR.
     // So 1 unit of fromCurrency = 1 / fromRateRow.buyRate EUR
     // Thus, fromCurrency in toCurrency = toRateRow.buyRate / fromRateRow.buyRate
-    return parseFloat(toRateRow.buyRate) / parseFloat(fromRateRow.buyRate);
+    return new Decimal(toRateRow.buyRate).div(fromRateRow.buyRate).toNumber();
   }
 
   async create(dto: CreateExchangeRateDto, userId?: string) {

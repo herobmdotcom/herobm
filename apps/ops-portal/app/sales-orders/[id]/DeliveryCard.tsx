@@ -151,8 +151,7 @@ export default function DeliveryCard({
                             <div>
                                 <PhoneInput
                                     international
-                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required because defaultCountry requires a specific enum type
-                                    defaultCountry={customerCountry as any}
+                                    defaultCountry={customerCountry as import('react-phone-number-input').Country}
                                     disabled={!isOrderDetailsEditable}
                                     className="input w-full flex items-center px-2 border border-[var(--border)] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--accent)]"
                                     value={parseInitialPhone(editDeliveryPhone)}

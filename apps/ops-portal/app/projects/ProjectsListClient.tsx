@@ -45,8 +45,7 @@ export default function ProjectsListClient() {
         minWidth: 160,
         flex: 1.5,
         valueGetter: (params) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- SDK untyped relation helper
-          const cust = params.data?.customer as any;
+          const cust = params.data?.customer as { customerName?: string; name?: string; customerNumber?: string } | undefined;
           return cust?.customerName || cust?.name || cust?.customerNumber || '—';
         },
       },
@@ -63,8 +62,7 @@ export default function ProjectsListClient() {
         valueFormatter: (params) => {
           if (!params.value) return '—';
           const s = String(params.value).toLowerCase();
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic translation key from API state code
-          return tStates.has(s as any) ? tStates(s as any) : String(params.value);
+          return tStates.has(s as never) ? tStates(s as never) : String(params.value);
         },
       },
       {
@@ -96,8 +94,7 @@ export default function ProjectsListClient() {
         headerName: t('columns.manager'),
         width: 150,
         valueGetter: (params) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- SDK untyped relation helper
-          const mgr = params.data?.projectManager as any;
+          const mgr = params.data?.projectManager as { name?: string; email?: string } | undefined;
           return mgr?.name || mgr?.email || '—';
         },
       },

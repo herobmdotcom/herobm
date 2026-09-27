@@ -18,6 +18,7 @@ import {
   SALES_ORDER_PICK_TRANSITIONS,
   SALES_ORDER_STATE,
   getValidStates,
+  toDecimal,
 } from '@herobm/shared';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
 import { isPickableBin } from '../inventory/inventory-math.utils';
@@ -49,8 +50,8 @@ export class PickingActionService {
     }
 
     const line = await findOrderLine(this.db, lineId, orderId);
-    const qty = parseFloat(quantity);
-    const ordered = parseFloat(line.quantity);
+    const qty = toDecimal(quantity).toNumber();
+    const ordered = toDecimal(line.quantity).toNumber();
 
     if (isNaN(qty) || qty <= 0) {
       throw new BadRequestException('Picked quantity must be > 0');
@@ -228,7 +229,7 @@ export class PickingActionService {
       );
     }
 
-    const qty = parseFloat(pick.quantity);
+    const qty = toDecimal(pick.quantity).toNumber();
     const line = await findOrderLine(this.db, pick.salesOrderLineId, orderId);
 
     const [shippingBin] = await this.db

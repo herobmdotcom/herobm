@@ -1,8 +1,10 @@
+import Decimal from 'decimal.js';
 import {
   computeLinePriceForStorage,
   normalizeUomCode,
   LineType,
   PURCHASE_ORDER_STATE,
+  type PurchaseOrderState,
 } from '@herobm/shared';
 
 export function resolveSupplierLinePricingAndMoq(
@@ -18,13 +20,13 @@ export function resolveSupplierLinePricingAndMoq(
   } | null,
 ): { qty: number; price: number; disc: number } {
   const supplierMoq = supplierInfo?.minPurchaseQty
-    ? parseFloat(supplierInfo.minPurchaseQty)
+    ? new Decimal(supplierInfo.minPurchaseQty).toNumber()
     : null;
   const supplierCost = supplierInfo?.costPrice
-    ? parseFloat(supplierInfo.costPrice)
+    ? new Decimal(supplierInfo.costPrice).toNumber()
     : null;
   const supplierDisc = supplierInfo?.discountPercent
-    ? parseFloat(supplierInfo.discountPercent)
+    ? new Decimal(supplierInfo.discountPercent).toNumber()
     : null;
 
   let qty: number;
@@ -38,7 +40,7 @@ export function resolveSupplierLinePricingAndMoq(
   ) {
     qty = supplierMoq;
   } else {
-    qty = parseFloat(String(lineDto.quantity || '1'));
+    qty = new Decimal(lineDto.quantity ?? '1').toNumber();
   }
 
   let price: number;
@@ -52,7 +54,7 @@ export function resolveSupplierLinePricingAndMoq(
   ) {
     price = supplierCost;
   } else {
-    price = parseFloat(String(lineDto.pricePerUnit || '0'));
+    price = new Decimal(lineDto.pricePerUnit || '0').toNumber();
   }
 
   let disc: number;
@@ -65,7 +67,7 @@ export function resolveSupplierLinePricingAndMoq(
   ) {
     disc = supplierDisc;
   } else {
-    disc = parseFloat(String(lineDto.discountPercentage || '0'));
+    disc = new Decimal(lineDto.discountPercentage || '0').toNumber();
   }
 
   return { qty, price, disc };
@@ -80,10 +82,10 @@ export function calculateUpdatedLinePricing(
   },
   existingLine:
     | {
-        lineType?: string;
-        quantity?: string;
-        pricePerUnit?: string;
-        discountPercentage?: string;
+        lineType?: string | null;
+        quantity?: string | null;
+        pricePerUnit?: string | null;
+        discountPercentage?: string | null;
       }
     | undefined,
   rate: number,
@@ -98,17 +100,17 @@ export function calculateUpdatedLinePricing(
   if (isComment) {
     return { amount: '0', tax: '0', totalAmount: '0' };
   }
-  const qty = parseFloat(
+  const qty = new Decimal(
     lineDto.quantity?.toString() || existingLine?.quantity || '0',
-  );
-  const price = parseFloat(
+  ).toNumber();
+  const price = new Decimal(
     lineDto.pricePerUnit?.toString() || existingLine?.pricePerUnit || '0',
-  );
-  const disc = parseFloat(
+  ).toNumber();
+  const disc = new Decimal(
     lineDto.discountPercentage?.toString() ||
       existingLine?.discountPercentage ||
       '0',
-  );
+  ).toNumber();
 
   return computeLinePriceForStorage({
     quantity: qty,
@@ -120,17 +122,19 @@ export function calculateUpdatedLinePricing(
 
 export function calculateNextPoReceiptState(
   allLines: { quantity: string; quantityReceived?: string | null }[],
-  currentState: string,
+  currentState: PurchaseOrderState,
   fallbackToOrdered = false,
-): string {
+): PurchaseOrderState {
   const isFullyReceived =
     allLines.length > 0 &&
-    allLines.every(
-      (l) => parseFloat(l.quantityReceived || '0') >= parseFloat(l.quantity),
+    allLines.every((l) =>
+      new Decimal(l.quantityReceived || '0').greaterThanOrEqualTo(
+        new Decimal(l.quantity || '0'),
+      ),
     );
 
-  const hasPartialReceipt = allLines.some(
-    (l) => parseFloat(l.quantityReceived || '0') > 0,
+  const hasPartialReceipt = allLines.some((l) =>
+    new Decimal(l.quantityReceived || '0').greaterThan(0),
   );
 
   return isFullyReceived
@@ -202,10 +206,10 @@ export function buildCreatePoLineRecord(
     };
   }
 
-  const disc = parseFloat(String(line.discountPercentage || '0'));
+  const disc = new Decimal(line.discountPercentage || '0').toNumber();
   const pricing = computeLinePriceForStorage({
-    quantity: parseFloat(String(line.quantity || '0')),
-    pricePerUnit: parseFloat(String(line.pricePerUnit || '0')),
+    quantity: new Decimal(line.quantity || '0').toNumber(),
+    pricePerUnit: new Decimal(line.pricePerUnit || '0').toNumber(),
     discountPercentage: disc,
     taxRate: rate,
   });

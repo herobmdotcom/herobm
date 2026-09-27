@@ -3,11 +3,18 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/shared/Button';
 import { formatAmount } from '@/lib/currency';
 
+export interface AllocatableInvoiceItem {
+  id: string;
+  invoiceNumber?: string;
+  pendingAllocation?: number;
+  pendingDiscountAmount?: number;
+  outstandingAmount?: number | string;
+}
+
 interface PartialAllocationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-  invoice: Record<string, any> | null;
+  invoice: AllocatableInvoiceItem | null;
   currencyCode: string;
   maxAvailable: number; // The maximum amount that can be allocated (lesser of payment remaining or invoice outstanding)
   onSave: (invoiceId: string, amount: number, discountAmount: number) => void;
@@ -29,8 +36,8 @@ export default function PartialAllocationModal({
   // Reset amount when modal opens or invoice changes
   useEffect(() => {
     if (isOpen && invoice) {
-      setAmount(invoice.pendingAllocation > 0 ? String(invoice.pendingAllocation) : '');
-      setDiscount(invoice.pendingDiscountAmount > 0 ? String(invoice.pendingDiscountAmount) : '');
+      setAmount((invoice.pendingAllocation ?? 0) > 0 ? String(invoice.pendingAllocation) : '');
+      setDiscount((invoice.pendingDiscountAmount ?? 0) > 0 ? String(invoice.pendingDiscountAmount) : '');
     }
   }, [isOpen, invoice]);
 
@@ -71,7 +78,7 @@ export default function PartialAllocationModal({
             </div>
             <div className="flex justify-between text-sm">
               <span className="font-bold text-[var(--accent)]">{t('outstanding')}</span>
-              <span className="font-medium text-[var(--text-primary)]">{formatAmount(parseFloat(invoice.outstandingAmount), currencyCode)}</span>
+              <span className="font-medium text-[var(--text-primary)]">{formatAmount(parseFloat(String(invoice.outstandingAmount || 0)), currencyCode)}</span>
             </div>
             <div className="flex justify-between text-sm pt-2 border-t border-[var(--accent)]/20">
               <span className="font-bold text-[var(--accent)]">{t('maxAvailable')}</span>

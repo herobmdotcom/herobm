@@ -239,8 +239,7 @@ const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> = ({
             </label>
             <PhoneInput
               international
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-              defaultCountry={defaultCountry as any}
+              defaultCountry={defaultCountry as import('react-phone-number-input').Country}
               className="input w-full flex items-center px-2 border border-[var(--border)] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--accent)]"
               value={parseInitialPhone(dto.recipientPhone)}
               onChange={(value) => handleChange('recipientPhone', value || '')}

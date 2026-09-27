@@ -24,6 +24,7 @@ import {
   TRANSFER_ORDER_STATE,
   TRANSFER_ORDER_PICK_STATE,
   SHIPMENT_STATE,
+  toDecimal,
 } from '@herobm/shared';
 import { v4 as uuidv4 } from 'uuid';
 import { InventoryMovementService } from '../../inventory/inventory-movement.service';
@@ -147,7 +148,7 @@ export class TransfersShipmentService {
         for (const pick of linePicks) {
           if (remainingToShip <= 0) break;
 
-          const pickQty = parseFloat(pick.quantity);
+          const pickQty = toDecimal(pick.quantity).toNumber();
           const shipQty = Math.min(pickQty, remainingToShip);
 
           remainingToShip -= shipQty;
@@ -230,8 +231,8 @@ export class TransfersShipmentService {
         tx as unknown as DrizzleDB,
       );
       const isFullyShipped = summary.lines.every(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Any allowed here
-        (l: any) => parseFloat(l.quantityShipped) >= parseFloat(l.quantity),
+        (l) =>
+          parseFloat(l.quantityShipped || '0') >= parseFloat(l.quantity || '0'),
       );
 
       if (isFullyShipped) {
@@ -363,7 +364,7 @@ export class TransfersShipmentService {
       const uomMap = new Map(productUoms.map((p) => [p.productId, p.baseUom]));
 
       for (const pick of picks) {
-        const pickQty = parseFloat(pick.quantity);
+        const pickQty = toDecimal(pick.quantity).toNumber();
 
         shipmentLinesInsert.push({
           shipmentLineId: uuidv4(),
@@ -521,7 +522,7 @@ export class TransfersShipmentService {
 
       const inventoryLines = [];
       for (const line of lines) {
-        const pickQty = parseFloat(line.quantity);
+        const pickQty = toDecimal(line.quantity).toNumber();
         const uomCode = uomMap.get(line.productId) || 'EA';
 
         if (!line.pickId) continue;

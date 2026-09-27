@@ -1,3 +1,4 @@
+import { Decimal } from 'decimal.js';
 import { eq } from 'drizzle-orm';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { salesInvoices } from '@herobm/db-schema';
@@ -61,15 +62,16 @@ export const autoTransitionSalesInvoiceBasedOnOutstandingAmount: SalesInvoiceLif
       )
         return null;
 
-      const outstanding = parseFloat(invoice.outstandingAmount);
-      const total = parseFloat(invoice.totalAmount);
+      const outstandingDec = new Decimal(invoice.outstandingAmount);
+      const totalDec = new Decimal(invoice.totalAmount);
+      const outstanding = outstandingDec.toNumber();
 
       let targetState = invoice.stateCode;
 
       // 2. Determine correct state
-      if (outstanding <= 0.001) {
+      if (outstandingDec.lte(0.001)) {
         targetState = SALES_INVOICE_STATE.PAID;
-      } else if (outstanding < total - 0.001) {
+      } else if (outstandingDec.lt(totalDec.minus(0.001))) {
         targetState = SALES_INVOICE_STATE.PARTIALLY_PAID;
       } else {
         targetState = SALES_INVOICE_STATE.INVOICED;
@@ -81,8 +83,7 @@ export const autoTransitionSalesInvoiceBasedOnOutstandingAmount: SalesInvoiceLif
       // 4. Execute transition
       await db
         .update(salesInvoices)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic state assignment bypasses strict Drizzle schema enums
-        .set({ stateCode: targetState as any, modifiedOn: new Date() })
+        .set({ stateCode: targetState, modifiedOn: new Date() })
         .where(eq(salesInvoices.invoiceId, invoiceId));
 
       await emitEvent(db, {

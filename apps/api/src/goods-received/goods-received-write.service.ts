@@ -65,6 +65,7 @@ import {
   PUTAWAY_STATUS,
   MATCH_STATUS,
   JOURNAL_ENTRY_SOURCE_TYPE,
+  toFinancialDecimal,
 } from '@herobm/shared';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
 
@@ -253,10 +254,9 @@ export class GoodsReceivedWriteService {
           }
 
           const unitCost = matchedPoLineId
-            ? String(
-                parseFloat(openPoLines[0].pricePerUnit) *
-                  parseFloat(openPoLines[0].exchangeRate || '1'),
-              )
+            ? toFinancialDecimal(openPoLines[0].pricePerUnit)
+                .mul(toFinancialDecimal(openPoLines[0].exchangeRate || '1'))
+                .toFixed(8)
             : null;
 
           lineValues.push({
@@ -332,17 +332,12 @@ export class GoodsReceivedWriteService {
             productId: products.productId,
             standardCost: products.standardCost,
             weightedAverageCost: products.weightedAverageCost,
-            qoh: sql`COALESCE((SELECT SUM(actual_quantity) FROM herobm_core.bin_contents WHERE product_id = products.product_id), 0)`.mapWith(
+            qoh: sql<number>`COALESCE((SELECT SUM(${binContents.actualQuantity}::numeric) FROM ${binContents} WHERE ${binContents.productId} = ${products.productId}), 0)`.mapWith(
               Number,
             ),
           })
           .from(products)
-          .where(
-            sql`${products.productId} IN (${sql.join(
-              productIds.map((p) => sql`${p}`),
-              sql`, `,
-            )})`,
-          );
+          .where(inArray(products.productId, productIds));
 
         // Create inventory ledger entries via inventoryService
         await this.inventoryMovementService.recordInventoryMovement(tx, {
@@ -356,6 +351,8 @@ export class GoodsReceivedWriteService {
             binId: receivingBin.binId,
             quantity: parseFloat(lv.quantityReceived),
             uomCode: lv.uomCode,
+            unitCost: lv.unitCost ? String(lv.unitCost) : undefined,
+            originalQuantity: parseFloat(lv.quantityReceived),
           })),
         });
 
@@ -557,7 +554,6 @@ export class GoodsReceivedWriteService {
       // Check if it is invoiced (Optional, but if we don't have purchase_invoice_lines handy, stateCode 'invoiced' on GR isn't tracked. We will rely on manual checks if any).
       // Wait, let's assume no invoice logic is explicitly checked for now, just cancellation.
 
-      // 3. Reverse Inventory Movement
       const receivingBinCode = 'RECEIVING';
       const [receivingZone] = await tx
         .select({ zoneId: zones.zoneId })
@@ -593,6 +589,59 @@ export class GoodsReceivedWriteService {
         );
       }
 
+      // Revert Product WAC valuation
+      // MUST BE DONE BEFORE recordInventoryMovement so QOH still includes the received goods being cancelled!
+      const valuationMethodCode = this.appConfig.valuationMethod();
+      const valuationStrategy = getValuationStrategy(valuationMethodCode);
+
+      const productIds = [...new Set(receiptLines.map((l) => l.productId))];
+      if (productIds.length > 0) {
+        const productRows = await tx
+          .select({
+            productId: products.productId,
+            standardCost: products.standardCost,
+            weightedAverageCost: products.weightedAverageCost,
+            qoh: sql<number>`COALESCE((SELECT SUM(${binContents.actualQuantity}::numeric) FROM ${binContents} WHERE ${binContents.productId} = ${products.productId}), 0)`.mapWith(
+              Number,
+            ),
+          })
+          .from(products)
+          .where(inArray(products.productId, productIds));
+
+        const productMap = new Map(productRows.map((p) => [p.productId, p]));
+
+        for (const lv of receiptLines) {
+          const product = productMap.get(lv.productId);
+          if (!product) continue;
+
+          const qty = parseFloat(lv.quantityReceived || '0');
+          const unitCost = lv.unitCost ? String(lv.unitCost) : '0';
+
+          const productData = {
+            ...product,
+            standardCost: product.standardCost || '0',
+            weightedAverageCost: product.weightedAverageCost || '0',
+          };
+
+          const valuation = valuationStrategy.onGoodsReceiptReversal(
+            productData,
+            product.qoh,
+            qty,
+            unitCost,
+          );
+
+          // Update product WAC in DB
+          await tx
+            .update(products)
+            .set({ weightedAverageCost: valuation.newWeightedAverageCost })
+            .where(eq(products.productId, product.productId));
+
+          // Update local state in map in case multiple lines share the same product
+          product.qoh -= qty;
+          product.weightedAverageCost = valuation.newWeightedAverageCost;
+        }
+      }
+
       await this.inventoryMovementService.recordInventoryMovement(tx, {
         entryNumber: `CAN-${receipt.receiptNumber}`,
         sourceType: 'PO_RECEIPT',
@@ -604,6 +653,7 @@ export class GoodsReceivedWriteService {
           binId: receivingBin.binId,
           quantity: -parseFloat(lv.quantityReceived),
           uomCode: lv.uomCode || lv.baseUom || 'EA',
+          unitCost: lv.unitCost ? String(lv.unitCost) : undefined,
         })),
       });
 
@@ -638,8 +688,8 @@ export class GoodsReceivedWriteService {
             activityId: line.activityId,
             partyType: line.partyType,
             partyId: line.partyId,
-            debit: parseFloat(line.credit), // Swap debits/credits
-            credit: parseFloat(line.debit),
+            debit: toFinancialDecimal(line.credit).toNumber(), // Swap debits/credits
+            credit: toFinancialDecimal(line.debit).toNumber(),
             memo: `Reversal of ${originalEntry.entryNumber}`,
           }));
 
@@ -657,128 +707,23 @@ export class GoodsReceivedWriteService {
         }
       }
 
-      // 5. Decrement PO lines and revert PO state
-      const updatedPoIds = new Set<string>();
-
-      // Pre-aggregate quantities to avoid duplicate purchaseOrderLineId issues in the VALUES clause
-      const aggregatedLines = new Map<
-        string,
-        { quantityReceived: number; purchaseOrderId: string }
-      >();
-
-      for (const line of receiptLines) {
-        if (
-          line.matchStatus === MATCH_STATUS.MATCHED &&
-          line.purchaseOrderLineId &&
-          line.purchaseOrderId
-        ) {
-          const qty = parseFloat(line.quantityReceived) || 0;
-          if (aggregatedLines.has(line.purchaseOrderLineId)) {
-            const existing = aggregatedLines.get(line.purchaseOrderLineId)!;
-            existing.quantityReceived += qty;
-          } else {
-            aggregatedLines.set(line.purchaseOrderLineId, {
-              quantityReceived: qty,
-              purchaseOrderId: line.purchaseOrderId,
-            });
-          }
-        }
-      }
-
-      const linesToUpdate = Array.from(aggregatedLines.entries());
-
-      if (linesToUpdate.length > 0) {
-        await tx.execute(
-          sql`UPDATE herobm_core.purchase_order_lines AS pol
-              SET quantity_received = COALESCE(pol.quantity_received, 0) - u.quantity_received
-              FROM (VALUES
-                ${sql.join(
-                  linesToUpdate.map(
-                    ([poLineId, data]) =>
-                      sql`(${poLineId}::uuid, CAST(${data.quantityReceived} AS NUMERIC))`,
-                  ),
-                  sql`, `,
-                )}
-              ) AS u(purchase_order_line_id, quantity_received)
-              WHERE pol.purchase_order_line_id = u.purchase_order_line_id`,
-        );
-
-        for (const [, data] of linesToUpdate) {
-          updatedPoIds.add(data.purchaseOrderId);
-        }
-      }
-
-      // Revert PO States
-      const poIds = Array.from(updatedPoIds);
-      const [allPoLines, allPOs] =
-        poIds.length > 0
-          ? await Promise.all([
-              tx
-                .select({
-                  purchaseOrderId: purchaseOrderLineItems.purchaseOrderId,
-                  quantityReceived: purchaseOrderLineItems.quantityReceived,
-                })
-                .from(purchaseOrderLineItems)
-                .where(inArray(purchaseOrderLineItems.purchaseOrderId, poIds)),
-              tx
-                .select({
-                  purchaseOrderId: purchaseOrders.purchaseOrderId,
-                  orderNumber: purchaseOrders.orderNumber,
-                })
-                .from(purchaseOrders)
-                .where(inArray(purchaseOrders.purchaseOrderId, poIds)),
-            ])
-          : [[], []];
-
-      const linesByPoId = new Map<string, typeof allPoLines>();
-      for (const l of allPoLines) {
-        const list = linesByPoId.get(l.purchaseOrderId) || [];
-        list.push(l);
-        linesByPoId.set(l.purchaseOrderId, list);
-      }
-
-      const poMap = new Map(
-        allPOs.map((p) => [p.purchaseOrderId, p.orderNumber]),
+      // 5. Decrement PO lines and revert PO state via single-writer delegation
+      const matchedLines = receiptLines.filter(
+        (l) =>
+          l.matchStatus === MATCH_STATUS.MATCHED &&
+          Boolean(l.purchaseOrderLineId),
       );
+      const reversalsToRecord = matchedLines.map((ml) => ({
+        purchaseOrderLineId: ml.purchaseOrderLineId as string,
+        quantity: parseFloat(ml.quantityReceived || '0'),
+      }));
 
-      for (const poId of updatedPoIds) {
-        const lines = linesByPoId.get(poId) || [];
-
-        const totalReceived = lines.reduce(
-          (sum, l) => sum + parseFloat(l.quantityReceived || '0'),
-          0,
-        );
-
-        let newPoState: PurchaseOrderState = PURCHASE_ORDER_STATE.ORDERED;
-        if (totalReceived > 0) {
-          // If there are still received lines, it might be partially received
-          newPoState = PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED;
-        }
-
-        // Just blindly revert state, assuming no invoice blocking. If the user wants to close short later they can.
-        await this.purchaseOrdersService.changePurchaseOrderState(
-          poId,
-          newPoState,
-          userId,
+      if (reversalsToRecord.length > 0) {
+        await this.purchaseOrdersWriteService.revertReceiptQuantities(
           tx,
-          true,
+          reversalsToRecord,
+          userId,
         );
-
-        const orderNumber = poMap.get(poId) || '';
-        // @herobm-skip-audit - DB write is performed via raw tx.execute, false positive
-        await emitEvent(tx, {
-          entityType: EntityType.PURCHASE_ORDER,
-          entityId: poId,
-          eventType: EventType.STATUS_CHANGED,
-          entityDisplayName: orderNumber,
-          payload: {
-            rule: 'cancel_receipt_revert',
-            from: PURCHASE_ORDER_STATE.RECEIVED,
-            to: newPoState,
-            reason: `Receipt ${receipt.receiptNumber} was cancelled.`,
-          },
-          actor: userId,
-        });
       }
 
       // 6. Update GR state
@@ -788,6 +733,21 @@ export class GoodsReceivedWriteService {
         userId,
         tx,
       );
+
+      await emitEvent(tx, {
+        entityType: EntityType.WAREHOUSE,
+        entityId: receipt.goodsReceivedId,
+        eventType: EventType.RECEIPT_STATUS_CHANGED,
+        entityDisplayName: receipt.receiptNumber,
+        payload: {
+          goodsReceivedId: receipt.goodsReceivedId,
+          receiptNumber: receipt.receiptNumber,
+          fromState: receipt.stateCode,
+          toState: GOODS_RECEIVED_STATE.CANCELLED,
+          reason: 'Reception cancelled',
+        },
+        actor: userId,
+      });
 
       this.logger.log(
         `Goods received ${receipt.receiptNumber} cancelled by ${userId}`,

@@ -105,12 +105,9 @@ export const OrganizationSlideOver: React.FC<OrganizationSlideOverProps> = ({
 
     setSaving(true);
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Org ID compatibility wrapper
-      let finalOrgId = selectedOrg?.organizationId || (selectedOrg as any)?.id || (selectedOrg as any)?.actorId;
+      const orgRecord = selectedOrg as { organizationId?: string; id?: string; actorId?: string } | null | undefined;
+      let finalOrgId: string | undefined = orgRecord?.organizationId || orgRecord?.id || orgRecord?.actorId;
 
-      if (typeof finalOrgId === 'object' && finalOrgId !== null) {
-        finalOrgId = finalOrgId.id || finalOrgId.organizationId || finalOrgId.actorId || String(finalOrgId);
-      }
       if (typeof finalOrgId === 'string') {
         finalOrgId = finalOrgId.replace(/[^0-9a-fA-F-]/g, '').toLowerCase();
       }
@@ -129,8 +126,8 @@ export const OrganizationSlideOver: React.FC<OrganizationSlideOverProps> = ({
           industry: dto.industry || undefined,
           email: dto.email || undefined,
         });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Org ID compatibility wrapper
-        finalOrgId = (newOrgResponse?.data as any)?.organizationId || (newOrgResponse?.data as any)?.id || finalOrgId;
+        const createdData = newOrgResponse?.data as { organizationId?: string; id?: string } | undefined;
+        finalOrgId = createdData?.organizationId || createdData?.id || finalOrgId;
         if (typeof finalOrgId === 'string') finalOrgId = finalOrgId.trim();
       }
 

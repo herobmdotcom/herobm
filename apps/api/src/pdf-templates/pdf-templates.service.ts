@@ -51,8 +51,7 @@ export class PdfTemplatesService {
     hookSlug: string,
     recordId: string,
     contextSlug: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    user: any,
+    user: { role?: string; username?: string },
     options?: Record<string, unknown>,
   ): Promise<{ pdfBuffer: Buffer; fileName: string }> {
     const hookStart = Date.now();
@@ -337,8 +336,7 @@ export class PdfTemplatesService {
     mockData: Record<string, unknown>,
     contextSlug?: string,
     entityId?: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    user?: any,
+    user?: { role?: string; username?: string },
   ): Promise<Buffer> {
     let finalData = mockData;
     if (contextSlug && entityId && user) {

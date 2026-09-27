@@ -769,8 +769,8 @@ export class ShippingContextLineDto {
 
 export class ShippingContextDto {
   @ApiPropertyOptional() isCreditBlocked?: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex sales order response
-  @ApiPropertyOptional({ type: () => Object }) order?: any;
+  @ApiPropertyOptional({ type: () => Object })
+  order?: Record<string, unknown>;
   @ApiProperty({ type: () => [ShippingContextLineDto] })
   lines!: ShippingContextLineDto[];
 

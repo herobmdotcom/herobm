@@ -11,6 +11,33 @@ import { formatAmount } from '@/lib/currency';
 import { reportError } from '@/lib/api';
 import { Button } from '@/components/shared/Button';
 
+export interface ReturnLineItem {
+  returnLineId?: string;
+  productNumber?: string;
+  productDescription?: string;
+  description?: string;
+  quantityReturned?: string | number;
+  pricePerUnit?: string | number;
+  discountPercentage?: string | number;
+  taxRate?: string | number;
+  returnFee?: string | number;
+  reason?: string;
+  resolution?: string;
+}
+
+export interface ReturnRecord {
+  returnId: string;
+  returnNumber: string;
+  salesOrderId?: string;
+  orderNumber?: string;
+  customerId?: string;
+  customerNumber?: string;
+  customerName?: string;
+  currencyCode?: string;
+  notes?: string;
+  lines?: ReturnLineItem[];
+}
+
 export default function ReturnCreditNoteSlideOver({
     isOpen,
     onClose,
@@ -19,16 +46,14 @@ export default function ReturnCreditNoteSlideOver({
 }: {
     isOpen: boolean;
     onClose: () => void;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    returnRecord: any | null;
+    returnRecord: ReturnRecord | null;
     onSuccess: () => void;
 }) {
     const tCommon = useTranslations('common');
     const t = useTranslations('portal');
     const [saving, setSaving] = useState(false);
     const [notes, setNotes] = useState('');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    const [fullReturn, setFullReturn] = useState<any>(null);
+    const [fullReturn, setFullReturn] = useState<ReturnRecord | null>(null);
 
     // Reset notes when opening a new record
     React.useEffect(() => {
@@ -36,7 +61,7 @@ export default function ReturnCreditNoteSlideOver({
             setNotes(`Credit note for return ${returnRecord.returnNumber}`);
             
             api.globalReturnsControllerFindOne(returnRecord.returnId)
-                .then(res => setFullReturn(res.data))
+                .then(res => setFullReturn(res.data as unknown as ReturnRecord))
                 .catch(err => reportError(err, 'Failed to fetch return details'));
         } else {
             setFullReturn(null);
@@ -48,13 +73,12 @@ export default function ReturnCreditNoteSlideOver({
         const targetRecord = fullReturn || returnRecord;
         if (!targetRecord?.lines) return { subtotal: 0, totalTax: 0, totalFees: 0, netCredit: 0 };
         return computeReturnCreditSummary(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-            targetRecord.lines.map((l: any) => ({
-                quantity: parseFloat(l.quantityReturned || '0'),
-                pricePerUnit: parseFloat(l.pricePerUnit || '0'),
-                discountPercentage: parseFloat(l.discountPercentage || '0'),
-                taxRate: parseFloat(l.taxRate || '0'),
-                returnFee: parseFloat(l.returnFee || '0'),
+            targetRecord.lines.map((l: ReturnLineItem) => ({
+                quantity: parseFloat(String(l.quantityReturned || '0')),
+                pricePerUnit: parseFloat(String(l.pricePerUnit || '0')),
+                discountPercentage: parseFloat(String(l.discountPercentage || '0')),
+                taxRate: parseFloat(String(l.taxRate || '0')),
+                returnFee: parseFloat(String(l.returnFee || '0')),
                 resolution: l.resolution,
             })),
         );
@@ -118,8 +142,7 @@ export default function ReturnCreditNoteSlideOver({
         </>
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    const lineColumns: DataTableColumn<any>[] = [
+    const lineColumns: DataTableColumn<ReturnLineItem>[] = [
         {
             id: 'product',
             header: 'Product',
@@ -140,7 +163,7 @@ export default function ReturnCreditNoteSlideOver({
             header: 'Return Qty',
             width: 90,
             align: 'right',
-            render: (line) => <span className="tabular-nums">{parseFloat(line.quantityReturned)}</span>,
+            render: (line) => <span className="tabular-nums">{parseFloat(String(line.quantityReturned || '0'))}</span>,
         },
         {
             id: 'reason',
@@ -161,7 +184,7 @@ export default function ReturnCreditNoteSlideOver({
             align: 'right',
             render: (line) => (
                 <span className="font-semibold tabular-nums">
-                    {parseFloat(line.returnFee || '0') > 0 ? formatAmount(parseFloat(line.returnFee || '0'), returnRecord?.currencyCode || 'USD') : '—'}
+                    {parseFloat(String(line.returnFee || '0')) > 0 ? formatAmount(parseFloat(String(line.returnFee || '0')), returnRecord?.currencyCode || 'USD') : '—'}
                 </span>
             ),
         },
@@ -171,16 +194,16 @@ export default function ReturnCreditNoteSlideOver({
             width: 130,
             align: 'right',
             render: (line) => {
-                const qty = parseFloat(line.quantityReturned || '0');
-                const price = parseFloat(line.pricePerUnit || '0');
-                const disc = parseFloat(line.discountPercentage || '0');
+                const qty = parseFloat(String(line.quantityReturned || '0'));
+                const price = parseFloat(String(line.pricePerUnit || '0'));
+                const disc = parseFloat(String(line.discountPercentage || '0'));
                 const grossLine = computeLinePrice({
                     quantity: qty,
                     pricePerUnit: price,
                     discountPercentage: disc,
-                    taxRate: parseFloat(line.taxRate || '0')
+                    taxRate: parseFloat(String(line.taxRate || '0'))
                 }).amount;
-                const fee = parseFloat(line.returnFee || '0');
+                const fee = parseFloat(String(line.returnFee || '0'));
                 const lineAmount = Math.max(0, grossLine - fee);
                 return (
                     <span className="font-semibold tabular-nums">
@@ -258,9 +281,9 @@ export default function ReturnCreditNoteSlideOver({
                     </h3>
                     <div className="card p-0 overflow-hidden">
                         <DataTable
-                            data={(fullReturn || returnRecord).lines || []}
+                            data={(fullReturn || returnRecord)?.lines || []}
                             columns={lineColumns}
-                            keyExtractor={(line) => line.returnLineId}
+                            keyExtractor={(line, idx) => String(line.returnLineId || idx)}
                             emptyMessage="No line items found"
                             footer={linesFooter}
                         />

@@ -59,13 +59,13 @@ export function OrderLinesTable({
       isTaxStale={isStale}
       subtotal={subtotal}
       totalTax={totalTax}
-      onUpdateLine={(lineId, field, val) =>
+      onUpdateLine={(lineId: string | number, field: string, val: unknown) =>
         updateLine(String(lineId), field, val as string | number | boolean | null | undefined)
       }
-      onUpdateLineFields={(lineId, fields) =>
+      onUpdateLineFields={(lineId: string | number, fields: Record<string, unknown>) =>
         updateLineFields(String(lineId), fields as Partial<OrderLine>)
       }
-      onRemoveLine={(lineId) => removeLine(String(lineId))}
+      onRemoveLine={(lineId: string | number) => removeLine(String(lineId))}
       onCalculateTaxes={calculateTaxes}
     />
   );

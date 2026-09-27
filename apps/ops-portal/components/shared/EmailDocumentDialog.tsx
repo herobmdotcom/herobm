@@ -178,16 +178,15 @@ export default function EmailDocumentDialog({
       setLoading(true);
       try {
         const res = await api.suppliersControllerFindOne(supplierId);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API boundary
-        const supplier = res.data as any;
+        const supplier = res.data;
         const trimmedEmail = (supplier?.emailAddress1 || '').trim();
         setEntityEmail(trimmedEmail);
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API boundary
-        const supContacts = (supplier?.contacts || []).map((c: any) => ({
+        const rawContacts = ((supplier as unknown as { contacts?: Contact[] })?.contacts || []) as Contact[];
+        const supContacts = rawContacts.map((c) => ({
           ...c,
           email: c.email ? c.email.trim() : c.email
-        })) as Contact[];
+        }));
         setContacts(supContacts);
 
         // Determine default TO address:
@@ -217,17 +216,16 @@ export default function EmailDocumentDialog({
       setLoading(true);
       try {
         const res = await api.customersControllerFindOne(customerId);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API boundary
-        const customer = res.data as any;
+        const customer = res.data;
         
         const trimmedCustomerEmail = (customer?.emailAddress1 || '').trim();
         setEntityEmail(trimmedCustomerEmail);
         
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API boundary
-        const custContacts = (customer?.contacts || []).map((c: any) => ({
+        const rawContacts = (customer?.contacts || []) as unknown as Contact[];
+        const custContacts = rawContacts.map((c) => ({
           ...c,
           email: c.email ? c.email.trim() : c.email
-        })) as Contact[];
+        }));
         setContacts(custContacts);
         
         // Determine default TO address:

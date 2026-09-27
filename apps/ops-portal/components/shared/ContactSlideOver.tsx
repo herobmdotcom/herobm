@@ -192,8 +192,7 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
       } else {
         // Brand new contact created and linked automatically via backend
         await api.contactsControllerCreate({
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required because SDK typing is too strict here
-          entityType: (entityType as any) || undefined,
+          entityType: (entityType as unknown as api.CreateContactDtoEntityType) || undefined,
           entityId: entityId || undefined,
           firstName: dto.firstName,
           lastName: dto.lastName,

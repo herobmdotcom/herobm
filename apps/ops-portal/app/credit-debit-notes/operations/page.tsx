@@ -8,8 +8,8 @@ import DataGrid from '@/components/DataGrid';
 import { formatLocalDate } from '@/lib/date';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
-import ReturnCreditNoteSlideOver from '../ReturnCreditNoteSlideOver';
-import ReturnDebitNoteSlideOver from '../ReturnDebitNoteSlideOver';
+import ReturnCreditNoteSlideOver, { ReturnRecord } from '../ReturnCreditNoteSlideOver';
+import ReturnDebitNoteSlideOver, { PurchaseReturnDetails, ReturnRecordSummary } from '../ReturnDebitNoteSlideOver';
 import type { ColDef, ValueFormatterParams, ValueGetterParams } from 'ag-grid-community';
 
 export interface UnifiedReturnRow {
@@ -62,16 +62,16 @@ export default function CreditDebitOperationsPage() {
 
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const [selectedCustomerReturn, setSelectedCustomerReturn] = useState<unknown | null>(null);
-  const [selectedSupplierReturn, setSelectedSupplierReturn] = useState<unknown | null>(null);
+  const [selectedCustomerReturn, setSelectedCustomerReturn] = useState<ReturnRecord | null>(null);
+  const [selectedSupplierReturn, setSelectedSupplierReturn] = useState<PurchaseReturnDetails | ReturnRecordSummary | null>(null);
 
   const triggerRefresh = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   const handleReturnClick = useCallback((row: UnifiedReturnRow) => {
     if (row.type === 'customer_return') {
-      setSelectedCustomerReturn(row.rawRecord || row);
+      setSelectedCustomerReturn((row.rawRecord as ReturnRecord) || (row as unknown as ReturnRecord));
     } else {
-      setSelectedSupplierReturn(row.rawRecord || row);
+      setSelectedSupplierReturn((row.rawRecord as PurchaseReturnDetails) || (row as unknown as ReturnRecordSummary));
     }
   }, []);
 
@@ -140,7 +140,7 @@ export default function CreditDebitOperationsPage() {
       <ReturnCreditNoteSlideOver
         isOpen={!!selectedCustomerReturn}
         onClose={() => setSelectedCustomerReturn(null)}
-        returnRecord={selectedCustomerReturn}
+        returnRecord={selectedCustomerReturn as unknown as ReturnRecord}
         onSuccess={() => {
           setSelectedCustomerReturn(null);
           triggerRefresh();
@@ -150,7 +150,7 @@ export default function CreditDebitOperationsPage() {
       <ReturnDebitNoteSlideOver
         isOpen={!!selectedSupplierReturn}
         onClose={() => setSelectedSupplierReturn(null)}
-        returnRecord={selectedSupplierReturn}
+        returnRecord={selectedSupplierReturn as unknown as PurchaseReturnDetails}
         onSuccess={() => {
           setSelectedSupplierReturn(null);
           triggerRefresh();

@@ -1,3 +1,5 @@
+import { Decimal } from 'decimal.js';
+import { roundMoney } from '@herobm/shared';
 import { DrizzleDB } from '../drizzle/drizzle.module';
 import { glSettings } from '@herobm/db-schema';
 import { sql } from 'drizzle-orm';
@@ -91,14 +93,14 @@ export async function fetchProfitAndLoss(
       ytd_credit?: string;
     };
 
-    const pDr = parseFloat(r.period_debit || '0');
-    const pCr = parseFloat(r.period_credit || '0');
-    const yDr = parseFloat(r.ytd_debit || '0');
-    const yCr = parseFloat(r.ytd_credit || '0');
+    const pDr = new Decimal(r.period_debit || '0');
+    const pCr = new Decimal(r.period_credit || '0');
+    const yDr = new Decimal(r.ytd_debit || '0');
+    const yCr = new Decimal(r.ytd_credit || '0');
 
     if (r.account_type === 'revenue') {
-      const amount = pCr - pDr;
-      const ytdAmount = yCr - yDr;
+      const amount = pCr.minus(pDr).toNumber();
+      const ytdAmount = yCr.minus(yDr).toNumber();
       revenueLines.push({
         accountCode: r.account_code,
         accountName: r.name,
@@ -106,8 +108,8 @@ export async function fetchProfitAndLoss(
         ytdAmount,
       });
     } else if (r.account_type === 'expense') {
-      const amount = pDr - pCr;
-      const ytdAmount = yDr - yCr;
+      const amount = pDr.minus(pCr).toNumber();
+      const ytdAmount = yDr.minus(yCr).toNumber();
 
       if (r.report_category === 'cost_of_goods_sold') {
         cogsLines.push({
@@ -138,33 +140,59 @@ export async function fetchProfitAndLoss(
     }
   }
 
-  const totalRevenue = revenueLines.reduce((s, l) => s + l.amount, 0);
-  const ytdRevenue = revenueLines.reduce((s, l) => s + (l.ytdAmount || 0), 0);
+  const totalRevenue = revenueLines.reduce(
+    (s, l) => new Decimal(s).plus(l.amount).toNumber(),
+    0,
+  );
+  const ytdRevenue = revenueLines.reduce(
+    (s, l) => new Decimal(s).plus(l.ytdAmount || 0).toNumber(),
+    0,
+  );
 
-  const totalCogs = cogsLines.reduce((s, l) => s + l.amount, 0);
-  const ytdCogs = cogsLines.reduce((s, l) => s + (l.ytdAmount || 0), 0);
+  const totalCogs = cogsLines.reduce(
+    (s, l) => new Decimal(s).plus(l.amount).toNumber(),
+    0,
+  );
+  const ytdCogs = cogsLines.reduce(
+    (s, l) => new Decimal(s).plus(l.ytdAmount || 0).toNumber(),
+    0,
+  );
 
-  const grossProfit = totalRevenue - totalCogs;
+  const grossProfit = new Decimal(totalRevenue).minus(totalCogs).toNumber();
   const grossMarginPercentage =
-    totalRevenue !== 0 ? (grossProfit / totalRevenue) * 100 : 0;
+    totalRevenue !== 0
+      ? new Decimal(grossProfit).div(totalRevenue).mul(100).toNumber()
+      : 0;
 
-  const totalOperatingExpenses = opexLines.reduce((s, l) => s + l.amount, 0);
+  const totalOperatingExpenses = opexLines.reduce(
+    (s, l) => new Decimal(s).plus(l.amount).toNumber(),
+    0,
+  );
   const ytdOperatingExpenses = opexLines.reduce(
-    (s, l) => s + (l.ytdAmount || 0),
+    (s, l) => new Decimal(s).plus(l.ytdAmount || 0).toNumber(),
     0,
   );
 
-  const operatingIncome = grossProfit - totalOperatingExpenses;
+  const operatingIncome = new Decimal(grossProfit)
+    .minus(totalOperatingExpenses)
+    .toNumber();
 
-  const totalOtherIncomeExpense = otherLines.reduce((s, l) => s + l.amount, 0);
+  const totalOtherIncomeExpense = otherLines.reduce(
+    (s, l) => new Decimal(s).plus(l.amount).toNumber(),
+    0,
+  );
   const ytdOtherIncomeExpense = otherLines.reduce(
-    (s, l) => s + (l.ytdAmount || 0),
+    (s, l) => new Decimal(s).plus(l.ytdAmount || 0).toNumber(),
     0,
   );
 
-  const netIncome = operatingIncome - totalOtherIncomeExpense;
+  const netIncome = new Decimal(operatingIncome)
+    .minus(totalOtherIncomeExpense)
+    .toNumber();
   const netMarginPercentage =
-    totalRevenue !== 0 ? (netIncome / totalRevenue) * 100 : 0;
+    totalRevenue !== 0
+      ? new Decimal(netIncome).div(totalRevenue).mul(100).toNumber()
+      : 0;
 
   return {
     period: {
@@ -326,23 +354,23 @@ export async function fetchBalanceSheet(
       last_ytd_credit?: string;
     };
 
-    const dr = parseFloat(r.total_debit || '0');
-    const cr = parseFloat(r.total_credit || '0');
+    const dr = new Decimal(r.total_debit || '0');
+    const cr = new Decimal(r.total_credit || '0');
 
-    const mtdDr = parseFloat(r.mtd_debit || '0');
-    const mtdCr = parseFloat(r.mtd_credit || '0');
+    const mtdDr = new Decimal(r.mtd_debit || '0');
+    const mtdCr = new Decimal(r.mtd_credit || '0');
 
-    const ytdDr = parseFloat(r.ytd_debit || '0');
-    const ytdCr = parseFloat(r.ytd_credit || '0');
+    const ytdDr = new Decimal(r.ytd_debit || '0');
+    const ytdCr = new Decimal(r.ytd_credit || '0');
 
-    const lastYtdDr = parseFloat(r.last_ytd_debit || '0');
-    const lastYtdCr = parseFloat(r.last_ytd_credit || '0');
+    const lastYtdDr = new Decimal(r.last_ytd_debit || '0');
+    const lastYtdCr = new Decimal(r.last_ytd_credit || '0');
 
     if (r.account_type === 'asset') {
-      const balance = dr - cr;
-      const movementMtd = mtdDr - mtdCr;
-      const movementYtd = ytdDr - ytdCr;
-      const movementLastYtd = lastYtdDr - lastYtdCr;
+      const balance = dr.minus(cr).toNumber();
+      const movementMtd = mtdDr.minus(mtdCr).toNumber();
+      const movementYtd = ytdDr.minus(ytdCr).toNumber();
+      const movementLastYtd = lastYtdDr.minus(lastYtdCr).toNumber();
 
       const isNonCurrent =
         r.report_category === 'fixed_asset' ||
@@ -370,10 +398,10 @@ export async function fetchBalanceSheet(
         });
       }
     } else if (r.account_type === 'liability') {
-      const balance = cr - dr;
-      const movementMtd = mtdCr - mtdDr;
-      const movementYtd = ytdCr - ytdDr;
-      const movementLastYtd = lastYtdCr - lastYtdDr;
+      const balance = cr.minus(dr).toNumber();
+      const movementMtd = mtdCr.minus(mtdDr).toNumber();
+      const movementYtd = ytdCr.minus(ytdDr).toNumber();
+      const movementLastYtd = lastYtdCr.minus(lastYtdDr).toNumber();
 
       const isNonCurrent =
         r.report_category === 'long_term_debt' ||
@@ -399,10 +427,10 @@ export async function fetchBalanceSheet(
         });
       }
     } else if (r.account_type === 'equity') {
-      const balance = cr - dr;
-      const movementMtd = mtdCr - mtdDr;
-      const movementYtd = ytdCr - ytdDr;
-      const movementLastYtd = lastYtdCr - lastYtdDr;
+      const balance = cr.minus(dr).toNumber();
+      const movementMtd = mtdCr.minus(mtdDr).toNumber();
+      const movementYtd = ytdCr.minus(ytdDr).toNumber();
+      const movementLastYtd = lastYtdCr.minus(lastYtdDr).toNumber();
 
       equityLines.push({
         accountCode: r.account_code,
@@ -413,35 +441,51 @@ export async function fetchBalanceSheet(
         movementLastYtd,
       });
     } else if (r.account_type === 'revenue') {
-      totalRevenueCr += cr;
-      totalRevenueDr += dr;
-      mtdRevenueCr += mtdCr;
-      mtdRevenueDr += mtdDr;
-      ytdRevenueCr += ytdCr;
-      ytdRevenueDr += ytdDr;
-      lastYtdRevenueCr += lastYtdCr;
-      lastYtdRevenueDr += lastYtdDr;
+      totalRevenueCr = new Decimal(totalRevenueCr).plus(cr).toNumber();
+      totalRevenueDr = new Decimal(totalRevenueDr).plus(dr).toNumber();
+      mtdRevenueCr = new Decimal(mtdRevenueCr).plus(mtdCr).toNumber();
+      mtdRevenueDr = new Decimal(mtdRevenueDr).plus(mtdDr).toNumber();
+      ytdRevenueCr = new Decimal(ytdRevenueCr).plus(ytdCr).toNumber();
+      ytdRevenueDr = new Decimal(ytdRevenueDr).plus(ytdDr).toNumber();
+      lastYtdRevenueCr = new Decimal(lastYtdRevenueCr)
+        .plus(lastYtdCr)
+        .toNumber();
+      lastYtdRevenueDr = new Decimal(lastYtdRevenueDr)
+        .plus(lastYtdDr)
+        .toNumber();
     } else if (r.account_type === 'expense') {
-      totalExpenseDr += dr;
-      totalExpenseCr += cr;
-      mtdExpenseDr += mtdDr;
-      mtdExpenseCr += mtdCr;
-      ytdExpenseDr += ytdDr;
-      ytdExpenseCr += ytdCr;
-      lastYtdExpenseDr += lastYtdDr;
-      lastYtdExpenseCr += lastYtdCr;
+      totalExpenseDr = new Decimal(totalExpenseDr).plus(dr).toNumber();
+      totalExpenseCr = new Decimal(totalExpenseCr).plus(cr).toNumber();
+      mtdExpenseDr = new Decimal(mtdExpenseDr).plus(mtdDr).toNumber();
+      mtdExpenseCr = new Decimal(mtdExpenseCr).plus(mtdCr).toNumber();
+      ytdExpenseDr = new Decimal(ytdExpenseDr).plus(ytdDr).toNumber();
+      ytdExpenseCr = new Decimal(ytdExpenseCr).plus(ytdCr).toNumber();
+      lastYtdExpenseDr = new Decimal(lastYtdExpenseDr)
+        .plus(lastYtdDr)
+        .toNumber();
+      lastYtdExpenseCr = new Decimal(lastYtdExpenseCr)
+        .plus(lastYtdCr)
+        .toNumber();
     }
   }
 
   // Current Period Earnings / Unclosed Net Income
-  const netEarnings =
-    totalRevenueCr - totalRevenueDr - (totalExpenseDr - totalExpenseCr);
-  const mtdNetEarnings =
-    mtdRevenueCr - mtdRevenueDr - (mtdExpenseDr - mtdExpenseCr);
-  const ytdNetEarnings =
-    ytdRevenueCr - ytdRevenueDr - (ytdExpenseDr - ytdExpenseCr);
-  const lastYtdNetEarnings =
-    lastYtdRevenueCr - lastYtdRevenueDr - (lastYtdExpenseDr - lastYtdExpenseCr);
+  const netEarnings = new Decimal(totalRevenueCr)
+    .minus(totalRevenueDr)
+    .minus(new Decimal(totalExpenseDr).minus(totalExpenseCr))
+    .toNumber();
+  const mtdNetEarnings = new Decimal(mtdRevenueCr)
+    .minus(mtdRevenueDr)
+    .minus(new Decimal(mtdExpenseDr).minus(mtdExpenseCr))
+    .toNumber();
+  const ytdNetEarnings = new Decimal(ytdRevenueCr)
+    .minus(ytdRevenueDr)
+    .minus(new Decimal(ytdExpenseDr).minus(ytdExpenseCr))
+    .toNumber();
+  const lastYtdNetEarnings = new Decimal(lastYtdRevenueCr)
+    .minus(lastYtdRevenueDr)
+    .minus(new Decimal(lastYtdExpenseDr).minus(lastYtdExpenseCr))
+    .toNumber();
 
   // If there are unclosed earnings, add Current Period Earnings to Equity without hardcoded code
   equityLines.push({
@@ -453,108 +497,134 @@ export async function fetchBalanceSheet(
     movementLastYtd: lastYtdNetEarnings,
   });
 
-  const totalCurrentAssets = currentAssets.reduce((s, l) => s + l.balance, 0);
+  const totalCurrentAssets = currentAssets.reduce(
+    (s, l) => new Decimal(s).plus(l.balance).toNumber(),
+    0,
+  );
   const totalCurrentAssetsMtd = currentAssets.reduce(
-    (s, l) => s + (l.movementMtd || 0),
+    (s, l) => new Decimal(s).plus(l.movementMtd || 0).toNumber(),
     0,
   );
   const totalCurrentAssetsYtd = currentAssets.reduce(
-    (s, l) => s + (l.movementYtd || 0),
+    (s, l) => new Decimal(s).plus(l.movementYtd || 0).toNumber(),
     0,
   );
   const totalCurrentAssetsLastYtd = currentAssets.reduce(
-    (s, l) => s + (l.movementLastYtd || 0),
+    (s, l) => new Decimal(s).plus(l.movementLastYtd || 0).toNumber(),
     0,
   );
 
   const totalNonCurrentAssets = nonCurrentAssets.reduce(
-    (s, l) => s + l.balance,
+    (s, l) => new Decimal(s).plus(l.balance).toNumber(),
     0,
   );
   const totalNonCurrentAssetsMtd = nonCurrentAssets.reduce(
-    (s, l) => s + (l.movementMtd || 0),
+    (s, l) => new Decimal(s).plus(l.movementMtd || 0).toNumber(),
     0,
   );
   const totalNonCurrentAssetsYtd = nonCurrentAssets.reduce(
-    (s, l) => s + (l.movementYtd || 0),
+    (s, l) => new Decimal(s).plus(l.movementYtd || 0).toNumber(),
     0,
   );
   const totalNonCurrentAssetsLastYtd = nonCurrentAssets.reduce(
-    (s, l) => s + (l.movementLastYtd || 0),
+    (s, l) => new Decimal(s).plus(l.movementLastYtd || 0).toNumber(),
     0,
   );
 
-  const totalAssets = totalCurrentAssets + totalNonCurrentAssets;
-  const totalAssetsMtd = totalCurrentAssetsMtd + totalNonCurrentAssetsMtd;
-  const totalAssetsYtd = totalCurrentAssetsYtd + totalNonCurrentAssetsYtd;
-  const totalAssetsLastYtd =
-    totalCurrentAssetsLastYtd + totalNonCurrentAssetsLastYtd;
+  const totalAssets = new Decimal(totalCurrentAssets)
+    .plus(totalNonCurrentAssets)
+    .toNumber();
+  const totalAssetsMtd = new Decimal(totalCurrentAssetsMtd)
+    .plus(totalNonCurrentAssetsMtd)
+    .toNumber();
+  const totalAssetsYtd = new Decimal(totalCurrentAssetsYtd)
+    .plus(totalNonCurrentAssetsYtd)
+    .toNumber();
+  const totalAssetsLastYtd = new Decimal(totalCurrentAssetsLastYtd)
+    .plus(totalNonCurrentAssetsLastYtd)
+    .toNumber();
 
   const totalCurrentLiabilities = currentLiabilities.reduce(
-    (s, l) => s + l.balance,
+    (s, l) => new Decimal(s).plus(l.balance).toNumber(),
     0,
   );
   const totalCurrentLiabilitiesMtd = currentLiabilities.reduce(
-    (s, l) => s + (l.movementMtd || 0),
+    (s, l) => new Decimal(s).plus(l.movementMtd || 0).toNumber(),
     0,
   );
   const totalCurrentLiabilitiesYtd = currentLiabilities.reduce(
-    (s, l) => s + (l.movementYtd || 0),
+    (s, l) => new Decimal(s).plus(l.movementYtd || 0).toNumber(),
     0,
   );
   const totalCurrentLiabilitiesLastYtd = currentLiabilities.reduce(
-    (s, l) => s + (l.movementLastYtd || 0),
+    (s, l) => new Decimal(s).plus(l.movementLastYtd || 0).toNumber(),
     0,
   );
 
   const totalNonCurrentLiabilities = nonCurrentLiabilities.reduce(
-    (s, l) => s + l.balance,
+    (s, l) => new Decimal(s).plus(l.balance).toNumber(),
     0,
   );
   const totalNonCurrentLiabilitiesMtd = nonCurrentLiabilities.reduce(
-    (s, l) => s + (l.movementMtd || 0),
+    (s, l) => new Decimal(s).plus(l.movementMtd || 0).toNumber(),
     0,
   );
   const totalNonCurrentLiabilitiesYtd = nonCurrentLiabilities.reduce(
-    (s, l) => s + (l.movementYtd || 0),
+    (s, l) => new Decimal(s).plus(l.movementYtd || 0).toNumber(),
     0,
   );
   const totalNonCurrentLiabilitiesLastYtd = nonCurrentLiabilities.reduce(
-    (s, l) => s + (l.movementLastYtd || 0),
+    (s, l) => new Decimal(s).plus(l.movementLastYtd || 0).toNumber(),
     0,
   );
 
-  const totalLiabilities = totalCurrentLiabilities + totalNonCurrentLiabilities;
-  const totalLiabilitiesMtd =
-    totalCurrentLiabilitiesMtd + totalNonCurrentLiabilitiesMtd;
-  const totalLiabilitiesYtd =
-    totalCurrentLiabilitiesYtd + totalNonCurrentLiabilitiesYtd;
-  const totalLiabilitiesLastYtd =
-    totalCurrentLiabilitiesLastYtd + totalNonCurrentLiabilitiesLastYtd;
+  const totalLiabilities = new Decimal(totalCurrentLiabilities)
+    .plus(totalNonCurrentLiabilities)
+    .toNumber();
+  const totalLiabilitiesMtd = new Decimal(totalCurrentLiabilitiesMtd)
+    .plus(totalNonCurrentLiabilitiesMtd)
+    .toNumber();
+  const totalLiabilitiesYtd = new Decimal(totalCurrentLiabilitiesYtd)
+    .plus(totalNonCurrentLiabilitiesYtd)
+    .toNumber();
+  const totalLiabilitiesLastYtd = new Decimal(totalCurrentLiabilitiesLastYtd)
+    .plus(totalNonCurrentLiabilitiesLastYtd)
+    .toNumber();
 
-  const totalEquity = equityLines.reduce((s, l) => s + l.balance, 0);
+  const totalEquity = equityLines.reduce(
+    (s, l) => new Decimal(s).plus(l.balance).toNumber(),
+    0,
+  );
   const totalEquityMtd = equityLines.reduce(
-    (s, l) => s + (l.movementMtd || 0),
+    (s, l) => new Decimal(s).plus(l.movementMtd || 0).toNumber(),
     0,
   );
   const totalEquityYtd = equityLines.reduce(
-    (s, l) => s + (l.movementYtd || 0),
+    (s, l) => new Decimal(s).plus(l.movementYtd || 0).toNumber(),
     0,
   );
   const totalEquityLastYtd = equityLines.reduce(
-    (s, l) => s + (l.movementLastYtd || 0),
+    (s, l) => new Decimal(s).plus(l.movementLastYtd || 0).toNumber(),
     0,
   );
 
-  const totalLiabilitiesAndEquity = totalLiabilities + totalEquity;
-  const totalLiabilitiesAndEquityMtd = totalLiabilitiesMtd + totalEquityMtd;
-  const totalLiabilitiesAndEquityYtd = totalLiabilitiesYtd + totalEquityYtd;
-  const totalLiabilitiesAndEquityLastYtd =
-    totalLiabilitiesLastYtd + totalEquityLastYtd;
+  const totalLiabilitiesAndEquity = new Decimal(totalLiabilities)
+    .plus(totalEquity)
+    .toNumber();
+  const totalLiabilitiesAndEquityMtd = new Decimal(totalLiabilitiesMtd)
+    .plus(totalEquityMtd)
+    .toNumber();
+  const totalLiabilitiesAndEquityYtd = new Decimal(totalLiabilitiesYtd)
+    .plus(totalEquityYtd)
+    .toNumber();
+  const totalLiabilitiesAndEquityLastYtd = new Decimal(totalLiabilitiesLastYtd)
+    .plus(totalEquityLastYtd)
+    .toNumber();
 
-  const drift = parseFloat(
-    (totalAssets - totalLiabilitiesAndEquity).toFixed(2),
-  );
+  const drift = new Decimal(totalAssets)
+    .minus(totalLiabilitiesAndEquity)
+    .toDecimalPlaces(2)
+    .toNumber();
   const isBalanced = Math.abs(drift) < 0.01;
 
   return {
@@ -625,8 +695,8 @@ export async function fetchBalanceSheet(
 // Trial Balance Classification & Summary Utility
 // ---------------------------------------------------------------------------
 
-export function roundCurrency(val: number): number {
-  return Math.round((val + Number.EPSILON) * 100) / 100;
+export function roundCurrency(val: number | string | Decimal): number {
+  return roundMoney(val).toNumber();
 }
 
 export interface RawTrialBalanceItem {
@@ -762,26 +832,33 @@ export function classifyAndAggregateTrialBalance(
     if (!accounts || accounts.length === 0) continue;
 
     const subtotal = {
-      openingBalance: roundCurrency(
-        accounts.reduce((s, a) => s + (a.openingBalance || 0), 0),
+      openingBalance: accounts.reduce(
+        (s, a) => new Decimal(s).plus(a.openingBalance || 0).toNumber(),
+        0,
       ),
-      periodDebit: roundCurrency(
-        accounts.reduce((s, a) => s + (a.periodDebit || 0), 0),
+      periodDebit: accounts.reduce(
+        (s, a) => new Decimal(s).plus(a.periodDebit || 0).toNumber(),
+        0,
       ),
-      periodCredit: roundCurrency(
-        accounts.reduce((s, a) => s + (a.periodCredit || 0), 0),
+      periodCredit: accounts.reduce(
+        (s, a) => new Decimal(s).plus(a.periodCredit || 0).toNumber(),
+        0,
       ),
-      closingBalance: roundCurrency(
-        accounts.reduce((s, a) => s + (a.closingBalance || 0), 0),
+      closingBalance: accounts.reduce(
+        (s, a) => new Decimal(s).plus(a.closingBalance || 0).toNumber(),
+        0,
       ),
-      ytdDebit: roundCurrency(
-        accounts.reduce((s, a) => s + (a.ytdDebit || 0), 0),
+      ytdDebit: accounts.reduce(
+        (s, a) => new Decimal(s).plus(a.ytdDebit || 0).toNumber(),
+        0,
       ),
-      ytdCredit: roundCurrency(
-        accounts.reduce((s, a) => s + (a.ytdCredit || 0), 0),
+      ytdCredit: accounts.reduce(
+        (s, a) => new Decimal(s).plus(a.ytdCredit || 0).toNumber(),
+        0,
       ),
-      ytdBalance: roundCurrency(
-        accounts.reduce((s, a) => s + (a.ytdBalance || 0), 0),
+      ytdBalance: accounts.reduce(
+        (s, a) => new Decimal(s).plus(a.ytdBalance || 0).toNumber(),
+        0,
       ),
     };
 
@@ -794,22 +871,33 @@ export function classifyAndAggregateTrialBalance(
   }
 
   const grandTotals = {
-    openingBalance: roundCurrency(
-      items.reduce((s, a) => s + (a.openingBalance || 0), 0),
+    openingBalance: items.reduce(
+      (s, a) => new Decimal(s).plus(a.openingBalance || 0).toNumber(),
+      0,
     ),
-    periodDebit: roundCurrency(
-      items.reduce((s, a) => s + (a.periodDebit || 0), 0),
+    periodDebit: items.reduce(
+      (s, a) => new Decimal(s).plus(a.periodDebit || 0).toNumber(),
+      0,
     ),
-    periodCredit: roundCurrency(
-      items.reduce((s, a) => s + (a.periodCredit || 0), 0),
+    periodCredit: items.reduce(
+      (s, a) => new Decimal(s).plus(a.periodCredit || 0).toNumber(),
+      0,
     ),
-    closingBalance: roundCurrency(
-      items.reduce((s, a) => s + (a.closingBalance || 0), 0),
+    closingBalance: items.reduce(
+      (s, a) => new Decimal(s).plus(a.closingBalance || 0).toNumber(),
+      0,
     ),
-    ytdDebit: roundCurrency(items.reduce((s, a) => s + (a.ytdDebit || 0), 0)),
-    ytdCredit: roundCurrency(items.reduce((s, a) => s + (a.ytdCredit || 0), 0)),
-    ytdBalance: roundCurrency(
-      items.reduce((s, a) => s + (a.ytdBalance || 0), 0),
+    ytdDebit: items.reduce(
+      (s, a) => new Decimal(s).plus(a.ytdDebit || 0).toNumber(),
+      0,
+    ),
+    ytdCredit: items.reduce(
+      (s, a) => new Decimal(s).plus(a.ytdCredit || 0).toNumber(),
+      0,
+    ),
+    ytdBalance: items.reduce(
+      (s, a) => new Decimal(s).plus(a.ytdBalance || 0).toNumber(),
+      0,
     ),
   };
 
@@ -819,48 +907,63 @@ export function classifyAndAggregateTrialBalance(
   const liabilityAccounts = items.filter((a) => a.accountType === 'liability');
   const equityAccounts = items.filter((a) => a.accountType === 'equity');
 
-  const periodRevenue = roundCurrency(
-    revenueAccounts.reduce(
-      (s, a) => s + ((a.periodCredit || 0) - (a.periodDebit || 0)),
-      0,
-    ),
+  const periodRevenue = revenueAccounts.reduce(
+    (s, a) =>
+      new Decimal(s)
+        .plus(new Decimal(a.periodCredit || 0).minus(a.periodDebit || 0))
+        .toNumber(),
+    0,
   );
-  const periodExpenses = roundCurrency(
-    expenseAccounts.reduce(
-      (s, a) => s + ((a.periodDebit || 0) - (a.periodCredit || 0)),
-      0,
-    ),
+  const periodExpenses = expenseAccounts.reduce(
+    (s, a) =>
+      new Decimal(s)
+        .plus(new Decimal(a.periodDebit || 0).minus(a.periodCredit || 0))
+        .toNumber(),
+    0,
   );
-  const periodNetIncome = roundCurrency(periodRevenue - periodExpenses);
+  const periodNetIncome = new Decimal(periodRevenue)
+    .minus(periodExpenses)
+    .toDecimalPlaces(2)
+    .toNumber();
 
-  const ytdRevenue = roundCurrency(
-    revenueAccounts.reduce(
-      (s, a) => s + ((a.ytdCredit || 0) - (a.ytdDebit || 0)),
-      0,
-    ),
+  const ytdRevenue = revenueAccounts.reduce(
+    (s, a) =>
+      new Decimal(s)
+        .plus(new Decimal(a.ytdCredit || 0).minus(a.ytdDebit || 0))
+        .toNumber(),
+    0,
   );
-  const ytdExpenses = roundCurrency(
-    expenseAccounts.reduce(
-      (s, a) => s + ((a.ytdDebit || 0) - (a.ytdCredit || 0)),
-      0,
-    ),
+  const ytdExpenses = expenseAccounts.reduce(
+    (s, a) =>
+      new Decimal(s)
+        .plus(new Decimal(a.ytdDebit || 0).minus(a.ytdCredit || 0))
+        .toNumber(),
+    0,
   );
-  const ytdNetIncome = roundCurrency(ytdRevenue - ytdExpenses);
+  const ytdNetIncome = new Decimal(ytdRevenue)
+    .minus(ytdExpenses)
+    .toDecimalPlaces(2)
+    .toNumber();
 
-  const totalAssets = roundCurrency(
-    assetAccounts.reduce((s, a) => s + (a.closingBalance || 0), 0),
+  const totalAssets = assetAccounts.reduce(
+    (s, a) => new Decimal(s).plus(a.closingBalance || 0).toNumber(),
+    0,
   );
-  const totalLiabilities = roundCurrency(
-    liabilityAccounts.reduce((s, a) => s + (a.closingBalance || 0), 0),
+  const totalLiabilities = liabilityAccounts.reduce(
+    (s, a) => new Decimal(s).plus(a.closingBalance || 0).toNumber(),
+    0,
   );
-  const totalEquity = roundCurrency(
-    equityAccounts.reduce((s, a) => s + (a.closingBalance || 0), 0),
+  const totalEquity = equityAccounts.reduce(
+    (s, a) => new Decimal(s).plus(a.closingBalance || 0).toNumber(),
+    0,
   );
 
-  const isBalanceSheetBalanced =
-    roundCurrency(
-      Math.abs(totalAssets + totalLiabilities + totalEquity - ytdNetIncome),
-    ) === 0;
+  const isBalanceSheetBalanced = new Decimal(totalAssets)
+    .plus(totalLiabilities)
+    .plus(totalEquity)
+    .minus(ytdNetIncome)
+    .abs()
+    .lt(0.01);
 
   return {
     categories,

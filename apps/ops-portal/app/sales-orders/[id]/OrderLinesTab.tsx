@@ -27,7 +27,7 @@ interface OrderLinesTabProps {
     addLineFromProduct: (product: Product) => void;
     addBlankLine: () => void;
     addCommentLine?: () => void;
-    updateLine: (lineId: string, field: string, value: string | boolean | null | undefined | number) => Promise<void> | void;
+    updateLine: (lineId: string, field: string, value: unknown) => Promise<void> | void;
     updateLineFields: (lineId: string, fields: Partial<OrderLine>) => Promise<void> | void;
     removeLine: (lineId: string) => void;
     calculateTaxes: () => void;

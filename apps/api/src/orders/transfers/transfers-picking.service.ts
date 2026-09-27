@@ -26,6 +26,7 @@ import {
   TRANSFER_ORDER_STATE,
   TRANSFER_ORDER_PICK_STATE,
   TRANSFER_ORDER_PICK_TRANSITIONS,
+  toDecimal,
 } from '@herobm/shared';
 import type { TransferOrderPickState } from '@herobm/shared';
 import { v4 as uuidv4 } from 'uuid';
@@ -178,37 +179,37 @@ export class TransfersPickingService {
       }
     }
 
-    const enrichedLines = lines.map((line: Record<string, unknown>) => {
+    const enrichedLines = lines.map((line) => {
       const linePicks = picks.filter(
-        (p: Record<string, unknown>) =>
+        (p) =>
           p.transferOrderLineId === line.transferOrderLineId &&
           p.stateCode !== TRANSFER_ORDER_PICK_STATE.CANCELLED,
       );
       const pickedQty = linePicks.reduce(
-        (acc: number, p: Record<string, unknown>) =>
-          acc + parseFloat(p.quantity as string),
+        (acc: number, p) => acc + parseFloat(p.quantity || '0'),
         0,
       );
-      const orderedQty = parseFloat(line.quantity as string);
+      const orderedQty = parseFloat(line.quantity || '0');
       const remaining = orderedQty - pickedQty;
 
-      let availableBins: Record<string, unknown>[] = [];
+      let availableBins: {
+        binId: string;
+        binName: string | null;
+        onHand: string;
+      }[] = [];
       let totalOnHand = 0;
 
       if (line.productType === 'inventory') {
         availableBins = binStock
-          .filter(
-            (b: Record<string, unknown>) => b.productId === line.productId,
-          )
-          .map((b: Record<string, unknown>) => ({
+          .filter((b) => b.productId === line.productId)
+          .map((b) => ({
             binId: b.binId,
             binName: b.binName,
             onHand: b.onHand,
           }));
 
         totalOnHand = availableBins.reduce(
-          (acc: number, b: Record<string, unknown>) =>
-            acc + parseFloat(b.onHand as string),
+          (acc: number, b) => acc + parseFloat(b.onHand || '0'),
           0,
         );
       }
@@ -227,14 +228,12 @@ export class TransfersPickingService {
     });
 
     const filteredLines = enrichedLines.filter(
-      (l: Record<string, unknown>) => parseFloat(l.quantity as string) > 0,
+      (l) => parseFloat(l.quantity || '0') > 0,
     );
-    const activePhysicalLines = filteredLines.filter(
-      (l: Record<string, unknown>) => l.isPhysical,
-    );
+    const activePhysicalLines = filteredLines.filter((l) => l.isPhysical);
     const totalLines = activePhysicalLines.length;
     const fullyPickedLines = activePhysicalLines.filter(
-      (l: Record<string, unknown>) => l.isFullyPicked,
+      (l) => l.isFullyPicked,
     ).length;
     const isFullyPicked = totalLines > 0 && totalLines === fullyPickedLines;
 
@@ -487,13 +486,13 @@ export class TransfersPickingService {
           {
             productId: pick.productId,
             binId: shippingBin.binId,
-            quantity: -parseFloat(pick.quantity),
+            quantity: toDecimal(pick.quantity).negated().toNumber(),
             uomCode: prod?.baseUom || 'EA',
           },
           {
             productId: pick.productId,
             binId: pick.binId,
-            quantity: parseFloat(pick.quantity),
+            quantity: toDecimal(pick.quantity).toNumber(),
             uomCode: prod?.baseUom || 'EA',
           },
         ],

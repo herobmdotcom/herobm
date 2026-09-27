@@ -43,12 +43,15 @@ export default function OpportunitySelect({
       required={required}
       className={className}
       onSearch={async (term) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO structure bypass
-        const res = await api.opportunitiesControllerFindAll({ limit: 100 } as any);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO structure bypass
-        const dataArray = (res.data as any)?.data || res.data || [];
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO structure bypass
-        const mapped: OpportunityOption[] = dataArray.map((o: any) => ({
+        const res = await api.opportunitiesControllerFindAll();
+        const responseData = res.data as unknown;
+        const dataArray: OpportunityOption[] =
+          typeof responseData === 'object' && responseData !== null && 'data' in responseData && Array.isArray((responseData as { data: unknown }).data)
+            ? ((responseData as { data: OpportunityOption[] }).data)
+            : Array.isArray(responseData)
+              ? (responseData as OpportunityOption[])
+              : [];
+        const mapped: OpportunityOption[] = dataArray.map((o) => ({
           opportunityId: o.opportunityId,
           name: o.name,
           status: o.status,

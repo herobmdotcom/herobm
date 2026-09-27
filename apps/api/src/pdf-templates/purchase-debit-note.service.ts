@@ -13,6 +13,7 @@ import {
   products,
   glSettings,
 } from '@herobm/db-schema';
+import { formatReportDate } from '@herobm/shared';
 
 export interface PurchaseDebitNoteData {
   header: {
@@ -175,9 +176,11 @@ export class PurchaseDebitNoteService {
     const customText =
       (options?.customPdfText as string) || (options?.quoteIntroText as string);
 
-    const debitNoteDateStr = dn.createdOn
-      ? new Date(dn.createdOn).toLocaleDateString('en-IE')
-      : new Date().toLocaleDateString('en-IE');
+    const debitNoteDateStr = formatReportDate(
+      dn.createdOn || new Date(),
+      undefined,
+      '—',
+    );
 
     return {
       header: {

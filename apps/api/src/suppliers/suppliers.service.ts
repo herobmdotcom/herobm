@@ -363,7 +363,8 @@ export class SuppliersService {
   async findSupplierProducts(vendorId: string, params: PaginationQuery) {
     const { page, limit, cursor, direction } = parsePagination(params);
 
-    const { productSuppliers, products } = await import('@herobm/db-schema');
+    const { productSuppliers, products, productUoms } =
+      await import('@herobm/db-schema');
 
     const whereClause = eq(productSuppliers.vendorId, vendorId);
     const qb = this.db
@@ -378,6 +379,9 @@ export class SuppliersService {
         isPreferred: productSuppliers.isPreferred,
         minPurchaseQty: productSuppliers.minPurchaseQty,
         purchaseUnit: productSuppliers.purchaseUnit,
+        purchaseUomId: productSuppliers.purchaseUomId,
+        purchaseUomCode: productUoms.uomCode,
+        purchaseUomRatio: productUoms.ratio,
         stateCode: productSuppliers.stateCode,
         productName: products.name,
         productNumber: products.productNumber,
@@ -385,6 +389,10 @@ export class SuppliersService {
       })
       .from(productSuppliers)
       .innerJoin(products, eq(productSuppliers.productId, products.productId))
+      .leftJoin(
+        productUoms,
+        eq(productSuppliers.purchaseUomId, productUoms.productUomId),
+      )
       .where(whereClause)
       .$dynamic();
 
@@ -439,7 +447,7 @@ export class SuppliersService {
   async findProductSuppliers(productId: string, params: PaginationQuery) {
     const { page, limit, cursor, direction } = parsePagination(params);
 
-    const { productSuppliers, suppliers, organizations } =
+    const { productSuppliers, suppliers, organizations, productUoms } =
       await import('@herobm/db-schema');
 
     const whereClause = eq(productSuppliers.productId, productId);
@@ -455,12 +463,19 @@ export class SuppliersService {
         isPreferred: productSuppliers.isPreferred,
         minPurchaseQty: productSuppliers.minPurchaseQty,
         purchaseUnit: productSuppliers.purchaseUnit,
+        purchaseUomId: productSuppliers.purchaseUomId,
+        purchaseUomCode: productUoms.uomCode,
+        purchaseUomRatio: productUoms.ratio,
         stateCode: productSuppliers.stateCode,
         vendorName: organizations.name,
         vendorNumber: suppliers.vendorNumber,
       })
       .from(productSuppliers)
       .innerJoin(suppliers, eq(productSuppliers.vendorId, suppliers.vendorId))
+      .leftJoin(
+        productUoms,
+        eq(productSuppliers.purchaseUomId, productUoms.productUomId),
+      )
       .leftJoin(
         organizations,
         eq(suppliers.organizationId, organizations.organizationId),

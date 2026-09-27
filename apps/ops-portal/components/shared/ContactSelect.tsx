@@ -48,15 +48,23 @@ export default function ContactSelect({
       className={className}
       clearOnSelect={clearOnSelect}
       onSearch={async (term) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type structure bypass
-        const res = await api.contactsControllerFindAll({ q: term, limit: 10 } as any);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type structure bypass
-        const dataArray = (res.data as any)?.data || res.data || [];
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type structure bypass
-        const mapped = dataArray.map((c: any) => ({ ...c, contactId: c.id || c.contactId }));
+        const res = await api.contactsControllerFindAll({ q: term, limit: 10 });
+        const responseData = res.data as unknown;
+        const dataArray: Contact[] =
+          typeof responseData === 'object' &&
+          responseData !== null &&
+          'data' in responseData &&
+          Array.isArray((responseData as { data: unknown }).data)
+            ? (responseData as { data: Contact[] }).data
+            : Array.isArray(responseData)
+              ? (responseData as Contact[])
+              : [];
+        const mapped = dataArray.map((c) => ({
+          ...c,
+          contactId: (c as unknown as { id?: string }).id || c.contactId,
+        }));
         if (excludeId) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type structure bypass
-          return mapped.filter((c: any) => c.contactId !== excludeId);
+          return mapped.filter((c) => c.contactId !== excludeId);
         }
         return mapped;
       }}

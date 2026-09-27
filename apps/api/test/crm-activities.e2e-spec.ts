@@ -160,14 +160,16 @@ describe('CRM Activities (e2e)', () => {
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.data)).toBe(true);
     // Viewer sees public non-task activities (call and meeting), but not admin's private task
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test validation
     expect(
-      res.body.data.some((a: any) => a.activityId === createdActivityId),
+      res.body.data.some(
+        (a: { activityId: string }) => a.activityId === createdActivityId,
+      ),
     ).toBe(true);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test validation
-    expect(res.body.data.some((a: any) => a.activityId === createdTaskId)).toBe(
-      false,
-    );
+    expect(
+      res.body.data.some(
+        (a: { activityId: string }) => a.activityId === createdTaskId,
+      ),
+    ).toBe(false);
   });
 
   it('GET /api/crm-activities?organizationId=... — filters by organizationId', async () => {
@@ -177,9 +179,11 @@ describe('CRM Activities (e2e)', () => {
 
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.data)).toBe(true);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test validation
     expect(
-      res.body.data.every((a: any) => a.organizationId === testOrganizationId),
+      res.body.data.every(
+        (a: { organizationId?: string }) =>
+          a.organizationId === testOrganizationId,
+      ),
     ).toBe(true);
   });
 
@@ -190,10 +194,11 @@ describe('CRM Activities (e2e)', () => {
 
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.data)).toBe(true);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test validation
-    expect(res.body.data.some((a: any) => a.activityId === createdTaskId)).toBe(
-      true,
-    );
+    expect(
+      res.body.data.some(
+        (a: { activityId: string }) => a.activityId === createdTaskId,
+      ),
+    ).toBe(true);
   });
 
   it('GET /api/crm-activities/:id — returns an activity by ID (viewer for public activity)', async () => {

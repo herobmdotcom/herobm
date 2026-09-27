@@ -6,7 +6,9 @@ import {
   NotFoundException,
   Logger,
 } from '@nestjs/common';
-import { eq, and, or } from 'drizzle-orm';
+import { Decimal } from 'decimal.js';
+import { eq, and, or, inArray } from 'drizzle-orm';
+import type { AnyPgColumn, PgTable } from 'drizzle-orm/pg-core';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -78,18 +80,26 @@ export class PaymentsWriteService {
         dto.currencyCode,
         new Date(dto.paymentDate),
       );
-      const baseAmount = (
-        parseFloat(dto.totalAmount?.toString() || '0') * fx.rate
-      ).toFixed(2);
+      const totalAmountDec = new Decimal(dto.totalAmount?.toString() || '0');
+      const fxRateDec = new Decimal(fx.rate);
+      const baseAmountDec = totalAmountDec
+        .mul(fxRateDec)
+        .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
 
-      let initialUnallocated = parseFloat(dto.totalAmount?.toString() || '0');
-      let baseInitialUnallocated = parseFloat(baseAmount);
+      let initialUnallocatedDec = new Decimal(totalAmountDec);
+      let baseInitialUnallocatedDec = new Decimal(baseAmountDec);
 
       if (dto.allocations && dto.allocations.length > 0) {
         for (const alloc of dto.allocations) {
-          const allocAmt = parseFloat(alloc.allocatedAmount.toString() || '0');
-          initialUnallocated -= allocAmt;
-          baseInitialUnallocated -= allocAmt * fx.rate;
+          const allocAmtDec = new Decimal(
+            alloc.allocatedAmount?.toString() || '0',
+          );
+          initialUnallocatedDec = initialUnallocatedDec.minus(allocAmtDec);
+          baseInitialUnallocatedDec = baseInitialUnallocatedDec.minus(
+            allocAmtDec
+              .mul(fxRateDec)
+              .toDecimalPlaces(2, Decimal.ROUND_HALF_UP),
+          );
         }
       }
 
@@ -102,14 +112,14 @@ export class PaymentsWriteService {
           partyId: dto.partyId || null,
           paymentDate: new Date(dto.paymentDate),
           modeOfPayment: dto.modeOfPayment,
-          totalAmount: dto.totalAmount?.toString() || '0',
-          unallocatedAmount: initialUnallocated.toString(),
-          baseTotalAmount: baseAmount,
-          baseUnallocatedAmount: baseInitialUnallocated.toFixed(2),
+          totalAmount: totalAmountDec.toFixed(2),
+          unallocatedAmount: initialUnallocatedDec.toFixed(2),
+          baseTotalAmount: baseAmountDec.toFixed(2),
+          baseUnallocatedAmount: baseInitialUnallocatedDec.toFixed(2),
           glAccountBank: dto.glAccountBank,
           referenceNumber: dto.referenceNumber,
           currencyCode: dto.currencyCode,
-          exchangeRate: fx.rate.toString(),
+          exchangeRate: fxRateDec.toString(),
           createdBy: actor,
           stateCode: PAYMENT_STATE.DRAFT,
         })
@@ -218,11 +228,96 @@ export class PaymentsWriteService {
         .from(paymentAllocations)
         .where(eq(paymentAllocations.paymentId, paymentId));
 
+      const salesInvoiceIds = Array.from(
+        new Set(
+          allocations
+            .filter((a) => a.referenceType === 'sales_invoice')
+            .map((a) => a.referenceId),
+        ),
+      );
+      const purchaseInvoiceIds = Array.from(
+        new Set(
+          allocations
+            .filter((a) => a.referenceType === 'purchase_invoice')
+            .map((a) => a.referenceId),
+        ),
+      );
+      const salesCreditNoteIds = Array.from(
+        new Set(
+          allocations
+            .filter((a) => a.referenceType === 'sales_credit_note')
+            .map((a) => a.referenceId),
+        ),
+      );
+      const purchaseDebitNoteIds = Array.from(
+        new Set(
+          allocations
+            .filter((a) => a.referenceType === 'purchase_debit_note')
+            .map((a) => a.referenceId),
+        ),
+      );
+
+      const docMap = new Map<
+        string,
+        { outstandingAmount?: string | number | null }
+      >();
+
+      if (salesInvoiceIds.length > 0) {
+        const rows = await tx
+          .select({
+            invoiceId: salesInvoices.invoiceId,
+            outstandingAmount: salesInvoices.outstandingAmount,
+          })
+          .from(salesInvoices)
+          .where(inArray(salesInvoices.invoiceId, salesInvoiceIds))
+          .for('update');
+        for (const r of rows) {
+          docMap.set(`sales_invoice:${r.invoiceId}`, r);
+        }
+      }
+      if (purchaseInvoiceIds.length > 0) {
+        const rows = await tx
+          .select({
+            invoiceId: purchaseInvoices.invoiceId,
+            outstandingAmount: purchaseInvoices.outstandingAmount,
+          })
+          .from(purchaseInvoices)
+          .where(inArray(purchaseInvoices.invoiceId, purchaseInvoiceIds))
+          .for('update');
+        for (const r of rows) {
+          docMap.set(`purchase_invoice:${r.invoiceId}`, r);
+        }
+      }
+      if (salesCreditNoteIds.length > 0) {
+        const rows = await tx
+          .select({
+            creditNoteId: salesCreditNotes.creditNoteId,
+            outstandingAmount: salesCreditNotes.outstandingAmount,
+          })
+          .from(salesCreditNotes)
+          .where(inArray(salesCreditNotes.creditNoteId, salesCreditNoteIds))
+          .for('update');
+        for (const r of rows) {
+          docMap.set(`sales_credit_note:${r.creditNoteId}`, r);
+        }
+      }
+      if (purchaseDebitNoteIds.length > 0) {
+        const rows = await tx
+          .select({
+            debitNoteId: purchaseDebitNotes.debitNoteId,
+            outstandingAmount: purchaseDebitNotes.outstandingAmount,
+          })
+          .from(purchaseDebitNotes)
+          .where(inArray(purchaseDebitNotes.debitNoteId, purchaseDebitNoteIds))
+          .for('update');
+        for (const r of rows) {
+          docMap.set(`purchase_debit_note:${r.debitNoteId}`, r);
+        }
+      }
+
       for (const alloc of allocations) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-        let targetTable: any;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-        let targetIdCol: any;
+        let targetTable: PgTable | null = null;
+        let targetIdCol: AnyPgColumn | null = null;
 
         switch (alloc.referenceType) {
           case 'sales_invoice':
@@ -243,22 +338,20 @@ export class PaymentsWriteService {
             break;
         }
 
-        if (targetTable) {
-          const [doc] = await tx
-            .select()
-            .from(targetTable)
-            .where(eq(targetIdCol, alloc.referenceId))
-            .for('update');
+        if (targetTable && targetIdCol) {
+          const doc = docMap.get(`${alloc.referenceType}:${alloc.referenceId}`);
 
           if (doc) {
-            const outstanding = parseFloat(doc.outstandingAmount);
-            const newOutstanding =
-              outstanding + parseFloat(alloc.allocatedAmount);
+            const outstandingDec = new Decimal(doc.outstandingAmount || '0');
+            const allocAmtDec = new Decimal(alloc.allocatedAmount || '0');
+            const newOutstandingDec = outstandingDec.plus(allocAmtDec);
+
+            doc.outstandingAmount = newOutstandingDec.toFixed(2);
 
             await tx
               .update(targetTable)
               .set({
-                outstandingAmount: newOutstanding.toString(),
+                outstandingAmount: newOutstandingDec.toFixed(2),
                 modifiedOn: new Date(),
               })
               .where(eq(targetIdCol, alloc.referenceId));
@@ -266,14 +359,14 @@ export class PaymentsWriteService {
             // Evaluate Invoice Lifecycle
             if (alloc.referenceType === 'sales_invoice') {
               await evaluateSalesInvoiceLifecycleRules(
-                tx as unknown as DrizzleDB,
+                tx,
                 alloc.referenceId,
                 { entity: 'payment', id: paymentId, action: 'cancelled' },
                 actor,
               );
             } else if (alloc.referenceType === 'purchase_invoice') {
               await evaluatePurchaseInvoiceLifecycleRules(
-                tx as unknown as DrizzleDB,
+                tx,
                 alloc.referenceId,
                 { entity: 'payment', id: paymentId, action: 'cancelled' },
                 actor,
@@ -284,7 +377,7 @@ export class PaymentsWriteService {
       }
 
       // 3. Reverse the GL journal entry
-      const amount = parseFloat(payment.totalAmount);
+      const amountDec = new Decimal(payment.totalAmount || '0');
 
       // Resolve Payment Lines (Split) vs Control Customer (AR/AP/Direct)
       const payLines = await tx
@@ -360,18 +453,20 @@ export class PaymentsWriteService {
         reversalLines.push({
           accountId: payment.glAccountBank,
           debit: 0,
-          credit: amount,
+          credit: amountDec.toNumber(),
           memo: `Reversal: ${payment.paymentNumber}`,
         });
 
         if (payLines.length > 0) {
           reversalLines.push(
             ...payLines.map((pl) => {
-              const plAmount = parseFloat(pl.amount);
+              const plAmountDec = new Decimal(pl.amount);
               return {
                 accountId: pl.glAccountId,
-                debit: plAmount > 0 ? plAmount : 0,
-                credit: plAmount < 0 ? Math.abs(plAmount) : 0,
+                debit: plAmountDec.greaterThan(0) ? plAmountDec.toNumber() : 0,
+                credit: plAmountDec.lessThan(0)
+                  ? plAmountDec.abs().toNumber()
+                  : 0,
                 memo: `Reversal: ${pl.memo || payment.paymentNumber}`,
                 partyType: linePartyType,
                 partyId: linePartyId,
@@ -381,7 +476,7 @@ export class PaymentsWriteService {
         } else {
           reversalLines.push({
             accountId: controlAccountId ?? undefined,
-            debit: amount,
+            debit: amountDec.toNumber(),
             credit: 0,
             memo: `Reversal: ${payment.paymentNumber}`,
             partyType: linePartyType,
@@ -391,7 +486,7 @@ export class PaymentsWriteService {
       } else {
         reversalLines.push({
           accountId: payment.glAccountBank,
-          debit: amount,
+          debit: amountDec.toNumber(),
           credit: 0,
           memo: `Reversal: ${payment.paymentNumber}`,
         });
@@ -399,11 +494,13 @@ export class PaymentsWriteService {
         if (payLines.length > 0) {
           reversalLines.push(
             ...payLines.map((pl) => {
-              const plAmount = parseFloat(pl.amount);
+              const plAmountDec = new Decimal(pl.amount);
               return {
                 accountId: pl.glAccountId,
-                debit: plAmount < 0 ? Math.abs(plAmount) : 0,
-                credit: plAmount > 0 ? plAmount : 0,
+                debit: plAmountDec.lessThan(0)
+                  ? plAmountDec.abs().toNumber()
+                  : 0,
+                credit: plAmountDec.greaterThan(0) ? plAmountDec.toNumber() : 0,
                 memo: `Reversal: ${pl.memo || payment.paymentNumber}`,
                 partyType: linePartyType,
                 partyId: linePartyId,
@@ -414,7 +511,7 @@ export class PaymentsWriteService {
           reversalLines.push({
             accountId: controlAccountId ?? undefined,
             debit: 0,
-            credit: amount,
+            credit: amountDec.toNumber(),
             memo: `Reversal: ${payment.paymentNumber}`,
             partyType: linePartyType,
             partyId: linePartyId,

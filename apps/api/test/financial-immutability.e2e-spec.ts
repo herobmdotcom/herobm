@@ -342,6 +342,7 @@ describe('Financial Immutability Triggers (e2e)', () => {
 
       const jeId = randomUUID();
       const lineId = randomUUID();
+      const line2Id = randomUUID();
       await db.execute(sql`
         INSERT INTO herobm_core.gl_journal_entries (
           journal_entry_id, entry_number, entry_date, source_type, is_reversed
@@ -353,9 +354,9 @@ describe('Financial Immutability Triggers (e2e)', () => {
       await db.execute(sql`
         INSERT INTO herobm_core.gl_journal_lines (
           journal_line_id, journal_entry_id, gl_account_id, debit, credit, foreign_debit, foreign_credit, is_reconciled
-        ) VALUES (
-          ${lineId}::uuid, ${jeId}::uuid, ${sharedAccountId}::uuid, '50.00', '0.00', '50.00', '0.00', false
-        );
+        ) VALUES 
+        (${lineId}::uuid, ${jeId}::uuid, ${sharedAccountId}::uuid, '50.00', '0.00', '50.00', '0.00', false),
+        (${line2Id}::uuid, ${jeId}::uuid, ${sharedAccountId}::uuid, '0.00', '50.00', '0.00', '50.00', false);
       `);
 
       let error: any = null;
@@ -381,6 +382,7 @@ describe('Financial Immutability Triggers (e2e)', () => {
 
       const jeId = randomUUID();
       const lineId = randomUUID();
+      const line2Id = randomUUID();
       await db.execute(sql`
         INSERT INTO herobm_core.gl_journal_entries (
           journal_entry_id, entry_number, entry_date, source_type, is_reversed
@@ -392,9 +394,9 @@ describe('Financial Immutability Triggers (e2e)', () => {
       await db.execute(sql`
         INSERT INTO herobm_core.gl_journal_lines (
           journal_line_id, journal_entry_id, gl_account_id, debit, credit, foreign_debit, foreign_credit, is_reconciled
-        ) VALUES (
-          ${lineId}::uuid, ${jeId}::uuid, ${sharedAccountId}::uuid, '50.00', '0.00', '50.00', '0.00', false
-        );
+        ) VALUES 
+        (${lineId}::uuid, ${jeId}::uuid, ${sharedAccountId}::uuid, '50.00', '0.00', '50.00', '0.00', false),
+        (${line2Id}::uuid, ${jeId}::uuid, ${sharedAccountId}::uuid, '0.00', '50.00', '0.00', '50.00', false);
       `);
 
       await expect(

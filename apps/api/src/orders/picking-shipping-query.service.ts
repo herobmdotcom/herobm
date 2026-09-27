@@ -28,7 +28,9 @@ import {
   SALES_ORDER_STATE,
   TRANSFER_ORDER_STATE,
   TRANSFER_ORDER_PICK_STATE,
+  toDecimal,
 } from '@herobm/shared';
+import Decimal from 'decimal.js';
 
 @Injectable()
 export class PickingShippingQueryService {
@@ -192,6 +194,7 @@ export class PickingShippingQueryService {
         sourceLocationId?: string;
         destinationLocationId?: string;
         isSameSite?: boolean;
+        _physicalLineCount?: number;
         _totalPhysicalLines?: number;
         _fullyPickedLines?: number;
         _shippableLines?: number;
@@ -216,7 +219,7 @@ export class PickingShippingQueryService {
           sourceLocationId: row.sourceLocationId,
           destinationLocationId: row.destinationLocationId,
           isSameSite: Boolean(row.isSameSite),
-          _totalPhysicalLines: 0,
+          _physicalLineCount: 0,
           _fullyPickedLines: 0,
           _shippableLines: 0,
         });
@@ -227,7 +230,7 @@ export class PickingShippingQueryService {
 
       const ordered = parseFloat(row.lineQuantity ?? '0');
       if (row.isPhysical && ordered > 0) {
-        order._totalPhysicalLines = (order._totalPhysicalLines || 0) + 1;
+        order._physicalLineCount = (order._physicalLineCount || 0) + 1;
         const picked = row.isStocked
           ? parseFloat(row.pickedQty?.toString() ?? '0')
           : ordered;
@@ -250,8 +253,8 @@ export class PickingShippingQueryService {
         let shippabilityStatus: 'ready' | 'partial';
 
         if (
-          (order._totalPhysicalLines || 0) > 0 &&
-          order._fullyPickedLines === order._totalPhysicalLines
+          (order._physicalLineCount || 0) > 0 &&
+          order._fullyPickedLines === order._physicalLineCount
         ) {
           shippabilityStatus = 'ready';
         } else {
@@ -259,8 +262,8 @@ export class PickingShippingQueryService {
         }
 
         const totalShippableLines = order._shippableLines || 0;
-        const totalLines = order._totalPhysicalLines || 0;
-        delete order._totalPhysicalLines;
+        const totalLines = order._physicalLineCount || 0;
+        delete order._physicalLineCount;
         delete order._fullyPickedLines;
         delete order._shippableLines;
 
@@ -345,7 +348,7 @@ export class PickingShippingQueryService {
       for (const row of pickSums) {
         pickedMap.set(
           row.salesOrderLineId,
-          parseFloat(String(row.totalPicked)),
+          new Decimal(row.totalPicked ?? '0').toNumber(),
         );
       }
     }
@@ -353,7 +356,7 @@ export class PickingShippingQueryService {
     const committedMap = await getCommittedPerLine(this.db, orderId);
 
     const enrichedLines = lines.map((line) => {
-      const ordered = parseFloat(line.quantity);
+      const ordered = toDecimal(line.quantity).toNumber();
       const isStocked =
         Boolean(line.productId) &&
         (!line.productType || line.productType === 'inventory');
@@ -428,8 +431,10 @@ export class PickingShippingQueryService {
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Needed for legacy code
-  private async getTransferShippingContext(orderId: string, order: any) {
+  private async getTransferShippingContext(
+    orderId: string,
+    order: typeof transferOrders.$inferSelect,
+  ) {
     const lines = await this.db
       .select({
         salesOrderLineId: transferOrderLines.transferOrderLineId,
@@ -554,7 +559,7 @@ export class PickingShippingQueryService {
     }
 
     const destLocation = await this.db.query.locations.findFirst({
-      where: eq(locations.locationId, order.destinationLocationId as string),
+      where: eq(locations.locationId, order.destinationLocationId),
     });
 
     const project = order.projectId

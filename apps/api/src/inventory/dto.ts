@@ -213,6 +213,10 @@ export class InventoryLedgerResponseDto {
   productId!: string;
   quantity!: string;
   date!: Date;
+  uomId?: string | null;
+  originalQuantity?: string | null;
+  unitCost?: string | null;
+  totalValue?: string | null;
 }
 
 export class InventoryEntryDetailsResponseDto {
@@ -220,6 +224,10 @@ export class InventoryEntryDetailsResponseDto {
   productId!: string;
   quantity!: string;
   date!: Date;
+  uomId?: string | null;
+  originalQuantity?: string | null;
+  unitCost?: string | null;
+  totalValue?: string | null;
 }
 
 export class FindByProductIdsBulkDto {
@@ -392,6 +400,15 @@ export class RestockItemDto {
 
   @ApiPropertyOptional()
   purchaseUnit?: string | null;
+
+  @ApiPropertyOptional()
+  purchaseUomId?: string | null;
+
+  @ApiPropertyOptional()
+  purchaseUomCode?: string | null;
+
+  @ApiPropertyOptional()
+  purchaseUomRatio?: number | null;
 }
 
 export class RestockSummaryDto {

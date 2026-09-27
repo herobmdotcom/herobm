@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { JOURNAL_ENTRY_SOURCE_TYPE } from '@herobm/shared';
+import Decimal from 'decimal.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -66,6 +67,15 @@ export interface InventoryGlResult {
 // Strategy Interface
 // ---------------------------------------------------------------------------
 
+export interface WorkOrderCompletionContext {
+  finishedGoodsValue: number;
+  componentsCost: number;
+  laborAndOverheadCost: number;
+  memo: string;
+  costCenterId?: string;
+  activityId?: string;
+}
+
 /**
  * Inventory Accounting Strategy.
  *
@@ -104,6 +114,11 @@ export interface InventoryAccountingStrategy {
   /** Supplier Debit Note → DR AP, CR GRNI */
   onSupplierDebitNote(ctx: GlPostingContext): InventoryGlResult | null;
 
+  /** Work order build completion → DR Finished Goods, CR Components / Labor */
+  onWorkOrderCompletion(
+    ctx: WorkOrderCompletionContext,
+  ): InventoryGlResult | null;
+
   /**
    * Resolves the target GL account for clearing matched purchase/invoice lines.
    * Perpetual: Returns the GRNI account (liability).
@@ -139,6 +154,9 @@ class PeriodicAccountingStrategy implements InventoryAccountingStrategy {
     return null;
   }
   onSupplierDebitNote(): null {
+    return null;
+  }
+  onWorkOrderCompletion(): null {
     return null;
   }
   resolvePurchaseClearingAccount(
@@ -416,6 +434,83 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
           activityId: ctx.activityId,
         },
       ],
+    };
+  }
+
+  onWorkOrderCompletion(
+    ctx: WorkOrderCompletionContext,
+  ): InventoryGlResult | null {
+    if (ctx.finishedGoodsValue <= 0) return null;
+    const inv = this.requireAccount(
+      this.accts.inventoryAccountId,
+      'Inventory Asset',
+    );
+    const expense =
+      this.accts.cogsAccountId || this.accts.shrinkageAccountId || inv;
+
+    const lines: InventoryGlLine[] = [];
+
+    // DR Finished Goods Inventory Asset
+    lines.push({
+      accountId: inv,
+      debit: Number(ctx.finishedGoodsValue.toFixed(2)),
+      credit: 0,
+      memo: ctx.memo,
+      costCenterId: ctx.costCenterId,
+      activityId: ctx.activityId,
+    });
+
+    // CR Raw Materials / Components Inventory Consumed
+    if (ctx.componentsCost > 0) {
+      lines.push({
+        accountId: inv,
+        debit: 0,
+        credit: new Decimal(ctx.componentsCost)
+          .toDecimalPlaces(2, Decimal.ROUND_HALF_UP)
+          .toNumber(),
+        memo: `${ctx.memo} - Components consumed`,
+        costCenterId: ctx.costCenterId,
+        activityId: ctx.activityId,
+      });
+    }
+
+    // CR Labor & Additional Overhead Capitalized
+    if (ctx.laborAndOverheadCost > 0) {
+      lines.push({
+        accountId: expense,
+        debit: 0,
+        credit: new Decimal(ctx.laborAndOverheadCost)
+          .toDecimalPlaces(2, Decimal.ROUND_HALF_UP)
+          .toNumber(),
+        memo: `${ctx.memo} - Labor & overhead capitalized`,
+        costCenterId: ctx.costCenterId,
+        activityId: ctx.activityId,
+      });
+    }
+
+    // Ensure double-entry balanced lines invariant (debit == credit)
+    const totalDebit = lines.reduce(
+      (sum, l) => sum.plus(new Decimal(l.debit || 0)),
+      new Decimal(0),
+    );
+    const totalCredit = lines.reduce(
+      (sum, l) => sum.plus(new Decimal(l.credit || 0)),
+      new Decimal(0),
+    );
+    const diff = totalDebit
+      .minus(totalCredit)
+      .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+    if (!diff.isZero() && diff.abs().lte(0.05) && lines.length > 1) {
+      lines[lines.length - 1].credit = new Decimal(
+        lines[lines.length - 1].credit,
+      )
+        .plus(diff)
+        .toNumber();
+    }
+
+    return {
+      sourceType: JOURNAL_ENTRY_SOURCE_TYPE.INVENTORY_ADJUSTMENT,
+      lines,
     };
   }
 

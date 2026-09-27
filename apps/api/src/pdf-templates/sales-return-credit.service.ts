@@ -8,7 +8,13 @@ import { resolveOrderDetail } from './report-data.helper';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { taxCategories, locations } from '@herobm/db-schema';
-import { computeLinePrice, computeReturnCreditSummary } from '@herobm/shared';
+import {
+  computeLinePrice,
+  computeReturnCreditSummary,
+  formatReportDate,
+  formatReportDateTime,
+  toDecimal,
+} from '@herobm/shared';
 import { AppConfigService } from '../settings/app-config.service';
 
 export interface SalesReturnCreditData {
@@ -224,9 +230,7 @@ export class SalesReturnCreditService {
         orderNumber: orderDetail.orderNumber || '',
         customerName: orderDetail.customerName || '',
         customerOrderNumber: orderDetail.customerOrderNumber || '',
-        orderDate: orderDetail.createdOn
-          ? new Date(orderDetail.createdOn).toLocaleDateString('en-IE')
-          : '',
+        orderDate: formatReportDate(orderDetail.createdOn, undefined, ''),
         currencyCode: orderDetail.currencyCode || this.appConfig.homeCurrency(),
         name: orderDetail.name || '',
       },
@@ -240,21 +244,15 @@ export class SalesReturnCreditService {
       returnToAddress,
       lines,
       summary: {
-        subtotal: creditSummary.subtotal.toFixed(2),
-        totalTax: creditSummary.totalTax.toFixed(2),
-        totalCredit: (creditSummary.subtotal + creditSummary.totalTax).toFixed(
-          2,
-        ),
-        totalFees: creditSummary.totalFees.toFixed(2),
-        netCredit: creditSummary.netCredit.toFixed(2),
+        subtotal: toDecimal(creditSummary.subtotal).toFixed(2),
+        totalTax: toDecimal(creditSummary.totalTax).toFixed(2),
+        totalCredit: toDecimal(creditSummary.subtotal)
+          .plus(toDecimal(creditSummary.totalTax))
+          .toFixed(2),
+        totalFees: toDecimal(creditSummary.totalFees).toFixed(2),
+        netCredit: toDecimal(creditSummary.netCredit).toFixed(2),
       },
-      generatedAt:
-        new Date().toLocaleDateString('en-IE') +
-        ' ' +
-        new Date().toLocaleTimeString('en-IE', {
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
+      generatedAt: formatReportDateTime(new Date()),
     };
   }
 }

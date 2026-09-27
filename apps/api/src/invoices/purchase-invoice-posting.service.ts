@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+import { Decimal } from 'decimal.js';
 import {
   Injectable,
   Inject,
@@ -126,20 +127,21 @@ export class PurchaseInvoicePostingService {
 
     const receiptCosts = new Map<string, { cost: number; poRate: number }>();
     for (const r of receipts) {
-      const q = parseFloat(r.quantityBilled);
-      const c = parseFloat(r.unitCost || '0');
-      const poRate = parseFloat(r.poExchangeRate || '1');
+      const qDec = new Decimal(r.quantityBilled);
+      const cDec = new Decimal(r.unitCost || '0');
+      const poRateDec = new Decimal(r.poExchangeRate || '1');
       const existing = receiptCosts.get(r.invoiceLineId) || {
         cost: 0,
         poRate: 1,
       };
+      const costDec = new Decimal(existing.cost).add(qDec.mul(cDec));
       receiptCosts.set(r.invoiceLineId, {
-        cost: existing.cost + q * c,
-        poRate: poRate,
+        cost: costDec.toNumber(),
+        poRate: poRateDec.toNumber(),
       });
     }
 
-    let lineTotalForeign = 0;
+    let lineTotalForeignDec = new Decimal(0);
     const expenseGroups = new Map<
       string,
       {
@@ -185,7 +187,8 @@ export class PurchaseInvoicePostingService {
       }
     >();
 
-    const invoiceRate = parseFloat(invoice.exchangeRate || '1');
+    const invoiceRateDec = new Decimal(invoice.exchangeRate || '1');
+    const invoiceRate = invoiceRateDec.toNumber();
 
     for (const row of lines) {
       const {
@@ -201,9 +204,13 @@ export class PurchaseInvoicePostingService {
         );
       }
 
-      const foreignAmt = parseFloat(line.amount);
-      const baseAmt = foreignAmt * invoiceRate;
-      lineTotalForeign += foreignAmt;
+      const foreignAmtDec = new Decimal(line.amount);
+      const baseAmtDec = foreignAmtDec
+        .mul(invoiceRateDec)
+        .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+      const baseAmt = baseAmtDec.toNumber();
+      const foreignAmt = foreignAmtDec.toNumber();
+      lineTotalForeignDec = lineTotalForeignDec.add(foreignAmtDec);
 
       // Extract CC/Activity from product
       const productDims = {
@@ -234,12 +241,27 @@ export class PurchaseInvoicePostingService {
           cost: 0,
           poRate: 1,
         };
-        const receiptCostBase = rc.cost;
-        const poRate = rc.poRate;
+        const receiptCostBaseDec = new Decimal(rc.cost);
+        const poRateDec = new Decimal(rc.poRate || 1);
 
-        const foreignCost = receiptCostBase / poRate;
-        const tradeVarianceBase = baseAmt - foreignCost * invoiceRate;
-        const fxVarianceBase = foreignCost * invoiceRate - receiptCostBase;
+        // Exact foreign value from original PO terms, maintaining precision
+        const foreignCostDec = receiptCostBaseDec.div(poRateDec);
+
+        // Trade Variance evaluated at current invoice rate
+        const tradeVarianceBaseDec = foreignAmtDec
+          .minus(foreignCostDec)
+          .mul(invoiceRateDec)
+          .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+
+        // FX variance absorbs the remainder exactly to guarantee the journal balances
+        const fxVarianceBaseDec = baseAmtDec
+          .minus(receiptCostBaseDec)
+          .minus(tradeVarianceBaseDec);
+
+        const receiptCostBase = receiptCostBaseDec.toNumber();
+        const foreignCost = foreignCostDec.toNumber();
+        const tradeVarianceBase = tradeVarianceBaseDec.toNumber();
+        const fxVarianceBase = fxVarianceBaseDec.toNumber();
 
         // GRNI Clearance
         const key = `GRNI|${productDims.costCenterId || ''}|${productDims.activityId || ''}`;
@@ -303,14 +325,18 @@ export class PurchaseInvoicePostingService {
       }
     }
 
-    const headerTotalForeign = parseFloat(invoice.totalAmount || '0');
-    const taxAmountForeign = parseFloat(invoice.taxAmount || '0');
-    const taxAmountBase = taxAmountForeign * invoiceRate;
-    const expectedHeaderForeign = lineTotalForeign + taxAmountForeign;
+    const headerTotalForeignDec = new Decimal(invoice.totalAmount || '0');
+    const taxAmountForeignDec = new Decimal(invoice.taxAmount || '0');
+    const taxAmountBaseDec = taxAmountForeignDec.mul(invoiceRateDec);
+    const taxAmountBase = taxAmountBaseDec.toNumber();
+    const taxAmountForeign = taxAmountForeignDec.toNumber();
+    const headerTotalForeign = headerTotalForeignDec.toNumber();
+    const expectedHeaderForeignDec =
+      lineTotalForeignDec.add(taxAmountForeignDec);
 
-    if (Math.abs(headerTotalForeign - expectedHeaderForeign) > 0.01) {
+    if (headerTotalForeignDec.minus(expectedHeaderForeignDec).abs().gt(0.01)) {
       throw new BadRequestException(
-        `Invoice totals mismatch. Header: ${headerTotalForeign.toFixed(2)}, Lines+Tax: ${expectedHeaderForeign.toFixed(2)}`,
+        `Invoice totals mismatch. Header: ${headerTotalForeignDec.toFixed(2)}, Lines+Tax: ${expectedHeaderForeignDec.toFixed(2)}`,
       );
     }
 
@@ -614,15 +640,17 @@ export class PurchaseInvoicePostingService {
             });
 
             // Rebalance AP Base vs Debits
-            const totalDebits = glLines.reduce(
-              (sum, l) => sum + Number(l.debit || 0),
-              0,
+            const totalDebitsDec = glLines.reduce(
+              (sum, l) => sum.add(new Decimal(l.debit || 0)),
+              new Decimal(0),
             );
-            const totalCreditsExclAp = glLines.reduce(
-              (sum, l) => sum + Number(l.credit || 0),
-              0,
+            const totalCreditsExclApDec = glLines.reduce(
+              (sum, l) => sum.add(new Decimal(l.credit || 0)),
+              new Decimal(0),
             );
-            const apBaseCredit = totalDebits - totalCreditsExclAp;
+            const apBaseCredit = totalDebitsDec
+              .minus(totalCreditsExclApDec)
+              .toNumber();
 
             glLines.push({
               accountCode: apCode,
@@ -838,8 +866,8 @@ export class PurchaseInvoicePostingService {
           matchedCount++;
         } else {
           // Add it as a new matched line
-          const qty = parseFloat(poLine.quantity || '0');
-          const price = parseFloat(poLine.pricePerUnit || '0');
+          const qty = new Decimal(poLine.quantity || '0').toNumber();
+          const price = new Decimal(poLine.pricePerUnit || '0').toNumber();
           const pricing = computeLinePriceForStorage({
             quantity: qty,
             pricePerUnit: price,

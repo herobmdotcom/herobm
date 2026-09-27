@@ -156,7 +156,7 @@ export class HumanActor {
   private async updateVisualCursor(x: number, y: number): Promise<void> {
     await this.page.evaluate(
       ([cx, cy]) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Playwright browser context global window evaluation
         const win = window as any;
         if (win.__ensureDemoCursor) {
           win.__ensureDemoCursor(cx, cy);
@@ -172,7 +172,7 @@ export class HumanActor {
   private async triggerVisualClick(x: number, y: number): Promise<void> {
     await this.page.evaluate(
       ([cx, cy]) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Playwright browser context global window evaluation
         const win = window as any;
         if (win.__triggerDemoClick) {
           win.__triggerDemoClick(cx, cy);

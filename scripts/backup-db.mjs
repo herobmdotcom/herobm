@@ -10,9 +10,27 @@ const rootDir = path.resolve(__dirname, '..');
 
 const args = process.argv.slice(2);
 let profile = "";
+let sourceArg = "";
+
 for (let i = 0; i < args.length; i++) {
     if (args[i] === '-p' || args[i] === '--profile') {
         profile = args[++i];
+    } else if (args[i] === '-s' || args[i] === '--source' || args[i] === '--source-name' || args[i] === '--host' || args[i] === '--name') {
+        sourceArg = args[++i];
+    } else if (args[i] === '-h' || args[i] === '--help') {
+        console.log(`
+HeroBM Database Backup Worker
+=============================
+Usage:
+  node scripts/backup-db.mjs [options]
+  make backup-run [SOURCE="<vm_or_host>"]
+
+Options:
+  -s, --source, --source-name <name>  Identifier for this VM/host in backup files (default: BACKUP_SOURCE_NAME or hostname)
+  -p, --profile <name>                Target environment profile (.env.<name>)
+  -h, --help                          Display this help message
+`);
+        process.exit(0);
     }
 }
 
@@ -41,15 +59,20 @@ const dbUser = process.env.POSTGRES_USER || 'postgres';
 const dbName = process.env.POSTGRES_DB || 'herobm';
 const backupRcloneDest = process.env.BACKUP_RCLONE_DEST;
 
+const rawHost = os.hostname();
+const sourceRaw = (sourceArg || process.env.BACKUP_SOURCE_NAME || process.env.HEROBM_INSTANCE_NAME || rawHost || 'herobm').trim();
+const sourceTag = sourceRaw.toLowerCase().replace(/[^a-z0-9_-]/g, '_').replace(/^_+|_+$/g, '') || 'herobm';
+
 const backupDir = path.join(os.homedir(), 'herobm_backups');
 if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
 
 const timestamp = new Date().toISOString().replace(/T/, '_').replace(/:/g, '').split('.')[0];
-const backupFile = path.join(backupDir, `herobm_db_backup_${timestamp}.sql.gz`);
+const backupFile = path.join(backupDir, `herobm_db_backup_${sourceTag}_${timestamp}.sql.gz`);
 
 console.log(`\x1b[36m=========================================\x1b[0m`);
 console.log(`\x1b[97m HEROBM PostgreSQL Database Backup Worker \x1b[0m`);
 console.log(`\x1b[36m=========================================\x1b[0m\n`);
+console.log(`Source / Host    : ${sourceTag}${sourceRaw !== sourceTag ? ` (${sourceRaw})` : rawHost && rawHost.toLowerCase() !== sourceTag ? ` (${rawHost})` : ''}`);
 console.log(`Target container : postgres-custom`);
 console.log(`Target database  : ${dbName}`);
 console.log(`Target user      : ${dbUser}`);

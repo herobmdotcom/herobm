@@ -45,9 +45,7 @@ export class EnrichmentService {
   async getConfig(
     providerName: string,
     tx?: DrizzleDB,
-    // Configuration schemas vary by provider and are stored generically in the database.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-  ): Promise<Record<string, any>> {
+  ): Promise<Record<string, unknown>> {
     const db = tx || this.db;
     const [integration] = await db
       .select()
@@ -60,15 +58,11 @@ export class EnrichmentService {
     }
 
     return this.encryptionService.decryptConfig(
-      // Type casting to Record<string, any> is required since db column is jsonb.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-      integration.config as Record<string, any>,
+      integration.config as Record<string, unknown>,
     );
   }
 
-  // Config payload is generic since the schema depends on the chosen provider.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-  async updateConfig(providerName: string, config: Record<string, any>) {
+  async updateConfig(providerName: string, config: Record<string, unknown>) {
     if (!this.providers.has(providerName)) {
       throw new NotFoundException(`Provider '${providerName}' not found`);
     }
@@ -116,9 +110,7 @@ export class EnrichmentService {
   async lookupByField(
     field: string,
     country: string,
-    // The payload structure is dynamic depending on the mapped enrichment provider.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    payload: string | Record<string, any>,
+    payload: string | Record<string, unknown>,
   ): Promise<EnrichmentResult> {
     const mappings = this.appConfig.enrichmentProviderMappings() || {};
     const providerName = mappings[field]?.[country];
@@ -132,9 +124,7 @@ export class EnrichmentService {
 
   async lookup(
     providerName: string,
-    // The payload structure is dynamic depending on the requested enrichment provider.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    payload: string | Record<string, any>,
+    payload: string | Record<string, unknown>,
   ): Promise<EnrichmentResult> {
     const provider = this.providers.get(providerName);
     if (!provider) {
@@ -149,9 +139,7 @@ export class EnrichmentService {
 
   async recordTransaction(
     providerName: string,
-    // Dynamic payload to accommodate various external provider schemas.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    payload: Record<string, any>,
+    payload: Record<string, unknown>,
     tx?: DrizzleDB,
   ): Promise<EnrichmentResult> {
     const provider = this.providers.get(providerName);
@@ -172,9 +160,7 @@ export class EnrichmentService {
 
   async recordRefund(
     providerName: string,
-    // Dynamic payload to accommodate various external provider schemas.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    payload: Record<string, any>,
+    payload: Record<string, unknown>,
     tx?: DrizzleDB,
   ): Promise<EnrichmentResult> {
     const provider = this.providers.get(providerName);

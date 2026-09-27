@@ -151,9 +151,8 @@ export function UserSettingsProvider({ children }: { children: React.ReactNode }
       }
     } catch (err: unknown) {
       // Don't loudly log 401 unauthenticated errors before login
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API error boundary
-      const anyErr = err as any;
-      if (anyErr?.message !== 'Not authenticated' && anyErr?.status !== 401 && anyErr?.status !== 403) {
+      const errorObj = err as { message?: string; status?: number } | null;
+      if (errorObj?.message !== 'Not authenticated' && errorObj?.status !== 401 && errorObj?.status !== 403) {
         reportError(err, 'UserSettingsProvider');
       }
     } finally {

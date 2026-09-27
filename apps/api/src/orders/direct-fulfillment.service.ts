@@ -28,6 +28,7 @@ import { InventoryMovementService } from '../inventory/inventory-movement.servic
 import { ShipmentsCoreService } from './shipments/shipments-core.service';
 import { getValuationStrategy } from '../inventory/valuation';
 import { getAccountingStrategy } from '../inventory/inventory-accounting';
+import Decimal from 'decimal.js';
 import { findOrder, getCommittedPerLine } from './shipment-helpers';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -120,6 +121,7 @@ export class DirectFulfillmentService {
           binId: string;
           quantity: number;
           uomCode: string;
+          unitCost?: string;
         }> = [];
         const cogsDetails: Array<{
           productId: string;
@@ -219,16 +221,18 @@ export class DirectFulfillmentService {
             );
 
             const totalAvailableOnHand = pickableBins.reduce(
-              (sum, b) => sum + parseFloat(String(b.onHand || 0)),
-              0,
+              (sum, b) => sum.plus(new Decimal(b.onHand || 0)),
+              new Decimal(0),
             );
 
-            if (qtyToFulfill > totalAvailableOnHand + 0.0001) {
+            if (
+              new Decimal(qtyToFulfill).gt(totalAvailableOnHand.plus(0.0001))
+            ) {
               if (dto.allowPartialFulfillment) {
-                qtyToFulfill = totalAvailableOnHand;
+                qtyToFulfill = totalAvailableOnHand.toNumber();
               } else {
                 throw new BadRequestException(
-                  `Insufficient stock on hand for line ${line.lineNumber} (${line.productNumber || line.productDescription}). Requested: ${qtyToFulfill}, Available: ${totalAvailableOnHand}`,
+                  `Insufficient stock on hand for line ${line.lineNumber} (${line.productNumber || line.productDescription}). Requested: ${qtyToFulfill}, Available: ${totalAvailableOnHand.toString()}`,
                 );
               }
             }
@@ -274,25 +278,29 @@ export class DirectFulfillmentService {
                 binId: b.binId,
                 quantity: -take,
                 uomCode: line.unitOfMeasure || 'EA',
+                unitCost:
+                  line.unitCost != null ? String(line.unitCost) : undefined,
               });
 
               // 3. Compute COGS
-              const cogsAmount =
+              const cogsDecimal =
                 line.unitCost != null
-                  ? (parseFloat(line.unitCost) * take).toFixed(2)
-                  : valuationStrategy.getCogs(
-                      {
-                        productId: line.productId,
-                        standardCost: line.standardCost || '0',
-                        weightedAverageCost: line.weightedAverageCost || '0',
-                      },
-                      take,
+                  ? new Decimal(line.unitCost).mul(new Decimal(take))
+                  : new Decimal(
+                      valuationStrategy.getCogs(
+                        {
+                          productId: line.productId,
+                          standardCost: line.standardCost || '0',
+                          weightedAverageCost: line.weightedAverageCost || '0',
+                        },
+                        take,
+                      ),
                     );
 
               cogsDetails.push({
                 productId: line.productId,
                 quantity: take,
-                cogsAmount,
+                cogsAmount: cogsDecimal.toString(),
               });
 
               fulfilledLines.push({
@@ -339,10 +347,13 @@ export class DirectFulfillmentService {
         }
 
         // 5. Post COGS GL Journal Entry
-        const totalCogs = cogsDetails.reduce(
-          (sum, d) => sum + parseFloat(d.cogsAmount || '0'),
-          0,
+        const totalCogsDecimal = cogsDetails.reduce(
+          (sum, d) => sum.plus(new Decimal(d.cogsAmount || '0')),
+          new Decimal(0),
         );
+        const totalCogs = totalCogsDecimal
+          .toDecimalPlaces(2, Decimal.ROUND_HALF_UP)
+          .toNumber();
 
         if (totalCogs > 0) {
           const accountingStrategy = getAccountingStrategy(
@@ -383,7 +394,7 @@ export class DirectFulfillmentService {
           }
 
           const dispatchGl = accountingStrategy.onGoodsDispatch({
-            amount: Number(totalCogs.toFixed(2)),
+            amount: totalCogs,
             memo: `Direct Fulfillment ${order.orderNumber}`,
             costCenterId: customerCostCenterId,
             activityId: customerActivityId,
@@ -397,8 +408,7 @@ export class DirectFulfillmentService {
             }
 
             await this.glService.postJournalEntry(
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GL journal lines structure
-              dispatchGl.lines as any[],
+              dispatchGl.lines,
               {
                 actor,
                 entryDate: new Date().toISOString().slice(0, 10),
@@ -541,8 +551,7 @@ export class DirectFulfillmentService {
     const [updatedOrder] = await tx
       .update(salesOrders)
       .set({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle typed enum column
-        stateCode: newState as any,
+        stateCode: newState,
         modifiedOn: new Date(),
       })
       .where(eq(salesOrders.salesOrderId, salesOrderId))

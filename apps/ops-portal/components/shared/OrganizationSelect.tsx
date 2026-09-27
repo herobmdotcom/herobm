@@ -48,13 +48,24 @@ export default function OrganizationSelect({
       required={required}
       className={className}
       onSearch={async (term) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type structure bypass
-        const res = await api.organizationsControllerFindAll({ q: term, limit: 10 } as any);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type structure bypass
-        const dataArray = (res.data as any)?.data || res.data || [];
+        const res = await api.organizationsControllerFindAll({ q: term, limit: 10 });
+        const responseData = res.data as unknown;
+        const dataArray: Organization[] =
+          typeof responseData === 'object' &&
+          responseData !== null &&
+          'data' in responseData &&
+          Array.isArray((responseData as { data: unknown }).data)
+            ? (responseData as { data: Organization[] }).data
+            : Array.isArray(responseData)
+              ? (responseData as Organization[])
+              : [];
         if (excludeId) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type structure bypass
-          return dataArray.filter((a: any) => (a.id || a.organizationId || a.actorId) !== excludeId);
+          return dataArray.filter(
+            (a) =>
+              a.organizationId !== excludeId &&
+              (a as unknown as { id?: string; actorId?: string }).id !== excludeId &&
+              (a as unknown as { id?: string; actorId?: string }).actorId !== excludeId,
+          );
         }
         return dataArray;
       }}

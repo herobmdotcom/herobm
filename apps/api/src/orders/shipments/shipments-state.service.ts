@@ -1,3 +1,4 @@
+import { Decimal } from 'decimal.js';
 import {
   Injectable,
   Inject,
@@ -57,11 +58,13 @@ import {
 
 import {
   SHIPMENT_STATE,
+  type ShipmentState,
   SHIPMENT_TRANSITIONS as SHIPMENT_STATE_TRANSITIONS,
   SALES_ORDER_STATE,
   SALES_ORDER_PICK_STATE,
   SALES_ORDER_PICK_TRANSITIONS,
   getValidStates,
+  toDecimal,
 } from '@herobm/shared';
 import type { SalesOrderPickState } from '@herobm/shared';
 import { InventoryMovementService } from '../../inventory/inventory-movement.service';
@@ -132,8 +135,7 @@ export class ShipmentsStateService {
 
         const [updated] = await innerTx
           .update(salesOrderShipments)
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-          .set({ stateCode: newState as any, modifiedOn: new Date() })
+          .set({ stateCode: newState as ShipmentState, modifiedOn: new Date() })
           .where(eq(salesOrderShipments.shipmentId, shipmentId))
           .returning();
 
@@ -319,7 +321,7 @@ export class ShipmentsStateService {
 
           const returnLines = [];
           for (const line of physicalStockLines) {
-            let remainingToRevert = parseFloat(line.quantity);
+            let remainingToRevert = toDecimal(line.quantity).toNumber();
             const availableDispatches = previousDispatch.filter(
               (p) => p.productId === line.productId && p.shippedQty > 0,
             );
@@ -392,13 +394,13 @@ export class ShipmentsStateService {
           }
 
           for (const sl of shipmentLines) {
-            let remainingToRevert = parseFloat(sl.quantityShipped);
+            let remainingToRevert = toDecimal(sl.quantityShipped).toNumber();
             const linePicks =
               shippedPicksByLineId.get(sl.salesOrderLineId) || [];
 
             for (const pick of linePicks) {
               if (remainingToRevert <= 0) break;
-              const pickQty = parseFloat(pick.quantity);
+              const pickQty = toDecimal(pick.quantity).toNumber();
               const take = Math.min(remainingToRevert, pickQty);
 
               if (take === pickQty) {
@@ -479,19 +481,27 @@ export class ShipmentsStateService {
               const product = cogsProductMap.get(line.productId);
 
               if (product) {
-                const cogsAmount =
-                  line.unitCost != null
-                    ? (parseFloat(line.unitCost) * line.quantity).toFixed(2)
-                    : strategy.getCogs(
-                        {
-                          productId: product.productId,
-                          standardCost: product.standardCost || '0',
-                          weightedAverageCost:
-                            product.weightedAverageCost || '0',
-                        },
-                        line.quantity,
-                      );
-                totalCogsReversed += parseFloat(cogsAmount);
+                let exactCogsDec: Decimal;
+                if (line.unitCost != null) {
+                  exactCogsDec = new Decimal(line.unitCost).mul(
+                    new Decimal(line.quantity),
+                  );
+                } else {
+                  const stratCogs = strategy.getCogs(
+                    {
+                      productId: product.productId,
+                      standardCost: product.standardCost || '0',
+                      weightedAverageCost: product.weightedAverageCost || '0',
+                    },
+                    line.quantity,
+                  );
+                  exactCogsDec = new Decimal(stratCogs);
+                }
+
+                // Add exact decimal directly to sum
+                totalCogsReversed = new Decimal(totalCogsReversed)
+                  .plus(exactCogsDec)
+                  .toNumber();
               }
             }
 
@@ -537,7 +547,9 @@ export class ShipmentsStateService {
             }
 
             const reversalGl = reversalStrategy.onDispatchReversal({
-              amount: Number(totalCogsReversed.toFixed(2)),
+              amount: new Decimal(totalCogsReversed)
+                .toDecimalPlaces(2, Decimal.ROUND_HALF_UP)
+                .toNumber(),
               memo: `Dispatch Reversal ${shipment.shipmentNumber}`,
               costCenterId: revCostCenterId,
               activityId: revActivityId,
@@ -545,8 +557,7 @@ export class ShipmentsStateService {
 
             if (reversalGl) {
               await this.glService.postJournalEntry(
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-                reversalGl.lines as any[],
+                reversalGl.lines,
                 {
                   actor,
                   entryDate: new Date().toISOString().slice(0, 10),
@@ -583,12 +594,14 @@ export class ShipmentsStateService {
 
   public async executeDispatch(
     innerTx: DrizzleDB,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    shipment: any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    shipmentLines: any[],
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    physicalStockLines: any[],
+    shipment: typeof salesOrderShipments.$inferSelect,
+    shipmentLines: { salesOrderLineId: string; quantityShipped: string }[],
+    physicalStockLines: {
+      productId: string | null;
+      quantity: string;
+      unitCost?: string | number | null;
+      uomCode?: string | null;
+    }[],
     actor: string,
   ) {
     const method = this.appConfig.valuationMethod();
@@ -620,10 +633,9 @@ export class ShipmentsStateService {
 
     const dispatchLines = [];
     for (const line of physicalStockLines) {
-      let remainingToShip = parseFloat(line.quantity);
+      let remainingToShip = toDecimal(line.quantity).toNumber();
       const availablePicks = pickHistory.filter(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-        (p: any) => p.productId === line.productId && p.netPicked > 0,
+        (p) => p.productId === line.productId && p.netPicked > 0,
       );
 
       for (const pick of availablePicks) {
@@ -634,6 +646,8 @@ export class ShipmentsStateService {
           binId: pick.binId,
           quantity: -take,
           uomCode: line.uomCode || 'EA',
+          unitCost: line.unitCost ? String(line.unitCost) : undefined,
+          originalQuantity: -take,
         });
         pick.netPicked -= take;
         remainingToShip -= take;
@@ -684,12 +698,12 @@ export class ShipmentsStateService {
     }
 
     for (const sl of shipmentLines) {
-      let remainingToShip = parseFloat(sl.quantityShipped);
+      let remainingToShip = toDecimal(sl.quantityShipped).toNumber();
       const linePicks = pickedPicksByLineId.get(sl.salesOrderLineId) || [];
 
       for (const pick of linePicks) {
         if (remainingToShip <= 0) break;
-        const pickQty = parseFloat(pick.quantity);
+        const pickQty = toDecimal(pick.quantity).toNumber();
         const take = Math.min(remainingToShip, pickQty);
         if (take === pickQty) {
           await this.changePickState(
@@ -722,7 +736,12 @@ export class ShipmentsStateService {
     }
 
     // Calculate COGS and record outbox event for GL mapping
-    const cogsDetails = [];
+    const cogsDetails: {
+      productId: string;
+      quantity: string;
+      cogsAmount: string;
+      exactCogsDec: Decimal;
+    }[] = [];
     const dspUuidProductIds: string[] = [];
     const dspNumberProductIds: string[] = [];
     for (const line of physicalStockLines) {
@@ -766,31 +785,42 @@ export class ShipmentsStateService {
       const product = dspProductMap.get(line.productId);
 
       if (product) {
-        const cogsAmount =
-          line.unitCost != null
-            ? (parseFloat(line.unitCost) * parseFloat(line.quantity)).toFixed(2)
-            : strategy.getCogs(
-                {
-                  productId: product.productId,
-                  standardCost: product.standardCost || '0',
-                  weightedAverageCost: product.weightedAverageCost || '0',
-                },
-                parseFloat(line.quantity),
-              );
+        let exactCogsDec: Decimal;
+        if (line.unitCost != null) {
+          exactCogsDec = new Decimal(line.unitCost).mul(
+            new Decimal(line.quantity),
+          );
+        } else {
+          const stratCogs = strategy.getCogs(
+            {
+              productId: product.productId,
+              standardCost: product.standardCost || '0',
+              weightedAverageCost: product.weightedAverageCost || '0',
+            },
+            toDecimal(line.quantity).toNumber(),
+          );
+          exactCogsDec = new Decimal(stratCogs);
+        }
 
         cogsDetails.push({
           productId: line.productId,
           quantity: line.quantity,
-          cogsAmount,
+          cogsAmount: exactCogsDec
+            .toDecimalPlaces(2, Decimal.ROUND_HALF_UP)
+            .toString(),
+          exactCogsDec,
         });
       }
     }
 
     // --- Financial Integration: Post COGS Journal Entry via Accounting Strategy ---
-    const totalCogs = cogsDetails.reduce(
-      (sum, detail) => sum + parseFloat(detail.cogsAmount),
-      0,
+    const totalCogsDec = cogsDetails.reduce(
+      (sum, detail) => sum.plus(detail.exactCogsDec),
+      new Decimal(0),
     );
+    const totalCogs = totalCogsDec
+      .toDecimalPlaces(2, Decimal.ROUND_HALF_UP)
+      .toNumber();
 
     const accountingStrategy = getAccountingStrategy(
       this.appConfig.inventoryAccountingMode(),
@@ -834,7 +864,7 @@ export class ShipmentsStateService {
     }
 
     const dispatchGl = accountingStrategy.onGoodsDispatch({
-      amount: Number(totalCogs.toFixed(2)),
+      amount: totalCogs,
       memo: `Dispatch ${shipment.shipmentNumber}`,
       costCenterId: customerCostCenterId,
       activityId: customerActivityId,
@@ -842,8 +872,7 @@ export class ShipmentsStateService {
 
     if (dispatchGl) {
       await this.glService.postJournalEntry(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-        dispatchGl.lines as any[],
+        dispatchGl.lines,
         {
           actor,
           entryDate: new Date().toISOString().slice(0, 10),
@@ -887,8 +916,7 @@ export class ShipmentsStateService {
     if (!existing) return;
     if (existing.stateCode === newState) return;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    const allowed = SALES_ORDER_PICK_TRANSITIONS[existing.stateCode as any];
+    const allowed = SALES_ORDER_PICK_TRANSITIONS[existing.stateCode];
     if (!allowed || !allowed.includes(newState)) {
       throw new BadRequestException(
         `Cannot transition sales order pick from '${existing.stateCode}' to '${newState}'.`,
@@ -897,8 +925,7 @@ export class ShipmentsStateService {
 
     await tx
       .update(salesOrderPicks)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-      .set({ stateCode: newState as any, modifiedOn: new Date() })
+      .set({ stateCode: newState, modifiedOn: new Date() })
       .where(eq(salesOrderPicks.pickId, pickId));
 
     if (newState === SALES_ORDER_PICK_STATE.CANCELLED) {

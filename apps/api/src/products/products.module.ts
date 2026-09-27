@@ -5,6 +5,8 @@ import { ProductsService } from './products.service';
 import { ProductGroupsService } from './product-groups.service';
 import { ProductGroupsController } from './product-groups.controller';
 import { ProductCopyService } from './product-copy.service';
+import { ProductComponentsService } from './product-components.service';
+import { ProductMediaService } from './product-media.service';
 
 @Module({
   controllers: [ProductsController, ProductGroupsController],
@@ -12,12 +14,16 @@ import { ProductCopyService } from './product-copy.service';
     ProductsService,
     ProductsWriteService,
     ProductCopyService,
+    ProductComponentsService,
+    ProductMediaService,
     ProductGroupsService,
   ],
   exports: [
     ProductsService,
     ProductsWriteService,
     ProductCopyService,
+    ProductComponentsService,
+    ProductMediaService,
     ProductGroupsService,
   ],
 })

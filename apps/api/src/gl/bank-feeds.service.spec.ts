@@ -272,6 +272,100 @@ describe('BankFeedsService', () => {
       // The insert should have been called with correctly mapped amounts
       expect(dbMock.insert).toHaveBeenCalled();
     });
+
+    it('should correctly parse DD/MM/YYYY and DD-MM-YYYY dates in bank statement CSVs', async () => {
+      dbMock.where.mockResolvedValueOnce([
+        {
+          profileId: 'prof-1',
+          headerRows: 1,
+          dateColumn: '0',
+          amountColumn: '1',
+          descriptionColumn: '2',
+        },
+      ]);
+      dbMock.orderBy.mockResolvedValueOnce([]); // No rules
+      dbMock.where.mockResolvedValueOnce([{ code: '1000-BANK' }]);
+      dbMock.orderBy.mockResolvedValueOnce([]); // No rules
+      dbMock.where.mockResolvedValueOnce([{ code: '1000-BANK' }]);
+
+      // Inside transaction
+      dbMock.where.mockResolvedValueOnce([
+        {
+          lineId: 'l1',
+          date: '2026-05-31',
+          amount: '100.00',
+          description: 'Row 1',
+          isReconciled: false,
+        },
+        {
+          lineId: 'l2',
+          date: '2026-06-05',
+          amount: '200.00',
+          description: 'Row 2',
+          isReconciled: false,
+        },
+      ]);
+
+      const csvData = Buffer.from(
+        'Date,Amount,Description\n31/05/2026,100.00,Row 1\n05/06/2026,200.00,Row 2',
+      );
+      const result = await service.importCsv(csvData, 'bank-acc-1', 'prof-1');
+
+      expect(result.unmatchedCount).toBe(2);
+      expect(dbMock.insert).toHaveBeenCalled();
+      expect(dbMock.values).toHaveBeenCalledWith(
+        expect.objectContaining({
+          date: '2026-06-05',
+        }),
+      );
+    });
+
+    it('should correctly parse 2-digit years and Excel serial dates in bank statement CSVs', async () => {
+      dbMock.where.mockResolvedValueOnce([
+        {
+          profileId: 'prof-1',
+          headerRows: 1,
+          dateColumn: '0',
+          amountColumn: '1',
+          descriptionColumn: '2',
+        },
+      ]);
+      dbMock.orderBy.mockResolvedValueOnce([]);
+      dbMock.where.mockResolvedValueOnce([{ code: '1000-BANK' }]);
+      dbMock.orderBy.mockResolvedValueOnce([]);
+      dbMock.where.mockResolvedValueOnce([{ code: '1000-BANK' }]);
+
+      // Inside transaction
+      dbMock.where.mockResolvedValueOnce([
+        {
+          lineId: 'l1',
+          date: '2026-05-15',
+          amount: '50.00',
+          description: 'Row 1',
+          isReconciled: false,
+        },
+        {
+          lineId: 'l2',
+          date: '2024-05-15',
+          amount: '75.00',
+          description: 'Row 2',
+          isReconciled: false,
+        },
+      ]);
+
+      const csvData = Buffer.from(
+        'Date,Amount,Description\n15/05/26,50.00,Row 1\n45427,75.00,Row 2',
+      );
+      const result = await service.importCsv(csvData, 'bank-acc-1', 'prof-1');
+
+      expect(result.unmatchedCount).toBe(2);
+      expect(dbMock.insert).toHaveBeenCalled();
+      expect(dbMock.values).toHaveBeenCalledWith(
+        expect.objectContaining({
+          date: '2024-05-15',
+        }),
+      );
+    });
   });
 
   describe('executeAutoMatching', () => {

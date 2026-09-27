@@ -2,6 +2,7 @@
  * Global currency configuration and utilities.
  * Shared between API, Background Workers, and Frontend.
  */
+import { Decimal } from 'decimal.js';
 import countryToCurrency from 'country-to-currency';
 
 // ----- Display preference -----
@@ -119,6 +120,47 @@ export class MissingExchangeRateError extends Error {
 }
 
 /**
+ * Converts an amount from one currency to another using high-precision Decimal base triangulation.
+ * Intermediate base calculations maintain full Decimal precision and round strictly at the target currency decimals.
+ */
+export function convertAmountDecimal(
+  amount: Decimal | number | string,
+  fromCode: string,
+  toCode: string,
+  baseCurrencyCode: string,
+  rates: Map<string, Decimal | number | string>,
+): Decimal {
+  const from = fromCode.toUpperCase();
+  const to = toCode.toUpperCase();
+  const base = baseCurrencyCode.toUpperCase();
+  const amtDec = new Decimal(amount || 0);
+
+  if (from === to) return amtDec;
+
+  const getRate = (code: string): Decimal => {
+    if (code === base) return new Decimal(1);
+    const rate = rates.get(code);
+    if (rate === undefined || rate === null) {
+      throw new MissingExchangeRateError(code);
+    }
+    const dec = new Decimal(rate);
+    if (dec.isNaN() || dec.isZero()) throw new MissingExchangeRateError(code);
+    return dec;
+  };
+
+  const fromRate = getRate(from);
+  const toRate = getRate(to);
+
+  // Conversion logic: amount in BASE = amount / fromRate
+  // amount in TARGET = (amount in BASE) * toRate
+  const def = getCurrency(to);
+  return amtDec
+    .div(fromRate)
+    .mul(toRate)
+    .toDecimalPlaces(def.decimals, Decimal.ROUND_HALF_UP);
+}
+
+/**
  * Convert an amount from one currency to another using provided rates.
  * 
  * Rates must be provided as a map where the key is the currency code 
@@ -133,29 +175,13 @@ export function convertAmount(
   fromCode: string,
   toCode: string,
   baseCurrencyCode: string,
-  rates: Map<string, number | string>
+  rates: Map<string, Decimal | number | string>,
 ): number {
-  if (fromCode === toCode) return amount;
-
-  const getRate = (code: string): number => {
-    if (code === baseCurrencyCode) return 1.0;
-    const rate = rates.get(code);
-    if (rate === undefined || rate === null) {
-      throw new MissingExchangeRateError(code);
-    }
-    const num = typeof rate === 'string' ? parseFloat(rate) : rate;
-    if (isNaN(num)) throw new MissingExchangeRateError(code);
-    return num;
-  };
-
-  const fromRate = getRate(fromCode);
-  const toRate = getRate(toCode);
-
-  // Conversion logic: amount in HOME = amount / fromRate
-  // amount in TARGET = (amount in HOME) * toRate
-  const raw = (amount / fromRate) * toRate;
-  
-  // Round to appropriate decimals for the target currency
-  const def = getCurrency(toCode);
-  return Number(Math.round(Number(raw + `e${def.decimals}`)) + `e-${def.decimals}`);
+  return convertAmountDecimal(
+    amount,
+    fromCode,
+    toCode,
+    baseCurrencyCode,
+    rates,
+  ).toNumber();
 }

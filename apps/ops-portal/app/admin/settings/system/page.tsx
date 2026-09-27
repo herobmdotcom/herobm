@@ -588,7 +588,6 @@ export default function SystemSettingsPage() {
         {/* ── Warehouse Settings ────────────────────────────────────────── */}
         <div id="warehouse-settings-section" className="card">
           <h3 className="section-heading mb-4">
-            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
             <span className="material-symbols-outlined">warehouse</span>
             Warehouse Settings
           </h3>

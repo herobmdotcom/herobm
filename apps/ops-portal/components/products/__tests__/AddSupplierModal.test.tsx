@@ -6,6 +6,12 @@ import * as api from '@herobm/sdk';
 
 jest.mock('@herobm/sdk', () => ({
   productsControllerAddSupplier: jest.fn(),
+  productsControllerFindOne: jest.fn().mockResolvedValue({
+    data: {
+      productId: 'prod-123',
+      productUoms: [],
+    },
+  }),
   suppliersControllerFindAll: jest.fn(),
 }));
 
@@ -282,5 +288,59 @@ describe('AddSupplierModal Component', () => {
     await user.click(cancelBtn);
 
     expect(mockOnClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders UoM select dropdown when product has UoM options and submits purchaseUomId', async () => {
+    const user = userEvent.setup();
+    (api.productsControllerFindOne as jest.Mock).mockResolvedValueOnce({
+      data: {
+        productId: mockProductId,
+        productUoms: [
+          { productUomId: 'uom-box-123', uomCode: 'BOX', ratio: 10 },
+          { productUomId: 'uom-ea-123', uomCode: 'EA', ratio: 1 },
+        ],
+      },
+    });
+    (api.productsControllerAddSupplier as jest.Mock).mockResolvedValue({
+      data: { success: true },
+    });
+
+    render(
+      <AddSupplierModal
+        productId={mockProductId}
+        productName={mockProductName}
+        productNumber={mockProductNumber}
+        isOpen={true}
+        onClose={mockOnClose}
+        onSuccess={mockOnSuccess}
+      />
+    );
+
+    const supplierInput = screen.getByTestId('supplier-select-input');
+    await user.type(supplierInput, 'vend-123');
+
+    // Wait for dropdown
+    await waitFor(() => {
+      expect(screen.getByRole('combobox')).toBeInTheDocument();
+    });
+
+    const select = screen.getByRole('combobox');
+    await user.selectOptions(select, 'uom-box-123');
+
+    const submitBtn = screen.getByRole('button', { name: 'Link Product' });
+    await user.click(submitBtn);
+
+    await waitFor(() => {
+      expect(api.productsControllerAddSupplier).toHaveBeenCalledWith(mockProductId, {
+        vendorId: 'vend-123',
+        supplierPartNumber: undefined,
+        costPrice: 0,
+        discountPercent: undefined,
+        minPurchaseQty: undefined,
+        purchaseUnit: 'BOX',
+        purchaseUomId: 'uom-box-123',
+        isPreferred: undefined,
+      });
+    });
   });
 });

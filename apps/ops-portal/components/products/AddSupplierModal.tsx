@@ -18,7 +18,16 @@ export interface SupplierLinkInitialData {
   discountPercent?: string | number | null;
   minPurchaseQty?: string | number | null;
   purchaseUnit?: string | null;
+  purchaseUomId?: string | null;
+  purchaseUomCode?: string | null;
+  purchaseUomRatio?: string | number | null;
   isPreferred?: boolean;
+}
+
+interface ProductUomOption {
+  productUomId: string;
+  uomCode: string;
+  ratio: string | number;
 }
 
 export interface AddSupplierModalProps {
@@ -40,12 +49,31 @@ export default function AddSupplierModal({
   const [discountPercent, setDiscountPercent] = useState('0');
   const [minPurchaseQty, setMinPurchaseQty] = useState('');
   const [purchaseUnit, setPurchaseUnit] = useState('');
+  const [purchaseUomId, setPurchaseUomId] = useState('');
+  const [uomOptions, setUomOptions] = useState<ProductUomOption[]>([]);
   const [isPreferred, setIsPreferred] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const t = useTranslations('products.supplierModal');
   const tCommon = useTranslations('common');
 
   const isEditing = Boolean(initialData);
+
+  useEffect(() => {
+    if (isOpen && productId) {
+      api.productsControllerFindOne(productId)
+        .then((res) => {
+          const prod = res.data;
+          const uoms = (prod as { productUoms?: ProductUomOption[] })?.productUoms || [];
+          setUomOptions(uoms);
+          if (!initialData?.purchaseUomId && prod?.defaultPurchaseUomId) {
+            setPurchaseUomId(prod.defaultPurchaseUomId);
+          }
+        })
+        .catch(() => {
+          // fallback if product fetch fails
+        });
+    }
+  }, [isOpen, productId, initialData]);
 
   useEffect(() => {
     if (isOpen) {
@@ -68,6 +96,7 @@ export default function AddSupplierModal({
             : ''
         );
         setPurchaseUnit(initialData.purchaseUnit || '');
+        setPurchaseUomId(initialData.purchaseUomId || '');
         setIsPreferred(Boolean(initialData.isPreferred));
       } else {
         setVendorId('');
@@ -76,6 +105,7 @@ export default function AddSupplierModal({
         setDiscountPercent('0');
         setMinPurchaseQty('');
         setPurchaseUnit('');
+        setPurchaseUomId('');
         setIsPreferred(false);
       }
     }
@@ -97,6 +127,7 @@ export default function AddSupplierModal({
         discountPercent: discountPercent && parseFloat(discountPercent) > 0 ? parseFloat(discountPercent) : undefined,
         minPurchaseQty: minPurchaseQty && parseFloat(minPurchaseQty) > 0 ? parseFloat(minPurchaseQty) : undefined,
         purchaseUnit: purchaseUnit.trim() || undefined,
+        purchaseUomId: purchaseUomId || undefined,
         isPreferred: isPreferred || undefined,
       });
       toast.success(isEditing ? t('messages.updateSuccess') : t('messages.success'));
@@ -247,20 +278,44 @@ export default function AddSupplierModal({
 
           <div>
             <label
-              htmlFor="purchase-unit"
+              htmlFor={uomOptions.length > 0 ? 'purchase-uom' : 'purchase-unit'}
               className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]"
             >
               {t('inputs.purchaseUnit')}
             </label>
-            <input
-              id="purchase-unit"
-              type="text"
-              placeholder="e.g. EA, BOX, PACK"
-              className="input w-full"
-              value={purchaseUnit}
-              onChange={(e) => setPurchaseUnit(e.target.value)}
-              disabled={submitting}
-            />
+            {uomOptions.length > 0 ? (
+              <select
+                id="purchase-uom"
+                className="select select-bordered w-full"
+                value={purchaseUomId}
+                onChange={(e) => {
+                  const selectedId = e.target.value;
+                  setPurchaseUomId(selectedId);
+                  const matched = uomOptions.find((u) => u.productUomId === selectedId);
+                  if (matched) {
+                    setPurchaseUnit(matched.uomCode);
+                  }
+                }}
+                disabled={submitting}
+              >
+                <option value="">Select UoM...</option>
+                {uomOptions.map((uom) => (
+                  <option key={uom.productUomId} value={uom.productUomId}>
+                    {uom.uomCode} {Number(uom.ratio) > 1 ? `(x${uom.ratio})` : ''}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                id="purchase-unit"
+                type="text"
+                placeholder="e.g. EA, BOX, PACK"
+                className="input w-full"
+                value={purchaseUnit}
+                onChange={(e) => setPurchaseUnit(e.target.value)}
+                disabled={submitting}
+              />
+            )}
           </div>
         </div>
 

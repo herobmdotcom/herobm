@@ -45,6 +45,9 @@ export interface RestockItemDto {
   currencyCode?: string | null;
   minPurchaseQty?: number | null;
   purchaseUnit?: string | null;
+  purchaseUomId?: string | null;
+  purchaseUomCode?: string | null;
+  purchaseUomRatio?: number | null;
 }
 
 interface LocationOption {

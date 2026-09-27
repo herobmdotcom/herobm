@@ -5,7 +5,9 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, sql, and } from 'drizzle-orm';
+import { Decimal } from 'decimal.js';
+import { eq, sql, and, inArray } from 'drizzle-orm';
+import type { AnyPgColumn, PgTable } from 'drizzle-orm/pg-core';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -21,7 +23,27 @@ import {
   supplierGroups,
 } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
-import { EntityType, EventType } from '../common/event-types';
+import {
+  EntityType,
+  type EntityTypeValue,
+  EventType,
+} from '../common/event-types';
+
+interface AllocatableDoc {
+  invoiceId?: string;
+  creditNoteId?: string;
+  debitNoteId?: string;
+  stateCode?: string;
+  outstandingAmount?: string | number | null;
+  totalAmount?: string | number | null;
+  invoiceDate?: string | Date | null;
+  dueDate?: string | Date | null;
+  paymentTermsDays?: number | null;
+  invoiceNumber?: string | null;
+  creditNoteNumber?: string | null;
+  debitNoteNumber?: string | null;
+  [key: string]: unknown;
+}
 import { randomUUID } from 'crypto';
 import { GlService } from '../gl/gl.service';
 import { PaymentsCoreService } from './payments-core.service';
@@ -32,6 +54,7 @@ import { evaluatePurchaseInvoiceLifecycleRules } from '../invoices/purchase-invo
 import {
   PAYMENT_STATE,
   PAYMENT_TYPE,
+  type PaymentType,
   SALES_INVOICE_STATE,
   PURCHASE_INVOICE_STATE,
   SALES_CREDIT_NOTE_STATE,
@@ -80,23 +103,24 @@ export class PaymentsAllocationService {
           .where(eq(paymentAllocations.paymentId, paymentId));
       }
 
-      let unallocatedAmount =
+      let unallocatedAmount = new Decimal(
         payment.stateCode === PAYMENT_STATE.DRAFT
-          ? parseFloat(payment.totalAmount)
-          : parseFloat(payment.unallocatedAmount);
+          ? payment.totalAmount
+          : payment.unallocatedAmount,
+      );
 
       // Calculate total allocation requested
       const totalRequested = dto.allocations.reduce(
-        (sum, a) => sum + a.allocatedAmount,
-        0,
+        (sum, a) => sum.plus(new Decimal(a.allocatedAmount || '0')),
+        new Decimal(0),
       );
-      if (totalRequested > unallocatedAmount + 0.001) {
+      if (totalRequested.greaterThan(unallocatedAmount.plus(0.001))) {
         throw new BadRequestException(
-          `Cannot allocate more than the available unallocated amount (${unallocatedAmount})`,
+          `Cannot allocate more than the available unallocated amount (${unallocatedAmount.toString()})`,
         );
       }
 
-      let earlyPaymentDiscount = 0;
+      let earlyPaymentDiscount = new Decimal(0);
       let earlyPaymentDiscountDays = 0;
 
       if (
@@ -119,7 +143,7 @@ export class PaymentsAllocationService {
             )[0]
           : null;
 
-        earlyPaymentDiscount = parseFloat(
+        earlyPaymentDiscount = new Decimal(
           customer?.earlyPaymentDiscount ?? group?.earlyPaymentDiscount ?? '0',
         );
         earlyPaymentDiscountDays =
@@ -146,7 +170,7 @@ export class PaymentsAllocationService {
             )[0]
           : null;
 
-        earlyPaymentDiscount = parseFloat(
+        earlyPaymentDiscount = new Decimal(
           supplier?.earlyPaymentDiscount ?? group?.earlyPaymentDiscount ?? '0',
         );
         earlyPaymentDiscountDays =
@@ -155,41 +179,140 @@ export class PaymentsAllocationService {
           0;
       }
 
+      // Batch lock all target documents per reference type
+      const salesInvoiceIds = Array.from(
+        new Set(
+          dto.allocations
+            .filter((a) => a.referenceType === 'sales_invoice')
+            .map((a) => a.referenceId),
+        ),
+      );
+      const purchaseInvoiceIds = Array.from(
+        new Set(
+          dto.allocations
+            .filter((a) => a.referenceType === 'purchase_invoice')
+            .map((a) => a.referenceId),
+        ),
+      );
+      const salesCreditNoteIds = Array.from(
+        new Set(
+          dto.allocations
+            .filter((a) => a.referenceType === 'sales_credit_note')
+            .map((a) => a.referenceId),
+        ),
+      );
+      const purchaseDebitNoteIds = Array.from(
+        new Set(
+          dto.allocations
+            .filter((a) => a.referenceType === 'purchase_debit_note')
+            .map((a) => a.referenceId),
+        ),
+      );
+
+      const docMap = new Map<string, AllocatableDoc>();
+
+      if (salesInvoiceIds.length > 0) {
+        const rows = (await tx
+          .select()
+          .from(salesInvoices)
+          .where(inArray(salesInvoices.invoiceId, salesInvoiceIds))
+          .for('update')) as AllocatableDoc[];
+        for (const r of rows) {
+          if (r.invoiceId) docMap.set(`sales_invoice:${r.invoiceId}`, r);
+        }
+      }
+      if (purchaseInvoiceIds.length > 0) {
+        const rows = (await tx
+          .select()
+          .from(purchaseInvoices)
+          .where(inArray(purchaseInvoices.invoiceId, purchaseInvoiceIds))
+          .for('update')) as AllocatableDoc[];
+        for (const r of rows) {
+          if (r.invoiceId) docMap.set(`purchase_invoice:${r.invoiceId}`, r);
+        }
+      }
+      if (salesCreditNoteIds.length > 0) {
+        const rows = (await tx
+          .select()
+          .from(salesCreditNotes)
+          .where(inArray(salesCreditNotes.creditNoteId, salesCreditNoteIds))
+          .for('update')) as AllocatableDoc[];
+        for (const r of rows) {
+          if (r.creditNoteId)
+            docMap.set(`sales_credit_note:${r.creditNoteId}`, r);
+        }
+      }
+      if (purchaseDebitNoteIds.length > 0) {
+        const rows = (await tx
+          .select()
+          .from(purchaseDebitNotes)
+          .where(inArray(purchaseDebitNotes.debitNoteId, purchaseDebitNoteIds))
+          .for('update')) as AllocatableDoc[];
+        for (const r of rows) {
+          if (r.debitNoteId)
+            docMap.set(`purchase_debit_note:${r.debitNoteId}`, r);
+        }
+      }
+
+      // Sum other draft allocations across all referenced documents in a single query
+      const allRefIds = Array.from(
+        new Set(dto.allocations.map((a) => a.referenceId)),
+      );
+      const otherDrafts =
+        allRefIds.length > 0
+          ? await tx
+              .select({
+                referenceId: paymentAllocations.referenceId,
+                allocated: paymentAllocations.allocatedAmount,
+              })
+              .from(paymentAllocations)
+              .innerJoin(
+                paymentEntries,
+                eq(paymentAllocations.paymentId, paymentEntries.paymentId),
+              )
+              .where(
+                and(
+                  inArray(paymentAllocations.referenceId, allRefIds),
+                  eq(paymentEntries.stateCode, PAYMENT_STATE.DRAFT),
+                  sql`${paymentAllocations.paymentId} != ${paymentId}`,
+                ),
+              )
+          : [];
+
+      const otherDraftAllocatedMap = new Map<string, Decimal>();
+      for (const d of otherDrafts) {
+        if (!d.referenceId) continue;
+        const curr =
+          otherDraftAllocatedMap.get(d.referenceId) || new Decimal(0);
+        otherDraftAllocatedMap.set(
+          d.referenceId,
+          curr.plus(new Decimal(d.allocated || '0')),
+        );
+      }
+
       // Process each allocation
       for (const alloc of dto.allocations) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-        let targetTable: any;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-        let targetIdCol: any;
         let targetIdLabel: string;
         let draftState: string;
         let cancelledState: string;
 
         switch (alloc.referenceType) {
           case 'sales_invoice':
-            targetTable = salesInvoices;
-            targetIdCol = salesInvoices.invoiceId;
             targetIdLabel = 'invoice';
             draftState = SALES_INVOICE_STATE.DRAFT;
             cancelledState = SALES_INVOICE_STATE.CANCELLED;
             break;
           case 'purchase_invoice':
-            targetTable = purchaseInvoices;
-            targetIdCol = purchaseInvoices.invoiceId;
             targetIdLabel = 'invoice';
             draftState = PURCHASE_INVOICE_STATE.DRAFT;
             cancelledState = PURCHASE_INVOICE_STATE.CANCELLED;
             break;
           case 'sales_credit_note':
-            targetTable = salesCreditNotes;
-            targetIdCol = salesCreditNotes.creditNoteId;
             targetIdLabel = 'credit note';
             draftState = SALES_CREDIT_NOTE_STATE.DRAFT;
             cancelledState = SALES_CREDIT_NOTE_STATE.CANCELLED;
             break;
           case 'purchase_debit_note':
-            targetTable = purchaseDebitNotes;
-            targetIdCol = purchaseDebitNotes.debitNoteId;
             targetIdLabel = 'debit note';
             draftState = PURCHASE_DEBIT_NOTE_STATE.DRAFT;
             cancelledState = PURCHASE_DEBIT_NOTE_STATE.CANCELLED;
@@ -200,12 +323,7 @@ export class PaymentsAllocationService {
             );
         }
 
-        // 2. Lock invoice/note
-        const [doc] = await tx
-          .select()
-          .from(targetTable)
-          .where(eq(targetIdCol, alloc.referenceId))
-          .for('update');
+        const doc = docMap.get(`${alloc.referenceType}:${alloc.referenceId}`);
 
         if (!doc)
           throw new NotFoundException(
@@ -218,41 +336,23 @@ export class PaymentsAllocationService {
           );
         }
 
-        // Sum other draft allocations to prevent over-allocation across multiple drafts
-        const otherDrafts = await tx
-          .select({ allocated: paymentAllocations.allocatedAmount })
-          .from(paymentAllocations)
-          .innerJoin(
-            paymentEntries,
-            eq(paymentAllocations.paymentId, paymentEntries.paymentId),
-          )
-          .where(
-            and(
-              eq(paymentAllocations.referenceId, alloc.referenceId),
-              eq(paymentEntries.stateCode, PAYMENT_STATE.DRAFT),
-              // Exclude the current payment ID
-              sql`${paymentAllocations.paymentId} != ${paymentId}`,
-            ),
-          );
-
-        const otherDraftAllocated = otherDrafts.reduce(
-          (sum, d) => sum + parseFloat(d.allocated),
-          0,
-        );
-        const outstanding = parseFloat(doc.outstandingAmount);
-
-        const requestedDiscount = alloc.discountAmount || 0;
+        const otherDraftAllocated =
+          otherDraftAllocatedMap.get(alloc.referenceId) || new Decimal(0);
+        const outstanding = new Decimal(doc.outstandingAmount || '0');
+        const allocAmountDec = new Decimal(alloc.allocatedAmount || '0');
+        const requestedDiscount = new Decimal(alloc.discountAmount || '0');
 
         if (
-          alloc.allocatedAmount + requestedDiscount >
-          outstanding - otherDraftAllocated + 0.001
+          allocAmountDec
+            .plus(requestedDiscount)
+            .greaterThan(outstanding.minus(otherDraftAllocated).plus(0.001))
         ) {
           throw new BadRequestException(
-            `Cannot allocate more than remaining outstanding amount on ${targetIdLabel} (Outstanding: ${outstanding}, Pending in other drafts: ${otherDraftAllocated})`,
+            `Cannot allocate more than remaining outstanding amount on ${targetIdLabel} (Outstanding: ${outstanding.toString()}, Pending in other drafts: ${otherDraftAllocated.toString()})`,
           );
         }
 
-        if (requestedDiscount > 0) {
+        if (requestedDiscount.greaterThan(0)) {
           if (!doc.invoiceDate) {
             throw new BadRequestException(
               `Cannot calculate discount: ${targetIdLabel} ${alloc.referenceId} has no invoice date.`,
@@ -260,8 +360,9 @@ export class PaymentsAllocationService {
           }
 
           if (
-            alloc.allocatedAmount + requestedDiscount <
-            outstanding - otherDraftAllocated - 0.001
+            allocAmountDec
+              .plus(requestedDiscount)
+              .lessThan(outstanding.minus(otherDraftAllocated).minus(0.001))
           ) {
             throw new BadRequestException(
               `Discount is only applicable if the payment fully settles the remaining outstanding balance.`,
@@ -283,12 +384,12 @@ export class PaymentsAllocationService {
           }
 
           // Use totalAmount of the invoice for max discount calculation, as discount is usually based on full invoice amount
-          const docTotal = parseFloat(doc.totalAmount);
-          const maxDiscount = (docTotal * earlyPaymentDiscount) / 100;
+          const docTotal = new Decimal(doc.totalAmount || '0');
+          const maxDiscount = docTotal.mul(earlyPaymentDiscount).div(100);
 
-          if (requestedDiscount > maxDiscount + 0.001) {
+          if (requestedDiscount.greaterThan(maxDiscount.plus(0.001))) {
             throw new BadRequestException(
-              `Requested discount (${requestedDiscount}) exceeds allowable discount (${maxDiscount}) based on terms.`,
+              `Requested discount (${requestedDiscount.toString()}) exceeds allowable discount (${maxDiscount.toString()}) based on terms.`,
             );
           }
         }
@@ -304,14 +405,14 @@ export class PaymentsAllocationService {
             : null,
         });
 
-        unallocatedAmount -= alloc.allocatedAmount;
+        unallocatedAmount = unallocatedAmount.minus(allocAmountDec);
       }
 
       // Update payment unallocated amount
       const [updatedPayment] = await tx
         .update(paymentEntries)
         .set({
-          unallocatedAmount: unallocatedAmount.toString(),
+          unallocatedAmount: unallocatedAmount.toFixed(2),
           modifiedOn: new Date(),
         })
         .where(eq(paymentEntries.paymentId, paymentId))
@@ -348,20 +449,96 @@ export class PaymentsAllocationService {
   }
 
   async _applyAllocationsToInvoices(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic target table
-    tx: any,
+    tx: DrizzleDB,
     paymentId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic target table
-    payment: any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic target table
-    allocations: any[],
+    payment: typeof paymentEntries.$inferSelect,
+    allocations: {
+      allocationId?: string;
+      referenceType: string;
+      referenceId: string;
+      allocatedAmount: string | number;
+      discountAmount?: string | number | null;
+    }[],
     actor: string,
   ) {
+    // Batch lock all target documents per reference type
+    const salesInvoiceIds = Array.from(
+      new Set(
+        allocations
+          .filter((a) => a.referenceType === 'sales_invoice')
+          .map((a) => a.referenceId),
+      ),
+    );
+    const purchaseInvoiceIds = Array.from(
+      new Set(
+        allocations
+          .filter((a) => a.referenceType === 'purchase_invoice')
+          .map((a) => a.referenceId),
+      ),
+    );
+    const salesCreditNoteIds = Array.from(
+      new Set(
+        allocations
+          .filter((a) => a.referenceType === 'sales_credit_note')
+          .map((a) => a.referenceId),
+      ),
+    );
+    const purchaseDebitNoteIds = Array.from(
+      new Set(
+        allocations
+          .filter((a) => a.referenceType === 'purchase_debit_note')
+          .map((a) => a.referenceId),
+      ),
+    );
+
+    const docMap = new Map<string, AllocatableDoc>();
+
+    if (salesInvoiceIds.length > 0) {
+      const rows = (await tx
+        .select()
+        .from(salesInvoices)
+        .where(inArray(salesInvoices.invoiceId, salesInvoiceIds))
+        .for('update')) as AllocatableDoc[];
+      for (const r of rows) {
+        if (r.invoiceId) docMap.set(`sales_invoice:${r.invoiceId}`, r);
+      }
+    }
+    if (purchaseInvoiceIds.length > 0) {
+      const rows = (await tx
+        .select()
+        .from(purchaseInvoices)
+        .where(inArray(purchaseInvoices.invoiceId, purchaseInvoiceIds))
+        .for('update')) as AllocatableDoc[];
+      for (const r of rows) {
+        if (r.invoiceId) docMap.set(`purchase_invoice:${r.invoiceId}`, r);
+      }
+    }
+    if (salesCreditNoteIds.length > 0) {
+      const rows = (await tx
+        .select()
+        .from(salesCreditNotes)
+        .where(inArray(salesCreditNotes.creditNoteId, salesCreditNoteIds))
+        .for('update')) as AllocatableDoc[];
+      for (const r of rows) {
+        if (r.creditNoteId)
+          docMap.set(`sales_credit_note:${r.creditNoteId}`, r);
+      }
+    }
+    if (purchaseDebitNoteIds.length > 0) {
+      const rows = (await tx
+        .select()
+        .from(purchaseDebitNotes)
+        .where(inArray(purchaseDebitNotes.debitNoteId, purchaseDebitNoteIds))
+        .for('update')) as AllocatableDoc[];
+      for (const r of rows) {
+        if (r.debitNoteId)
+          docMap.set(`purchase_debit_note:${r.debitNoteId}`, r);
+      }
+    }
+
     for (const alloc of allocations) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic target table
-      let targetTable: any;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic target table
-      let targetIdCol: any;
+      let targetTable: PgTable | null = null;
+      let targetIdCol: AnyPgColumn | null = null;
 
       switch (alloc.referenceType) {
         case 'sales_invoice':
@@ -382,23 +559,22 @@ export class PaymentsAllocationService {
           break;
       }
 
-      if (targetTable) {
-        const [doc] = await tx
-          .select()
-          .from(targetTable)
-          .where(eq(targetIdCol, alloc.referenceId))
-          .for('update');
+      if (targetTable && targetIdCol) {
+        const doc = docMap.get(`${alloc.referenceType}:${alloc.referenceId}`);
 
         if (doc) {
-          const outstanding = parseFloat(doc.outstandingAmount);
-          const discountAmt = parseFloat(alloc.discountAmount || '0');
-          const newOutstanding =
-            outstanding - parseFloat(alloc.allocatedAmount) - discountAmt;
+          const outstanding = new Decimal(doc.outstandingAmount || '0');
+          const discountAmt = new Decimal(alloc.discountAmount || '0');
+          const allocAmt = new Decimal(alloc.allocatedAmount || '0');
+          const newOutstanding = outstanding.minus(allocAmt).minus(discountAmt);
+
+          // Update in-memory doc in case multiple allocations touch the same document
+          doc.outstandingAmount = newOutstanding.toFixed(2);
 
           await tx
             .update(targetTable)
             .set({
-              outstandingAmount: newOutstanding.toString(),
+              outstandingAmount: newOutstanding.toFixed(2),
               modifiedOn: new Date(),
             })
             .where(eq(targetIdCol, alloc.referenceId));
@@ -406,14 +582,14 @@ export class PaymentsAllocationService {
           // Evaluate Invoice Lifecycle
           if (alloc.referenceType === 'sales_invoice') {
             await evaluateSalesInvoiceLifecycleRules(
-              tx as unknown as DrizzleDB,
+              tx,
               alloc.referenceId,
               { entity: 'payment', id: paymentId, action: 'allocated' },
               actor,
             );
           } else if (alloc.referenceType === 'purchase_invoice') {
             await evaluatePurchaseInvoiceLifecycleRules(
-              tx as unknown as DrizzleDB,
+              tx,
               alloc.referenceId,
               { entity: 'payment', id: paymentId, action: 'allocated' },
               actor,
@@ -421,7 +597,7 @@ export class PaymentsAllocationService {
           }
 
           // Emit allocation event
-          await emitEvent(tx as unknown as DrizzleDB, {
+          await emitEvent(tx, {
             entityType: EntityType.PAYMENT,
             entityId: paymentId,
             eventType: EventType.PAYMENT_ALLOCATED,
@@ -431,22 +607,20 @@ export class PaymentsAllocationService {
               referenceType: alloc.referenceType,
               referenceId: alloc.referenceId,
               allocatedAmount: alloc.allocatedAmount,
-              newOutstandingBalance: newOutstanding,
+              newOutstandingBalance: newOutstanding.toNumber(),
             },
             actor,
           });
 
           // Also emit to the invoice event stream
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic document table access
           const entityDisplayName =
             doc.invoiceNumber ||
             doc.creditNoteNumber ||
             doc.debitNoteNumber ||
             alloc.referenceId;
           // @sync-ignore -- Entity type is resolved dynamically at runtime but will match valid types
-          await emitEvent(tx as unknown as DrizzleDB, {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Types align dynamically
-            entityType: alloc.referenceType,
+          await emitEvent(tx, {
+            entityType: alloc.referenceType as EntityTypeValue,
             entityId: alloc.referenceId,
             eventType: EventType.PAYMENT_ALLOCATED,
             entityDisplayName,
@@ -455,7 +629,7 @@ export class PaymentsAllocationService {
               paymentNumber: payment.paymentNumber,
               allocationId: alloc.allocationId,
               allocatedAmount: alloc.allocatedAmount,
-              newOutstandingBalance: newOutstanding,
+              newOutstandingBalance: newOutstanding.toNumber(),
             },
             actor,
           });
@@ -465,22 +639,27 @@ export class PaymentsAllocationService {
   }
 
   async _postLateAllocationJournal(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic target table
-    tx: any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic target table
-    payment: any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic target table
-    allocations: any[],
+    tx: DrizzleDB,
+    payment: typeof paymentEntries.$inferSelect,
+    allocations: {
+      allocationId?: string;
+      referenceType: string;
+      referenceId: string;
+      allocatedAmount: string | number;
+      discountAmount?: string | number | null;
+    }[],
     actor: string,
   ) {
     if (!allocations.length) return;
 
-    const paymentRate = parseFloat(payment.exchangeRate || '1');
-    const isReceipt = [
-      PAYMENT_TYPE.CUSTOMER_RECEIPT,
-      PAYMENT_TYPE.SUPPLIER_REFUND,
-      PAYMENT_TYPE.DIRECT_RECEIPT,
-    ].includes(payment.paymentType);
+    const paymentRateDec = new Decimal(payment.exchangeRate || '1');
+    const isReceipt = (
+      [
+        PAYMENT_TYPE.CUSTOMER_RECEIPT,
+        PAYMENT_TYPE.SUPPLIER_REFUND,
+        PAYMENT_TYPE.DIRECT_RECEIPT,
+      ] as PaymentType[]
+    ).includes(payment.paymentType as PaymentType);
     const settings = await this.glService.getSettings(tx);
 
     let controlAccountId: string | null = null;
@@ -490,11 +669,18 @@ export class PaymentsAllocationService {
       payment.paymentType === PAYMENT_TYPE.CUSTOMER_REFUND
     ) {
       if (payment.partyId) {
-        const [cust] = await tx
-          .select()
+        const [custRow] = await tx
+          .select({
+            defaultArAccountId: customerGroups.defaultArAccountId,
+          })
           .from(customers)
+          .leftJoin(
+            customerGroups,
+            eq(customers.customerGroupId, customerGroups.customerGroupId),
+          )
           .where(eq(customers.customerId, payment.partyId));
-        controlAccountId = cust?.glAccountReceivable ?? null;
+        controlAccountId =
+          custRow?.defaultArAccountId || settings?.defaultArAccountId || null;
         linePartyType = 'customer';
       }
     } else if (
@@ -502,11 +688,18 @@ export class PaymentsAllocationService {
       payment.paymentType === PAYMENT_TYPE.SUPPLIER_REFUND
     ) {
       if (payment.partyId) {
-        const [sup] = await tx
-          .select()
+        const [suppRow] = await tx
+          .select({
+            defaultApAccountId: supplierGroups.defaultApAccountId,
+          })
           .from(suppliers)
+          .leftJoin(
+            supplierGroups,
+            eq(suppliers.supplierGroupId, supplierGroups.supplierGroupId),
+          )
           .where(eq(suppliers.vendorId, payment.partyId));
-        controlAccountId = sup?.glAccountPayable ?? null;
+        controlAccountId =
+          suppRow?.defaultApAccountId || settings?.defaultApAccountId || null;
         linePartyType = 'supplier';
       }
     }
@@ -523,32 +716,75 @@ export class PaymentsAllocationService {
       ? discountGivenAccountId
       : discountReceivedAccountId;
 
+    const salesInvoiceIds = Array.from(
+      new Set(
+        allocations
+          .filter((a) => a.referenceType === 'sales_invoice')
+          .map((a) => a.referenceId),
+      ),
+    );
+    const purchaseInvoiceIds = Array.from(
+      new Set(
+        allocations
+          .filter((a) => a.referenceType === 'purchase_invoice')
+          .map((a) => a.referenceId),
+      ),
+    );
+
+    const exchangeRateMap = new Map<string, Decimal>();
+
+    if (salesInvoiceIds.length > 0) {
+      const salesInvs = await tx
+        .select({
+          invoiceId: salesInvoices.invoiceId,
+          exchangeRate: salesInvoices.exchangeRate,
+        })
+        .from(salesInvoices)
+        .where(inArray(salesInvoices.invoiceId, salesInvoiceIds));
+
+      for (const inv of salesInvs) {
+        if (inv.exchangeRate) {
+          exchangeRateMap.set(inv.invoiceId, new Decimal(inv.exchangeRate));
+        }
+      }
+    }
+
+    if (purchaseInvoiceIds.length > 0) {
+      const purchaseInvs = await tx
+        .select({
+          invoiceId: purchaseInvoices.invoiceId,
+          exchangeRate: purchaseInvoices.exchangeRate,
+        })
+        .from(purchaseInvoices)
+        .where(inArray(purchaseInvoices.invoiceId, purchaseInvoiceIds));
+
+      for (const inv of purchaseInvs) {
+        if (inv.exchangeRate) {
+          exchangeRateMap.set(inv.invoiceId, new Decimal(inv.exchangeRate));
+        }
+      }
+    }
+
     const lines: JournalLineDto[] = [];
-    let totalDebits = 0;
-    let totalCredits = 0;
+    let totalDebits = new Decimal(0);
+    let totalCredits = new Decimal(0);
 
     for (const alloc of allocations) {
-      let invoiceRate = paymentRate;
-      if (alloc.referenceType === 'sales_invoice') {
-        const [inv] = await tx
-          .select({ exchangeRate: salesInvoices.exchangeRate })
-          .from(salesInvoices)
-          .where(eq(salesInvoices.invoiceId, alloc.referenceId));
-        if (inv?.exchangeRate) invoiceRate = parseFloat(inv.exchangeRate);
-      } else if (alloc.referenceType === 'purchase_invoice') {
-        const [inv] = await tx
-          .select({ exchangeRate: purchaseInvoices.exchangeRate })
-          .from(purchaseInvoices)
-          .where(eq(purchaseInvoices.invoiceId, alloc.referenceId));
-        if (inv?.exchangeRate) invoiceRate = parseFloat(inv.exchangeRate);
-      }
+      const invoiceRateDec =
+        exchangeRateMap.get(alloc.referenceId) || paymentRateDec;
 
-      const allocAmt = parseFloat(alloc.allocatedAmount || '0');
-      const discountAmt = parseFloat(alloc.discountAmount || '0');
+      const allocAmtDec = new Decimal(alloc.allocatedAmount || '0');
+      const discountAmtDec = new Decimal(alloc.discountAmount || '0');
 
-      const allocInvoiceBase = allocAmt * invoiceRate;
-      const allocPaymentBase = allocAmt * paymentRate;
-      const discountBase = discountAmt * invoiceRate;
+      const allocInvoiceBaseDec = allocAmtDec
+        .mul(invoiceRateDec)
+        .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+      const allocPaymentBaseDec = allocAmtDec
+        .mul(paymentRateDec)
+        .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+      const discountBaseDec = discountAmtDec
+        .mul(invoiceRateDec)
+        .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
 
       // Unallocated was posted at paymentRate, invoice is posted at invoiceRate.
       // We must reverse the unallocated portion from AR, and post it + discount at invoice rate.
@@ -556,83 +792,86 @@ export class PaymentsAllocationService {
         // Receipt: original unallocated was Credited to AR at paymentRate.
         // We must Debit AR for (allocPaymentBase), Credit AR for (allocInvoiceBase + discountBase)
         // Delta Credit to AR = allocInvoiceBase + discountBase - allocPaymentBase
-        const deltaCreditAR =
-          allocInvoiceBase + discountBase - allocPaymentBase;
+        const deltaCreditARDec = allocInvoiceBaseDec
+          .plus(discountBaseDec)
+          .minus(allocPaymentBaseDec);
 
-        if (discountAmt > 0 && discountAccountId) {
+        if (discountAmtDec.greaterThan(0) && discountAccountId) {
           lines.push({
             accountId: discountAccountId,
-            debit: discountBase,
+            debit: discountBaseDec.toNumber(),
             credit: 0,
-            foreignDebit: discountAmt,
+            foreignDebit: discountAmtDec.toNumber(),
             foreignCredit: 0,
             foreignCurrencyCode: payment.currencyCode,
-            exchangeRate: invoiceRate,
+            exchangeRate: invoiceRateDec.toNumber(),
             partyType: linePartyType,
             partyId: payment.partyId,
             memo: `Early Payment Discount for ${payment.paymentNumber}`,
           });
-          totalDebits += discountBase;
+          totalDebits = totalDebits.plus(discountBaseDec);
         }
 
-        if (deltaCreditAR > 0) {
+        if (deltaCreditARDec.greaterThan(0)) {
           lines.push({
             accountId: controlAccountId,
             debit: 0,
-            credit: deltaCreditAR,
+            credit: deltaCreditARDec.toNumber(),
             foreignDebit: 0,
-            foreignCredit: discountAmt,
+            foreignCredit: discountAmtDec.toNumber(),
             foreignCurrencyCode: payment.currencyCode,
             exchangeRate: 1,
             partyType: linePartyType,
             partyId: payment.partyId,
             memo: `Late Allocation for ${payment.paymentNumber}`,
           });
-          totalCredits += deltaCreditAR;
-        } else if (deltaCreditAR < 0) {
-          const debitAR = -deltaCreditAR;
+          totalCredits = totalCredits.plus(deltaCreditARDec);
+        } else if (deltaCreditARDec.lessThan(0)) {
+          const debitARDec = deltaCreditARDec.negated();
           lines.push({
             accountId: controlAccountId,
-            debit: debitAR,
+            debit: debitARDec.toNumber(),
             credit: 0,
             foreignDebit: 0,
-            foreignCredit: -discountAmt, // negative foreign credit is essentially a foreign debit of discountAmt
+            foreignCredit: discountAmtDec.negated().toNumber(), // negative foreign credit is essentially a foreign debit of discountAmt
             foreignCurrencyCode: payment.currencyCode,
             exchangeRate: 1,
             partyType: linePartyType,
             partyId: payment.partyId,
             memo: `Late Allocation for ${payment.paymentNumber}`,
           });
-          totalDebits += debitAR;
+          totalDebits = totalDebits.plus(debitARDec);
         }
       } else {
         // Payment: original unallocated was Debited to AP at paymentRate.
         // We must Credit AP for (allocPaymentBase), Debit AP for (allocInvoiceBase + discountBase)
         // Delta Debit to AP = allocInvoiceBase + discountBase - allocPaymentBase
-        const deltaDebitAP = allocInvoiceBase + discountBase - allocPaymentBase;
+        const deltaDebitAPDec = allocInvoiceBaseDec
+          .plus(discountBaseDec)
+          .minus(allocPaymentBaseDec);
 
-        if (discountAmt > 0 && discountAccountId) {
+        if (discountAmtDec.greaterThan(0) && discountAccountId) {
           lines.push({
             accountId: discountAccountId,
             debit: 0,
-            credit: discountBase,
+            credit: discountBaseDec.toNumber(),
             foreignDebit: 0,
-            foreignCredit: discountAmt,
+            foreignCredit: discountAmtDec.toNumber(),
             foreignCurrencyCode: payment.currencyCode,
-            exchangeRate: invoiceRate,
+            exchangeRate: invoiceRateDec.toNumber(),
             partyType: linePartyType,
             partyId: payment.partyId,
             memo: `Early Payment Discount for ${payment.paymentNumber}`,
           });
-          totalCredits += discountBase;
+          totalCredits = totalCredits.plus(discountBaseDec);
         }
 
-        if (deltaDebitAP > 0) {
+        if (deltaDebitAPDec.greaterThan(0)) {
           lines.push({
             accountId: controlAccountId,
-            debit: deltaDebitAP,
+            debit: deltaDebitAPDec.toNumber(),
             credit: 0,
-            foreignDebit: discountAmt,
+            foreignDebit: discountAmtDec.toNumber(),
             foreignCredit: 0,
             foreignCurrencyCode: payment.currencyCode,
             exchangeRate: 1,
@@ -640,14 +879,14 @@ export class PaymentsAllocationService {
             partyId: payment.partyId,
             memo: `Late Allocation for ${payment.paymentNumber}`,
           });
-          totalDebits += deltaDebitAP;
-        } else if (deltaDebitAP < 0) {
-          const creditAP = -deltaDebitAP;
+          totalDebits = totalDebits.plus(deltaDebitAPDec);
+        } else if (deltaDebitAPDec.lessThan(0)) {
+          const creditAPDec = deltaDebitAPDec.negated();
           lines.push({
             accountId: controlAccountId,
             debit: 0,
-            credit: creditAP,
-            foreignDebit: -discountAmt,
+            credit: creditAPDec.toNumber(),
+            foreignDebit: discountAmtDec.negated().toNumber(),
             foreignCredit: 0,
             foreignCurrencyCode: payment.currencyCode,
             exchangeRate: 1,
@@ -655,23 +894,23 @@ export class PaymentsAllocationService {
             partyId: payment.partyId,
             memo: `Late Allocation for ${payment.paymentNumber}`,
           });
-          totalCredits += creditAP;
+          totalCredits = totalCredits.plus(creditAPDec);
         }
       }
     }
 
-    const fxVariance = totalDebits - totalCredits;
-    if (Math.abs(fxVariance) > 0.005) {
+    const fxVarianceDec = totalDebits.minus(totalCredits);
+    if (fxVarianceDec.abs().greaterThan(0.0001)) {
       if (!fxGainAccountId || !fxLossAccountId) {
         throw new BadRequestException(
           'Realised FX Gain/Loss accounts are not configured in GL Settings.',
         );
       }
-      if (fxVariance > 0) {
+      if (fxVarianceDec.greaterThan(0)) {
         lines.push({
           accountId: fxGainAccountId,
           debit: 0,
-          credit: fxVariance,
+          credit: fxVarianceDec.toNumber(),
           foreignDebit: 0,
           foreignCredit: 0,
           foreignCurrencyCode: payment.currencyCode,
@@ -681,7 +920,7 @@ export class PaymentsAllocationService {
       } else {
         lines.push({
           accountId: fxLossAccountId,
-          debit: -fxVariance,
+          debit: fxVarianceDec.abs().toNumber(),
           credit: 0,
           foreignDebit: 0,
           foreignCredit: 0,

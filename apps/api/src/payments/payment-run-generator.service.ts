@@ -1,4 +1,5 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { Decimal } from 'decimal.js';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { Inject } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
@@ -65,18 +66,18 @@ export class PaymentRunGeneratorService {
       }
 
       let generatedPayments = 0;
-      let totalCashAmount = 0;
-      let totalDiscountAmount = 0;
+      let totalCashAmount = new Decimal(0);
+      let totalDiscountAmount = new Decimal(0);
 
       for (const inv of selectedInvoices) {
         const paymentId = uuidv4();
-        const unallocated = Number(inv.outstandingAmount);
-        let discountAmount = 0;
+        const unallocated = new Decimal(inv.outstandingAmount || '0');
+        let discountAmount = new Decimal(0);
 
         // Check if discount applies
         if (inv.earlyPaymentDiscount && inv.earlyPaymentDiscountDays !== null) {
-          const discountPercent = Number(inv.earlyPaymentDiscount);
-          if (discountPercent > 0) {
+          const discountPercent = new Decimal(inv.earlyPaymentDiscount);
+          if (discountPercent.greaterThan(0)) {
             const invoiceDate = new Date(
               inv.invoiceDate as string | number | Date,
             );
@@ -87,15 +88,18 @@ export class PaymentRunGeneratorService {
 
             if (new Date(targetDate) <= discountDeadlineDate) {
               // Discount applies
-              discountAmount = (unallocated * discountPercent) / 100;
+              discountAmount = unallocated
+                .mul(discountPercent)
+                .div(100)
+                .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
             }
           }
         }
 
-        const cashAmount = unallocated - discountAmount;
+        const cashAmount = unallocated.minus(discountAmount);
 
-        totalCashAmount += cashAmount;
-        totalDiscountAmount += discountAmount;
+        totalCashAmount = totalCashAmount.plus(cashAmount);
+        totalDiscountAmount = totalDiscountAmount.plus(discountAmount);
 
         const allocationsToCreate = [
           {
@@ -108,9 +112,10 @@ export class PaymentRunGeneratorService {
           },
         ];
 
-        if (cashAmount > 0) {
+        if (cashAmount.greaterThan(0)) {
           // Create Draft Payment
-          const paymentNumber = `PAY-${Date.now().toString().slice(-6)}-${generatedPayments + 1}`;
+          const seq = new Decimal(generatedPayments).plus(1).toNumber();
+          const paymentNumber = `PAY-${Date.now().toString().slice(-6)}-${seq}`;
           const [payment] = await tx
             .insert(paymentEntries)
             .values({
@@ -151,8 +156,8 @@ export class PaymentRunGeneratorService {
 
       return {
         generatedPayments,
-        totalCashAmount,
-        totalDiscountAmount,
+        totalCashAmount: totalCashAmount.toNumber(),
+        totalDiscountAmount: totalDiscountAmount.toNumber(),
       };
     });
   }
@@ -199,14 +204,14 @@ export class PaymentRunGeneratorService {
       const candidates = [];
 
       for (const inv of dueInvoices) {
-        const unallocated = Number(inv.outstandingAmount);
-        let discountAmount = 0;
+        const unallocated = new Decimal(inv.outstandingAmount || '0');
+        let discountAmount = new Decimal(0);
         let hasDiscountOpportunity = false;
 
         // Check if discount applies
         if (inv.earlyPaymentDiscount && inv.earlyPaymentDiscountDays !== null) {
-          const discountPercent = Number(inv.earlyPaymentDiscount);
-          if (discountPercent > 0) {
+          const discountPercent = new Decimal(inv.earlyPaymentDiscount);
+          if (discountPercent.greaterThan(0)) {
             const invoiceDate = new Date(
               inv.invoiceDate as string | number | Date,
             );
@@ -216,13 +221,16 @@ export class PaymentRunGeneratorService {
             );
 
             if (target <= discountDeadlineDate) {
-              discountAmount = (unallocated * discountPercent) / 100;
+              discountAmount = unallocated
+                .mul(discountPercent)
+                .div(100)
+                .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
               hasDiscountOpportunity = true;
             }
           }
         }
 
-        const cashAmount = unallocated - discountAmount;
+        const cashAmount = unallocated.minus(discountAmount);
 
         // Due soon: Due date is within 7 days of target date, or already past due
         const dueSoonThreshold = new Date(target);
@@ -233,8 +241,8 @@ export class PaymentRunGeneratorService {
 
         candidates.push({
           ...inv,
-          cashAmount,
-          discountAmount,
+          cashAmount: cashAmount.toNumber(),
+          discountAmount: discountAmount.toNumber(),
           hasDiscountOpportunity,
           isDueSoon,
         });

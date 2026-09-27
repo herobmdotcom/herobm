@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 
 export type FallbackOption = {
-  value: string | number | null | undefined;
+  value: any;
   sourceLabel: string;
 };
 
@@ -13,7 +13,7 @@ export function useInheritance(fallbacks: FallbackOption[]) {
     );
     
     return {
-      inheritedValue: resolved?.value || null,
+      inheritedValue: resolved?.value !== undefined ? (resolved.value as any) : null,
       inheritedSourceLabel: resolved?.sourceLabel || null,
     };
   }, [fallbacks]);
@@ -24,17 +24,23 @@ export function useInheritance(fallbacks: FallbackOption[]) {
  * returned an unmapped raw Drizzle object (e.g. `productGroupId`) 
  * or a mapped SDK object (`id`).
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function useGroup<T = any>(groups: T[], groupId: string | null | undefined): T | null {
+export type GroupLike = Record<string, any>;
+
+export function useGroup<T extends object = any>(
+  groups: T[] | undefined | null,
+  groupId: string | null | undefined,
+): any {
   return useMemo(() => {
     if (!groupId || !groups?.length) return null;
-    
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return groups.find((g: any) => 
-      g.id === groupId || 
-      g.productGroupId === groupId || 
-      g.supplierGroupId === groupId || 
-      g.customerGroupId === groupId
-    ) || null;
+
+    return (
+      (groups.find(
+        (g: any) =>
+          g.id === groupId ||
+          g.productGroupId === groupId ||
+          g.supplierGroupId === groupId ||
+          g.customerGroupId === groupId,
+      ) as any) || null
+    );
   }, [groups, groupId]);
 }

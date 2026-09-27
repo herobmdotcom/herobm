@@ -3,7 +3,7 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
 import * as schema from '@herobm/db-schema';
-import { PgDatabase } from 'drizzle-orm/pg-core';
+import { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 
 // Load environment variables from the root .env file
 dotenv.config({
@@ -14,8 +14,7 @@ dotenv.config({
 });
 
 // Define the common SeedDB type exported for all seed scripts
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle complex types
-export type SeedDB = PgDatabase<any, typeof schema, any>;
+export type SeedDB = PgDatabase<PgQueryResultHKT, typeof schema>;
 
 async function main() {
   const args = process.argv.slice(2);
