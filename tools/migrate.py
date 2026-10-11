@@ -44,15 +44,18 @@ def load_env(profile=None):
 load_env()
 
 CONTAINER = os.environ.get("POSTGRES_CONTAINER", "postgres-custom")
-DB_USER = os.environ.get("POSTGRES_USER", "postgres")
+DB_USER = os.environ["POSTGRES_USER"]
 DB_NAME = os.environ.get("POSTGRES_DB", "herobm")
 
 
 def psql(sql: str, capture: bool = False) -> str | None:
     """Execute SQL via docker exec psql."""
     cmd = [
-        "podman", "exec", "-i", CONTAINER,
+        "podman", "exec", "-i",
+        "-e", "PGOPTIONS=-c lock_timeout=10s",
+        CONTAINER,
         "psql", "-U", DB_USER, "-d", DB_NAME,
+        "-v", "ON_ERROR_STOP=1",
         "-t", "-A",  # tuples-only, unaligned output
         "-c", sql,
     ]
@@ -70,10 +73,13 @@ def psql_file(filepath: str, record_migration: str | None = None) -> bool:
     with open(filepath, "r", encoding="utf-8-sig") as f:
         sql = f.read()
     cmd = [
-        "podman", "exec", "-i", CONTAINER,
+        "podman", "exec", "-i",
+        "-e", "PGOPTIONS=-c lock_timeout=10s",
+        CONTAINER,
         "psql", "-U", DB_USER, "-d", DB_NAME,
         "-v", "ON_ERROR_STOP=1",
     ]
+    sql = "SET lock_timeout = '10s';\n" + sql
     if record_migration:
         cmd.append("-1")  # wrap in a single transaction
         sql += f"\nCREATE TABLE IF NOT EXISTS herobm_core.schema_migrations (filename TEXT PRIMARY KEY, applied_at TIMESTAMPTZ DEFAULT NOW());\n"
@@ -116,8 +122,11 @@ def apply_extensions(dry_run: bool) -> None:
         print(f"\n  [DRY RUN] Would apply extensions: {os.path.basename(EXTENSIONS_FILE)}")
     else:
         print(f"\n  Applying extensions: {os.path.basename(EXTENSIONS_FILE)} ...", end=" ", flush=True)
-        psql_file(EXTENSIONS_FILE)
-        print("OK")
+        if psql_file(EXTENSIONS_FILE):
+            print("OK")
+        else:
+            print("\nFATAL: Failed to apply extensions. Aborting.", file=sys.stderr)
+            sys.exit(1)
 
 
 def get_applied() -> set[str]:

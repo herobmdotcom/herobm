@@ -96,8 +96,11 @@ export function resolveCustomerRiskProfile(
 
   const limitNum = parseFloat(resolved.effectiveCreditLimit);
   if (limitNum >= 0 && !hasValidOverride) {
-    const totalExposure =
-      creditAssessment.totalInvoiceBalance + additionalExposure;
+    const baseExposure =
+      creditAssessment.netOutstandingBalance !== undefined
+        ? creditAssessment.netOutstandingBalance
+        : creditAssessment.totalInvoiceBalance;
+    const totalExposure = baseExposure + additionalExposure;
     if (totalExposure > limitNum) {
       if (creditLimitBehavior === 'hard') {
         resolved.isSalesBlocked = true;

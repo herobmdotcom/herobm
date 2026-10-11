@@ -392,4 +392,38 @@ describe('DataGrid — localStorage helpers', () => {
       expect(customCol.hide).toBe(true);
     });
   });
+
+  it('guarantees stable colId for computed columns without field or colId (ADV-224)', async () => {
+    render(
+      <DataGrid
+        rowData={[{ id: '1', qty: 5 }]}
+        columns={[
+          { field: 'qty', headerName: 'Quantity' },
+          {
+            headerName: 'Box Qty',
+            valueGetter: (params) => `${params.data?.qty} boxes`,
+          },
+        ]}
+        gridKey="test-box-qty"
+      />,
+    );
+
+    await waitFor(() => {
+      expect(latestAgGridProps).not.toBeNull();
+      const boxQtyCol = latestAgGridProps.columnDefs.find(
+        (c: any) => c.headerName === 'Box Qty',
+      );
+      expect(boxQtyCol).toBeDefined();
+      expect(boxQtyCol.colId).toBe('Box Qty');
+    });
+
+    // Verify Options / Column Picker renders the column with a checkbox
+    const optionsButton = screen.getByTitle('options');
+    expect(optionsButton).toBeInTheDocument();
+    await userEvent.click(optionsButton);
+
+    const boxQtyCheckbox = screen.getByRole('checkbox', { name: 'Box Qty' });
+    expect(boxQtyCheckbox).toBeInTheDocument();
+    expect(boxQtyCheckbox).toBeChecked();
+  });
 });

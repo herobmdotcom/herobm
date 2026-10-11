@@ -11,4 +11,12 @@ export interface InventoryEntryDetailsResponseDto {
   productId: string;
   quantity: string;
   date: string;
+  /** @nullable */
+  uomId?: string | null;
+  /** @nullable */
+  originalQuantity?: string | null;
+  /** @nullable */
+  unitCost?: string | null;
+  /** @nullable */
+  totalValue?: string | null;
 }

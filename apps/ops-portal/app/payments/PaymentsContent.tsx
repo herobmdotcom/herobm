@@ -108,6 +108,7 @@ export default function PaymentsContent() {
       },
     },
     {
+      colId: 'allocation',
       headerName: 'Allocation',
       width: 140,
       valueGetter: (params: { data?: UnifiedPayment }) => {

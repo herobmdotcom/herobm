@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.1
  */
 import type { ExecuteEltDtoGlCutoffMode } from './executeEltDtoGlCutoffMode';
+import type { ExecuteEltDtoGlImportMode } from './executeEltDtoGlImportMode';
 import type { DbConfigDto } from './dbConfigDto';
 import type { ExecuteEltDtoSource } from './executeEltDtoSource';
 
@@ -14,6 +15,8 @@ export interface ExecuteEltDto {
   legacyInvoicesPaidBeforeDate?: string;
   /** Cut-off date mode for General Ledger opening balances take-on (start_of_month or current_date). */
   glCutoffMode?: ExecuteEltDtoGlCutoffMode;
+  /** General Ledger (GL) import mode (full, codes_only, none). */
+  glImportMode?: ExecuteEltDtoGlImportMode;
   dbConfig?: DbConfigDto;
   source?: ExecuteEltDtoSource;
   resumeExtraction?: boolean;

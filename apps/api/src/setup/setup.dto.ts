@@ -153,6 +153,16 @@ export class ExecuteEltDto {
   @IsOptional()
   @IsIn(['start_of_month', 'current_date'])
   glCutoffMode?: 'start_of_month' | 'current_date';
+
+  @ApiProperty({
+    description: 'General Ledger (GL) import mode (full, codes_only, none).',
+    enum: ['full', 'codes_only', 'none'],
+    required: false,
+    default: 'full',
+  })
+  @IsOptional()
+  @IsIn(['full', 'codes_only', 'none'])
+  glImportMode?: 'full' | 'codes_only' | 'none';
 }
 
 // ---------------------------------------------------------------------------

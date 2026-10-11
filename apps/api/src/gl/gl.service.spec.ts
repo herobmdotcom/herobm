@@ -4,6 +4,7 @@ import {
   CUSTOMER_STATE,
   PROJECT_STATE,
   PROJECT_TASK_STATE,
+  RECONCILIATION_STATE,
 } from '@herobm/shared';
 import { GlService } from './gl.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
@@ -29,6 +30,8 @@ import {
   projects,
   projectTasks,
   projectLedgerEntries,
+  bankStatementLines,
+  glReconciliations,
 } from '@herobm/db-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq, sql } from 'drizzle-orm';
@@ -43,6 +46,9 @@ describe('GlService', () => {
     await pg.db.delete(projectLedgerEntries);
     await pg.db.delete(projectTasks);
     await pg.db.delete(projects);
+    await pg.client.exec(
+      'TRUNCATE herobm_core.bank_statement_lines, herobm_core.gl_reconciliations CASCADE;',
+    );
     await pg.db.delete(glJournalLines);
     await pg.db.delete(glJournalEntries);
     await pg.db.delete(glSettings);
@@ -1507,6 +1513,216 @@ describe('GlService', () => {
       expect(subledgerRows[0].lineType).toBe('expense');
       expect(Number(subledgerRows[0].totalCostBase)).toBe(500);
       expect(Number(subledgerRows[0].totalPriceBase)).toBe(0);
+    });
+  });
+
+  describe('updateAccount — Zero-Transaction Invariant (ADV-222)', () => {
+    it('should update currency on an account with zero transactions', async () => {
+      const [account] = await pg.db
+        .insert(glAccounts)
+        .values({
+          accountCode: '1090',
+          name: 'Clean Bank Account',
+          accountType: 'asset',
+          isGroup: false,
+          isSystem: false,
+          isBankAccount: true,
+          currencyCode: 'EUR',
+          isActive: true,
+        })
+        .returning();
+
+      const updated = await service.updateAccount(account.glAccountId, {
+        currencyCode: 'USD',
+      });
+
+      expect(updated.currencyCode).toBe('USD');
+
+      const [inDb] = await pg.db
+        .select()
+        .from(glAccounts)
+        .where(eq(glAccounts.glAccountId, account.glAccountId));
+      expect(inDb.currencyCode).toBe('USD');
+    });
+
+    it('should reject updating currency if currency code is invalid', async () => {
+      const [account] = await pg.db
+        .insert(glAccounts)
+        .values({
+          accountCode: '1091',
+          name: 'Invalid Currency Account',
+          accountType: 'asset',
+          isGroup: false,
+          isSystem: false,
+          isBankAccount: true,
+          currencyCode: 'EUR',
+          isActive: true,
+        })
+        .returning();
+
+      await expect(
+        service.updateAccount(account.glAccountId, {
+          currencyCode: 'INVALID_CURRENCY',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject updating currency if journal entries exist on the account', async () => {
+      const [account] = await pg.db
+        .insert(glAccounts)
+        .values({
+          accountCode: '1092',
+          name: 'Bank With Journals',
+          accountType: 'asset',
+          isGroup: false,
+          isSystem: false,
+          isBankAccount: true,
+          currencyCode: 'EUR',
+          isActive: true,
+        })
+        .returning();
+
+      const [offsetAccount] = await pg.db
+        .insert(glAccounts)
+        .values({
+          accountCode: '4092',
+          name: 'Revenue Offset',
+          accountType: 'revenue',
+          isGroup: false,
+          isSystem: false,
+          isBankAccount: false,
+          currencyCode: 'EUR',
+          isActive: true,
+        })
+        .returning();
+
+      const [je] = await pg.db
+        .insert(glJournalEntries)
+        .values({
+          entryNumber: 'JE-TEST-001',
+          entryDate: '2026-03-20',
+          sourceType: 'manual',
+          isReversed: false,
+        })
+        .returning();
+
+      await pg.db.insert(glJournalLines).values([
+        {
+          journalEntryId: je.journalEntryId,
+          glAccountId: account.glAccountId,
+          debit: '100',
+          credit: '0',
+          foreignDebit: '100',
+          foreignCredit: '0',
+          isReconciled: false,
+        },
+        {
+          journalEntryId: je.journalEntryId,
+          glAccountId: offsetAccount.glAccountId,
+          debit: '0',
+          credit: '100',
+          foreignDebit: '0',
+          foreignCredit: '100',
+          isReconciled: false,
+        },
+      ]);
+
+      await expect(
+        service.updateAccount(account.glAccountId, {
+          currencyCode: 'AUD',
+        }),
+      ).rejects.toThrow('because journal entries already exist');
+    });
+
+    it('should reject updating currency if bank statement lines exist on the account', async () => {
+      const [account] = await pg.db
+        .insert(glAccounts)
+        .values({
+          accountCode: '1093',
+          name: 'Bank With Statement',
+          accountType: 'asset',
+          isGroup: false,
+          isSystem: false,
+          isBankAccount: true,
+          currencyCode: 'EUR',
+          isActive: true,
+        })
+        .returning();
+
+      await pg.db.insert(bankStatementLines).values({
+        glAccountId: account.glAccountId,
+        date: '2026-03-21',
+        description: 'Test Import Line',
+        amount: '250.00',
+        isReconciled: false,
+      });
+
+      await expect(
+        service.updateAccount(account.glAccountId, {
+          currencyCode: 'GBP',
+        }),
+      ).rejects.toThrow('because bank statement lines exist');
+    });
+
+    it('should reject updating currency if reconciliation records exist on the account', async () => {
+      const [account] = await pg.db
+        .insert(glAccounts)
+        .values({
+          accountCode: '1094',
+          name: 'Bank With Recon',
+          accountType: 'asset',
+          isGroup: false,
+          isSystem: false,
+          isBankAccount: true,
+          currencyCode: 'EUR',
+          isActive: true,
+        })
+        .returning();
+
+      await pg.db.insert(glReconciliations).values({
+        glAccountId: account.glAccountId,
+        statementDate: '2026-03-22',
+        statementBalance: '5000.00',
+        status: RECONCILIATION_STATE.DRAFT,
+      });
+
+      await expect(
+        service.updateAccount(account.glAccountId, {
+          currencyCode: 'CAD',
+        }),
+      ).rejects.toThrow('because reconciliation records exist');
+    });
+
+    it('should allow updating name and isActive without changing currency even if transactions exist', async () => {
+      const [account] = await pg.db
+        .insert(glAccounts)
+        .values({
+          accountCode: '1095',
+          name: 'Original Bank Name',
+          accountType: 'asset',
+          isGroup: false,
+          isSystem: false,
+          isBankAccount: true,
+          currencyCode: 'EUR',
+          isActive: true,
+        })
+        .returning();
+
+      await pg.db.insert(bankStatementLines).values({
+        glAccountId: account.glAccountId,
+        date: '2026-03-21',
+        description: 'Test Import Line',
+        amount: '250.00',
+        isReconciled: false,
+      });
+
+      const updated = await service.updateAccount(account.glAccountId, {
+        name: 'Updated Bank Name',
+        currencyCode: 'EUR', // Same currency
+      });
+
+      expect(updated.name).toBe('Updated Bank Name');
+      expect(updated.currencyCode).toBe('EUR');
     });
   });
 });

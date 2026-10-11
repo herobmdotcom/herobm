@@ -145,6 +145,10 @@ export class CustomersService {
         customerGroupCreditLimit: customerGroups.creditLimit,
         customerGroupIsOnCreditHold: customerGroups.isOnCreditHold,
         customerGroupTaxPositionId: customerGroups.taxPositionId,
+        customerGroupStateCode: customerGroups.stateCode,
+        customerGroupEarlyPaymentDiscount: customerGroups.earlyPaymentDiscount,
+        customerGroupEarlyPaymentDiscountDays:
+          customerGroups.earlyPaymentDiscountDays,
         gstCategoryName: taxPositions.code,
         score: scoreSql,
         billingAddressLine1: organizations.headquartersAddressLine1,
@@ -300,7 +304,7 @@ export class CustomersService {
 
       const groupProfile: CustomerGroupProfile | null = c.customerGroupId
         ? {
-            stateCode: c.stateCode as string,
+            stateCode: (c.customerGroupStateCode || c.stateCode) as string,
             isOnCreditHold: Boolean(c.customerGroupIsOnCreditHold),
             creditLimit:
               c.customerGroupCreditLimit !== null &&
@@ -308,6 +312,12 @@ export class CustomersService {
                 ? String(c.customerGroupCreditLimit)
                 : null,
             tradingTermsId: c.customerGroupTradingTermsId,
+            earlyPaymentDiscount:
+              c.customerGroupEarlyPaymentDiscount !== null &&
+              c.customerGroupEarlyPaymentDiscount !== undefined
+                ? String(c.customerGroupEarlyPaymentDiscount)
+                : null,
+            earlyPaymentDiscountDays: c.customerGroupEarlyPaymentDiscountDays,
           }
         : null;
 
@@ -315,7 +325,10 @@ export class CustomersService {
         custProfile,
         groupProfile,
         {
-          totalInvoiceBalance: totalOutstanding,
+          totalInvoiceBalance: b?.totalInvoiceOutstanding ?? totalOutstanding,
+          totalCreditNoteBalance: b?.totalCreditNoteOutstanding ?? 0,
+          unallocatedPaymentBalance: b?.unallocatedPaymentsTotal ?? 0,
+          netOutstandingBalance: totalOutstanding,
           overdueInvoiceBalance,
           glBalance,
           isOverdue: overdueInvoiceBalance > 0.01,
@@ -743,7 +756,12 @@ export class CustomersService {
         custProfile as CustomerProfile,
         groupProfile as CustomerGroupProfile,
         {
-          totalInvoiceBalance: Number(b.totalOutstanding),
+          totalInvoiceBalance: Number(
+            b.totalInvoiceOutstanding ?? b.totalOutstanding,
+          ),
+          totalCreditNoteBalance: Number(b.totalCreditNoteOutstanding ?? 0),
+          unallocatedPaymentBalance: Number(b.unallocatedPaymentsTotal ?? 0),
+          netOutstandingBalance: Number(b.totalOutstanding),
           overdueInvoiceBalance: Number(b.totalOutstanding) - Number(b.current),
           glBalance: Number(b.glBalance),
           isOverdue: Number(b.totalOutstanding) - Number(b.current) > 0,

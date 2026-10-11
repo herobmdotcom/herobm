@@ -1,10 +1,11 @@
 import { Injectable, Inject, Logger, NotFoundException } from '@nestjs/common';
-import { eq, and, notInArray, asc } from 'drizzle-orm';
+import { eq, and, notInArray, asc, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { AppConfigService } from '../settings/app-config.service';
 import {
   customers,
+  customerGroups,
   organizations,
   tradingTerms,
   salesInvoices,
@@ -79,7 +80,7 @@ export class CustomerOverdueNoticeService {
         customerId: customers.customerId,
         customerNumber: customers.customerNumber,
         currencyCode: customers.currencyCode,
-        creditLimit: customers.creditLimit,
+        creditLimit: sql<string>`COALESCE(${customers.creditLimit}, ${customerGroups.creditLimit})`,
         stateCode: customers.stateCode,
         termsDescription: tradingTerms.description,
         termsCode: tradingTerms.code,
@@ -92,12 +93,19 @@ export class CustomerOverdueNoticeService {
       })
       .from(customers)
       .leftJoin(
+        customerGroups,
+        eq(customers.customerGroupId, customerGroups.customerGroupId),
+      )
+      .leftJoin(
         organizations,
         eq(customers.organizationId, organizations.organizationId),
       )
       .leftJoin(
         tradingTerms,
-        eq(customers.tradingTermsId, tradingTerms.tradingTermsId),
+        eq(
+          sql`COALESCE(${customers.tradingTermsId}, ${customerGroups.tradingTermsId})`,
+          tradingTerms.tradingTermsId,
+        ),
       )
       .where(eq(customers.customerId, customerId))
       .limit(1);

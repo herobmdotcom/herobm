@@ -7595,6 +7595,7 @@ async function seedDemoAppSettings(db: SeedDB) {
     const timeHex = now.getTime().toString(16).padStart(12, '0');
     const sid = `${crypto.randomUUID()}-${timeHex}`;
     await db.insert(appSettings).values({
+      ...crmSettings,
       inventoryValuationMethod: 'weighted_average',
       inventoryAccountingMode: 'perpetual',
       allowNegativeInventory: false,
@@ -7608,7 +7609,6 @@ async function seedDemoAppSettings(db: SeedDB) {
         { value: 'WHOLESALE', order: 3 },
         { value: 'RETAIL', order: 4 },
       ],
-      ...crmSettings,
     });
     console.log(
       '  Seeded app_settings with demo CRM stages, types, and roles.',
@@ -7650,8 +7650,8 @@ export async function seedDemoTenantSettings(db: SeedDB, dryRun = false) {
     await db
       .insert(tenantSettings)
       .values({
-        tenantSettingsId: '00000000-0000-4000-8000-000000000000',
         ...demoData,
+        tenantSettingsId: '00000000-0000-4000-8000-000000000000',
       })
       .onConflictDoUpdate({
         target: tenantSettings.tenantSettingsId,

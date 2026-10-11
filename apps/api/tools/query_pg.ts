@@ -4,7 +4,8 @@ import * as dotenv from 'dotenv';
 import path from 'path';
 
 // Fix path resolution for dotenv to support being run from anywhere
-const rootDir = path.resolve(process.cwd(), process.cwd().endsWith('apps\\api') || process.cwd().endsWith('apps/api') ? '..' : '.');
+const normCwd = process.cwd().replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();
+const rootDir = path.resolve(process.cwd(), normCwd.endsWith('apps/api') ? '../..' : '.');
 let activeProfile = '';
 if (fs.existsSync(path.resolve(rootDir, '.active_profile'))) {
   activeProfile = fs.readFileSync(path.resolve(rootDir, '.active_profile'), 'utf8').trim();
@@ -30,16 +31,18 @@ if (!input) {
 }
 
 let sql = input;
-const querySqlInRoot = path.resolve(rootDir, 'tmp', 'query.sql');
-if ((input.includes('query.sql') || input.includes('tmp')) && fs.existsSync(querySqlInRoot)) {
-  sql = fs.readFileSync(querySqlInRoot, 'utf8');
-  console.log(`[query_pg] Loaded from querySqlInRoot: ${querySqlInRoot} (${sql.length} chars)`);
-} else if (fs.existsSync(input) && fs.statSync(input).isFile()) {
-  sql = fs.readFileSync(input, 'utf8');
-  console.log(`[query_pg] Loaded from input: ${input} (${sql.length} chars)`);
-} else if (fs.existsSync(path.resolve(rootDir, input)) && fs.statSync(path.resolve(rootDir, input)).isFile()) {
-  sql = fs.readFileSync(path.resolve(rootDir, input), 'utf8');
-  console.log(`[query_pg] Loaded from rootDir/input: ${path.resolve(rootDir, input)} (${sql.length} chars)`);
+const candidates = [
+  path.resolve(process.cwd(), input),
+  path.resolve(rootDir, 'tmp', 'query.sql'),
+  path.resolve(rootDir, input),
+  input
+];
+for (const p of candidates) {
+  if (fs.existsSync(p) && fs.statSync(p).isFile()) {
+    sql = fs.readFileSync(p, 'utf8');
+    console.log(`[query_pg] Loaded from: ${p} (${sql.length} chars)`);
+    break;
+  }
 }
 
 // Security: Prevent agents from bypassing make migrate or corrupting data natively

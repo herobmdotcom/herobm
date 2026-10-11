@@ -45,6 +45,7 @@ import {
 import { toast } from "react-hot-toast";
 import { reportError } from "@/lib/api";
 import EmailDocumentDialog from "@/components/shared/EmailDocumentDialog";
+import { routes } from "@/lib/routes";
 
 import { CustomerDetailsTab } from "./components/CustomerDetailsTab";
 import { CustomerContactsTab } from "./components/CustomerContactsTab";
@@ -101,9 +102,9 @@ export default function AccountDetailPage({
 
 
   const searchParams = useSearchParams();
-  const initialTab = (searchParams.get('tab') as "details" | "contacts" | "delivery" | "salesOrders" | "projects" | "invoices" | "payments") || "details";
+  const initialTab = (searchParams.get('tab') as "details" | "contacts" | "delivery" | "salesOrders" | "projects" | "invoices" | "creditNotes" | "payments") || "details";
   const [activeTab, setActiveTab] = useState<
-    "details" | "contacts" | "delivery" | "salesOrders" | "projects" | "invoices" | "payments"
+    "details" | "contacts" | "delivery" | "salesOrders" | "projects" | "invoices" | "creditNotes" | "payments"
   >(initialTab);
 
   // Document Dialog State & PDF Generator
@@ -212,6 +213,71 @@ export default function AccountDetailPage({
       { field: "stateCode", headerName: "Status", width: 140, valueFormatter: (p: GridParam) => p.value ? (tStates.has(String(p.value).toLowerCase() as never) ? tStates(String(p.value).toLowerCase() as never) : String(p.value)) : "" }
     ],
     [tStates, baseCurrency],
+  );
+
+  const creditNoteColumns = useMemo<Record<string, unknown>[]>(
+    () => [
+      { field: "creditNoteNumber", headerName: "Note Number", width: 170 },
+      {
+        field: "orderNumber",
+        headerName: "Order No",
+        width: 150,
+        valueGetter: (p: { data?: { orderNumber?: string; salesOrderNumber?: string } }) =>
+          p.data?.orderNumber || p.data?.salesOrderNumber || "—",
+      },
+      {
+        field: "returnNumber",
+        headerName: "Return No",
+        width: 150,
+        valueGetter: (p: { data?: { returnNumber?: string; referenceNumber?: string } }) =>
+          p.data?.returnNumber || p.data?.referenceNumber || "—",
+      },
+      {
+        field: "createdOn",
+        headerName: tCommon("columns.date"),
+        width: 140,
+        valueFormatter: (p: GridParam) =>
+          formatLocalDate(p.value, undefined, ""),
+      },
+      {
+        field: "totalAmount",
+        headerName: "Total Amount",
+        type: "numericColumn",
+        width: 150,
+        valueGetter: (p: { data?: { totalAmount?: string | number } }) =>
+          p.data?.totalAmount ? parseFloat(String(p.data.totalAmount)) : null,
+        valueFormatter: (p: GridParam) =>
+          !p.value || p.value === 0
+            ? "—"
+            : formatAmount(Number(p.value), p.data?.currencyCode || baseCurrency),
+      },
+      {
+        field: "outstandingAmount",
+        headerName: "Outstanding",
+        type: "numericColumn",
+        width: 150,
+        valueGetter: (p: { data?: { outstandingAmount?: string | number } }) =>
+          p.data?.outstandingAmount !== undefined && p.data?.outstandingAmount !== null
+            ? parseFloat(String(p.data.outstandingAmount))
+            : null,
+        valueFormatter: (p: GridParam) =>
+          !p.value || p.value === 0
+            ? "—"
+            : formatAmount(Number(p.value), p.data?.currencyCode || baseCurrency),
+      },
+      {
+        field: "stateCode",
+        headerName: tCommon("columns.state"),
+        width: 130,
+        valueFormatter: (p: GridParam) => {
+          if (!p.value) return "";
+          const s = String(p.value).toLowerCase();
+          return tStates.has(s as Parameters<typeof tStates>[0]) ? tStates(s as Parameters<typeof tStates>[0]) : String(p.value);
+        },
+      },
+      { field: "notes", headerName: "Notes", flex: 1, minWidth: 160 },
+    ],
+    [tCommon, tStates, baseCurrency],
   );
 
 
@@ -374,6 +440,13 @@ export default function AccountDetailPage({
       onClick: () => setActiveTab("invoices"),
     },
     {
+      id: "tab-credit-notes",
+      label: "Credit Notes",
+      isSubPage: true,
+      isActive: activeTab === "creditNotes",
+      onClick: () => setActiveTab("creditNotes"),
+    },
+    {
       id: "tab-payments",
       label: "Payments",
       isSubPage: true,
@@ -431,13 +504,15 @@ export default function AccountDetailPage({
           </div>
         )}
 
-        {customer.isSalesBlocked && (
+        {(customer.isSalesBlocked || Boolean(customer.overrideCreditHoldUntil && new Date(customer.overrideCreditHoldUntil) > new Date())) && (
           <div className="px-4 lg:px-6 pt-4">
             <EntityBanner
               type={customer.overrideCreditHoldUntil && new Date(customer.overrideCreditHoldUntil) > new Date() ? 'warning' : 'error'}
               title={customer.overrideCreditHoldUntil && new Date(customer.overrideCreditHoldUntil) > new Date() ? t('customers.creditHold.overriddenTitle') : t('customers.creditHold.activeTitle')}
               description={
-                customer.salesBlockReasons?.length
+                customer.overrideCreditHoldUntil && new Date(customer.overrideCreditHoldUntil) > new Date()
+                  ? t('customers.creditHold.overriddenDesc', { date: toInputDateFormat(customer.overrideCreditHoldUntil) })
+                  : customer.salesBlockReasons?.length
                   ? (customer.salesBlockReasons as string[]).map((r: string, index: number, array: string[]) => {
                       const text = t(`customers.creditHold.reasons.${r}` as Parameters<typeof t>[0]);
                       const isLast = index === array.length - 1;
@@ -548,6 +623,19 @@ export default function AccountDetailPage({
             fetchAll
             rowIdField="invoiceId"
             rowHref={(row: { invoiceId: string; salesOrderId?: string }) => row.salesOrderId ? `/sales-orders/${row.salesOrderId}#invoices-section` : ''}
+          />
+        )}
+
+        {activeTab === "creditNotes" && (
+          <DetailTabGrid
+            title="Sales Credit Notes"
+            endpoint={`/api/sales-credit-notes?customerId=${encodeURIComponent(params.id)}&limit=50`}
+            columns={creditNoteColumns}
+            gridKey="customer-credit-notes"
+            urlPrefix="sales-credit-notes"
+            fetchAll
+            rowIdField="creditNoteId"
+            rowHref={(row: { creditNoteId?: string }) => row.creditNoteId ? routes.salesCreditNotes.detail(row.creditNoteId) : ''}
           />
         )}
 

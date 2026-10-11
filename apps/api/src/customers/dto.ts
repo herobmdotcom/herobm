@@ -187,6 +187,14 @@ export class BaseCustomerGroupDto {
   @IsOptional()
   @IsString()
   stateCode?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @Transform(({ value }) =>
+    value === '' || value === null ? false : Boolean(value),
+  )
+  @IsBoolean()
+  isOnCreditHold?: boolean;
 }
 
 export class CreateCustomerGroupDto extends BaseCustomerGroupDto {}
@@ -261,6 +269,7 @@ export class CustomerGroupResponseDto {
   defaultCostCenterId?: string;
   defaultActivityId?: string;
   stateCode?: string;
+  @ApiProperty({ required: false })
   isOnCreditHold?: boolean;
   creditLimit?: string;
   tradingTermsId?: string;
@@ -299,8 +308,13 @@ export class AgedBalanceResponseDto {
 export class CreditAssessmentResponseDto {
   totalInvoiceBalance!: number;
   overdueInvoiceBalance!: number;
+  totalCreditNoteBalance?: number;
+  unallocatedPaymentBalance?: number;
+  netOutstandingBalance?: number;
   glBalance!: number;
   isOverdue!: boolean;
+  oldestOverdueInvoice?: string;
+  oldestOverdueInvoiceId?: string;
 }
 
 export class DeleteCustomerGroupResponseDto {

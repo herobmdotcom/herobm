@@ -242,104 +242,153 @@ export function CustomerDetailsTab({
         </div>
 
         {/* Credit Overview Card */}
-        {canManageCredit && (
-          <div id="credit-overview-section" className="card">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-              <h3 className="section-heading flex items-center gap-2 m-0 p-0 border-0">
-                <span className="material-symbols-outlined shrink-0">credit_card</span>
-                <span>Credit</span>
-              </h3>
-              <div className="flex items-center gap-2">
-                {onPrintStatement && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={onPrintStatement}
-                    disabled={saving}
-                  >
-                    Print Statement
-                  </Button>
-                )}
-                {onEmailStatement && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={onEmailStatement}
-                    disabled={saving}
-                  >
-                    Email Statement
-                  </Button>
-                )}
-                {onPrintOverdueNotice && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={onPrintOverdueNotice}
-                    disabled={saving}
-                  >
-                    Print Overdue Notice
-                  </Button>
-                )}
-                {onEmailOverdueNotice && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={onEmailOverdueNotice}
-                    disabled={saving}
-                  >
-                    Email Overdue Notice
-                  </Button>
-                )}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <div>
-                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                  {t("salesOrders.creditHold.totalOutstanding")}
-                </label>
-                <p className="font-semibold text-lg">
-                  {creditAssessment ? formatAmount(creditAssessment.totalInvoiceBalance, dto.currencyCode || baseCurrency) : "—"}
-                </p>
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                  {t("salesOrders.creditHold.overdue")}
-                </label>
-                <p className={`font-semibold text-lg ${creditAssessment && creditAssessment.overdueInvoiceBalance > 0 ? "text-red-600" : ""}`}>
-                  {creditAssessment ? formatAmount(creditAssessment.overdueInvoiceBalance, dto.currencyCode || baseCurrency) : "—"}
-                </p>
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                  {t("salesOrders.creditHold.glBalance")}
-                </label>
-                <p className="font-semibold text-lg">
-                  {creditAssessment ? formatAmount(creditAssessment.glBalance, dto.currencyCode || baseCurrency) : "—"}
-                </p>
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                  {t("portal.creditLimit")}
-                </label>
-                <p className="font-semibold text-lg">
-                  {formatAmount(parseFloat(dto.creditLimit ?? (creditLimitInheritance.inheritedValue as string) ?? "0"), dto.currencyCode || baseCurrency)}
-                </p>
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
-                  {t("salesOrders.creditHold.systemStatus")}
-                </label>
-                <p className="font-semibold text-lg flex items-center gap-1.5">
-                  {dto.isSalesBlocked ? (
-                    <><span className="w-2.5 h-2.5 rounded-full bg-red-500"></span><span className="text-red-700">Blocked</span></>
-                  ) : (
-                    <><span className="w-2.5 h-2.5 rounded-full bg-green-500"></span><span className="text-green-700">Good Standing</span></>
+        {canManageCredit && (() => {
+          const netBalance = creditAssessment?.netOutstandingBalance ?? creditAssessment?.totalInvoiceBalance ?? 0;
+          const glBalance = creditAssessment?.glBalance ?? 0;
+          const discrepancy = Math.abs(netBalance - glBalance);
+          const isReconciled = discrepancy < 0.01;
+          const isInCredit = netBalance < -0.005;
+          const isDue = netBalance > 0.005;
+          const totalCredits = (creditAssessment?.totalCreditNoteBalance ?? 0) + (creditAssessment?.unallocatedPaymentBalance ?? 0);
+          const effectiveLimitNum = parseFloat(
+            String(
+              dto.creditLimit !== null && dto.creditLimit !== undefined && dto.creditLimit !== ""
+                ? dto.creditLimit
+                : creditLimitInheritance.inheritedValue || "0"
+            ) || "0"
+          );
+
+          const standingStatusText = dto.isSalesBlocked 
+            ? t('customers.credit.blocked') 
+            : t('customers.credit.goodStanding');
+
+          const creditNotesLabel = (creditAssessment?.unallocatedPaymentBalance ?? 0) > 0
+            ? t('customers.credit.creditsAndReceipts')
+            : t('customers.credit.creditNotes');
+
+          return (
+            <div id="credit-overview-section" className="card">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+                <div className="flex items-center gap-2.5">
+                  <h3 className="section-heading !mb-0 p-0 border-0">
+                    Credit
+                  </h3>
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                    dto.isSalesBlocked 
+                      ? 'bg-red-500/10 text-red-500 border border-red-500/20' 
+                      : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${dto.isSalesBlocked ? 'bg-red-500' : 'bg-emerald-500'}`}></span>
+                    {standingStatusText}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {onPrintStatement && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={onPrintStatement}
+                      disabled={saving}
+                    >
+                      Print Statement
+                    </Button>
                   )}
-                </p>
+                  {onEmailStatement && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={onEmailStatement}
+                      disabled={saving}
+                    >
+                      Email Statement
+                    </Button>
+                  )}
+                  {onPrintOverdueNotice && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={onPrintOverdueNotice}
+                      disabled={saving}
+                    >
+                      Print Overdue Notice
+                    </Button>
+                  )}
+                  {onEmailOverdueNotice && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={onEmailOverdueNotice}
+                      disabled={saving}
+                    >
+                      Email Overdue Notice
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Clean Flat Metric Row */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
+                {/* 1. Net Position */}
+                <div>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                    Net Position
+                  </label>
+                  <p className={`font-semibold text-lg ${isInCredit ? 'text-emerald-500' : isDue && (creditAssessment?.overdueInvoiceBalance ?? 0) > 0 ? 'text-red-500' : ''}`}>
+                    {creditAssessment ? formatAmount(netBalance, dto.currencyCode || baseCurrency) : "—"}
+                  </p>
+                  {creditAssessment && (
+                    <p className="text-xs text-[var(--text-muted)] mt-1">
+                      {isReconciled 
+                        ? `GL Reconciled (${formatAmount(glBalance, dto.currencyCode || baseCurrency)})` 
+                        : `GL Discrepancy: ${formatAmount(discrepancy, dto.currencyCode || baseCurrency)} (GL: ${formatAmount(glBalance, dto.currencyCode || baseCurrency)})`
+                      }
+                    </p>
+                  )}
+                </div>
+
+                {/* 2. Invoices */}
+                <div>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                    Invoices
+                  </label>
+                  <p className="font-semibold text-lg">
+                    {creditAssessment ? formatAmount(creditAssessment.totalInvoiceBalance, dto.currencyCode || baseCurrency) : "—"}
+                  </p>
+                </div>
+
+                {/* 3. Credit Notes */}
+                <div>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                    {creditNotesLabel}
+                  </label>
+                  <p className={`font-semibold text-lg ${totalCredits > 0 ? 'text-emerald-500' : ''}`}>
+                    {creditAssessment ? formatAmount(totalCredits, dto.currencyCode || baseCurrency) : "—"}
+                  </p>
+                </div>
+
+                {/* 4. Overdue */}
+                <div>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                    Overdue
+                  </label>
+                  <p className={`font-semibold text-lg ${(creditAssessment?.overdueInvoiceBalance ?? 0) > 0 ? 'text-red-500' : ''}`}>
+                    {creditAssessment ? formatAmount(creditAssessment.overdueInvoiceBalance, dto.currencyCode || baseCurrency) : "—"}
+                  </p>
+                </div>
+
+                {/* 5. Credit Limit */}
+                <div>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
+                    Credit Limit
+                  </label>
+                  <p className="font-semibold text-lg">
+                    {formatAmount(effectiveLimitNum, dto.currencyCode || baseCurrency)}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Pricing & Tax Card */}
         <div id="pricing-section" className="card">

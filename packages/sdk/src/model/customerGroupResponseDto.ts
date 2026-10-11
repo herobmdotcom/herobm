@@ -7,6 +7,7 @@
  */
 
 export interface CustomerGroupResponseDto {
+  isOnCreditHold?: boolean;
   earlyPaymentDiscount?: string;
   earlyPaymentDiscountDays?: number;
   customerGroupId: string;
@@ -17,7 +18,6 @@ export interface CustomerGroupResponseDto {
   defaultCostCenterId?: string;
   defaultActivityId?: string;
   stateCode?: string;
-  isOnCreditHold?: boolean;
   creditLimit?: string;
   tradingTermsId?: string;
   taxPositionId?: string;

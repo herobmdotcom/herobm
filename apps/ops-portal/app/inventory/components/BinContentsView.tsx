@@ -82,6 +82,7 @@ export default function BinContentsView() {
     { field: 'productName', headerName: tCommon('columns.name'), flex: 1, minWidth: 200, valueFormatter: (params) => params.value || '—' },
     { field: 'actualQuantity', headerName: tCommon('columns.qty'), width: 90, type: 'numericColumn' },
     { 
+      colId: 'boxQty',
       headerName: 'Box Qty', 
       width: 130, 
       type: 'rightAligned',
@@ -159,7 +160,8 @@ export default function BinContentsView() {
       <DataGrid<BinContentRow>
         endpoint={binsEndpoint}
         columns={columns}
-        gridKey={`ops-bins-${refreshKey}`}
+        gridKey="ops-bins"
+        refreshTrigger={refreshKey}
         rowIdField="binContentId"
         rowSelection="multiple"
         onSelectionChanged={handleSelectionChanged}

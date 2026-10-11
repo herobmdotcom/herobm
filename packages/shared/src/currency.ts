@@ -97,15 +97,18 @@ export function formatAmount(
   display: 'symbol' | 'code' = CURRENCY_DISPLAY
 ): string {
   const def = getCurrency(currencyCode);
-  const formatted = amount.toLocaleString(undefined, {
+  const isNegative = amount < 0;
+  const absAmount = Math.abs(amount);
+  const formatted = absAmount.toLocaleString(undefined, {
     minimumFractionDigits: def.decimals,
     maximumFractionDigits: def.decimals,
   });
 
+  const sign = isNegative ? '-' : '';
   if (display === 'symbol') {
-    return `${def.symbol}${formatted}`;
+    return `${sign}${def.symbol}${formatted}`;
   }
-  return `${def.code} ${formatted}`;
+  return `${sign}${def.code} ${formatted}`;
 }
 
 /**

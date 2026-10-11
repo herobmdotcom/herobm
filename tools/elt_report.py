@@ -39,8 +39,8 @@ def get_db_metrics(source):
         conn = psycopg2.connect(
             host=os.environ.get("POSTGRES_HOST", "localhost"),
             port=os.environ.get("POSTGRES_PORT", "5432"),
-            user=os.environ.get("POSTGRES_USER", "postgres"),
-            password=os.environ.get("POSTGRES_PASSWORD", "postgres"),
+            user=os.environ["POSTGRES_USER"],
+            password=os.environ["POSTGRES_PASSWORD"],
             dbname=os.environ.get("POSTGRES_DB", "herobm")
         )
         cur = conn.cursor()

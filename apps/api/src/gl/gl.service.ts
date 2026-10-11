@@ -31,13 +31,14 @@ import {
   activities,
   outbox,
   organizations,
-  glFiscalPeriods,
   financialEvents,
   systemEvents,
   salesInvoices,
   projectLedgerEntries,
   projects,
   projectTasks,
+  bankStatementLines,
+  glReconciliations,
 } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -58,6 +59,7 @@ import {
   PROJECT_LEDGER_ENTRY_TYPE,
   PROJECT_LINE_TYPE,
   PROJECT_SOURCE_TYPE,
+  CURRENCIES,
 } from '@herobm/shared';
 import {
   JournalLineDto,
@@ -81,6 +83,12 @@ import {
   type ProfitAndLossParams,
   type BalanceSheetParams,
 } from './gl-financial-statements.utils';
+import {
+  assertPeriodOpen,
+  generateFiscalYearPeriods,
+  getFiscalPeriods,
+  updatePeriodStatus,
+} from './gl-fiscal-periods.utils';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -658,6 +666,7 @@ export class GlService implements OnModuleInit {
       reportCategory?: string;
       isActive?: boolean;
       isBankAccount?: boolean;
+      currencyCode?: string;
       metadata?: Record<string, unknown>;
     },
     userId?: string,
@@ -690,6 +699,53 @@ export class GlService implements OnModuleInit {
         updateData.reportCategory = data.reportCategory
           ? (data.reportCategory as GLReportCategory)
           : null;
+      }
+
+      if (
+        data.currencyCode !== undefined &&
+        data.currencyCode !== existing.currencyCode
+      ) {
+        if (!CURRENCIES.some((c) => c.code === data.currencyCode)) {
+          throw new BadRequestException(
+            `Invalid currency code '${data.currencyCode}'.`,
+          );
+        }
+
+        // Verify zero transactions invariant across journal lines, statement lines, and reconciliations
+        const [journalUsage] = await tx
+          .select({ count: sql<number>`count(*)` })
+          .from(glJournalLines)
+          .where(eq(glJournalLines.glAccountId, glAccountId));
+
+        if (Number(journalUsage?.count || 0) > 0) {
+          throw new BadRequestException(
+            `Cannot change currency on account '${existing.accountCode} - ${existing.name}' because journal entries already exist. Deactivate this account and create a new one instead.`,
+          );
+        }
+
+        const [statementUsage] = await tx
+          .select({ count: sql<number>`count(*)` })
+          .from(bankStatementLines)
+          .where(eq(bankStatementLines.glAccountId, glAccountId));
+
+        if (Number(statementUsage?.count || 0) > 0) {
+          throw new BadRequestException(
+            `Cannot change currency on account '${existing.accountCode} - ${existing.name}' because bank statement lines exist. Deactivate this account and create a new one instead.`,
+          );
+        }
+
+        const [reconUsage] = await tx
+          .select({ count: sql<number>`count(*)` })
+          .from(glReconciliations)
+          .where(eq(glReconciliations.glAccountId, glAccountId));
+
+        if (Number(reconUsage?.count || 0) > 0) {
+          throw new BadRequestException(
+            `Cannot change currency on account '${existing.accountCode} - ${existing.name}' because reconciliation records exist. Deactivate this account and create a new one instead.`,
+          );
+        }
+
+        updateData.currencyCode = data.currencyCode;
       }
 
       const [updated] = await tx
@@ -1121,33 +1177,7 @@ export class GlService implements OnModuleInit {
    * Verifies that the given entryDate does not fall into a locked or closed accounting period.
    */
   async assertPeriodOpen(entryDate: string, tx?: DrizzleDB) {
-    const queryDb = tx || this.db;
-    const [period] = await queryDb
-      .select()
-      .from(glFiscalPeriods)
-      .where(
-        and(
-          sql`${glFiscalPeriods.startDate} <= ${entryDate}`,
-          sql`${glFiscalPeriods.endDate} >= ${entryDate}`,
-        ),
-      )
-      .limit(1);
-
-    if (!period) {
-      return;
-    }
-
-    if (period.status === 'hard_closed') {
-      throw new BadRequestException(
-        `Cannot post to hard-closed accounting period '${period.periodName}' (${period.startDate} to ${period.endDate}). Postings in closed periods are forbidden.`,
-      );
-    }
-
-    if (period.status === 'soft_locked') {
-      throw new BadRequestException(
-        `Cannot post to soft-locked accounting period '${period.periodName}' (${period.startDate} to ${period.endDate}). Period is locked for adjustments.`,
-      );
-    }
+    return assertPeriodOpen(entryDate, tx || this.db);
   }
 
   /**
@@ -1157,130 +1187,14 @@ export class GlService implements OnModuleInit {
     fiscalYear?: number;
     status?: 'open' | 'soft_locked' | 'hard_closed';
   }) {
-    const targetYear = query?.fiscalYear || new Date().getFullYear();
-    const existing = await this.db
-      .select({ id: glFiscalPeriods.periodId })
-      .from(glFiscalPeriods)
-      .where(eq(glFiscalPeriods.fiscalYear, targetYear))
-      .limit(1);
-
-    if (existing.length === 0) {
-      await this.generateFiscalYearPeriods(targetYear, 'system');
-    }
-
-    const conditions = [];
-    if (query?.fiscalYear) {
-      conditions.push(eq(glFiscalPeriods.fiscalYear, query.fiscalYear));
-    }
-    if (query?.status) {
-      conditions.push(eq(glFiscalPeriods.status, query.status));
-    }
-
-    const periods = await this.db
-      .select()
-      .from(glFiscalPeriods)
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .orderBy(glFiscalPeriods.startDate);
-
-    if (periods.length === 0) {
-      return [];
-    }
-
-    const periodIds = periods.map((p) => p.periodId);
-    const events = await this.db
-      .select()
-      .from(financialEvents)
-      .where(
-        and(
-          eq(financialEvents.entityType, EntityType.FISCAL_PERIOD),
-          inArray(financialEvents.entityId, periodIds),
-        ),
-      )
-      .orderBy(sql`${financialEvents.createdOn} DESC`);
-
-    const eventsByPeriodId = new Map<string, typeof events>();
-    for (const evt of events) {
-      const list = eventsByPeriodId.get(evt.entityId) || [];
-      list.push(evt);
-      eventsByPeriodId.set(evt.entityId, list);
-    }
-
-    return periods.map((p) => ({
-      ...p,
-      events: eventsByPeriodId.get(p.periodId) || [],
-    }));
+    return getFiscalPeriods(this.db, query);
   }
 
   /**
    * Auto-generates 12 monthly fiscal periods for a fiscal year.
    */
   async generateFiscalYearPeriods(fiscalYear: number, actor?: string) {
-    const [settings] = await this.db
-      .select({ fiscalYearStartMonth: glSettings.fiscalYearStartMonth })
-      .from(glSettings)
-      .limit(1);
-    const startMonth = settings?.fiscalYearStartMonth || 1;
-
-    await this.db.transaction(async (tx) => {
-      for (let i = 0; i < 12; i++) {
-        const periodNumber = i + 1;
-        const monthZeroIndexed = (startMonth - 1 + i) % 12;
-        const yearOffset = Math.floor((startMonth - 1 + i) / 12);
-        const calendarYear = fiscalYear + yearOffset;
-        const monthStr = String(monthZeroIndexed + 1).padStart(2, '0');
-
-        const startDate = `${calendarYear}-${monthStr}-01`;
-        const lastDay = new Date(
-          calendarYear,
-          monthZeroIndexed + 1,
-          0,
-        ).getDate();
-        const endDate = `${calendarYear}-${monthStr}-${String(lastDay).padStart(2, '0')}`;
-        const periodName = `${calendarYear}-${monthStr}`;
-
-        // n-plus-one-ignore: fixed 12-month calendar loop during fiscal year setup
-        const [existing] = await tx
-          .select()
-          .from(glFiscalPeriods)
-          .where(eq(glFiscalPeriods.periodName, periodName))
-          .limit(1);
-
-        if (!existing) {
-          const notes = `Period ${periodNumber} of FY${fiscalYear} (created by ${actor || 'admin'})`;
-          const [inserted] = await tx
-            .insert(glFiscalPeriods)
-            .values({
-              periodName,
-              fiscalYear,
-              periodNumber,
-              startDate,
-              endDate,
-              status: 'open',
-              notes,
-            })
-            .returning();
-
-          await emitEvent(tx, {
-            entityType: EntityType.FISCAL_PERIOD,
-            entityId: inserted.periodId,
-            eventType: EventType.CREATED,
-            entityDisplayName: inserted.periodName,
-            payload: {
-              periodName: inserted.periodName,
-              fiscalYear: inserted.fiscalYear,
-              periodNumber: inserted.periodNumber,
-              startDate: inserted.startDate,
-              endDate: inserted.endDate,
-              status: inserted.status,
-              notes: inserted.notes,
-            },
-            actor,
-          });
-        }
-      }
-    });
-
-    return this.getFiscalPeriods({ fiscalYear });
+    return generateFiscalYearPeriods(this.db, fiscalYear, actor);
   }
 
   /**
@@ -1292,83 +1206,7 @@ export class GlService implements OnModuleInit {
     actor?: string,
     notes?: string,
   ) {
-    return await this.db.transaction(async (tx) => {
-      const [period] = await tx
-        .select()
-        .from(glFiscalPeriods)
-        .where(eq(glFiscalPeriods.periodId, periodId))
-        .limit(1);
-
-      if (!period) {
-        throw new NotFoundException(`Fiscal period '${periodId}' not found.`);
-      }
-
-      const updates: Record<string, unknown> = {
-        status,
-        modifiedOn: new Date(),
-      };
-
-      if (notes !== undefined) {
-        updates.notes = notes;
-      }
-
-      if (status === 'soft_locked') {
-        updates.lockedBy = actor || 'admin';
-        updates.lockedAt = new Date();
-      } else if (status === 'hard_closed') {
-        updates.closedBy = actor || 'admin';
-        updates.closedAt = new Date();
-      } else if (status === 'open') {
-        updates.lockedBy = null;
-        updates.lockedAt = null;
-        updates.closedBy = null;
-        updates.closedAt = null;
-      }
-
-      const [updated] = await tx
-        .update(glFiscalPeriods)
-        .set(updates)
-        .where(eq(glFiscalPeriods.periodId, periodId))
-        .returning();
-
-      if (status !== period.status) {
-        await emitEvent(tx, {
-          entityType: EntityType.FISCAL_PERIOD,
-          entityId: updated.periodId,
-          eventType: EventType.STATUS_CHANGED,
-          entityDisplayName: updated.periodName,
-          payload: {
-            periodName: updated.periodName,
-            fiscalYear: updated.fiscalYear,
-            periodNumber: updated.periodNumber,
-            startDate: updated.startDate,
-            endDate: updated.endDate,
-            status: updated.status,
-            notes: updated.notes,
-          },
-          actor,
-        });
-      } else {
-        await emitEvent(tx, {
-          entityType: EntityType.FISCAL_PERIOD,
-          entityId: updated.periodId,
-          eventType: EventType.UPDATED,
-          entityDisplayName: updated.periodName,
-          payload: {
-            periodName: updated.periodName,
-            fiscalYear: updated.fiscalYear,
-            periodNumber: updated.periodNumber,
-            startDate: updated.startDate,
-            endDate: updated.endDate,
-            status: updated.status,
-            notes: updated.notes,
-          },
-          actor,
-        });
-      }
-
-      return updated;
-    });
+    return updatePeriodStatus(this.db, periodId, status, actor, notes);
   }
 
   // -------------------------------------------------------------------------

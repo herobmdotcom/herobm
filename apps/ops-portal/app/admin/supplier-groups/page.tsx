@@ -2,6 +2,7 @@
 
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useState, useEffect, useMemo } from 'react';
+import { mutate } from 'swr';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
@@ -120,6 +121,7 @@ export default function SupplierGroupsAdmin() {
         await api.supplierGroupsControllerCreate(formattedPayload as unknown as api.CreateSupplierGroupDto);
       }
       loadData();
+      mutate('ref-supplier-groups');
     } catch (err: unknown) {
       toast.error(getErrorMessage(err));
       reportError(err, 'SupplierGroupsAdmin_handleSave');
@@ -133,6 +135,7 @@ export default function SupplierGroupsAdmin() {
       await api.supplierGroupsControllerRemove(payload.supplierGroupId || '');
       toast.success(t('toasts.deleted'));
       loadData();
+      mutate('ref-supplier-groups');
     } catch (err: unknown) {
       toast.error(getErrorMessage(err));
       reportError(err, 'SupplierGroupsAdmin_handleDelete');

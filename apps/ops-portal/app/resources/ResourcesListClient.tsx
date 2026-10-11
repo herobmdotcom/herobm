@@ -212,6 +212,7 @@ export default function ResourcesListClient() {
         },
       },
       {
+        colId: 'linkedEntity',
         headerName: t('columns.linkedEntity'),
         minWidth: 180,
         flex: 1.5,

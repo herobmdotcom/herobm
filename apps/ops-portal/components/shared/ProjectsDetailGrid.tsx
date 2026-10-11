@@ -145,6 +145,7 @@ export function ProjectsDetailGrid({
       ...(shouldShowCustomer
         ? [
             {
+              colId: 'customer',
               headerName: tProjects('columns.customer'),
               minWidth: 160,
               flex: 1.2,
@@ -190,6 +191,7 @@ export function ProjectsDetailGrid({
         valueFormatter: (p: { value?: string }) => formatBillingType(p.value),
       },
       {
+        colId: 'budget',
         headerName: tProjects('columns.budget'),
         width: 130,
         type: 'numericColumn',
@@ -205,6 +207,7 @@ export function ProjectsDetailGrid({
         },
       },
       {
+        colId: 'revenue',
         headerName: tProjects('columns.revenue'),
         width: 130,
         type: 'numericColumn',
@@ -230,6 +233,7 @@ export function ProjectsDetailGrid({
         },
       },
       {
+        colId: 'manager',
         headerName: tProjects('columns.manager'),
         width: 150,
         valueGetter: (p: { data?: ProjectGridRow }) =>

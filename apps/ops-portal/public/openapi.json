@@ -27338,11 +27338,26 @@
           "overdueInvoiceBalance": {
             "type": "number"
           },
+          "totalCreditNoteBalance": {
+            "type": "number"
+          },
+          "unallocatedPaymentBalance": {
+            "type": "number"
+          },
+          "netOutstandingBalance": {
+            "type": "number"
+          },
           "glBalance": {
             "type": "number"
           },
           "isOverdue": {
             "type": "boolean"
+          },
+          "oldestOverdueInvoice": {
+            "type": "string"
+          },
+          "oldestOverdueInvoiceId": {
+            "type": "string"
           }
         },
         "required": [
@@ -27607,6 +27622,9 @@
       "CustomerGroupResponseDto": {
         "type": "object",
         "properties": {
+          "isOnCreditHold": {
+            "type": "boolean"
+          },
           "earlyPaymentDiscount": {
             "type": "string"
           },
@@ -27636,9 +27654,6 @@
           },
           "stateCode": {
             "type": "string"
-          },
-          "isOnCreditHold": {
-            "type": "boolean"
           },
           "creditLimit": {
             "type": "string"
@@ -27671,6 +27686,9 @@
           },
           "stateCode": {
             "type": "string"
+          },
+          "isOnCreditHold": {
+            "type": "boolean"
           },
           "groupCode": {
             "type": "string"
@@ -27722,6 +27740,9 @@
           },
           "stateCode": {
             "type": "string"
+          },
+          "isOnCreditHold": {
+            "type": "boolean"
           },
           "groupCode": {
             "type": "string"
@@ -29303,7 +29324,7 @@
               "allow_fractional",
               "round_up",
               "round_down",
-              "round_nearest"
+              "force_multiple"
             ]
           }
         },
@@ -29331,7 +29352,7 @@
               "allow_fractional",
               "round_up",
               "round_down",
-              "round_nearest"
+              "force_multiple"
             ]
           }
         }
@@ -29757,6 +29778,22 @@
           "date": {
             "format": "date-time",
             "type": "string"
+          },
+          "uomId": {
+            "type": "string",
+            "nullable": true
+          },
+          "originalQuantity": {
+            "type": "string",
+            "nullable": true
+          },
+          "unitCost": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalValue": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -29781,6 +29818,22 @@
           "date": {
             "format": "date-time",
             "type": "string"
+          },
+          "uomId": {
+            "type": "string",
+            "nullable": true
+          },
+          "originalQuantity": {
+            "type": "string",
+            "nullable": true
+          },
+          "unitCost": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalValue": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -31028,6 +31081,9 @@
           },
           "isBankAccount": {
             "type": "boolean"
+          },
+          "currencyCode": {
+            "type": "string"
           },
           "metadata": {
             "type": "object"
@@ -39345,6 +39401,9 @@
           "expectedDate": {
             "type": "string"
           },
+          "orderDate": {
+            "type": "string"
+          },
           "lines": {
             "type": "array",
             "items": {
@@ -39353,7 +39412,6 @@
           }
         },
         "required": [
-          "purchaseOrderId",
           "orderNumber",
           "deliveryLocationId",
           "vendorId"
@@ -41846,6 +41904,16 @@
             ],
             "description": "Cut-off date mode for General Ledger opening balances take-on (start_of_month or current_date).",
             "default": "start_of_month"
+          },
+          "glImportMode": {
+            "type": "string",
+            "enum": [
+              "full",
+              "codes_only",
+              "none"
+            ],
+            "description": "General Ledger (GL) import mode (full, codes_only, none).",
+            "default": "full"
           },
           "dbConfig": {
             "$ref": "#/components/schemas/DbConfigDto"

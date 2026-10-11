@@ -9,6 +9,11 @@
 export interface CreditAssessmentResponseDto {
   totalInvoiceBalance: number;
   overdueInvoiceBalance: number;
+  totalCreditNoteBalance?: number;
+  unallocatedPaymentBalance?: number;
+  netOutstandingBalance?: number;
   glBalance: number;
   isOverdue: boolean;
+  oldestOverdueInvoice?: string;
+  oldestOverdueInvoiceId?: string;
 }

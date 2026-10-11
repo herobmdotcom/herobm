@@ -14,5 +14,5 @@ export const UpdateProductComponentDtoFractionalBehavior = {
   allow_fractional: 'allow_fractional',
   round_up: 'round_up',
   round_down: 'round_down',
-  round_nearest: 'round_nearest',
+  force_multiple: 'force_multiple',
 } as const;

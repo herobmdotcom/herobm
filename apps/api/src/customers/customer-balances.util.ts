@@ -12,6 +12,9 @@ export interface AgedBalanceResult {
   days31To60: number;
   days61To90: number;
   days90Plus: number;
+  totalInvoiceOutstanding?: number;
+  totalCreditNoteOutstanding?: number;
+  unallocatedPaymentsTotal?: number;
   totalOutstanding: number;
   glBalance: number;
   discrepancyAmount: number;
@@ -111,11 +114,50 @@ export async function calculateCustomerBalances(
     GROUP BY so.customer_id
   `;
 
-  const [invoicesRes, glRes, uninvoicedRes] = await Promise.all([
-    db.execute(invoicesQuery),
-    db.execute(glQuery),
-    db.execute(uninvoicedQuery),
-  ]);
+  const creditNotesFilter =
+    customerIds && customerIds.length > 0
+      ? sql`AND cn.customer_id IN (${sql.join(
+          customerIds.map((id) => sql`${id}`),
+          sql`, `,
+        )})`
+      : sql``;
+
+  const creditNotesQuery = sql`
+    SELECT
+      cn.customer_id as "customerId",
+      COALESCE(SUM(cn.outstanding_amount), 0) as "creditNotesTotal"
+    FROM herobm_core.sales_credit_notes cn
+    WHERE cn.outstanding_amount > 0 AND cn.state_code NOT IN ('draft', 'cancelled', 'paid', 'void')
+    ${creditNotesFilter}
+    GROUP BY cn.customer_id
+  `;
+
+  const paymentsFilter =
+    customerIds && customerIds.length > 0
+      ? sql`AND pe.party_id IN (${sql.join(
+          customerIds.map((id) => sql`${id}`),
+          sql`, `,
+        )})`
+      : sql``;
+
+  const paymentsQuery = sql`
+    SELECT
+      pe.party_id as "customerId",
+      COALESCE(SUM(pe.unallocated_amount), 0) as "unallocatedPaymentsTotal"
+    FROM herobm_core.payment_entries pe
+    WHERE pe.payment_type = 'customer_receipt' AND pe.state_code = 'posted' AND pe.unallocated_amount > 0
+    ${paymentsFilter}
+    GROUP BY pe.party_id
+  `;
+
+  const [invoicesRes, glRes, uninvoicedRes, creditNotesRes, paymentsRes] =
+    await Promise.all([
+      db.execute(invoicesQuery),
+      db.execute(glQuery),
+      db.execute(uninvoicedQuery),
+      db.execute(creditNotesQuery),
+      db.execute(paymentsQuery),
+    ]);
 
   const invoicesRows = ((invoicesRes as unknown as Record<string, unknown>)
     .rows ?? invoicesRes) as Record<string, unknown>[];
@@ -123,6 +165,11 @@ export async function calculateCustomerBalances(
     glRes) as Record<string, unknown>[];
   const uninvoicedRows = ((uninvoicedRes as unknown as Record<string, unknown>)
     .rows ?? uninvoicedRes) as Record<string, unknown>[];
+  const creditNotesRows = ((
+    creditNotesRes as unknown as Record<string, unknown>
+  ).rows ?? creditNotesRes) as Record<string, unknown>[];
+  const paymentsRows = ((paymentsRes as unknown as Record<string, unknown>)
+    .rows ?? paymentsRes) as Record<string, unknown>[];
 
   const glMap = new Map<string, number>();
   for (const row of glRows) {
@@ -138,15 +185,35 @@ export async function calculateCustomerBalances(
     }
   }
 
-  // If customerIds is passed (i.e. we are fulfilling the Customers Table index),
-  // we must ensure we return a result for EVERY requested customer, even if they have $0 outstanding invoices.
-  // The invoicesQuery only returns customers with outstanding invoices.
-  // So we merge.
+  const creditNotesMap = new Map<string, number>();
+  for (const row of creditNotesRows) {
+    if (row.customerId) {
+      creditNotesMap.set(
+        row.customerId as string,
+        Number(row.creditNotesTotal),
+      );
+    }
+  }
+
+  const paymentsMap = new Map<string, number>();
+  for (const row of paymentsRows) {
+    if (row.customerId) {
+      paymentsMap.set(
+        row.customerId as string,
+        Number(row.unallocatedPaymentsTotal),
+      );
+    }
+  }
+
   const resultMap = new Map<string, AgedBalanceResult>();
 
   if (customerIds && customerIds.length > 0) {
     // Pre-populate with 0 balances
     for (const id of customerIds) {
+      const glBalance = glMap.get(id) || 0;
+      const cnTotal = creditNotesMap.get(id) || 0;
+      const payments = paymentsMap.get(id) || 0;
+      const netOutstanding = 0 - cnTotal - payments;
       resultMap.set(id, {
         customerId: id,
         current: 0,
@@ -154,9 +221,12 @@ export async function calculateCustomerBalances(
         days31To60: 0,
         days61To90: 0,
         days90Plus: 0,
-        totalOutstanding: 0,
-        glBalance: glMap.get(id) || 0,
-        discrepancyAmount: Math.abs(0 - (glMap.get(id) || 0)),
+        totalInvoiceOutstanding: 0,
+        totalCreditNoteOutstanding: cnTotal,
+        unallocatedPaymentsTotal: payments,
+        totalOutstanding: netOutstanding,
+        glBalance,
+        discrepancyAmount: Math.abs(netOutstanding - glBalance),
         uninvoicedOrdersTotal: uninvoicedMap.get(id) || 0,
       });
     }
@@ -166,7 +236,10 @@ export async function calculateCustomerBalances(
     const id = row.customerId as string;
     const glBalance = glMap.get(id) || 0;
     const uninvoiced = uninvoicedMap.get(id) || 0;
-    const totalOutstanding = Number(row.totalOutstanding);
+    const invoiceOutstanding = Number(row.totalOutstanding);
+    const cnTotal = creditNotesMap.get(id) || 0;
+    const payments = paymentsMap.get(id) || 0;
+    const totalOutstanding = invoiceOutstanding - cnTotal - payments;
 
     resultMap.set(id, {
       customerId: id,
@@ -178,6 +251,9 @@ export async function calculateCustomerBalances(
       days31To60: Number(row.days31To60),
       days61To90: Number(row.days61To90),
       days90Plus: Number(row.days90Plus),
+      totalInvoiceOutstanding: invoiceOutstanding,
+      totalCreditNoteOutstanding: cnTotal,
+      unallocatedPaymentsTotal: payments,
       totalOutstanding,
       glBalance,
       discrepancyAmount: Math.abs(totalOutstanding - glBalance),

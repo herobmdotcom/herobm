@@ -1,4 +1,4 @@
-import { convertAmount, MissingExchangeRateError } from './currency';
+import { convertAmount, formatAmount, MissingExchangeRateError } from './currency';
 
 describe('currency conversion', () => {
   const rates = new Map<string, number>([
@@ -50,5 +50,12 @@ describe('currency conversion', () => {
     // 100 EUR * 140.556 = 14055.6 -> rounded to 14056
     const ratesWithJpy = new Map<string, number>([['JPY', 140.556]]);
     expect(convertAmount(100, 'EUR', 'JPY', 'EUR', ratesWithJpy)).toBe(14056);
+  });
+
+  it('should format positive and negative amounts with proper symbol positioning', () => {
+    expect(formatAmount(475, 'EUR')).toBe('€475.00');
+    expect(formatAmount(-41072.9, 'AUD')).toBe('-A$41,072.90');
+    expect(formatAmount(-41072.9, 'AUD', 'code')).toBe('-AUD 41,072.90');
+    expect(formatAmount(0, 'USD')).toBe('$0.00');
   });
 });

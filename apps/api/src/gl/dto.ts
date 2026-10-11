@@ -573,6 +573,10 @@ export class UpdateAccountRequestDto {
   @IsOptional()
   isBankAccount?: boolean;
 
+  @IsString()
+  @IsOptional()
+  currencyCode?: string;
+
   @IsObject()
   @IsOptional()
   metadata?: Record<string, unknown>;

@@ -569,14 +569,28 @@ export default function DataGrid<T>({
   }, [rowData, swrResponse, data]);
 
   const mergedColumns = useMemo<ColDef<T>[]>(() => {
-    if (!customFieldColumns.length) return columns;
-    const existingIds = new Set(
-      columns.map((c) => (c.colId || c.field || '') as string).filter(Boolean),
-    );
-    const uniqueCustomCols = customFieldColumns.filter(
-      (c) => !existingIds.has((c.colId || c.field || '') as string),
-    ) as ColDef<T>[];
-    return [...columns, ...uniqueCustomCols];
+    const rawCols = !customFieldColumns.length
+      ? columns
+      : (() => {
+          const existingIds = new Set(
+            columns.map((c) => (c.colId || c.field || '') as string).filter(Boolean),
+          );
+          const uniqueCustomCols = customFieldColumns.filter(
+            (c) => !existingIds.has((c.colId || c.field || '') as string),
+          ) as ColDef<T>[];
+          return [...columns, ...uniqueCustomCols];
+        })();
+
+    return rawCols.map((col, index) => {
+      const resolvedColId = (col.colId ||
+        col.field ||
+        (typeof col.headerName === 'string' ? col.headerName : undefined) ||
+        `col_${index}`) as string;
+      return {
+        ...col,
+        colId: resolvedColId,
+      };
+    });
   }, [columns, customFieldColumns]);
 
   /** Enhance columns: add header tooltips, cell tooltips, and numeric parsing */

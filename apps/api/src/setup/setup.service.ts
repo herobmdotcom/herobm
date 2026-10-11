@@ -951,6 +951,7 @@ export class SetupService {
       configJson: {
         legacyInvoicesPaidBeforeDate: dto.legacyInvoicesPaidBeforeDate,
         glCutoffMode: dto.glCutoffMode,
+        glImportMode: dto.glImportMode,
       },
       progressJson: [
         { step: 1, name: 'Importing Data (ELT)', status: 'running' },
@@ -1037,6 +1038,10 @@ export class SetupService {
         envOverride.DEFAULT_TAX_CATEGORY_CODE = dto.defaultTaxCategoryCode;
       }
 
+      if (dto.glImportMode) {
+        envOverride.GL_IMPORT_MODE = dto.glImportMode;
+      }
+
       const source = dto.source;
       if (!source) {
         throw new BadRequestException('Import source is required');
@@ -1121,7 +1126,9 @@ export class SetupService {
         }
       }
 
-      await this.inferAndSaveGlMetadataSchema(jobId);
+      if (dto.glImportMode !== 'none') {
+        await this.inferAndSaveGlMetadataSchema(jobId);
+      }
 
       // Reload app config cache so API picks up the new settings
       try {

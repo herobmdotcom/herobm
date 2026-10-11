@@ -131,6 +131,7 @@ export function SalesOrdersDetailGrid({
 
     if (shouldShowCustomer) {
       cols.push({
+        colId: 'customer',
         headerName: tSales('columns.customer') || tCommon('columns.customer'),
         minWidth: 160,
         flex: 1.1,

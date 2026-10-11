@@ -10,6 +10,7 @@ export interface UpdateCustomerGroupDto {
   earlyPaymentDiscount?: string;
   earlyPaymentDiscountDays?: number;
   stateCode?: string;
+  isOnCreditHold?: boolean;
   groupCode?: string;
   name?: string;
   defaultArAccountId?: string;

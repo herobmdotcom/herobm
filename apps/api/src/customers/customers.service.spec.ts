@@ -344,6 +344,46 @@ describe('CustomersService', () => {
       expect(result.data).toHaveLength(1);
       expect(result.data[0].isSalesBlocked).toBe(false);
     });
+
+    it('should include customer group early payment discount and stateCode in findAll', async () => {
+      const [ag] = await pg.db
+        .insert(customerGroups)
+        .values({
+          name: 'Discounted Group',
+          groupCode: 'DISC01',
+          earlyPaymentDiscount: '2.5',
+          earlyPaymentDiscountDays: 14,
+          isOnCreditHold: false,
+          stateCode: CUSTOMER_STATE.ACTIVE,
+        })
+        .returning();
+
+      const [act] = await pg.db
+        .insert(organizations)
+        .values({
+          stateCode: ORGANIZATION_STATE.ACTIVE,
+          name: 'Discounted Customer Org',
+          headquartersAddressLine1: 'AU',
+          isTaxRegistered: false,
+        })
+        .returning();
+
+      await pg.db.insert(customers).values({
+        organizationId: act.organizationId,
+        customerNumber: 'DISC-CUST-01',
+        currencyCode: 'USD',
+        stateCode: CUSTOMER_STATE.ACTIVE,
+        customerGroupId: ag.customerGroupId,
+        source: 'app',
+        createdBy: 'system',
+      });
+
+      const result = await service.findAll();
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].customerGroupEarlyPaymentDiscount).toBe('2.5');
+      expect(result.data[0].customerGroupEarlyPaymentDiscountDays).toBe(14);
+      expect(result.data[0].customerGroupStateCode).toBe(CUSTOMER_STATE.ACTIVE);
+    });
   });
 
   describe('findOne', () => {

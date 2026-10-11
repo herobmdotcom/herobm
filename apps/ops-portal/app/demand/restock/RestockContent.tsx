@@ -237,6 +237,7 @@ export default function RestockContent() {
             : '—',
       },
       {
+        colId: 'estimatedCost',
         headerName: t('columns.estimatedCost'),
         width: 125,
         cellClass: 'font-mono text-right font-semibold',

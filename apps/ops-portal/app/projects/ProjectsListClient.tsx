@@ -41,6 +41,7 @@ export default function ProjectsListClient() {
         flex: 2,
       },
       {
+        colId: 'customer',
         headerName: t('columns.customer'),
         minWidth: 160,
         flex: 1.5,
@@ -91,6 +92,7 @@ export default function ProjectsListClient() {
         },
       },
       {
+        colId: 'manager',
         headerName: t('columns.manager'),
         width: 150,
         valueGetter: (params) => {

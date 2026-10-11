@@ -11,7 +11,7 @@ import type { CreatePurchaseOrderLineDto } from './createPurchaseOrderLineDto';
 export interface CreatePurchaseOrderDto {
   /** @nullable */
   metadata?: CreatePurchaseOrderDtoMetadata;
-  purchaseOrderId: string;
+  purchaseOrderId?: string;
   orderNumber: string;
   deliveryLocationId: string;
   name?: string;
@@ -20,5 +20,6 @@ export interface CreatePurchaseOrderDto {
   notes?: string;
   referenceNumber?: string;
   expectedDate?: string;
+  orderDate?: string;
   lines?: CreatePurchaseOrderLineDto[];
 }

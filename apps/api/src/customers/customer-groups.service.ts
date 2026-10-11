@@ -49,8 +49,8 @@ export class CustomerGroupsService {
       const rows = await tx
         .insert(customerGroups)
         .values({
-          isOnCreditHold: false,
           ...dto,
+          isOnCreditHold: dto.isOnCreditHold ?? false,
           stateCode: (dto.stateCode as CustomerState) || CUSTOMER_STATE.ACTIVE,
         } as typeof customerGroups.$inferInsert)
         .returning();

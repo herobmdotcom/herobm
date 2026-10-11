@@ -91,7 +91,8 @@ export async function calculateSubledgerReconciliation(
   const arSubledger = await execScalar(sql`
     SELECT ((SELECT COALESCE(SUM(COALESCE(base_outstanding_amount, outstanding_amount)), 0)::numeric FROM herobm_core.sales_invoices WHERE state_code NOT IN ('draft', 'cancelled'))
           - (SELECT COALESCE(SUM(COALESCE(base_outstanding_amount, outstanding_amount)), 0)::numeric FROM herobm_core.sales_credit_notes WHERE state_code NOT IN ('draft', 'cancelled'))
-          - (SELECT COALESCE(SUM(COALESCE(base_unallocated_amount, unallocated_amount)), 0)::numeric FROM herobm_core.payment_entries WHERE payment_type = 'customer_receipt' AND state_code NOT IN ('draft', 'cancelled')))::numeric
+          - (SELECT COALESCE(SUM(COALESCE(base_unallocated_amount, unallocated_amount)), 0)::numeric FROM herobm_core.payment_entries WHERE payment_type = 'customer_receipt' AND state_code NOT IN ('draft', 'cancelled'))
+          + (SELECT COALESCE(SUM(COALESCE(base_unallocated_amount, unallocated_amount)), 0)::numeric FROM herobm_core.payment_entries WHERE payment_type = 'customer_refund' AND state_code NOT IN ('draft', 'cancelled')))::numeric
   `);
   const arGl = arId
     ? await execScalar(sql`
@@ -107,7 +108,8 @@ export async function calculateSubledgerReconciliation(
   const apSubledger = await execScalar(sql`
     SELECT ((SELECT COALESCE(SUM(COALESCE(base_outstanding_amount, outstanding_amount)), 0)::numeric FROM herobm_core.purchase_invoices WHERE state_code NOT IN ('draft', 'cancelled'))
           - (SELECT COALESCE(SUM(COALESCE(base_outstanding_amount, outstanding_amount)), 0)::numeric FROM herobm_core.purchase_debit_notes WHERE state_code NOT IN ('draft', 'cancelled'))
-          - (SELECT COALESCE(SUM(COALESCE(base_unallocated_amount, unallocated_amount)), 0)::numeric FROM herobm_core.payment_entries WHERE payment_type = 'supplier_payment' AND state_code NOT IN ('draft', 'cancelled')))::numeric
+          - (SELECT COALESCE(SUM(COALESCE(base_unallocated_amount, unallocated_amount)), 0)::numeric FROM herobm_core.payment_entries WHERE payment_type = 'supplier_payment' AND state_code NOT IN ('draft', 'cancelled'))
+          + (SELECT COALESCE(SUM(COALESCE(base_unallocated_amount, unallocated_amount)), 0)::numeric FROM herobm_core.payment_entries WHERE payment_type = 'supplier_refund' AND state_code NOT IN ('draft', 'cancelled')))::numeric
   `);
   const apGl = apId
     ? await execScalar(sql`
@@ -141,7 +143,7 @@ export async function calculateSubledgerReconciliation(
 
   // 5. Perpetual Inventory Parity
   const invSubledger = await execScalar(sql`
-    SELECT COALESCE(SUM(bc.actual_quantity * COALESCE(p.standard_cost, p.weighted_average_cost, 0)), 0)::numeric
+    SELECT COALESCE(SUM(bc.actual_quantity * COALESCE(p.weighted_average_cost, p.standard_cost, 0)), 0)::numeric
     FROM herobm_core.bin_contents bc
     JOIN herobm_core.products p ON p.product_id = bc.product_id
   `);

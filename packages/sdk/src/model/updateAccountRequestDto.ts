@@ -12,5 +12,6 @@ export interface UpdateAccountRequestDto {
   reportCategory?: string;
   isActive?: boolean;
   isBankAccount?: boolean;
+  currencyCode?: string;
   metadata?: UpdateAccountRequestDtoMetadata;
 }

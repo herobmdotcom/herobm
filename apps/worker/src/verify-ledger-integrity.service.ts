@@ -531,7 +531,7 @@ export async function verifyLedgerIntegrity(
 
       // 6. Perpetual Inventory Parity
       const invSubledger = await execScalar(sql`
-        SELECT COALESCE(SUM(bc.actual_quantity * COALESCE(p.standard_cost, p.weighted_average_cost, 0)), 0)::numeric
+        SELECT COALESCE(SUM(bc.actual_quantity * COALESCE(p.weighted_average_cost, p.standard_cost, 0)), 0)::numeric
         FROM herobm_core.bin_contents bc
         JOIN herobm_core.products p ON p.product_id = bc.product_id
       `);

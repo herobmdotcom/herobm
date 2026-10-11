@@ -41,6 +41,12 @@
     "primaryBadge": "Primary"
   },
   "contacts": "Contacts",
+  "credit": {
+    "blocked": "Blocked",
+    "creditNotes": "Credit Notes",
+    "creditsAndReceipts": "Credits & Receipts",
+    "goodStanding": "Good Standing"
+  },
   "creditHold": {
     "activeDesc": "This order is blocked because the customer is on credit hold.",
     "activeTitle": "Credit Hold Active",

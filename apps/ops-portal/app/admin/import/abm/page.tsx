@@ -34,6 +34,7 @@ export default function AdminImportPage() {
     defaultTaxCategoryCode: '',
     enableLegacyInvoicesRule: false,
     legacyInvoicesPaidBeforeDate: '',
+    glImportMode: 'full' as 'full' | 'codes_only' | 'none',
     glCutoffMode: 'start_of_month' as 'start_of_month' | 'current_date'
   });
   
@@ -162,6 +163,7 @@ export default function AdminImportPage() {
         baseCurrency: config.baseCurrency,
         defaultTaxCategoryCode: config.defaultTaxCategoryCode,
         legacyInvoicesPaidBeforeDate: config.enableLegacyInvoicesRule ? config.legacyInvoicesPaidBeforeDate : '',
+        glImportMode: config.glImportMode,
         glCutoffMode: config.glCutoffMode,
       };
 
@@ -405,39 +407,90 @@ export default function AdminImportPage() {
             </div>
 
             <div className="col-span-2 mt-2">
-              <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">{t('options.glCutoffTitle')}</h2>
-              <p className="text-sm text-[var(--text-muted)] mb-4">{t('options.glCutoffDesc')}</p>
+              <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">{t('options.glImportTitle')}</h2>
+              <p className="text-sm text-[var(--text-muted)] mb-4">{t('options.glImportDesc')}</p>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <label className="flex items-start gap-3 p-4 border border-[var(--border)] rounded-lg cursor-pointer transition-colors hover:bg-[var(--bg-secondary)] aria-selected:border-[var(--accent)] aria-selected:bg-[var(--accent)]/10" aria-selected={config.glCutoffMode === 'start_of_month'}>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <label className="flex items-start gap-3 p-4 border border-[var(--border)] rounded-lg cursor-pointer transition-colors hover:bg-[var(--bg-secondary)] aria-selected:border-[var(--accent)] aria-selected:bg-[var(--accent)]/10" aria-selected={config.glImportMode === 'full'}>
                   <input 
                     type="radio" 
-                    name="glCutoffMode" 
-                    checked={config.glCutoffMode === 'start_of_month'}
-                    onChange={() => setConfig({ ...config, glCutoffMode: 'start_of_month' })}
+                    name="glImportMode" 
+                    checked={config.glImportMode === 'full'}
+                    onChange={() => setConfig({ ...config, glImportMode: 'full' })}
                     className="mt-1 accent-[var(--accent)]" 
                   />
                   <div>
-                    <div className="font-bold text-[var(--text-primary)]">{t('options.glCutoffStartOfMonthTitle')}</div>
-                    <div className="text-sm text-[var(--text-muted)]">{t('options.glCutoffStartOfMonthDesc')}</div>
+                    <div className="font-bold text-[var(--text-primary)]">{t('options.glImportFullTitle')}</div>
+                    <div className="text-sm text-[var(--text-muted)]">{t('options.glImportFullDesc')}</div>
                   </div>
                 </label>
 
-                <label className="flex items-start gap-3 p-4 border border-[var(--border)] rounded-lg cursor-pointer transition-colors hover:bg-[var(--bg-secondary)] aria-selected:border-[var(--accent)] aria-selected:bg-[var(--accent)]/10" aria-selected={config.glCutoffMode === 'current_date'}>
+                <label className="flex items-start gap-3 p-4 border border-[var(--border)] rounded-lg cursor-pointer transition-colors hover:bg-[var(--bg-secondary)] aria-selected:border-[var(--accent)] aria-selected:bg-[var(--accent)]/10" aria-selected={config.glImportMode === 'codes_only'}>
                   <input 
                     type="radio" 
-                    name="glCutoffMode" 
-                    checked={config.glCutoffMode === 'current_date'}
-                    onChange={() => setConfig({ ...config, glCutoffMode: 'current_date' })}
+                    name="glImportMode" 
+                    checked={config.glImportMode === 'codes_only'}
+                    onChange={() => setConfig({ ...config, glImportMode: 'codes_only' })}
                     className="mt-1 accent-[var(--accent)]" 
                   />
                   <div>
-                    <div className="font-bold text-[var(--text-primary)]">{t('options.glCutoffCurrentDateTitle')}</div>
-                    <div className="text-sm text-[var(--text-muted)]">{t('options.glCutoffCurrentDateDesc')}</div>
+                    <div className="font-bold text-[var(--text-primary)]">{t('options.glImportCodesOnlyTitle')}</div>
+                    <div className="text-sm text-[var(--text-muted)]">{t('options.glImportCodesOnlyDesc')}</div>
+                  </div>
+                </label>
+
+                <label className="flex items-start gap-3 p-4 border border-[var(--border)] rounded-lg cursor-pointer transition-colors hover:bg-[var(--bg-secondary)] aria-selected:border-[var(--accent)] aria-selected:bg-[var(--accent)]/10" aria-selected={config.glImportMode === 'none'}>
+                  <input 
+                    type="radio" 
+                    name="glImportMode" 
+                    checked={config.glImportMode === 'none'}
+                    onChange={() => setConfig({ ...config, glImportMode: 'none' })}
+                    className="mt-1 accent-[var(--accent)]" 
+                  />
+                  <div>
+                    <div className="font-bold text-[var(--text-primary)]">{t('options.glImportNoneTitle')}</div>
+                    <div className="text-sm text-[var(--text-muted)]">{t('options.glImportNoneDesc')}</div>
                   </div>
                 </label>
               </div>
             </div>
+
+            {config.glImportMode === 'full' && (
+              <div className="col-span-2 mt-2">
+                <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">{t('options.glCutoffTitle')}</h2>
+                <p className="text-sm text-[var(--text-muted)] mb-4">{t('options.glCutoffDesc')}</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <label className="flex items-start gap-3 p-4 border border-[var(--border)] rounded-lg cursor-pointer transition-colors hover:bg-[var(--bg-secondary)] aria-selected:border-[var(--accent)] aria-selected:bg-[var(--accent)]/10" aria-selected={config.glCutoffMode === 'start_of_month'}>
+                    <input 
+                      type="radio" 
+                      name="glCutoffMode" 
+                      checked={config.glCutoffMode === 'start_of_month'}
+                      onChange={() => setConfig({ ...config, glCutoffMode: 'start_of_month' })}
+                      className="mt-1 accent-[var(--accent)]" 
+                    />
+                    <div>
+                      <div className="font-bold text-[var(--text-primary)]">{t('options.glCutoffStartOfMonthTitle')}</div>
+                      <div className="text-sm text-[var(--text-muted)]">{t('options.glCutoffStartOfMonthDesc')}</div>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-3 p-4 border border-[var(--border)] rounded-lg cursor-pointer transition-colors hover:bg-[var(--bg-secondary)] aria-selected:border-[var(--accent)] aria-selected:bg-[var(--accent)]/10" aria-selected={config.glCutoffMode === 'current_date'}>
+                    <input 
+                      type="radio" 
+                      name="glCutoffMode" 
+                      checked={config.glCutoffMode === 'current_date'}
+                      onChange={() => setConfig({ ...config, glCutoffMode: 'current_date' })}
+                      className="mt-1 accent-[var(--accent)]" 
+                    />
+                    <div>
+                      <div className="font-bold text-[var(--text-primary)]">{t('options.glCutoffCurrentDateTitle')}</div>
+                      <div className="text-sm text-[var(--text-muted)]">{t('options.glCutoffCurrentDateDesc')}</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            )}
           </div>
 
           <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t('sections.executionOptions')}</h2>

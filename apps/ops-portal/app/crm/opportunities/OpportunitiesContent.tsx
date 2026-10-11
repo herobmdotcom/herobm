@@ -70,6 +70,7 @@ export default function OpportunitiesContent() {
     () => [
       { field: 'name', headerName: 'Opportunity Name', minWidth: 200, flex: 2 },
       {
+        colId: 'organization',
         headerName: 'Client / Organization',
         minWidth: 160,
         flex: 1.5,

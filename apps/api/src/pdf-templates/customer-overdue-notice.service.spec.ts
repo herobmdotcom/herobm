@@ -27,8 +27,10 @@ describe('CustomerOverdueNoticeService', () => {
       from: jest.fn().mockReturnValue({
         leftJoin: jest.fn().mockReturnValue({
           leftJoin: jest.fn().mockReturnValue({
-            where: jest.fn().mockReturnValue({
-              limit: jest.fn().mockResolvedValue([]),
+            leftJoin: jest.fn().mockReturnValue({
+              where: jest.fn().mockReturnValue({
+                limit: jest.fn().mockResolvedValue([]),
+              }),
             }),
           }),
         }),
@@ -116,8 +118,10 @@ describe('CustomerOverdueNoticeService', () => {
       from: jest.fn().mockReturnValue({
         leftJoin: jest.fn().mockReturnValue({
           leftJoin: jest.fn().mockReturnValue({
-            where: jest.fn().mockReturnValue({
-              limit: jest.fn().mockResolvedValue([customerHeader]),
+            leftJoin: jest.fn().mockReturnValue({
+              where: jest.fn().mockReturnValue({
+                limit: jest.fn().mockResolvedValue([customerHeader]),
+              }),
             }),
           }),
         }),

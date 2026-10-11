@@ -90,4 +90,68 @@ describe('CustomerGroupsService', () => {
       (transformed as Record<string, unknown>).unknownField,
     ).toBeUndefined();
   });
+
+  it('preserves isOnCreditHold across ValidationPipe whitelist transform', async () => {
+    const pipe = new ValidationPipe({ whitelist: true, transform: true });
+
+    const rawDto = {
+      name: 'Credit Hold Group',
+      isOnCreditHold: true,
+      unknownField: 'should be stripped',
+    };
+
+    const transformed = await pipe.transform(rawDto, {
+      type: 'body',
+      metatype: UpdateCustomerGroupDto,
+    });
+
+    expect(transformed.name).toBe('Credit Hold Group');
+    expect(transformed.isOnCreditHold).toBe(true);
+    expect(
+      (transformed as Record<string, unknown>).unknownField,
+    ).toBeUndefined();
+  });
+
+  it('updates customer group isOnCreditHold and persists to database', async () => {
+    const group = await service.create({
+      groupCode: 'GRP-HOLD-01',
+      name: 'Hold Test Group',
+    });
+    expect(group.isOnCreditHold).toBe(false);
+
+    const updatedHold = await service.update(group.customerGroupId, {
+      isOnCreditHold: true,
+    });
+    expect(updatedHold.isOnCreditHold).toBe(true);
+
+    const fetchedHold = await service.findOne(group.customerGroupId);
+    expect(fetchedHold.isOnCreditHold).toBe(true);
+
+    const updatedUnhold = await service.update(group.customerGroupId, {
+      isOnCreditHold: false,
+    });
+    expect(updatedUnhold.isOnCreditHold).toBe(false);
+
+    const fetchedUnhold = await service.findOne(group.customerGroupId);
+    expect(fetchedUnhold.isOnCreditHold).toBe(false);
+  });
+
+  it('creates customer group when dto has explicit undefined isOnCreditHold (ADV-225)', async () => {
+    // Exactly replicates the failure mode: DTO instance containing undefined isOnCreditHold
+    const dtoInstance = plainToInstance(CreateCustomerGroupDto, {
+      groupCode: '4',
+      name: 'Trade',
+      isOnCreditHold: undefined,
+    });
+
+    const group = await service.create(dtoInstance);
+    expect(group.customerGroupId).toBeDefined();
+    expect(group.groupCode).toBe('4');
+    expect(group.name).toBe('Trade');
+    expect(group.isOnCreditHold).toBe(false);
+
+    // Verify database row directly
+    const fetched = await service.findOne(group.customerGroupId);
+    expect(fetched.isOnCreditHold).toBe(false);
+  });
 });

@@ -4,6 +4,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useTranslations } from 'next-intl';
 
 import { useState, useEffect, useMemo } from 'react';
+import { mutate } from 'swr';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import DiscountMatrixSlideOver from '@/components/shared/DiscountMatrixSlideOver';
@@ -181,6 +182,7 @@ export default function AccountGroupsAdmin() {
         toast.success('Group created');
       }
       loadData();
+      mutate('ref-customer-groups');
     } catch (err: unknown) {
       toast.error(getErrorMessage(err));
       throw err;
@@ -193,6 +195,7 @@ export default function AccountGroupsAdmin() {
       await api.customerGroupsControllerRemove(row.customerGroupId);
       toast.success(t('toasts.deleted'));
       loadData();
+      mutate('ref-customer-groups');
     } catch (err: unknown) {
       toast.error(getErrorMessage(err));
     }
@@ -246,6 +249,7 @@ export default function AccountGroupsAdmin() {
         onSave={async (d) => {
           await api.customerGroupsControllerUpdate(d.customerGroupId as string, d);
           setGroups((prev) => prev.map((g) => (g.customerGroupId === d.customerGroupId ? { ...g, ...d } : g)));
+          mutate('ref-customer-groups');
         }}
         glAccountOptions={glAccountOptions}
         costCenterOptions={costCenterOptions}

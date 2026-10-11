@@ -1,4 +1,4 @@
-.PHONY: help help-install fast-install check-postgres-logs up-db down-db up-portal-api down-portal-api up-portal-api-nginx down-portal-api-nginx up-nginx down-nginx build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke clean-legacy-containers clean-db rebuild-db-keep-raw clean-db-keep-extract init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract elt-report report import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-docs-webhooks dev-docs-all dev-docs-audit check-docs dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-packages-unit test-api-cov test-api-e2e test-portal-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init backup-destination backup-setup backup-run backup-now backup-restore typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint lint-portal verify-i18n clean-build install-prereqs setup-python install-npm bootstrap verify-db verify-all verify-fast verify-api verify-portal verify-pipeline test-pipeline test-abm test-odoo check-all test-deps test-unit test-single test-changed test-structural query-drizzle query-postgres query-git git-safe git-ro git-query test-heavy test-data test-all build-all clean-dev demo-help demo-auth demo-sales-order demo-crm bump-version release
+.PHONY: help help-install fast-install check-postgres-logs up-db down-db up-portal-api down-portal-api up-portal-api-nginx down-portal-api-nginx up-nginx down-nginx build-worker up-redis down-redis up-maildev down-maildev up-all down-all up down restart logs status ps clean nuke clean-legacy-containers clean-db rebuild-db-keep-raw clean-db-keep-extract db-kill-connections init-db init-env extract extract-dry extract-table sync-table transform transform-seed test-transform transform-dry transform-select transform-select-dry transform-refresh elt elt-no-extract elt-report report import-legacy import-legacy-shipments dev-docs-schema dev-docs-api dev-docs-webhooks dev-docs-all dev-docs-audit check-docs dev-generate-sdk dev-db-generate generate-extensions extract-docker extract-docker-dry dev-local prod-local dev-api dev-mcp dev-pipeline rebuild-api rebuild-portal rebuild-pipeline rebuild-worker build-images rebuild-apps pre-push test-api-unit test-portal-unit test-packages-unit test-api-cov test-api-e2e test-portal-e2e dev-portal migrate check-schema-drift migrate-status migrate-dry seed seed-demo init backup-destination backup-setup backup-run backup-now backup-restore typecheck-portal build-api build-mcp build-portal build-shared build-db-schema build-sdk check-types check-lint lint-portal verify-i18n clean-build install-prereqs setup-python install-npm bootstrap verify-db verify-all verify-fast verify-api verify-portal verify-pipeline test-pipeline test-abm test-odoo check-all test-deps test-unit test-single test-changed test-structural query-drizzle query-postgres query-git git-safe git-ro git-query test-heavy test-data test-all build-all clean-dev demo-help demo-auth demo-sales-order demo-crm bump-version release
 
 
 define HELP_TEXT
@@ -27,6 +27,7 @@ Database & Migrations:
   make seed           - Seed database with application data
   make init           - Full DB initialization (schema, migrate, seed, ELT)
   make rebuild-db-keep-raw - Alias for clean-db
+  make db-kill-connections - Terminate open client connections to application database
 
 Backup & Recovery:
   make backup-destination [DEST=...] [SOURCE=...] - Configure cloud storage destination (rclone)
@@ -321,8 +322,13 @@ endif
 	@echo "Pruning unused podman resources..."
 	-podman system prune -a
 
+db-kill-connections:
+	@echo "Terminating open connections to $(or $(POSTGRES_DB),herobm)..."
+	-@podman exec -i postgres-custom psql -U $(or $(POSTGRES_USER),postgres) -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$(or $(POSTGRES_DB),herobm)' AND pid <> pg_backend_pid();" >/dev/null 2>&1 || true
+
 clean-db:
 	@$(PYTHON_CMD) tools/confirm.py "WARNING: This will drop and rebuild the herobm_core database while preserving raw extracted data (raw_* schemas). Continue?" $(if $(FORCE),--force,)
+	-$(MAKE) db-kill-connections
 	@echo "Resetting herobm_core and dbt transformation schemas..."
 	@podman exec -i postgres-custom psql -U $(or $(POSTGRES_USER),postgres) -d $(or $(POSTGRES_DB),herobm) -c "SET client_min_messages = warning; DROP SCHEMA IF EXISTS herobm_core CASCADE; DROP SCHEMA IF EXISTS abm_staging CASCADE; DROP SCHEMA IF EXISTS abm_intermediate CASCADE; DROP SCHEMA IF EXISTS odoo_staging CASCADE; DROP SCHEMA IF EXISTS odoo_intermediate CASCADE; CREATE SCHEMA herobm_core;"
 	$(MAKE) migrate
@@ -600,8 +606,8 @@ rebuild-worker:
 	$(COMPOSE_CMD) ps
 
 build-images:
-	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v1.2.3-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_custom-api:latest -f Dockerfile.api .
-	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v1.2.3-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
+	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v1.2.4-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_custom-api:latest -f Dockerfile.api .
+	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v1.2.4-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
 	$(if $(wildcard Dockerfile.pipeline),podman build -t localhost/herobm_pipeline-runner:latest -f Dockerfile.pipeline .,)
 	podman build -t localhost/outbox-worker:latest -f Dockerfile.worker .
 
@@ -611,6 +617,7 @@ rebuild-apps: build-images
 	-podman stop herobm-api herobm-ui herobm-outbox $(if $(wildcard Dockerfile.pipeline),herobm-pipeline,)
 	-podman rm -f herobm-api herobm-ui herobm-outbox $(if $(wildcard Dockerfile.pipeline),herobm-pipeline,)
 	-podman system prune -f
+	-$(MAKE) db-kill-connections
 	$(MAKE) migrate
 	$(COMPOSE_CMD) up -d --no-build --no-deps herobm-api herobm-ui herobm-outbox $(if $(wildcard Dockerfile.pipeline),herobm-pipeline,)
 	$(COMPOSE_CMD) ps
