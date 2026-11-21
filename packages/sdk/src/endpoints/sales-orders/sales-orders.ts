@@ -18,7 +18,10 @@ import type {
   OrdersControllerFindAll200,
   OrdersControllerFindAllParams,
   OrdersControllerFindOneParams,
+  OrdersControllerGetProductPricingHistoryParams,
   OverrideCreditHoldDto,
+  PaginatedPricingHistoryResponseDto,
+  ReorderOrderLinesDto,
   SalesSettingsResponseDto,
   UpdateOrderDto,
   UpdateOrderLineDto,
@@ -176,6 +179,49 @@ export const ordersControllerCreate = async (createOrderDto: CreateOrderDto, opt
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       createOrderDto,)
+  }
+);}
+
+
+/**
+ * Retrieve paginated historical sales orders for a specific product, ranking customer orders first.
+ * @summary Get Product Pricing History
+ */
+export type ordersControllerGetProductPricingHistoryResponse200 = {
+  data: PaginatedPricingHistoryResponseDto
+  status: 200
+}
+    
+export type ordersControllerGetProductPricingHistoryResponseSuccess = (ordersControllerGetProductPricingHistoryResponse200) & {
+  headers: Headers;
+};
+;
+
+export type ordersControllerGetProductPricingHistoryResponse = (ordersControllerGetProductPricingHistoryResponseSuccess)
+
+export const getOrdersControllerGetProductPricingHistoryUrl = (params: OrdersControllerGetProductPricingHistoryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/sales-orders/pricing-history?${stringifiedParams}` : `/sales-orders/pricing-history`
+}
+
+export const ordersControllerGetProductPricingHistory = async (params: OrdersControllerGetProductPricingHistoryParams, options?: RequestInit): Promise<ordersControllerGetProductPricingHistoryResponse> => {
+  
+  return customFetch<ordersControllerGetProductPricingHistoryResponse>(getOrdersControllerGetProductPricingHistoryUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
   }
 );}
 
@@ -485,6 +531,44 @@ export const ordersControllerAddLine = async (id: string,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       createOrderLineDto,)
+  }
+);}
+
+
+/**
+ * Reorder line items on a draft sales order.
+ * @summary Reorder Order Lines
+ */
+export type ordersControllerReorderLinesResponse200 = {
+  data: OrderResponseDto
+  status: 200
+}
+    
+export type ordersControllerReorderLinesResponseSuccess = (ordersControllerReorderLinesResponse200) & {
+  headers: Headers;
+};
+;
+
+export type ordersControllerReorderLinesResponse = (ordersControllerReorderLinesResponseSuccess)
+
+export const getOrdersControllerReorderLinesUrl = (id: string,) => {
+
+
+  
+
+  return `/sales-orders/${id}/lines/reorder`
+}
+
+export const ordersControllerReorderLines = async (id: string,
+    reorderOrderLinesDto: ReorderOrderLinesDto, options?: RequestInit): Promise<ordersControllerReorderLinesResponse> => {
+  
+  return customFetch<ordersControllerReorderLinesResponse>(getOrdersControllerReorderLinesUrl(id),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      reorderOrderLinesDto,)
   }
 );}
 

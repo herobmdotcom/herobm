@@ -6,6 +6,8 @@
  * OpenAPI spec version: 1.1
  */
 import type {
+  BulkUpdateResponseDto,
+  BulkUpdateSuppliersDto,
   CreateSupplierDto,
   CreateSupplierExpiryDto,
   CreateSupplierGroupDto,
@@ -279,6 +281,43 @@ export const suppliersControllerUpdate = async (id: string,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       updateSupplierDto,)
+  }
+);}
+
+
+/**
+ * Bulk update curated fields across multiple selected suppliers.
+ * @summary Bulk Update Suppliers
+ */
+export type suppliersControllerBulkUpdateResponse200 = {
+  data: BulkUpdateResponseDto
+  status: 200
+}
+    
+export type suppliersControllerBulkUpdateResponseSuccess = (suppliersControllerBulkUpdateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type suppliersControllerBulkUpdateResponse = (suppliersControllerBulkUpdateResponseSuccess)
+
+export const getSuppliersControllerBulkUpdateUrl = () => {
+
+
+  
+
+  return `/suppliers/bulk-update`
+}
+
+export const suppliersControllerBulkUpdate = async (bulkUpdateSuppliersDto: BulkUpdateSuppliersDto, options?: RequestInit): Promise<suppliersControllerBulkUpdateResponse> => {
+  
+  return customFetch<suppliersControllerBulkUpdateResponse>(getSuppliersControllerBulkUpdateUrl(),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      bulkUpdateSuppliersDto,)
   }
 );}
 

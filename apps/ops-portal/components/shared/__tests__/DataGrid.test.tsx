@@ -10,9 +10,10 @@ import userEvent from '@testing-library/user-event';
 import DataGrid from '../DataGrid';
 import { customFetch } from '@herobm/sdk';
 
+const mockPush = jest.fn();
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
+  useRouter: () => ({ push: mockPush, replace: jest.fn() }),
   usePathname: () => '/test',
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -425,5 +426,52 @@ describe('DataGrid — localStorage helpers', () => {
     const boxQtyCheckbox = screen.getByRole('checkbox', { name: 'Box Qty' });
     expect(boxQtyCheckbox).toBeInTheDocument();
     expect(boxQtyCheckbox).toBeChecked();
+  });
+
+  it('navigates on row click when rowHref is provided, but suppresses navigation if target is interactive or has data-no-row-click', async () => {
+    mockPush.mockClear();
+    render(
+      <DataGrid
+        rowData={[{ id: 'prod-1', name: 'Widget' }]}
+        columns={[{ field: 'name', headerName: 'Name' }]}
+        rowHref={(data: any) => `/products/${data.id}`}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(latestAgGridProps).not.toBeNull();
+      expect(latestAgGridProps.onRowClicked).toBeDefined();
+    });
+
+    // 1. Regular click on table cell -> should navigate
+    const regularTarget = document.createElement('div');
+    latestAgGridProps.onRowClicked({
+      data: { id: 'prod-1' },
+      event: { target: regularTarget },
+    });
+    expect(mockPush).toHaveBeenCalledWith('/products/prod-1');
+
+    mockPush.mockClear();
+
+    // 2. Click on a button inside the row -> should NOT navigate
+    const button = document.createElement('button');
+    const iconSpan = document.createElement('span');
+    button.appendChild(iconSpan);
+    latestAgGridProps.onRowClicked({
+      data: { id: 'prod-1' },
+      event: { target: iconSpan },
+    });
+    expect(mockPush).not.toHaveBeenCalled();
+
+    // 3. Click on an element with data-no-row-click -> should NOT navigate
+    const noClickDiv = document.createElement('div');
+    noClickDiv.setAttribute('data-no-row-click', 'true');
+    const childSpan = document.createElement('span');
+    noClickDiv.appendChild(childSpan);
+    latestAgGridProps.onRowClicked({
+      data: { id: 'prod-1' },
+      event: { target: childSpan },
+    });
+    expect(mockPush).not.toHaveBeenCalled();
   });
 });

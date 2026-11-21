@@ -1,84 +1,53 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
-import { BackordersService } from './backorders.service';
-import { TaxResolutionEngine } from '../tax/tax-resolution.engine';
 import {
-  InventoryGap,
-  SALES_ORDER_STATE,
-  CUSTOMER_STATE,
-  PRODUCT_STATE,
-  getErrorMessage,
-  normalizeUomCode,
-  LineType,
-} from '@herobm/shared';
-import Decimal from 'decimal.js';
-import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-  Logger,
-  InternalServerErrorException,
-} from '@nestjs/common';
-import { eq, sql, inArray, getTableColumns } from 'drizzle-orm';
-import { randomUUID } from 'crypto';
-import { AppConfigService } from '../settings/app-config.service';
-import { OrganizationService } from '../settings/organization.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  salesOrders,
-  salesOrderLineItems,
-  salesEvents,
-  customers as coreAccounts,
-  customerGroups,
   products as coreProducts,
-  backorders,
-  purchaseOrders,
-  transferOrders,
-  locations,
-  productUoms,
-  productComponents,
-  tradingTerms,
+  salesOrderLineItems,
+  salesOrders,
   taxCategories,
 } from '@herobm/db-schema';
+import { LineType, SALES_ORDER_STATE, normalizeUomCode } from '@herobm/shared';
 import {
-  CreateOrderDto,
-  UpdateOrderDto,
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import Decimal from 'decimal.js';
+import { eq, inArray, sql } from 'drizzle-orm';
+import { AuditMode, calculateAuditTrail } from '../common/audit';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { AppConfigService } from '../settings/app-config.service';
+import { OrganizationService } from '../settings/organization.service';
+import { TaxResolutionEngine } from '../tax/tax-resolution.engine';
+import { BackordersService } from './backorders.service';
+import {
   CreateOrderLineDto as AddLineDto, // Renamed to match usage
   UpdateOrderLineDto as UpdateLineDto,
 } from './dto';
-import { calculateAuditTrail, AuditMode } from '../common/audit';
-import { findOrderLine as sharedFindOrderLine } from './shipment-helpers';
-import { emitEvent } from '../common/emit-event';
-import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
-import { EntityType, EventType } from '../common/event-types';
-import { getExchangeRateForCurrency } from '../common/fx-helper';
 
-import { TaxCategoriesService } from '../tax/tax-categories.service';
-import { EnrichmentService } from '../enrichment/enrichment.service';
-import { verifySystemHealth } from '../common/utils/security.util';
-import { PickingService } from './picking.service';
-import { CustomersService } from '../customers/customers.service';
-import { CreditAssessmentService } from '../customers/credit-assessment.service';
-import { ProductsService } from '../products/products.service';
 import {
   SALES_ORDER_TRANSITIONS as STATE_TRANSITIONS,
   getValidStates,
-  computeLinePriceForStorage,
 } from '@herobm/shared';
-import {
-  resolveEffectiveCreditHold,
-  resolveEffectiveCreditLimit,
-  resolveEffectiveTradingTermsId,
-} from '../customers/credit-control.utils';
-import { PdfTemplatesService } from '../pdf-templates/pdf-templates.service';
+import { CreditAssessmentService } from '../customers/credit-assessment.service';
+import { CustomersService } from '../customers/customers.service';
 import { EmailService } from '../email/email.service';
-import { EmailDocumentDto } from './dto';
-import type { JwtUser } from '../auth/auth-user.decorator';
+import { EnrichmentService } from '../enrichment/enrichment.service';
+import { PdfTemplatesService } from '../pdf-templates/pdf-templates.service';
+import { ProductsService } from '../products/products.service';
+import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { OrdersCoreService } from './orders-core.service';
+import {
+  reorderSalesOrderLines,
+  shiftOrderLinesForInsert,
+} from './order-lines-ordering.utils';
 import { OrdersQueryService } from './orders-query.service';
+import { PickingService } from './picking.service';
 
-const VALID_STATES = getValidStates(STATE_TRANSITIONS);
+const _VALID_STATES = getValidStates(STATE_TRANSITIONS);
 
 // DTOs imported from ./dto
 
@@ -338,6 +307,24 @@ export class OrderLinesService {
           parentLineId: null,
         };
         insertValues.push(parentLine);
+      }
+
+      const maxLineVal = maxLine[0]?.max ?? 0;
+      const requestedLine = dto.insertAtLineNumber;
+      if (
+        requestedLine !== undefined &&
+        requestedLine >= 1 &&
+        requestedLine <= maxLineVal
+      ) {
+        await shiftOrderLinesForInsert(
+          tx,
+          orderId,
+          requestedLine,
+          insertValues.length,
+        );
+        insertValues.forEach((val, idx) => {
+          val.lineNumber = requestedLine + idx;
+        });
       }
 
       await tx.insert(salesOrderLineItems).values(insertValues);
@@ -705,7 +692,7 @@ export class OrderLinesService {
     const isComment =
       (dto.lineType ?? existingLine.lineType) === (LineType.COMMENT as string);
 
-    let taxCategoryId: string | null = null;
+    let _taxCategoryId: string | null = null;
     let isExternalTax = false;
     let taxRate = 0;
 
@@ -716,7 +703,7 @@ export class OrderLinesService {
         existingLine.productId ?? undefined,
         dto.taxCategoryId ?? existingLine.taxCategoryId ?? undefined,
       );
-      taxCategoryId = resolvedTax.taxCategoryId;
+      _taxCategoryId = resolvedTax.taxCategoryId;
       isExternalTax = resolvedTax.taxProvider !== 'internal';
       taxRate = isExternalTax ? 0 : resolvedTax.rate;
     }
@@ -947,6 +934,42 @@ export class OrderLinesService {
         actor,
       });
     });
+  }
+
+  async reorderLines(orderId: string, lineIds: string[], actor = 'system') {
+    const order = await this.ordersQueryService.findOrder(orderId);
+    if (order.stateCode !== SALES_ORDER_STATE.DRAFT) {
+      throw new BadRequestException(
+        'Cannot reorder lines on a non-draft order',
+      );
+    }
+
+    await this.db.transaction(async (tx: DrizzleDB) => {
+      await tx
+        .select({ id: salesOrders.salesOrderId })
+        .from(salesOrders)
+        .where(eq(salesOrders.salesOrderId, orderId))
+        .for('update');
+
+      const orderedIds = await reorderSalesOrderLines(tx, orderId, lineIds);
+      if (!orderedIds) return;
+
+      await tx
+        .update(salesOrders)
+        .set({ modifiedOn: new Date() })
+        .where(eq(salesOrders.salesOrderId, orderId));
+
+      await emitEvent(tx, {
+        entityType: EntityType.SALES_ORDER,
+        entityId: orderId,
+        eventType: EventType.UPDATED,
+        entityDisplayName: order.orderNumber,
+        payload: { reorderedLineIds: orderedIds },
+        actor,
+      });
+    });
+
+    return { success: true };
   }
 
   // -------------------------------------------------------------------------

@@ -1,6 +1,6 @@
-import { FieldMaskInterceptor } from './field-mask.interceptor';
-import { ExecutionContext, CallHandler } from '@nestjs/common';
+import { CallHandler, ExecutionContext } from '@nestjs/common';
 import { of } from 'rxjs';
+import { FieldMaskInterceptor } from './field-mask.interceptor';
 
 describe('FieldMaskInterceptor', () => {
   let interceptor: FieldMaskInterceptor;

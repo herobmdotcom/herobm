@@ -1,10 +1,10 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import {
+  IsArray,
+  IsNotEmpty,
+  IsObject,
   IsOptional,
   IsString,
-  IsNotEmpty,
-  IsArray,
-  IsObject,
 } from 'class-validator';
 
 export class EmptyBodyDto {}

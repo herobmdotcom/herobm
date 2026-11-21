@@ -13,6 +13,7 @@ export interface Customer {
   currencyCode?: string;
   customerGroupId?: string | null;
   customerDiscount?: string | null;
+  priceScale?: number | null;
   taxPosition?: string | null;
   taxPositionId?: string | null;
   customerGroupTaxPositionId?: string | null;

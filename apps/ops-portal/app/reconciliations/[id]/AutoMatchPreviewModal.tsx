@@ -234,7 +234,7 @@ export default function AutoMatchPreviewModal({
                 {previewData.proposedRuleMatches.map((m: any, i: number) => {
                   const isIgnored = ignoredLineIds.includes(m.bankLineId);
                   return (
-                    <div key={i} className={`card p-5 space-y-6 border rounded-xl relative transition-all ${isIgnored ? 'opacity-50 grayscale bg-gray-100 border-gray-200' : 'bg-gray-50/50 border-gray-200'}`}>
+                    <div key={i} className={`card p-5 space-y-6 border rounded-xl relative transition-all ${isIgnored ? 'opacity-50 grayscale bg-[var(--bg-secondary)] border-[var(--border)]' : 'bg-[var(--bg-secondary)]/50 border-[var(--border)]'}`}>
                       <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
                         <label className="flex items-center gap-2 cursor-pointer">
                           <span className="text-sm font-medium text-gray-700">{t('applyMatch')}</span>
@@ -269,7 +269,7 @@ export default function AutoMatchPreviewModal({
                   const matchedLedgerLines = ledgerLines.filter(l => m.journalLineIds.includes(l.journalLineId));
                   const isIgnored = m.bankLineIds.some((id: string) => ignoredLineIds.includes(id));
                   return (
-                    <div key={i} className={`card p-5 space-y-6 border rounded-xl relative transition-all ${isIgnored ? 'opacity-50 grayscale bg-gray-100 border-gray-200' : 'bg-gray-50/50 border-gray-200'}`}>
+                    <div key={i} className={`card p-5 space-y-6 border rounded-xl relative transition-all ${isIgnored ? 'opacity-50 grayscale bg-[var(--bg-secondary)] border-[var(--border)]' : 'bg-[var(--bg-secondary)]/50 border-[var(--border)]'}`}>
                       <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
                         <label className="flex items-center gap-2 cursor-pointer">
                           <span className="text-sm font-medium text-gray-700">{t('applyMatch')}</span>

@@ -1,30 +1,30 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
-  workOrders,
+  binContents,
+  bins,
+  locations,
+  products,
+  warehouseEvents,
   workOrderComponents,
   workOrderPicks,
-  products,
-  locations,
-  bins,
-  binContents,
+  workOrders,
   zones,
-  warehouseEvents,
 } from '@herobm/db-schema';
-import {
-  eq,
-  desc,
-  gte,
-  and,
-  aliasedTable,
-  sql,
-  gt,
-  inArray,
-} from 'drizzle-orm';
-import { isPickableBinCondition } from '../inventory/inventory-math.utils';
 import { WORK_ORDER_PICK_STATE } from '@herobm/shared';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  aliasedTable,
+  and,
+  desc,
+  eq,
+  gt,
+  gte,
+  inArray,
+  sql,
+} from 'drizzle-orm';
 import { EntityType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { isPickableBinCondition } from '../inventory/inventory-math.utils';
 
 const outputBins = aliasedTable(bins, 'output_bins');
 

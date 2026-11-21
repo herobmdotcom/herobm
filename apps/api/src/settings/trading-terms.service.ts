@@ -1,16 +1,11 @@
-import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { tradingTerms } from '@herobm/db-schema';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
-import { CreateTradingTermDto, UpdateTradingTermDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { CreateTradingTermDto, UpdateTradingTermDto } from './dto';
 
 @Injectable()
 export class TradingTermsService {

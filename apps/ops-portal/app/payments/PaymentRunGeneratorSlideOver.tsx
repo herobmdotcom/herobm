@@ -194,7 +194,7 @@ export function PaymentRunGeneratorSlideOver({
     return (
       <div className="mb-6">
         <Button variant="ghost"
-          className="flex items-center gap-2 w-full justify-start font-bold text-gray-800 mb-2 hover:bg-gray-50 p-1 rounded"
+          className="flex items-center gap-2 w-full justify-start font-bold text-[var(--text-primary)] mb-2 hover:bg-[var(--bg-card-hover)] p-1 rounded"
           onClick={() => toggleSection(key)}
         >
           {isExpanded ? (
@@ -243,18 +243,18 @@ export function PaymentRunGeneratorSlideOver({
                         onChange={() => handleToggleInvoice(inv.invoiceId)}
                       />
                     </td>
-                    <td className="text-gray-900">{inv.invoiceNumber}</td>
-                    <td className="text-gray-600 truncate max-w-[150px]" title={inv.supplierName}>{inv.supplierName}</td>
-                    <td className="text-gray-600">
+                    <td className="text-[var(--text-primary)]">{inv.invoiceNumber}</td>
+                    <td className="text-[var(--text-secondary)] truncate max-w-[150px]" title={inv.supplierName}>{inv.supplierName}</td>
+                    <td className="text-[var(--text-secondary)]">
                       {formatLocalDate(inv.dueDate as unknown as string)}
                     </td>
-                    <td className="text-right text-gray-600">
+                    <td className="text-right text-[var(--text-secondary)]">
                       ${Number(inv.outstandingAmount).toFixed(2)}
                     </td>
-                    <td className="text-right text-gray-500">
+                    <td className="text-right text-[var(--text-muted)]">
                       {inv.discountAmount > 0 ? `-$${inv.discountAmount.toFixed(2)}` : '-'}
                     </td>
-                    <td className="text-right font-medium text-gray-900">
+                    <td className="text-right font-medium text-[var(--text-primary)]">
                       ${inv.cashAmount.toFixed(2)}
                     </td>
                   </tr>
@@ -316,7 +316,7 @@ export function PaymentRunGeneratorSlideOver({
                 min="0"
                 step="0.01"
                 placeholder="e.g. 5000"
-                className="input w-full bg-white"
+                className="input w-full"
                 value={budgetAmount}
                 onChange={(e) => setBudgetAmount(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleApplyBudget()}
@@ -324,7 +324,7 @@ export function PaymentRunGeneratorSlideOver({
             </div>
             <Button variant="secondary"
               onClick={handleApplyBudget}
-              className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded font-medium hover:bg-gray-50 transition-colors text-sm h-10"
+              className="h-10"
             >
               {t('apply')}
             </Button>
@@ -352,15 +352,14 @@ export function PaymentRunGeneratorSlideOver({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-200 flex justify-between items-center">
-          <div className="font-medium text-gray-900">
+        <div className="p-4 border-t border-[var(--border)] flex justify-between items-center">
+          <div className="font-medium text-[var(--text-primary)]">
             { }
             {t('totalSelected')}: ${totalSelectedCash.toFixed(2)} ({selectedInvoiceIds.size} {t('invoices')})
           </div>
           <div className="flex gap-3">
             <Button variant="secondary"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded"
               disabled={generating}
             >
               {t('cancel')}

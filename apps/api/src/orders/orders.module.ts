@@ -1,72 +1,66 @@
 import {
-  Module,
-  OnModuleInit,
-  Inject,
-  NotFoundException,
-  forwardRef,
-} from '@nestjs/common';
-import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
-import { PdfTemplatesModule } from '../pdf-templates/pdf-templates.module';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { eq, sql } from 'drizzle-orm';
-import {
-  salesOrders,
   salesInvoices,
   salesOrderShipments,
+  salesOrders,
   transferOrders,
 } from '@herobm/db-schema';
 import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
+import { Inject, Module, OnModuleInit, forwardRef } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { OrdersController } from './orders.controller';
-import { OrderReturnsController } from './order-returns.controller';
-import { OrderPickingController } from './order-picking.controller';
-import { OrderShipmentsController } from './order-shipments.controller';
-import { GlobalShipmentsController } from './global-shipments.controller';
-import { GlobalReturnsController } from './global-returns.controller';
-import { UnifiedReturnsController } from './unified-returns.controller';
-import { GlobalReturnsService } from './global-returns.service';
-import { OrdersService } from './orders.service';
-import { OrdersCoreService } from './orders-core.service';
-import { OrderCreationService } from './order-creation.service';
-import { OrderLinesService } from './order-lines.service';
-import { OrderStateService } from './order-state.service';
-import { OrdersQueryService } from './orders-query.service';
-import { BackordersService } from './backorders.service';
-import { ReturnsWriteService } from './returns-write.service';
-import { PickingService } from './picking.service';
-import { PickingQueryService } from './picking-query.service';
-import { PickingShippingQueryService } from './picking-shipping-query.service';
-import { PickingActionService } from './picking-action.service';
-import { DirectFulfillmentService } from './direct-fulfillment.service';
-import { ShipmentsCoreService } from './shipments/shipments-core.service';
-import { ShipmentsWriteService } from './shipments/shipments-write.service';
-import { ShipmentsStateService } from './shipments/shipments-state.service';
-import { AllocationsController } from './allocations.controller';
-import { TransfersController } from './transfers/transfers.controller';
-import { TransfersCoreService } from './transfers/transfers-core.service';
-import { TransfersWriteService } from './transfers/transfers-write.service';
-import { TransfersStateService } from './transfers/transfers-state.service';
-import { TransfersPickingService } from './transfers/transfers-picking.service';
-import { TransfersShipmentService } from './transfers/transfers-shipment.service';
-import { TaxModule } from '../tax/tax.module';
-import { InventoryModule } from '../inventory/inventory.module';
+import { sql } from 'drizzle-orm';
 import { CustomersModule } from '../customers/customers.module';
-import { ProductsModule } from '../products/products.module';
-import { GlModule } from '../gl/gl.module';
-import { SettingsModule } from '../settings/settings.module';
-import { InvoicesModule } from '../invoices/invoices.module';
+import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { EnrichmentModule } from '../enrichment/enrichment.module';
+import { GlModule } from '../gl/gl.module';
+import { InventoryModule } from '../inventory/inventory.module';
+import { InvoicesModule } from '../invoices/invoices.module';
+import { PdfTemplatesModule } from '../pdf-templates/pdf-templates.module';
 import { PickingSlipService } from '../pdf-templates/picking-slip.service';
 import { SalesInvoiceService as ReportSalesInvoiceService } from '../pdf-templates/sales-invoice.service';
 import { SalesQuoteService } from '../pdf-templates/sales-quote.service';
 import { SalesReturnCreditService } from '../pdf-templates/sales-return-credit.service';
+import { ProductsModule } from '../products/products.module';
+import { SettingsModule } from '../settings/settings.module';
+import { TaxModule } from '../tax/tax.module';
+import { AllocationsController } from './allocations.controller';
+import { BackordersService } from './backorders.service';
+import { DirectFulfillmentService } from './direct-fulfillment.service';
+import { GlobalReturnsController } from './global-returns.controller';
+import { GlobalReturnsService } from './global-returns.service';
+import { GlobalShipmentsController } from './global-shipments.controller';
+import { OrderCreationService } from './order-creation.service';
+import { OrderLinesService } from './order-lines.service';
+import { OrderPickingController } from './order-picking.controller';
+import { OrderReturnsController } from './order-returns.controller';
+import { OrderShipmentsController } from './order-shipments.controller';
+import { OrderStateService } from './order-state.service';
+import { OrdersCoreService } from './orders-core.service';
+import { OrdersQueryService } from './orders-query.service';
+import { OrdersController } from './orders.controller';
+import { OrdersService } from './orders.service';
+import { PickingActionService } from './picking-action.service';
+import { PickingQueryService } from './picking-query.service';
+import { PickingShippingQueryService } from './picking-shipping-query.service';
+import { PickingService } from './picking.service';
+import { ReturnsWriteService } from './returns-write.service';
+import { ShipmentsCoreService } from './shipments/shipments-core.service';
+import { ShipmentsStateService } from './shipments/shipments-state.service';
+import { ShipmentsWriteService } from './shipments/shipments-write.service';
+import { TransfersCoreService } from './transfers/transfers-core.service';
+import { TransfersPickingService } from './transfers/transfers-picking.service';
+import { TransfersShipmentService } from './transfers/transfers-shipment.service';
+import { TransfersStateService } from './transfers/transfers-state.service';
+import { TransfersWriteService } from './transfers/transfers-write.service';
+import { TransfersController } from './transfers/transfers.controller';
+import { UnifiedReturnsController } from './unified-returns.controller';
 
-import { ShippingDocketService } from '../pdf-templates/shipping-docket.service';
 import { BusinessReportsModule } from '../business-reports/business-reports.module';
 import { EmailModule } from '../email/email.module';
-import { NotificationsModule } from '../notifications/notifications.module';
 import { ManufacturingModule } from '../manufacturing/manufacturing.module';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { ShippingDocketService } from '../pdf-templates/shipping-docket.service';
 import { PurchaseOrdersModule } from '../purchase-orders/purchase-orders.module';
 
 @Module({
@@ -181,7 +175,7 @@ export class OrdersModule implements OnModuleInit {
 
     this.dataSourcesRegistry.register(DATA_SOURCE_CONTEXT.PICKING_SLIP, {
       requiredPermissions: [{ resource: 'sales-orders', action: 'read' }],
-      resolveData: async (id: string, user: Record<string, unknown>) => {
+      resolveData: async (id: string, _user: Record<string, unknown>) => {
         return (await this.pickingSlipService.assembleData(
           id,
         )) as unknown as Record<string, unknown>;
@@ -207,34 +201,13 @@ export class OrdersModule implements OnModuleInit {
       requiredPermissions: [{ resource: 'sales-orders', action: 'read' }],
       resolveData: async (
         id: string,
-        user: Record<string, unknown>,
+        _user: Record<string, unknown>,
         options?: Record<string, unknown>,
       ) => {
-        const [inv] = await this.db
-          .select({
-            orderId: salesInvoices.salesOrderId,
-            projectId: salesInvoices.projectId,
-          })
-          .from(salesInvoices)
-          .where(eq(salesInvoices.invoiceId, id));
-        if (!inv) throw new NotFoundException(`Invoice ${id} not found`);
-        if (inv.orderId) {
-          return (await this.reportSalesInvoiceService.assembleData(
-            inv.orderId,
-            'app',
-            id,
-            options,
-          )) as unknown as Record<string, unknown>;
-        }
-        if (inv.projectId) {
-          return (await this.reportSalesInvoiceService.assembleProjectInvoiceData(
-            id,
-            options,
-          )) as unknown as Record<string, unknown>;
-        }
-        throw new NotFoundException(
-          `Invoice ${id} has no associated sales order or project`,
-        );
+        return (await this.reportSalesInvoiceService.assembleInvoiceData(
+          id,
+          options,
+        )) as unknown as Record<string, unknown>;
       },
       getRandomId: async () => {
         const rows = await this.db
@@ -248,7 +221,7 @@ export class OrdersModule implements OnModuleInit {
 
     this.dataSourcesRegistry.register(DATA_SOURCE_CONTEXT.SALES_RETURN, {
       requiredPermissions: [{ resource: 'sales-returns', action: 'read' }],
-      resolveData: async (id: string, user: Record<string, unknown>) => {
+      resolveData: async (id: string, _user: Record<string, unknown>) => {
         return (await this.reportSalesReturnCreditService.assembleData(
           id,
           'app',

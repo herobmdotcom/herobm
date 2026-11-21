@@ -1,18 +1,38 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import DataGrid from '@/components/DataGrid';
 import { Button } from '@/components/shared/Button';
 import { formatLocalDate } from '@/lib/date';
-import { formatAmount } from '@herobm/shared';
+import { CURRENCIES, CUSTOMER_STATE, formatAmount, hasPermission, SystemResource } from '@herobm/shared';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
+import { useAuth } from '@/components/AuthGate';
+import { useCustomerGroups, useTaxPositions, useTradingTerms } from '@/hooks/useReferenceData';
+import BulkEditSlideOver, { type BulkEditFieldDef } from '@/components/shared/BulkEditSlideOver';
+import * as api from '@herobm/sdk';
 
+interface CustomerGridRow {
+  customerId: string;
+  customerNumber: string;
+  name?: string;
+  [key: string]: unknown;
+}
 
 export default function CustomersContent() {
-  const router = useRouter();
+  const { permissions } = useAuth();
+  const canBulkWrite = hasPermission(permissions, SystemResource.BULK_WRITE, 'write');
+
+  const [isBulkMode, setIsBulkMode] = useState(false);
+  const [selectedCustomers, setSelectedCustomers] = useState<CustomerGridRow[]>([]);
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const { customerGroups } = useCustomerGroups();
+  const { tradingTerms } = useTradingTerms();
+  const { taxPositions } = useTaxPositions();
+
   const tCommon = useTranslations('common');
   const tAccounts = useTranslations('customers');
   const tStates = useTranslations('common.states');
@@ -85,30 +105,187 @@ export default function CustomersContent() {
       type: 'numericColumn',
       valueFormatter: (p: { value?: string | number }) => p.value != null ? `${parseFloat(String(p.value)).toFixed(1)}%` : '—',
     },
-  ], [tCommon, tAccounts]);
+  ], [tCommon, tAccounts, tStates]);
 
+  const gridColumns = useMemo<ColDef[]>(() => {
+    if (!isBulkMode) return columns;
+    const checkboxCol: ColDef = {
+      colId: '__select',
+      width: 48,
+      minWidth: 48,
+      maxWidth: 48,
+      resizable: false,
+      sortable: false,
+      filter: false,
+      pinned: 'left',
+      checkboxSelection: true,
+      headerCheckboxSelection: true,
+      headerCheckboxSelectionFilteredOnly: true,
+    };
+    return [checkboxCol, ...columns];
+  }, [isBulkMode, columns]);
 
+  const bulkFields = useMemo<BulkEditFieldDef[]>(() => [
+    {
+      key: 'customerGroupId',
+      label: tCommon('columns.group'),
+      type: 'select',
+      nullable: true,
+      options: customerGroups.map((g) => ({
+        label: g.name,
+        value: g.customerGroupId,
+      })),
+      placeholder: 'Select Customer Group...',
+    },
+    {
+      key: 'tradingTermsId',
+      label: 'Trading Terms',
+      type: 'select',
+      nullable: true,
+      options: tradingTerms.map((tt) => ({
+        label: tt.description || tt.code,
+        value: tt.tradingTermsId,
+      })),
+      placeholder: 'Select Trading Terms...',
+      helpText: 'Requires Credit Control permission.',
+    },
+    {
+      key: 'taxPositionId',
+      label: tCommon('columns.taxPosition'),
+      type: 'select',
+      nullable: true,
+      options: taxPositions.map((tp) => ({
+        label: tp.title || tp.code,
+        value: tp.taxPositionId,
+      })),
+      placeholder: 'Select Tax Position...',
+    },
+    {
+      key: 'priceTier',
+      label: tCommon('columns.priceScale'),
+      type: 'select',
+      nullable: true,
+      options: [
+        { label: 'Tier 1', value: 'tier_1' },
+        { label: 'Tier 2', value: 'tier_2' },
+        { label: 'Tier 3', value: 'tier_3' },
+        { label: 'Tier 4', value: 'tier_4' },
+      ],
+      placeholder: 'Select Price Tier...',
+    },
+    {
+      key: 'currencyCode',
+      label: tCommon('columns.currency'),
+      type: 'select',
+      nullable: false,
+      options: CURRENCIES.map((c) => ({
+        label: `${c.code} (${c.name})`,
+        value: c.code,
+      })),
+      placeholder: 'Select Currency...',
+    },
+    {
+      key: 'isOnCreditHold',
+      label: 'Credit Hold',
+      type: 'boolean',
+      nullable: false,
+      helpText: 'Toggle to place or release credit hold across selected customers.',
+    },
+    {
+      key: 'stateCode',
+      label: tCommon('columns.status'),
+      type: 'select',
+      nullable: false,
+      options: [
+        { label: tCommon('states.active'), value: CUSTOMER_STATE.ACTIVE },
+        { label: tCommon('states.inactive'), value: CUSTOMER_STATE.INACTIVE },
+        { label: tCommon('states.archived'), value: CUSTOMER_STATE.ARCHIVED },
+      ],
+      placeholder: 'Select Status...',
+    },
+  ], [customerGroups, tradingTerms, taxPositions, tCommon]);
+
+  const handleBulkApply = async (payload: Record<string, unknown>) => {
+    const ids = selectedCustomers.map((c) => c.customerId);
+    const res = await api.customersControllerBulkUpdate({
+      ids,
+      ...payload,
+    });
+    setRefreshTrigger((prev) => prev + 1);
+    setSelectedCustomers([]);
+    setIsBulkMode(false);
+    return res.data;
+  };
 
   return (
-    <DataGrid
-      endpoint="/api/customers"
-      columns={columns}
-      customFieldEntityType="customers"
-      gridKey="ops-customers"
-      searchPlaceholder={tAccounts('placeholders.searchAccounts')}
-      exportFileName="customers"
-      showArchivedToggle
-      rowIdField="customerId"
-      rowHref={(row) => `/customers/${row.customerId}`}
-      pageTitle={tAccounts('title')}
-      defaultSortModel={[{ colId: 'customerNumber', sort: 'asc' }]}
-      headerActions={
-        <Button asChild variant="primary">
-          <Link href="/customers/new">
-            {tAccounts('buttons.createCustomer')}
-          </Link>
-        </Button>
-      }
-    />
+    <>
+      <DataGrid
+        endpoint="/api/customers"
+        columns={gridColumns}
+        customFieldEntityType="customers"
+        gridKey="ops-customers"
+        searchPlaceholder={tAccounts('placeholders.searchAccounts')}
+        exportFileName="customers"
+        showArchivedToggle
+        rowIdField="customerId"
+        rowSelection={isBulkMode ? 'multiple' : 'single'}
+        fetchAll={isBulkMode}
+        onSelectionChanged={isBulkMode ? (rows) => setSelectedCustomers(rows as CustomerGridRow[]) : undefined}
+        rowHref={isBulkMode ? undefined : (row) => `/customers/${row.customerId}`}
+        pageTitle={tAccounts('title')}
+        defaultSortModel={[{ colId: 'customerNumber', sort: 'asc' }]}
+        refreshTrigger={refreshTrigger}
+        headerActions={
+          <div className="flex items-center gap-2">
+            {canBulkWrite && (
+              <Button
+                type="button"
+                variant={isBulkMode ? 'secondary' : 'ghost'}
+                onClick={() => {
+                  setIsBulkMode(!isBulkMode);
+                  setSelectedCustomers([]);
+                }}
+              >
+                {isBulkMode ? tCommon('bulkEdit.exit') : tCommon('bulkEdit.toggle')}
+              </Button>
+            )}
+            <Button asChild variant="primary">
+              <Link href="/customers/new">
+                {tAccounts('buttons.createCustomer')}
+              </Link>
+            </Button>
+          </div>
+        }
+        secondaryHeader={
+          isBulkMode ? (
+            <div className="flex items-center gap-3 py-1">
+              <span className="text-xs font-semibold px-2.5 py-1 rounded bg-[var(--bg-secondary)] border border-[var(--border)] text-[var(--text-primary)]">
+                {tCommon('bulkEdit.selectedCount', { count: selectedCustomers.length })}
+              </span>
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                disabled={selectedCustomers.length === 0}
+                onClick={() => setIsBulkOpen(true)}
+              >
+                {tCommon('bulkEdit.editSelected', { count: selectedCustomers.length })}
+              </Button>
+            </div>
+          ) : undefined
+        }
+      />
+
+      {isBulkOpen && (
+        <BulkEditSlideOver
+          isOpen={isBulkOpen}
+          onClose={() => setIsBulkOpen(false)}
+          entityName={tAccounts('title')}
+          selectedCount={selectedCustomers.length}
+          fields={bulkFields}
+          onApply={handleBulkApply}
+        />
+      )}
+    </>
   );
 }

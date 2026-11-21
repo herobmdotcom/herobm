@@ -10,7 +10,10 @@ export interface Product {
   name: string;
   listPrice?: string | null;
   tradePrice?: string | null;
+  priceLevel3?: string | null;
+  priceLevel4?: string | null;
   standardCost?: string | null;
+  weightedAverageCost?: string | null;
   baseUom?: string | null;
   structureType?: 'standard' | 'kit';
   productType?: string;
@@ -28,6 +31,8 @@ interface ProductSearchInputProps {
   structureType?: 'standard' | 'kit';
   productType?: string;
   disabled?: boolean;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
+  shortcutHint?: string;
 }
 
 export default function ProductSearchInput({
@@ -39,6 +44,8 @@ export default function ProductSearchInput({
   structureType,
   productType,
   disabled,
+  inputRef,
+  shortcutHint,
 }: ProductSearchInputProps) {
   const t = useTranslations('common.productSearch');
 
@@ -48,6 +55,8 @@ export default function ProductSearchInput({
       disabled={disabled}
       className={className}
       style={style}
+      inputRef={inputRef}
+      shortcutHint={shortcutHint}
       clearOnSelect
       onSearch={async (term) => {
         const res = await api.productsControllerFindAll({

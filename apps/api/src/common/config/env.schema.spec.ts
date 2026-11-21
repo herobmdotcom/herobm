@@ -1,7 +1,7 @@
 /* eslint-disable no-restricted-syntax -- Unit tests validating schema validation against mock test secrets */
+import { ConfigService } from '@nestjs/config';
 import { envSchema, validateEnv } from './env.schema';
 import { EnvService } from './env.service';
-import { ConfigService } from '@nestjs/config';
 
 describe('Environment Validation', () => {
   it('should parse default development configuration correctly', () => {

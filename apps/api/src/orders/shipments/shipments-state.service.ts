@@ -1,72 +1,51 @@
-import { Decimal } from 'decimal.js';
 import {
-  Injectable,
-  Inject,
-  BadRequestException,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
-import { eq, sql, desc, and, gte, or, inArray } from 'drizzle-orm';
-import { DRIZZLE } from '../../drizzle/drizzle.module';
-import type { DrizzleDB } from '../../drizzle/drizzle.module';
-import {
-  salesOrders,
-  salesOrderShipments,
-  salesOrderShipmentLines,
-  salesOrderLineItems,
-  products as coreProducts,
   bins,
+  customers as coreAccounts,
+  products as coreProducts,
+  customerGroups,
   inventoryEntries,
   inventoryLedger,
-  customers as coreAccounts,
-  customerGroups,
-  backorders,
-  purchaseOrders,
-  systemEvents,
-  warehouseEvents,
-  salesOrderPicks,
-  transferOrders,
-  transferOrderShipments,
-  transferOrderShipmentLines,
-  transferOrderLines,
-  locations,
   organizations,
+  salesOrderLineItems,
+  salesOrderPicks,
+  salesOrders,
+  salesOrderShipmentLines,
+  salesOrderShipments,
 } from '@herobm/db-schema';
-import { AppConfigService } from '../../settings/app-config.service';
-import { getValuationStrategy } from '../../inventory/valuation';
-import { getAccountingStrategy } from '../../inventory/inventory-accounting';
 import {
-  findOrder,
-  findOrderLine,
-  findShipment,
-  findShipmentLine,
-  assertShipmentQtyAvailable,
-  getInvoicedPerLine,
-  getCommittedPerLine,
-} from '../shipment-helpers';
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
+import { Decimal } from 'decimal.js';
+import { and, eq, inArray, or, sql } from 'drizzle-orm';
 import { emitEvent } from '../../common/emit-event';
 import { EntityType, EventType } from '../../common/event-types';
-import { calculateAuditTrail, AuditMode } from '../../common/audit';
-import { evaluateLifecycleRules } from '../order-lifecycle-rules';
+import type { DrizzleDB } from '../../drizzle/drizzle.module';
+import { DRIZZLE } from '../../drizzle/drizzle.module';
 import { GlService } from '../../gl/gl.service';
+import { getAccountingStrategy } from '../../inventory/inventory-accounting';
+import { getValuationStrategy } from '../../inventory/valuation';
+import { AppConfigService } from '../../settings/app-config.service';
+import { evaluateLifecycleRules } from '../order-lifecycle-rules';
 import {
-  CreateShipmentDto,
-  UpdateShipmentDto,
-  AddShipmentLineDto,
-  UpdateShipmentLineDto,
-} from '../dto';
+  findOrderLine,
+  findShipment,
+  getCommittedPerLine,
+  getInvoicedPerLine,
+} from '../shipment-helpers';
 
+import type { SalesOrderPickState } from '@herobm/shared';
 import {
-  SHIPMENT_STATE,
-  type ShipmentState,
-  SHIPMENT_TRANSITIONS as SHIPMENT_STATE_TRANSITIONS,
-  SALES_ORDER_STATE,
+  getValidStates,
   SALES_ORDER_PICK_STATE,
   SALES_ORDER_PICK_TRANSITIONS,
-  getValidStates,
+  SHIPMENT_STATE,
+  SHIPMENT_TRANSITIONS as SHIPMENT_STATE_TRANSITIONS,
   toDecimal,
+  type ShipmentState,
 } from '@herobm/shared';
-import type { SalesOrderPickState } from '@herobm/shared';
 import { InventoryMovementService } from '../../inventory/inventory-movement.service';
 import { ShipmentsCoreService } from './shipments-core.service';
 

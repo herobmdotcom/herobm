@@ -92,6 +92,7 @@ Makefile.test
 .env.*
 .setup-token
 .startup_choice
+.setup_currency
 .test_target
 .test_single
 

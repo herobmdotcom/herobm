@@ -1,16 +1,16 @@
-import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  IsUUID,
-  IsNumberString,
-  IsInt,
-  Min,
-  Max,
-  IsDateString,
-  IsObject,
-} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsDateString,
+  IsInt,
+  IsNotEmpty,
+  IsNumberString,
+  IsObject,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class CreateOpportunityDto {
   @ApiProperty()

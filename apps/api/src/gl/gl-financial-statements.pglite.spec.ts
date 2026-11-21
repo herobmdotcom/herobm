@@ -1,22 +1,18 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { GlService } from './gl.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { AppConfigService } from '../settings/app-config.service';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
 import {
+  activities,
+  costCenters,
   glAccounts,
   glJournalEntries,
   glJournalLines,
   glSettings,
-  costCenters,
-  activities,
 } from '@herobm/db-schema';
+import { Test, TestingModule } from '@nestjs/testing';
 import { randomUUID } from 'crypto';
-import {
-  fetchProfitAndLoss,
-  fetchBalanceSheet,
-} from './gl-financial-statements.utils';
+import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { AppConfigService } from '../settings/app-config.service';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { GlService } from './gl.service';
 
 describe('GL Financial Statements PGlite Integration Tests', () => {
   const pg = setupPgliteSuite();

@@ -533,6 +533,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                   className={`w-10 h-[22px] rounded-[11px] relative transition-colors duration-200 ${supplier.stateCode === SUPPLIER_STATE.ACTIVE ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'} ${!isEditable ? 'opacity-50' : 'opacity-100'}`}
                 >
                   <div
+                    // dark-mode-ok: white toggle switch thumb
                     className={`w-4 h-4 rounded-full bg-white absolute top-[3px] transition-all duration-200 ${supplier.stateCode === SUPPLIER_STATE.ACTIVE ? 'left-[21px]' : 'left-[3px]'}`}
                   />
                 </div>
@@ -547,8 +548,8 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('earlyPaymentDiscount')}
               </label>
-              <div className="flex items-center gap-3">
-                <div className="relative w-32 shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="relative w-28 shrink-0">
                   <InheritedNumberInput
                     className="input w-full pr-8"
                     value={dto?.earlyPaymentDiscount || ''}
@@ -562,13 +563,13 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                     inheritedValue={earlyPaymentDiscountInheritance.inheritedValue}
                     inheritedSourceLabel={earlyPaymentDiscountInheritance.inheritedSourceLabel}
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 font-medium text-slate-400 pointer-events-none">%</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 font-medium text-slate-400 pointer-events-none text-sm">%</span>
                 </div>
                 {/* eslint-disable-next-line i18next/no-literal-string -- The word 'in' is not translatable here */}
                 <span className="text-sm font-medium shrink-0 text-[var(--text-muted)]">
                   in
                 </span>
-                <div className="relative w-32 shrink-0">
+                <div className="relative w-28 shrink-0">
                   <InheritedNumberInput
                     className="input w-full pr-12"
                     value={dto?.earlyPaymentDiscountDays?.toString() || ''}
@@ -584,42 +585,55 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                   {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 font-medium text-slate-400 pointer-events-none text-sm">days</span>
                 </div>
-                {!!earlyPaymentDiscountInheritance.inheritedSourceLabel && !!earlyPaymentDiscountDaysInheritance.inheritedSourceLabel && (
-                  <span className="text-xs italic text-[var(--primary)] ml-2">
-                    {tCommon('options.inheritValue', { 
-                      label: `${earlyPaymentDiscountInheritance.inheritedValue}% in ${earlyPaymentDiscountDaysInheritance.inheritedValue} days`,
-                      source: earlyPaymentDiscountInheritance.inheritedSourceLabel || ''
-                    })}
-                  </span>
-                )}
               </div>
+              {Boolean(
+                (earlyPaymentDiscountInheritance.inheritedSourceLabel || earlyPaymentDiscountDaysInheritance.inheritedSourceLabel) &&
+                (earlyPaymentDiscountInheritance.inheritedValue || earlyPaymentDiscountDaysInheritance.inheritedValue)
+              ) && (
+                <p
+                  className="text-xs italic text-[var(--primary)] mt-1.5 truncate"
+                  title={tCommon('options.inheritValue', { 
+                    label: `${earlyPaymentDiscountInheritance.inheritedValue ?? '0'}% in ${earlyPaymentDiscountDaysInheritance.inheritedValue ?? '0'} days`,
+                    source: earlyPaymentDiscountInheritance.inheritedSourceLabel || earlyPaymentDiscountDaysInheritance.inheritedSourceLabel || ''
+                  })}
+                >
+                  {tCommon('options.inheritValue', { 
+                    label: `${earlyPaymentDiscountInheritance.inheritedValue ?? '0'}% in ${earlyPaymentDiscountDaysInheritance.inheritedValue ?? '0'} days`,
+                    source: earlyPaymentDiscountInheritance.inheritedSourceLabel || earlyPaymentDiscountDaysInheritance.inheritedSourceLabel || ''
+                  })}
+                </p>
+              )}
             </div>
 
             <div>
               <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 Credit Limit
               </label>
-              <div className="flex items-center gap-3">
-                <InheritedNumberInput
-                  step="0.01"
-                  className="input w-full max-w-xs"
-                  value={dto?.creditLimit || ""}
-                  onChange={(val) => updateField('creditLimit', val)}
-                  onBlur={() => saveField("creditLimit", dto?.creditLimit)}
-                  disabled={!isEditable}
-                  placeholder="0.00"
-                  inheritedValue={creditLimitInheritance.inheritedValue}
-                  inheritedSourceLabel={creditLimitInheritance.inheritedSourceLabel}
-                />
-                {!!creditLimitInheritance.inheritedSourceLabel && (
-                  <span className="text-xs italic text-[var(--primary)] ml-2">
-                    {tCommon('options.inheritValue', {
-                      label: creditLimitInheritance.inheritedValue || '',
-                      source: creditLimitInheritance.inheritedSourceLabel || ''
-                    })}
-                  </span>
-                )}
-              </div>
+              <InheritedNumberInput
+                step="0.01"
+                className="input w-full"
+                value={dto?.creditLimit || ""}
+                onChange={(val) => updateField('creditLimit', val)}
+                onBlur={() => saveField("creditLimit", dto?.creditLimit)}
+                disabled={!isEditable}
+                placeholder="0.00"
+                inheritedValue={creditLimitInheritance.inheritedValue}
+                inheritedSourceLabel={creditLimitInheritance.inheritedSourceLabel}
+              />
+              {Boolean(creditLimitInheritance.inheritedSourceLabel && creditLimitInheritance.inheritedValue) && (
+                <p
+                  className="text-xs italic text-[var(--primary)] mt-1.5 truncate"
+                  title={tCommon('options.inheritValue', {
+                    label: creditLimitInheritance.inheritedValue || '',
+                    source: creditLimitInheritance.inheritedSourceLabel || ''
+                  })}
+                >
+                  {tCommon('options.inheritValue', {
+                    label: creditLimitInheritance.inheritedValue || '',
+                    source: creditLimitInheritance.inheritedSourceLabel || ''
+                  })}
+                </p>
+              )}
             </div>
 
             {/* ── Row 2 ── */}
@@ -676,6 +690,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                   className={`w-10 h-[22px] rounded-[11px] relative transition-colors duration-200 ${dto?.isTaxRegistered ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'} ${!isEditable ? 'opacity-50' : 'opacity-100'}`}
                 >
                   <div
+                    // dark-mode-ok: white toggle switch thumb
                     className={`w-4 h-4 rounded-full bg-white absolute top-[3px] transition-all duration-200 ${dto?.isTaxRegistered ? 'left-[21px]' : 'left-[3px]'}`}
                   />
                 </div>

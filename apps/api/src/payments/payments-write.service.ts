@@ -1,43 +1,43 @@
 import {
-  Injectable,
-  Inject,
-  forwardRef,
+  customerGroups,
+  customers,
+  paymentAllocations,
+  paymentEntries,
+  paymentLines,
+  purchaseDebitNotes,
+  purchaseInvoices,
+  salesCreditNotes,
+  salesInvoices,
+  supplierGroups,
+  suppliers,
+} from '@herobm/db-schema';
+import {
+  JOURNAL_ENTRY_SOURCE_TYPE,
+  PAYMENT_STATE,
+  PAYMENT_TYPE,
+} from '@herobm/shared';
+import {
   BadRequestException,
-  NotFoundException,
+  Inject,
+  Injectable,
   Logger,
+  NotFoundException,
+  forwardRef,
 } from '@nestjs/common';
 import { Decimal } from 'decimal.js';
-import { eq, and, or, inArray } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import type { AnyPgColumn, PgTable } from 'drizzle-orm/pg-core';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  paymentEntries,
-  paymentAllocations,
-  salesInvoices,
-  purchaseInvoices,
-  customers,
-  customerGroups,
-  suppliers,
-  supplierGroups,
-  paymentLines,
-  salesCreditNotes,
-  purchaseDebitNotes,
-} from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { getExchangeRateForCurrency } from '../common/fx-helper';
-import { GlService } from '../gl/gl.service';
-import { SuppliersService } from '../suppliers/suppliers.service';
-import { evaluateSalesInvoiceLifecycleRules } from '../invoices/sales-invoice-lifecycle-rules';
-import { evaluatePurchaseInvoiceLifecycleRules } from '../invoices/purchase-invoice-lifecycle-rules';
-import { CreatePaymentDto } from './dto';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { JournalLineDto } from '../gl/dto';
-import {
-  PAYMENT_STATE,
-  PAYMENT_TYPE,
-  JOURNAL_ENTRY_SOURCE_TYPE,
-} from '@herobm/shared';
+import { GlService } from '../gl/gl.service';
+import { evaluatePurchaseInvoiceLifecycleRules } from '../invoices/purchase-invoice-lifecycle-rules';
+import { evaluateSalesInvoiceLifecycleRules } from '../invoices/sales-invoice-lifecycle-rules';
+import { SuppliersService } from '../suppliers/suppliers.service';
+import { CreatePaymentDto } from './dto';
 import { PaymentsCoreService } from './payments-core.service';
 import { PaymentsPostingService } from './payments-posting.service';
 

@@ -1,7 +1,7 @@
-import { SeedDB } from '../run';
+import { generateTransactions, seedMasterData, wipeDatabase } from '../demo';
 import { runProdSeeds } from '../prod';
 import { seedCoaAccounts, seedCoaSettings } from '../prod/core';
-import { wipeDatabase, seedMasterData, generateTransactions } from '../demo';
+import { SeedDB } from '../run';
 
 export async function runSimSeeds(
   db: SeedDB,
@@ -17,6 +17,9 @@ export async function runSimSeeds(
     await wipeDatabase(db);
 
     // 1. Run core foundational seeds
+    if (!process.env.HOME_CURRENCY) {
+      process.env.HOME_CURRENCY = region === 'au_standard' ? 'AUD' : 'USD';
+    }
     await runProdSeeds(db, dryRun);
     await seedCoaAccounts(db, false, region);
     await seedCoaSettings(db, false, region);

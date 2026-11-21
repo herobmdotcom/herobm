@@ -40,7 +40,31 @@ test.describe('Workflow: Order-to-Cash', () => {
       await orderPoInput.fill(orderRef);
     }
 
-    // 4. Add a Custom Line Item
+    // 4. Submit the Order and intercept the API creation request
+    const createBtn = page.getByRole('button', { name: /create order/i }).first();
+    await expect(createBtn).toBeVisible();
+
+    const responsePromise = page.waitForResponse(
+      (res) => res.url().includes('/api/orders') && res.request().method() === 'POST',
+      { timeout: 15000 }
+    ).catch(() => null);
+
+    await createBtn.click();
+
+    const response = await responsePromise;
+    if (response) {
+      expect([200, 201]).toContain(response.status());
+    }
+
+    // 5. Assert URL redirect to Order Detail page
+    await page.waitForURL(/\/sales-orders\/[a-zA-Z0-9-]+/, { timeout: 15000 }).catch(() => null);
+    await expectNoErrorBoundaries(page);
+
+    // 6. Verify Order Detail view loaded
+    const orderTitle = page.locator('h1, h2, [class*="EntityHeader"]').first();
+    await expect(orderTitle).toBeVisible();
+
+    // 7. Add a Custom Line Item on the Order Detail workbench
     const addCustomLineBtn = page.getByRole('button', { name: /custom line/i }).first();
     if (await addCustomLineBtn.isVisible()) {
       await addCustomLineBtn.click();
@@ -58,30 +82,6 @@ test.describe('Workflow: Order-to-Cash', () => {
         await priceInput.fill('150.00');
       }
     }
-
-    // 5. Submit the Order and intercept the API creation request
-    const createBtn = page.getByRole('button', { name: /create order/i }).first();
-    await expect(createBtn).toBeVisible();
-
-    const responsePromise = page.waitForResponse(
-      (res) => res.url().includes('/api/orders') && res.request().method() === 'POST',
-      { timeout: 15000 }
-    ).catch(() => null);
-
-    await createBtn.click();
-
-    const response = await responsePromise;
-    if (response) {
-      expect([200, 201]).toContain(response.status());
-    }
-
-    // 6. Assert URL redirect to Order Detail page
-    await page.waitForURL(/\/sales-orders\/[a-zA-Z0-9-]+/, { timeout: 15000 }).catch(() => null);
-    await expectNoErrorBoundaries(page);
-
-    // 7. Verify Order Detail view loaded
-    const orderTitle = page.locator('h1, h2, [class*="EntityHeader"]').first();
-    await expect(orderTitle).toBeVisible();
 
     // 8. Follow through to Picking workflow view
     await page.goto('/inventory/picking', { waitUntil: 'domcontentloaded' });

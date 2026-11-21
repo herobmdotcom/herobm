@@ -66,6 +66,19 @@ To process counter sales with cash or EFTPOS settlement, the organization must c
 5. For cash sales, enter the **Amount Tendered** to view change due.
 6. Click **Complete Sale**. The receipt prints instantly, and stock decrements from the counter bin.
 
+### 2. Rapid Keyboard Line Entry (No Mouse Required)
+In the **Lines** section, you can add items continuously from the keyboard (in addition to hardware barcode scanning):
+
+| Key / Step | Action |
+| :--- | :--- |
+| **`/`** | Focus the **Add product** search box from anywhere on the page. |
+| **Type + `↑` / `↓`** | Search by SKU or name and move the highlight (top match is highlighted automatically). |
+| **`Enter`** | Stage the highlighted product and focus the **Qty** box with `1` pre-selected. |
+| **Type qty + `Enter`** | Add the line item with its catalog price and return focus to the search box for the next item. |
+| **`Esc`** | Cancel a staged product (or close search results) and return to the search box. |
+
+*Tip: Click **`+`** next to any line number to insert a new line above it, or drag the **`⋮⋮`** handle to reorder lines. Focusing any existing **Qty**, **Unit Price**, or **Disc %** cell auto-selects its value.*
+
 ---
 
 ## Field Reference

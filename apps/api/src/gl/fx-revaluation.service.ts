@@ -1,26 +1,25 @@
-import { Decimal } from 'decimal.js';
-import { Injectable, BadRequestException, Inject } from '@nestjs/common';
-import { GlService } from './gl.service';
-import {
-  RunFxRevaluationDto,
-  CommitFxRevaluationDto,
-  JournalLineDto,
-} from './dto';
 import {
   exchangeRates,
-  purchaseInvoices,
-  salesInvoices,
-  salesOrders,
   goodsReceived,
   goodsReceivedLines,
+  purchaseInvoices,
   purchaseOrders,
-  customers,
+  salesInvoices,
+  salesOrders,
   suppliers,
 } from '@herobm/db-schema';
+import { JOURNAL_ENTRY_SOURCE_TYPE, MATCH_STATUS } from '@herobm/shared';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { Decimal } from 'decimal.js';
 import { and, desc, eq, gt, lte, ne, sql } from 'drizzle-orm';
-import { MATCH_STATUS, JOURNAL_ENTRY_SOURCE_TYPE } from '@herobm/shared';
-import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import {
+  CommitFxRevaluationDto,
+  JournalLineDto,
+  RunFxRevaluationDto,
+} from './dto';
+import { GlService } from './gl.service';
 
 @Injectable()
 export class FxRevaluationService {
@@ -302,7 +301,7 @@ export class FxRevaluationService {
     });
   }
 
-  async commitRevaluation(dto: CommitFxRevaluationDto, actor: string) {
+  async commitRevaluation(dto: CommitFxRevaluationDto, _actor: string) {
     if (!dto.lines || dto.lines.length === 0) {
       throw new BadRequestException('No lines provided to commit.');
     }

@@ -1,8 +1,8 @@
+import { tradingTerms } from '@herobm/db-schema';
 import { Test, TestingModule } from '@nestjs/testing';
-import { TradingTermsService } from './trading-terms.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { tradingTerms } from '@herobm/db-schema';
+import { TradingTermsService } from './trading-terms.service';
 
 describe('TradingTermsService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

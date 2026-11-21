@@ -1,6 +1,10 @@
+import {
+  roundMoney,
+  SALES_INVOICE_STATE,
+  SALES_ORDER_STATE,
+} from '@herobm/shared';
 import { sql } from 'drizzle-orm';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { SALES_INVOICE_STATE, SALES_ORDER_STATE } from '@herobm/shared';
 
 export interface AgedBalanceResult {
   customerId: string;
@@ -143,9 +147,9 @@ export async function calculateCustomerBalances(
   const paymentsQuery = sql`
     SELECT
       pe.party_id as "customerId",
-      COALESCE(SUM(pe.unallocated_amount), 0) as "unallocatedPaymentsTotal"
+      COALESCE(SUM(CASE WHEN pe.payment_type = 'customer_receipt' THEN pe.unallocated_amount ELSE -pe.unallocated_amount END), 0) as "unallocatedPaymentsTotal"
     FROM herobm_core.payment_entries pe
-    WHERE pe.payment_type = 'customer_receipt' AND pe.state_code = 'posted' AND pe.unallocated_amount > 0
+    WHERE pe.payment_type IN ('customer_receipt', 'customer_refund') AND pe.state_code = 'posted' AND pe.unallocated_amount > 0
     ${paymentsFilter}
     GROUP BY pe.party_id
   `;
@@ -205,74 +209,110 @@ export async function calculateCustomerBalances(
     }
   }
 
-  const resultMap = new Map<string, AgedBalanceResult>();
-
-  if (customerIds && customerIds.length > 0) {
-    // Pre-populate with 0 balances
-    for (const id of customerIds) {
-      const glBalance = glMap.get(id) || 0;
-      const cnTotal = creditNotesMap.get(id) || 0;
-      const payments = paymentsMap.get(id) || 0;
-      const netOutstanding = 0 - cnTotal - payments;
-      resultMap.set(id, {
-        customerId: id,
-        current: 0,
-        days1To30: 0,
-        days31To60: 0,
-        days61To90: 0,
-        days90Plus: 0,
-        totalInvoiceOutstanding: 0,
-        totalCreditNoteOutstanding: cnTotal,
-        unallocatedPaymentsTotal: payments,
-        totalOutstanding: netOutstanding,
-        glBalance,
-        discrepancyAmount: Math.abs(netOutstanding - glBalance),
-        uninvoicedOrdersTotal: uninvoicedMap.get(id) || 0,
-      });
+  const invoicesMap = new Map<string, Record<string, unknown>>();
+  for (const row of invoicesRows) {
+    if (row.customerId) {
+      invoicesMap.set(row.customerId as string, row);
     }
   }
 
-  for (const row of invoicesRows) {
-    const id = row.customerId as string;
+  const allIds = new Set<string>();
+  if (customerIds && customerIds.length > 0) {
+    customerIds.forEach((id) => allIds.add(id));
+  } else {
+    invoicesRows.forEach(
+      (r) => r.customerId && allIds.add(r.customerId as string),
+    );
+    creditNotesRows.forEach(
+      (r) => r.customerId && allIds.add(r.customerId as string),
+    );
+    paymentsRows.forEach(
+      (r) => r.customerId && allIds.add(r.customerId as string),
+    );
+    glRows.forEach((r) => r.customerId && allIds.add(r.customerId as string));
+  }
+
+  const resultMap = new Map<string, AgedBalanceResult>();
+
+  for (const id of allIds) {
+    const invRow = invoicesMap.get(id);
     const glBalance = glMap.get(id) || 0;
     const uninvoiced = uninvoicedMap.get(id) || 0;
-    const invoiceOutstanding = Number(row.totalOutstanding);
+    const invoiceOutstanding = Number(invRow?.totalOutstanding || 0);
     const cnTotal = creditNotesMap.get(id) || 0;
     const payments = paymentsMap.get(id) || 0;
-    const totalOutstanding = invoiceOutstanding - cnTotal - payments;
+    const totalCredit = cnTotal + payments;
+
+    let days90Plus = Number(invRow?.days90Plus || 0);
+    let days61To90 = Number(invRow?.days61To90 || 0);
+    let days31To60 = Number(invRow?.days31To60 || 0);
+    let days1To30 = Number(invRow?.days1To30 || 0);
+    let current = Number(invRow?.current || 0);
+
+    let remCredit = totalCredit;
+    if (remCredit > 0) {
+      const r90 = Math.min(days90Plus, remCredit);
+      days90Plus -= r90;
+      remCredit -= r90;
+    }
+    if (remCredit > 0) {
+      const r61 = Math.min(days61To90, remCredit);
+      days61To90 -= r61;
+      remCredit -= r61;
+    }
+    if (remCredit > 0) {
+      const r31 = Math.min(days31To60, remCredit);
+      days31To60 -= r31;
+      remCredit -= r31;
+    }
+    if (remCredit > 0) {
+      const r1 = Math.min(days1To30, remCredit);
+      days1To30 -= r1;
+      remCredit -= r1;
+    }
+    if (remCredit > 0) {
+      current -= remCredit;
+    }
+
+    const totalOutstanding = roundMoney(
+      current + days1To30 + days31To60 + days61To90 + days90Plus,
+    ).toNumber();
 
     resultMap.set(id, {
       customerId: id,
-      customerName: row.customerName as string,
-      customerNumber: row.customerNumber as string,
-      currencyCode: row.currencyCode as string,
-      current: Number(row.current),
-      days1To30: Number(row.days1To30),
-      days31To60: Number(row.days31To60),
-      days61To90: Number(row.days61To90),
-      days90Plus: Number(row.days90Plus),
+      customerName: invRow?.customerName as string | undefined,
+      customerNumber: invRow?.customerNumber as string | undefined,
+      currencyCode: invRow?.currencyCode as string | undefined,
+      current: roundMoney(current).toNumber(),
+      days1To30: roundMoney(days1To30).toNumber(),
+      days31To60: roundMoney(days31To60).toNumber(),
+      days61To90: roundMoney(days61To90).toNumber(),
+      days90Plus: roundMoney(days90Plus).toNumber(),
       totalInvoiceOutstanding: invoiceOutstanding,
       totalCreditNoteOutstanding: cnTotal,
       unallocatedPaymentsTotal: payments,
       totalOutstanding,
       glBalance,
-      discrepancyAmount: Math.abs(totalOutstanding - glBalance),
+      discrepancyAmount: roundMoney(
+        Math.abs(totalOutstanding - glBalance),
+      ).toNumber(),
       uninvoicedOrdersTotal: uninvoiced,
       // Pass these through for risk calculation
-      stateCode: row.stateCode as string,
-      isOnCreditHold: Boolean(row.cIsOnCreditHold),
+      stateCode: invRow?.stateCode as string | undefined,
+      isOnCreditHold: invRow ? Boolean(invRow.cIsOnCreditHold) : false,
       creditLimit:
-        row.cCreditLimit !== null
-          ? String(row.cCreditLimit as string | number)
+        invRow && invRow.cCreditLimit !== null
+          ? String(invRow.cCreditLimit as string | number)
           : null,
-      overrideCreditHoldUntil: row.cOverride
-        ? new Date(row.cOverride as string)
-        : null,
-      customerGroupId: row.customerGroupId as string | undefined,
-      groupIsOnCreditHold: Boolean(row.gIsOnCreditHold),
+      overrideCreditHoldUntil:
+        invRow && invRow.cOverride
+          ? new Date(invRow.cOverride as string)
+          : null,
+      customerGroupId: invRow?.customerGroupId as string | undefined,
+      groupIsOnCreditHold: invRow ? Boolean(invRow.gIsOnCreditHold) : false,
       groupCreditLimit:
-        row.gCreditLimit !== null
-          ? String(row.gCreditLimit as string | number)
+        invRow && invRow.gCreditLimit !== null
+          ? String(invRow.gCreditLimit as string | number)
           : null,
     });
   }

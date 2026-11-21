@@ -1,41 +1,41 @@
 import { SystemResource } from '@herobm/shared';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiOkResponse,
-  ApiBody,
-  ApiConsumes,
-} from '@nestjs/swagger';
-import {
-  Controller,
-  Get,
-  Patch,
-  Post,
-  Delete,
   Body,
-  UseInterceptors,
-  UploadedFile,
-  Res,
-  UseGuards,
-  NotFoundException,
+  Controller,
+  Delete,
+  Get,
   HttpCode,
   HttpStatus,
+  NotFoundException,
+  Patch,
+  Post,
+  Res,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
-import { RATE_LIMITS } from '../common/config/throttler.config';
+import {
+  ApiBody,
+  ApiConsumes,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import type { Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
-import { OrganizationService } from './organization.service';
-import { StorageService } from '../common/storage/storage.service';
-import { CasbinResource, CasbinAction, SkipCasbin } from '../auth/casbin.guard';
-import { Public } from '../auth/public.decorator';
 import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
+import { CasbinAction, CasbinResource, SkipCasbin } from '../auth/casbin.guard';
+import { Public } from '../auth/public.decorator';
+import { RATE_LIMITS } from '../common/config/throttler.config';
+import { StorageService } from '../common/storage/storage.service';
 import {
-  UpdateOrganizationSettingsDto,
   OrganizationSettingsResponseDto,
+  UpdateOrganizationSettingsDto,
 } from './dto';
+import { OrganizationService } from './organization.service';
 
 @Controller('settings/organization')
 @CasbinResource(SystemResource.SETTINGS)

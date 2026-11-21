@@ -1,8 +1,8 @@
 import { Global, Module } from '@nestjs/common';
-import { EmailService } from './email.service';
-import { EmailController } from './email.controller';
-import { SettingsModule } from '../settings/settings.module';
 import { EncryptionService } from '../common/encryption.service';
+import { SettingsModule } from '../settings/settings.module';
+import { EmailController } from './email.controller';
+import { EmailService } from './email.service';
 
 @Global()
 @Module({

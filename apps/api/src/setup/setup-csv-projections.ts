@@ -1,21 +1,21 @@
-import { eq, sql } from 'drizzle-orm';
 import {
-  customers,
-  suppliers,
-  organizations,
   customerGroups,
-  supplierGroups,
-  tradingTerms,
-  taxPositions,
-  products,
-  productGroups,
-  uomDictionary,
-  salesOrders,
+  customers,
   locations,
-  projects,
-  users,
   opportunities,
+  organizations,
+  productGroups,
+  products,
+  projects,
+  salesOrders,
+  supplierGroups,
+  suppliers,
+  taxPositions,
+  tradingTerms,
+  uomDictionary,
+  users,
 } from '@herobm/db-schema';
+import { eq, sql } from 'drizzle-orm';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import type { ExportCsvQueryDto } from './setup.dto';
 

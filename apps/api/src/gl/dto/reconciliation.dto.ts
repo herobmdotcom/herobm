@@ -1,11 +1,11 @@
 import {
-  IsString,
-  IsNotEmpty,
-  IsNumber,
   IsBoolean,
   IsDateString,
-  IsOptional,
   IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
 } from 'class-validator';
 
 export class CreateReconciliationDto {

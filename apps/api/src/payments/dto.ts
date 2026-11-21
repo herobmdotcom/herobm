@@ -1,17 +1,17 @@
+import type { PaymentType } from '@herobm/shared';
+import { PAYMENT_TYPE } from '@herobm/shared';
+import { Type } from 'class-transformer';
 import {
-  IsString,
+  IsArray,
+  IsEnum,
   IsNotEmpty,
   IsNumber,
-  Min,
-  IsUUID,
-  IsArray,
-  ValidateNested,
   IsOptional,
-  IsEnum,
+  IsString,
+  IsUUID,
+  Min,
+  ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
-import { PAYMENT_TYPE } from '@herobm/shared';
-import type { PaymentType } from '@herobm/shared';
 
 export const MODES_OF_PAYMENT = [
   'Cash',

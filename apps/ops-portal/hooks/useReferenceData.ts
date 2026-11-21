@@ -81,6 +81,24 @@ export function useSupplierGroups() {
   };
 }
 
+export function useProductGroups() {
+  const { data = [], error, isLoading, mutate } = useSWR<any[]>(
+    'ref-product-groups',
+    async () => {
+      const res = await api.productGroupsControllerFindAll();
+      return (res.data?.data || []) as any[];
+    },
+    REFERENCE_SWR_CONFIG
+  );
+
+  return {
+    productGroups: data,
+    isLoading,
+    error,
+    mutate,
+  };
+}
+
 export function useTaxCategories() {
   const { data = [], error, isLoading, mutate } = useSWR<api.TaxCategoryResponseDto[]>(
     'ref-tax-categories',

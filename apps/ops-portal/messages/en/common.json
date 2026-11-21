@@ -66,6 +66,27 @@
     "thisOrder": "This Order",
     "title": "Availability"
   },
+  "bulkEdit": {
+    "backToEdit": "Back to Edit",
+    "changesSummary": "Changes to be applied ({count})",
+    "clearInherit": "Clear / Inherit",
+    "clearNotice": "This field will be cleared on all selected records to inherit settings from the parent group or system default.",
+    "confirmApply": "Confirm & Apply to {count} {entity}",
+    "confirmTitle": "Confirm Bulk Update",
+    "editSelected": "Edit Selected ({count})",
+    "exit": "Exit Bulk Edit",
+    "noChange": "No Change",
+    "noDisabled": "No (Disabled)",
+    "reviewChanges": "Review Changes ({count})",
+    "selectedCount": "{count} selected",
+    "setValue": "Set Value",
+    "success": "Successfully updated {updated} {entity}",
+    "title": "Bulk Edit {count} {entity}",
+    "toggle": "Bulk Edit",
+    "warningBanner": "You are about to modify {count} {entity}. Please verify the changes below before applying.",
+    "warningNotice": "This bulk operation will directly mutate all {count} selected records. Records whose values already match these targets will be automatically skipped without modification.",
+    "yesEnabled": "Yes (Enabled)"
+  },
   "buttons": {
     "add": "Add",
     "addContact": "Add Contact",
@@ -395,10 +416,18 @@
     "username": "Username"
   },
   "productSearch": {
+    "add": "Add",
     "availableShort": "Avail",
+    "cancelInsert": "Cancel insert position",
+    "cancelSelection": "Cancel selection",
+    "dragToReorder": "Drag to reorder",
+    "insertLineAbove": "Insert line above #{lineNumber}",
+    "insertingAt": "Insert at #{lineNumber}",
     "noMatchingProducts": "No matching products",
     "onHandShort": "OH",
     "placeholder": "Search product...",
+    "qtyLabel": "Quantity",
+    "qtyPlaceholder": "Qty",
     "typeMinChars": "Type at least 2 characters..."
   },
   "products": {

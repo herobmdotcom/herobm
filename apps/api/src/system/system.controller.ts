@@ -1,17 +1,17 @@
-import {
-  ApiTags,
-  ApiOperation,
-  ApiOkResponse,
-  ApiQuery,
-} from '@nestjs/swagger';
-import { Controller, Get, Query, BadRequestException } from '@nestjs/common';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
-import { execSync } from 'child_process';
-import { SystemLogResponseDto, SystemVersionResponseDto } from './dto';
 import { getErrorMessage, SystemResource } from '@herobm/shared';
+import { BadRequestException, Controller, Get, Query } from '@nestjs/common';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
+import { execSync } from 'child_process';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
+import { SystemLogResponseDto, SystemVersionResponseDto } from './dto';
 
 let cachedApiVersion: string | null = null;
 

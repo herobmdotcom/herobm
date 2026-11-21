@@ -56,7 +56,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 
 ---
 
-## Core Endpoint Catalog (568 Endpoints Across 28 Domains)
+## Core Endpoint Catalog (572 Endpoints Across 28 Domains)
 
 ### CRM Activities
 
@@ -98,6 +98,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `GET` | `/customers/{id}` | Get Customer |
 | `PATCH` | `/customers/{id}` | Update Customer |
 | `GET` | `/customers/{id}/credit-assessment` | Get Credit Assessment |
+| `PATCH` | `/customers/bulk-update` | Bulk Update Customers |
 | `POST` | `/customers/{id}/archive` | Archive Customer |
 | `POST` | `/customers/{id}/unarchive` | Unarchive Customer |
 | `POST` | `/customers/{id}/email-document` | Email Customer Statement Document |
@@ -298,6 +299,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `GET` | `/products/{id}` | Get Product |
 | `PATCH` | `/products/{id}` | Update Product |
 | `GET` | `/products/{id}/cost-summary` | Get Product Cost Summary |
+| `PATCH` | `/products/bulk-update` | Bulk Update Products |
 | `POST` | `/products/{id}/copy` | Copy Product |
 | `POST` | `/products/{id}/archive` | Archive Product |
 | `POST` | `/products/{id}/unarchive` | Unarchive Product |
@@ -445,6 +447,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `PATCH` | `/sales-orders/settings` | Update Sales Settings |
 | `GET` | `/sales-orders` | Find All Orders |
 | `POST` | `/sales-orders` | Create Order |
+| `GET` | `/sales-orders/pricing-history` | Get Product Pricing History |
 | `POST` | `/sales-orders/{id}/tax` | Calculate Taxes |
 | `POST` | `/sales-orders/{id}/email-document` | Email Document |
 | `PATCH` | `/sales-orders/{id}/state` | Change Order State |
@@ -518,6 +521,7 @@ An interactive OpenAPI / Swagger UI test workbench is available on the running A
 | `GET` | `/suppliers/by-product/{productId}` | List Product Suppliers |
 | `GET` | `/suppliers/{id}` | Get Supplier |
 | `PATCH` | `/suppliers/{id}` | Update Supplier |
+| `PATCH` | `/suppliers/bulk-update` | Bulk Update Suppliers |
 | `GET` | `/suppliers/{id}/products` | List Supplier Products |
 | `POST` | `/suppliers/{id}/archive` | Archive Supplier |
 | `POST` | `/suppliers/{id}/unarchive` | Unarchive Supplier |

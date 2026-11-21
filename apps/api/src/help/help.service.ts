@@ -1,21 +1,21 @@
 import {
-  Injectable,
   Inject,
+  Injectable,
   Logger,
   OnModuleInit,
   Optional,
 } from '@nestjs/common';
+import { Enforcer } from 'casbin';
 import * as fs from 'fs';
 import * as path from 'path';
-import { Enforcer } from 'casbin';
 import { CASBIN_ENFORCER } from '../auth/casbin.provider';
-import {
-  HelpTopic,
-  HelpContextResponse,
-  HelpTopicSummary,
-  HelpSearchResult,
-} from './help.types';
 import { parseHelpMarkdown } from './help-parser';
+import {
+  HelpContextResponse,
+  HelpSearchResult,
+  HelpTopic,
+  HelpTopicSummary,
+} from './help.types';
 
 @Injectable()
 export class HelpService implements OnModuleInit {

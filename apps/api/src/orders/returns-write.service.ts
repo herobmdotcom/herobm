@@ -1,90 +1,87 @@
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
   BadRequestException,
+  Inject,
+  Injectable,
   Logger,
+  NotFoundException,
   forwardRef,
 } from '@nestjs/common';
-import { AppConfigService } from '../settings/app-config.service';
-import { SalesCreditNoteService } from '../invoices/sales-credit-note.service';
 import Decimal from 'decimal.js';
+import { SalesCreditNoteService } from '../invoices/sales-credit-note.service';
+import { AppConfigService } from '../settings/app-config.service';
 
 import {
-  eq,
-  sql,
+  binContents,
+  bins,
+  customers as coreAccounts,
+  products as coreProducts,
+  customerGroups,
+  locations,
+  organizations,
+  salesCreditNotes,
+  salesEvents,
+  salesOrderLineItems,
+  salesOrderReturnLines,
+  salesOrderReturns,
+  salesOrders,
+  taxCategories,
+  zones,
+} from '@herobm/db-schema';
+import {
   and,
-  or,
-  ilike,
-  desc,
   asc,
-  inArray,
+  desc,
+  eq,
   getTableColumns,
+  ilike,
+  inArray,
+  or,
+  sql,
 } from 'drizzle-orm';
+import { AuditMode, calculateAuditTrail } from '../common/audit';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
 import {
   PaginationQuery,
   parsePagination,
   withCursorPagination,
 } from '../common/pagination';
-import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  salesOrders,
-  salesOrderLineItems,
-  salesOrderReturns,
-  salesOrderReturnLines,
-  salesCreditNotes,
-  salesEvents,
-  outbox,
-  bins,
-  binContents,
-  zones,
-  products as coreProducts,
-  customers as coreAccounts,
-  customerGroups,
-  locations,
-  salesInvoices,
-  organizations,
-  taxCategories,
-} from '@herobm/db-schema';
-import { emitEvent } from '../common/emit-event';
-import { EntityType, EventType } from '../common/event-types';
-import { calculateAuditTrail, AuditMode } from '../common/audit';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { GlService } from '../gl/gl.service';
 
 import {
+  getCommittedPerLine,
   findOrder as sharedFindOrder,
   findOrderLine as sharedFindOrderLine,
-  getCommittedPerLine,
 } from './shipment-helpers';
 
 import {
-  RETURN_STATE,
-  type ReturnState,
-  SALES_ORDER_STATE,
-  RETURN_TRANSITIONS as RETURN_STATE_TRANSITIONS,
-  getValidStates,
   PUTAWAY_STATUS,
   type PutawayStatus,
   RETURN_RESOLUTION,
+  RETURN_STATE,
+  RETURN_TRANSITIONS as RETURN_STATE_TRANSITIONS,
+  type ReturnState,
+  SALES_ORDER_STATE,
+  getValidStates,
 } from '@herobm/shared';
-import { getValuationStrategy } from '../inventory/valuation';
 import { getAccountingStrategy } from '../inventory/inventory-accounting';
-import { validateReturnQuantity } from './returns-math.utils';
+import { InventoryMovementService } from '../inventory/inventory-movement.service';
+import { getValuationStrategy } from '../inventory/valuation';
 import {
-  CreateReturnDto,
-  UpdateReturnDto,
   AddReturnLineDto,
-  UpdateReturnLineDto,
+  CreateReturnDto,
   ReceiveReturnDto,
-  CreateOrderDto,
+  UpdateReturnDto,
+  UpdateReturnLineDto,
 } from './dto';
+import { validateReturnQuantity } from './returns-math.utils';
 import {
   generateReturnNumber,
   getAlreadyReturnedQty,
   recalculateSalesReturnWac,
 } from './returns-write.utils';
-import { InventoryMovementService } from '../inventory/inventory-movement.service';
 
 const VALID_RETURN_STATES = getValidStates(RETURN_STATE_TRANSITIONS);
 
@@ -450,7 +447,7 @@ export class ReturnsWriteService {
           );
         }
 
-        const orderLine = await this.findOrderLine(
+        const _orderLine = await this.findOrderLine(
           dto.salesOrderLineId,
           ret.salesOrderId,
           innerTx,
@@ -865,7 +862,7 @@ export class ReturnsWriteService {
             );
           }
 
-          const orderLine = await this.findOrderLine(
+          const _orderLine = await this.findOrderLine(
             existingLine.salesOrderLineId,
             ret.salesOrderId,
             innerTx,

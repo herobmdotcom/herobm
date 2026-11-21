@@ -1,10 +1,9 @@
+import { INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { createE2eModule } from './utils/e2e-module';
-import { INestApplication } from '@nestjs/common';
-import { AppModule } from '../src/app.module';
 
-import request from 'supertest';
 import { CUSTOMER_STATE } from '@herobm/shared';
+import request from 'supertest';
 
 /**
  * ==============================================================================
@@ -446,5 +445,9 @@ describe('Inventory Cycle (e2e)', () => {
     );
 
     expect(totalQoh).toBe(6);
+  });
+
+  afterAll(async () => {
+    await app.close();
   });
 });

@@ -1,9 +1,7 @@
-import { AppConfigService } from '../settings/app-config.service';
-import { Test, TestingModule } from '@nestjs/testing';
-import { OrdersCoreService } from './orders-core.service';
 import { OrderCreationService } from './order-creation.service';
 import { OrderLinesService } from './order-lines.service';
 import { OrderStateService } from './order-state.service';
+import { OrdersCoreService } from './orders-core.service';
 import { OrdersQueryService } from './orders-query.service';
 
 class OrdersWriteService {
@@ -76,41 +74,28 @@ class OrdersWriteService {
   OrdersCoreService.prototype as any
 ).computeLineAmount;
 
-import { BackordersService } from './backorders.service';
-import { PickingService } from './picking.service';
-import { TaxCategoriesService } from '../tax/tax-categories.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
 import {
-  NotFoundException,
-  BadRequestException,
-  ConflictException,
-} from '@nestjs/common';
-import { CustomersService } from '../customers/customers.service';
-import { CreditAssessmentService } from '../customers/credit-assessment.service';
-import { ProductsService } from '../products/products.service';
-import {
-  SALES_ORDER_STATE,
-  PRODUCT_STATE,
   CUSTOMER_STATE,
+  PRODUCT_STATE,
+  SALES_ORDER_STATE,
 } from '@herobm/shared';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 
-import { PGlite } from '@electric-sql/pglite';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { DrizzleDB } from '../drizzle/drizzle.module';
-import { eq, sql } from 'drizzle-orm';
+import {
+  products as coreProducts,
+  exchangeRates,
+  locations,
+  productComponents,
+  salesOrderLineItems,
+  salesOrders,
+} from '@herobm/db-schema';
+import { eq } from 'drizzle-orm';
 import {
   createTestCustomer,
   createTestProduct,
   createTestSalesOrder,
 } from '../../test/fixtures';
-import {
-  salesOrders,
-  salesOrderLineItems,
-  products as coreProducts,
-  productComponents,
-  locations,
-  exchangeRates,
-} from '@herobm/db-schema';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 
 import { taxCategories } from '@herobm/db-schema';
 import { getErrorMessage } from '@herobm/shared';

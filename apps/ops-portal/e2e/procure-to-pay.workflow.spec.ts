@@ -29,24 +29,7 @@ test.describe('Workflow: Procure-to-Pay', () => {
       }
     }
 
-    // 3. Add a Custom Line Item
-    const addCustomLineBtn = page.getByRole('button', { name: /custom line/i }).first();
-    if (await addCustomLineBtn.isVisible()) {
-      await addCustomLineBtn.click();
-      await page.waitForTimeout(300);
-
-      const descInput = page.locator('input[placeholder*="Description" i], table input[type="text"]').first();
-      if (await descInput.isVisible()) {
-        await descInput.fill(lineDescription);
-      }
-
-      const priceInput = page.locator('input[placeholder*="0.00"], table input[type="number"]').first();
-      if (await priceInput.isVisible()) {
-        await priceInput.fill('45.00');
-      }
-    }
-
-    // 4. Submit the Purchase Order and intercept the API request
+    // 3. Submit the Purchase Order header and intercept the API request
     const createBtn = page.getByRole('button', { name: /create order|create purchase order|save/i }).first();
     await expect(createBtn).toBeVisible();
 
@@ -62,13 +45,29 @@ test.describe('Workflow: Procure-to-Pay', () => {
       expect([200, 201]).toContain(response.status());
     }
 
-    // 5. Assert redirect to Purchase Order Detail view
+    // 4. Assert redirect to Purchase Order Detail view
     await page.waitForURL(/\/purchase-orders\/[a-zA-Z0-9-]+/, { timeout: 15000 }).catch(() => null);
     await expectNoErrorBoundaries(page);
 
-    // 6. Verify Purchase Order detail page rendered
+    // 5. Verify Purchase Order detail page rendered & add a custom line on the edit page
     const poTitle = page.locator('h1, h2, [class*="EntityHeader"]').first();
     await expect(poTitle).toBeVisible();
+
+    const addCustomLineBtn = page.getByRole('button', { name: /custom line/i }).first();
+    if (await addCustomLineBtn.isVisible()) {
+      await addCustomLineBtn.click();
+      await page.waitForTimeout(300);
+
+      const descInput = page.locator('input[placeholder*="Description" i], table input[type="text"]').first();
+      if (await descInput.isVisible()) {
+        await descInput.fill(lineDescription);
+      }
+
+      const priceInput = page.locator('input[placeholder*="0.00"], table input[type="number"]').first();
+      if (await priceInput.isVisible()) {
+        await priceInput.fill('45.00');
+      }
+    }
 
     // 7. Follow through to Receiving queue
     await page.goto('/receiving', { waitUntil: 'domcontentloaded' });

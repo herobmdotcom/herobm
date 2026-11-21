@@ -1,37 +1,36 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { TransfersWriteService } from './transfers-write.service';
-import { TransfersCoreService } from './transfers-core.service';
-import { DRIZZLE } from '../../drizzle/drizzle.module';
-import { setupPgliteSuite } from '../../test-utils/pglite-suite';
 import {
-  transferOrders,
+  backorders,
+  customers,
   locations,
   products,
-  transferOrderLines,
-  transferOrderShipments,
-  warehouseEvents,
-  uomDictionary,
-  taxCategories,
-  backorders,
-  salesOrders,
-  salesOrderLineItems,
-  customers,
   projects,
   projectTasks,
+  salesOrderLineItems,
+  salesOrders,
+  taxCategories,
+  transferOrderLines,
+  transferOrders,
+  uomDictionary,
+  warehouseEvents,
 } from '@herobm/db-schema';
-import { EntityType, EventType } from '../../common/event-types';
-import { eq, desc } from 'drizzle-orm';
 import {
-  TRANSFER_ORDER_STATE,
   BACKORDER_STATE,
-  PRODUCT_STATE,
-  SALES_ORDER_STATE,
   CUSTOMER_STATE,
-  PROJECT_STATE,
+  PRODUCT_STATE,
   PROJECT_BILLING_TYPE,
+  PROJECT_STATE,
   PROJECT_TASK_STATE,
+  SALES_ORDER_STATE,
+  TRANSFER_ORDER_STATE,
 } from '@herobm/shared';
+import { Test, TestingModule } from '@nestjs/testing';
+import { eq } from 'drizzle-orm';
+import { EventType } from '../../common/event-types';
+import { DRIZZLE } from '../../drizzle/drizzle.module';
+import { setupPgliteSuite } from '../../test-utils/pglite-suite';
 import { BackordersService } from '../backorders.service';
+import { TransfersCoreService } from './transfers-core.service';
+import { TransfersWriteService } from './transfers-write.service';
 
 describe('TransfersWriteService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

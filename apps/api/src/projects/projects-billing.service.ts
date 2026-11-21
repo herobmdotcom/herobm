@@ -1,33 +1,33 @@
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-  Logger,
-  forwardRef,
-} from '@nestjs/common';
-import { eq, inArray, and, or } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  projects,
-  projectTasks,
   projectLedgerEntries,
-  salesInvoices,
+  projectTasks,
+  projects,
   salesInvoiceLines,
+  salesInvoices,
 } from '@herobm/db-schema';
-import { BillProjectDto, ProjectBillingResponseDto } from './dto';
-import { emitEvent } from '../common/emit-event';
-import { EntityType, EventType } from '../common/event-types';
-import { SalesInvoiceService } from '../invoices/sales-invoice.service';
 import {
-  PROJECT_STATE,
-  PROJECT_TASK_STATE,
   PROJECT_LEDGER_ENTRY_TYPE,
   PROJECT_LINE_TYPE,
   PROJECT_SOURCE_TYPE,
+  PROJECT_STATE,
+  PROJECT_TASK_STATE,
   computeLinePrice,
 } from '@herobm/shared';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  forwardRef,
+} from '@nestjs/common';
+import { and, eq, inArray, or } from 'drizzle-orm';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { SalesInvoiceService } from '../invoices/sales-invoice.service';
+import { BillProjectDto, ProjectBillingResponseDto } from './dto';
 
 export async function unbillProjectInvoiceHelper(
   db: DrizzleDB,

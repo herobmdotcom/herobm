@@ -28,7 +28,7 @@ test.describe('Sidebar Section: Sales', () => {
     await expect(newOrderBtn).toBeVisible();
   });
 
-  test('Sales Orders: create form loads with line items and customer selection', async ({ page }) => {
+  test('Sales Orders: create form loads with customer selection and order details', async ({ page }) => {
     await page.goto('/sales-orders/new', { waitUntil: 'domcontentloaded' });
     await expectNoErrorBoundaries(page);
 

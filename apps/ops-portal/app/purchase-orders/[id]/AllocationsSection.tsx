@@ -127,17 +127,17 @@ export default function AllocationsSection({ orderId, allocations, loading, onAl
                     {alloc.productName || tCommon('unknownProduct')}
                   </div>
                   
-                  <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
+                  <div className="flex flex-col gap-0 border-t border-[var(--border)] pt-1">
                     <div className="flex justify-between py-1">
-                      <span className="text-xs font-medium text-slate-500">{t('allocationsSection.allocatedQty')}</span>
+                      <span className="text-xs font-medium text-[var(--text-muted)]">{t('allocationsSection.allocatedQty')}</span>
                       <span className="font-bold tabular-nums text-sm">{alloc.quantity}</span>
                     </div>
                     <div className="flex justify-between py-1">
-                      <span className="text-xs font-medium text-slate-500">{t('allocationsSection.dateRequested')}</span>
-                      <span className="text-sm text-slate-600">{formatLocalDate(alloc.createdOn)}</span>
+                      <span className="text-xs font-medium text-[var(--text-muted)]">{t('allocationsSection.dateRequested')}</span>
+                      <span className="text-sm text-[var(--text-secondary)]">{formatLocalDate(alloc.createdOn)}</span>
                     </div>
                   </div>
-                  <div className="flex justify-end mt-2 pt-2 border-t border-slate-100">
+                  <div className="flex justify-end mt-2 pt-2 border-t border-[var(--border)]">
                     <Button 
                       onClick={() => handleUnlink(alloc.id)}
                       variant="secondary" size="sm"

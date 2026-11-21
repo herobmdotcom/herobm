@@ -173,7 +173,8 @@ if (!reuseContainers) {
         REDIS_HOST: "127.0.0.1",
         REDIS_PORT: "6380",
         TEST_RUNNER_URL: "http://127.0.0.1:8005",
-        TEST_API_URL: "http://127.0.0.1:3005"
+        TEST_API_URL: "http://127.0.0.1:3005",
+        HOME_CURRENCY: process.env.HOME_CURRENCY || "AUD"
     };
 
     const pyCmd = process.platform === 'win32' ? 'python' : 'python3';
@@ -213,7 +214,8 @@ const dbEnv = {
     REDIS_HOST: "127.0.0.1",
     REDIS_PORT: "6380",
     TEST_RUNNER_URL: "http://127.0.0.1:8005",
-    TEST_API_URL: "http://127.0.0.1:3005"
+    TEST_API_URL: "http://127.0.0.1:3005",
+    HOME_CURRENCY: process.env.HOME_CURRENCY || "AUD"
 };
 
 let failed = false;

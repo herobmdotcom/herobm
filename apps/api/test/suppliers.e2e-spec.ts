@@ -1,10 +1,7 @@
-import { TestingModule } from '@nestjs/testing';
-import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
-import { AppModule } from '../src/app.module';
+import { TestingModule } from '@nestjs/testing';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
-import { suppliers, masterDataEvents } from '@herobm/db-schema';
-import { like, sql } from 'drizzle-orm';
+import { createE2eModule } from './utils/e2e-module';
 
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import request from 'supertest';

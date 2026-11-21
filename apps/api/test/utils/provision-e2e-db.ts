@@ -8,24 +8,24 @@
  *   - Cold (Template Build): ~15-20s (runs migrations & seeds once)
  *   - Warm (Template Clone): < 200ms (PostgreSQL copy-on-write clone)
  */
-import * as dotenv from 'dotenv';
-import * as path from 'path';
-import * as fs from 'fs';
 import * as crypto from 'crypto';
+import * as dotenv from 'dotenv';
+import * as fs from 'fs';
+import * as path from 'path';
 
 // Load environment from monorepo root .env
 const rootEnv = path.resolve(__dirname, '..', '..', '..', '..', '.env');
 dotenv.config({ path: rootEnv });
 process.env.ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'password'; // TEST_CREDENTIAL
 
-import postgres from 'postgres';
-import { drizzle } from 'drizzle-orm/postgres-js';
 import * as schema from '@herobm/db-schema';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import {
   runCoreSeeds,
+  seedAccounts,
   seedCoaAccounts,
   seedCoaSettings,
-  seedAccounts,
 } from '../../src/seeds/prod/core';
 import { seedTestLocations, seedTestUsers } from './test-seed';
 
@@ -149,6 +149,9 @@ async function buildTemplateDb(
 
     // Seed the database
     const db = drizzle(templateSql, { schema });
+    if (!process.env.HOME_CURRENCY) {
+      process.env.HOME_CURRENCY = 'AUD';
+    }
     await runCoreSeeds(db, false);
     await seedCoaAccounts(db, false);
     await seedCoaSettings(db, false);

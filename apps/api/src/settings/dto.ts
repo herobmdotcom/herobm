@@ -1,22 +1,21 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  IsNumberString,
+  IsArray,
+  IsBoolean,
   IsDateString,
   IsEmail,
-  IsUrl,
-  IsBoolean,
-  IsNumber,
-  IsUUID,
   IsEnum,
-  IsArray,
-  ValidateNested,
-  MaxLength,
   IsIn,
+  IsNotEmpty,
+  IsNumber,
+  IsNumberString,
+  IsOptional,
+  IsString,
+  IsUrl,
+  MaxLength,
+  ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 
 export class OrderedSettingDto {
   @ApiProperty()

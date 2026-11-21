@@ -1,19 +1,19 @@
+import { taxPositionMappings, taxPositions } from '@herobm/db-schema';
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
   BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
 } from '@nestjs/common';
-import { eq, ne, and } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
+import { and, eq } from 'drizzle-orm';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { taxPositions, taxPositionMappings } from '@herobm/db-schema';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import {
   CreateTaxPositionDto,
   UpdateTaxPositionDto,
 } from './tax-positions.dto';
-import { emitEvent } from '../common/emit-event';
-import { EntityType, EventType } from '../common/event-types';
 
 @Injectable()
 export class TaxPositionsService {

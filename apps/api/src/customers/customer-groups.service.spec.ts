@@ -1,13 +1,12 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { CustomerGroupsService } from './customer-groups.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { customerGroups, masterDataEvents } from '@herobm/db-schema';
 import { CUSTOMER_STATE } from '@herobm/shared';
 import { ValidationPipe } from '@nestjs/common';
-import { UpdateCustomerGroupDto, CreateCustomerGroupDto } from './dto';
+import { Test, TestingModule } from '@nestjs/testing';
 import { plainToInstance } from 'class-transformer';
-import { validate } from 'class-validator';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { CustomerGroupsService } from './customer-groups.service';
+import { CreateCustomerGroupDto, UpdateCustomerGroupDto } from './dto';
 
 describe('CustomerGroupsService', () => {
   const pg = setupPgliteSuite();

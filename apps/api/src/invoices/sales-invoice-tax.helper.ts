@@ -1,9 +1,9 @@
-import { Decimal } from 'decimal.js';
+import { getErrorMessage } from '@herobm/shared';
 import { BadRequestException, Logger } from '@nestjs/common';
+import { Decimal } from 'decimal.js';
+import { EnrichmentService } from '../enrichment/enrichment.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { OrganizationService } from '../settings/organization.service';
-import { EnrichmentService } from '../enrichment/enrichment.service';
-import { getErrorMessage } from '@herobm/shared';
 
 export interface RecordExternalTaxParams {
   appConfig: AppConfigService;

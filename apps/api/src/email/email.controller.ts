@@ -1,33 +1,37 @@
+import { emailOutbox } from '@herobm/db-schema';
+import { SystemResource } from '@herobm/shared';
 import {
+  BadRequestException,
   Controller,
   Get,
-  Post,
-  Param,
-  Query,
   Inject,
-  BadRequestException,
+  Param,
+  Post,
+  Query,
 } from '@nestjs/common';
 import {
-  ApiTags,
   ApiBearerAuth,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiQuery,
-  ApiOkResponse,
-  ApiCreatedResponse,
-  ApiBody,
+  ApiTags,
 } from '@nestjs/swagger';
-import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
-import { emailOutbox } from '@herobm/db-schema';
-import { eq, and, desc, or } from 'drizzle-orm';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
-import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
-import { SystemResource } from '@herobm/shared';
-import { emitEvent } from '../common/emit-event';
-import { EventType, EntityType, type EntityTypeValue } from '../common/event-types';
-import { AppConfigService } from '../settings/app-config.service';
-import { EncryptionService } from '../common/encryption.service';
+import { and, desc, eq, or } from 'drizzle-orm';
 import * as nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport';
+import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
+import { emitEvent } from '../common/emit-event';
+import { EncryptionService } from '../common/encryption.service';
+import {
+  EntityType,
+  EventType,
+  type EntityTypeValue,
+} from '../common/event-types';
+import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
+import { AppConfigService } from '../settings/app-config.service';
 
 @ApiTags('System')
 @ApiBearerAuth()

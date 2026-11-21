@@ -987,6 +987,16 @@ export default function DataGrid<T>({
   /** Row click handler — snapshot scroll state before navigating away */
   const handleRowClicked = useCallback(
     (event: RowClickedEvent<T>) => {
+      const mouseEvent = event.event as MouseEvent | undefined;
+      const target = mouseEvent?.target as HTMLElement | undefined;
+      if (
+        target &&
+        typeof target.closest === 'function' &&
+        target.closest('button, a, input, select, textarea, [data-no-row-click]')
+      ) {
+        return;
+      }
+
       if (gridKey && event.api) {
         try {
           if (typeof event.api.getState === 'function') {
@@ -1002,7 +1012,6 @@ export default function DataGrid<T>({
       if (rowHref && event.data) {
         const url = rowHref(event.data);
         if (url) {
-          const mouseEvent = event.event as MouseEvent | undefined;
           if (mouseEvent && (mouseEvent.ctrlKey || mouseEvent.metaKey || mouseEvent.button === 1 || mouseEvent.which === 2)) {
             window.open(url, '_blank', 'noopener,noreferrer');
           } else {
@@ -1351,7 +1360,7 @@ export default function DataGrid<T>({
                     }
                     setIsCustomView(false);
                   }}
-                  className="hover:text-slate-800 focus:outline-none flex items-center justify-center rounded hover:bg-slate-100 px-1 py-0.5 transition-colors"
+                  className="hover:text-[var(--text-primary)] focus:outline-none flex items-center justify-center rounded hover:bg-[var(--bg-card-hover)] px-1 py-0.5 transition-colors"
                 >
                   {tGrid('clearCustomView')}
                 </Button>
@@ -1519,6 +1528,14 @@ export default function DataGrid<T>({
               }
             } : undefined}
             onRowClicked={(onRowClicked || rowHref) ? (r, e) => {
+              const target = (e as unknown as MouseEvent)?.target as HTMLElement | undefined;
+              if (
+                target &&
+                typeof target.closest === 'function' &&
+                target.closest('button, a, input, select, textarea, [data-no-row-click]')
+              ) {
+                return;
+              }
               const main = document.querySelector('main');
               if (main && gridKey) {
                 sessionStorage.setItem(`datagrid-mobile-scroll-${gridKey}`, String(main.scrollTop));

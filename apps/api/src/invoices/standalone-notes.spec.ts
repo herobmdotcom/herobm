@@ -1,6 +1,6 @@
-import { salesCreditNotes, purchaseDebitNotes } from '@herobm/db-schema';
-import { CreateSalesCreditNoteDto } from './sales-credit-notes.dto';
+import { purchaseDebitNotes, salesCreditNotes } from '@herobm/db-schema';
 import { CreateDebitNoteDto } from '../purchase-debit-notes/dto';
+import { CreateSalesCreditNoteDto } from './sales-credit-notes.dto';
 
 describe('BL-015 Standalone Credit & Debit Notes Invariants', () => {
   it('Assert salesCreditNotes columns returnId, salesOrderId, invoiceId are nullable', () => {

@@ -1,6 +1,6 @@
-import { FileLoggerService } from './file-logger.service';
 import * as fs from 'fs';
 import * as path from 'path';
+import { FileLoggerService } from './file-logger.service';
 
 describe('FileLoggerService', () => {
   const testDir = path.join(process.cwd(), 'logs', '__test_file_logger__');

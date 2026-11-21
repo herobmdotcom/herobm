@@ -1,8 +1,8 @@
-import { TestingModule } from '@nestjs/testing';
-import { createE2eModule } from './utils/e2e-module';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { TestingModule } from '@nestjs/testing';
 import { generate } from 'otplib';
 import request from 'supertest';
+import { createE2eModule } from './utils/e2e-module';
 
 describe('Auth 2FA Lifecycle (e2e) — ADV-168', () => {
   let app: INestApplication;

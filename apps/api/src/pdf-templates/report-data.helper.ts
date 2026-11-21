@@ -1,12 +1,12 @@
-import { OrdersQueryService } from '../orders/orders-query.service';
-import { SalesQuoteData } from './sales-quote.service';
 import {
   computeOrderTotals,
-  LineType,
   formatReportDate,
   formatReportDateTime,
+  LineType,
   toDecimal,
 } from '@herobm/shared';
+import { OrdersQueryService } from '../orders/orders-query.service';
+import { SalesQuoteData } from './sales-quote.service';
 
 /**
  * Shared helper for resolving order detail and assembling report data.
@@ -62,6 +62,20 @@ export function assembleOrderData(
     orderNumber?: string | null;
     projectNumber?: string | null;
     customerName?: string | null;
+    customerAddress?: string | null;
+    billingAddress?: string | null;
+    customerAddressLine1?: string | null;
+    customerAddressLine2?: string | null;
+    customerCity?: string | null;
+    customerState?: string | null;
+    customerPostalCode?: string | null;
+    customerCountry?: string | null;
+    deliveryAddressLine1?: string | null;
+    deliveryAddressLine2?: string | null;
+    deliveryCity?: string | null;
+    deliveryState?: string | null;
+    deliveryPostalCode?: string | null;
+    deliveryCountry?: string | null;
     customerOrderNumber?: string | null;
     createdOn?: string | Date | null;
     currencyCode?: string | null;
@@ -71,8 +85,6 @@ export function assembleOrderData(
   fallbackCurrency: string,
 ): SalesQuoteData {
   const lines = orderDetail.lines.map((l) => {
-    const qty = toDecimal(l.quantity).toNumber();
-    const price = toDecimal(l.pricePerUnit).toNumber();
     const disc = toDecimal(l.discountPercentage).toNumber();
 
     let taxRate = 0;
@@ -107,11 +119,50 @@ export function assembleOrderData(
 
   const totals = computeOrderTotals(lines);
 
+  const billingAddressParts = [
+    orderDetail.customerAddressLine1,
+    orderDetail.customerAddressLine2,
+    [
+      orderDetail.customerCity,
+      orderDetail.customerState,
+      orderDetail.customerPostalCode,
+    ]
+      .filter(Boolean)
+      .join(' '),
+    orderDetail.customerCountry,
+  ].filter(Boolean);
+
+  const deliveryAddressParts = [
+    orderDetail.deliveryAddressLine1,
+    orderDetail.deliveryAddressLine2,
+    [
+      orderDetail.deliveryCity,
+      orderDetail.deliveryState,
+      orderDetail.deliveryPostalCode,
+    ]
+      .filter(Boolean)
+      .join(' '),
+    orderDetail.deliveryCountry,
+  ].filter(Boolean);
+
+  const customerAddress =
+    orderDetail.customerAddress ||
+    orderDetail.billingAddress ||
+    (billingAddressParts.length > 0 ? billingAddressParts.join(', ') : '') ||
+    (deliveryAddressParts.length > 0 ? deliveryAddressParts.join(', ') : '');
+
+  const billingAddress =
+    orderDetail.billingAddress ||
+    (billingAddressParts.length > 0 ? billingAddressParts.join(', ') : '') ||
+    customerAddress;
+
   return {
     header: {
       orderNumber: orderDetail.orderNumber || '',
       projectNumber: orderDetail.projectNumber || '',
       customerName: orderDetail.customerName || '',
+      customerAddress: customerAddress || undefined,
+      billingAddress: billingAddress || undefined,
       customerOrderNumber: orderDetail.customerOrderNumber || '',
       orderDate: formatReportDate(orderDetail.createdOn, undefined, ''),
       currencyCode: orderDetail.currencyCode || fallbackCurrency,

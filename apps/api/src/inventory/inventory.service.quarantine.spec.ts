@@ -1,39 +1,38 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AppConfigService } from '../settings/app-config.service';
-import { UomService } from './uom.service';
-import { GlService } from '../gl/gl.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
-  locations,
-  zones,
   bins,
-  products,
-  suppliers,
   goodsReceived,
   goodsReceivedLines,
-  inventoryLedger,
   inventoryEntries,
-  uomDictionary,
+  inventoryLedger,
+  locations,
   organizations,
+  products,
+  suppliers,
+  uomDictionary,
+  zones,
 } from '@herobm/db-schema';
 import {
-  PUTAWAY_STATUS,
-  PRODUCT_STATE,
-  CUSTOMER_STATE,
-  SUPPLIER_STATE,
   GOODS_RECEIVED_STATE,
   MATCH_STATUS,
   ORGANIZATION_STATE,
+  PRODUCT_STATE,
+  PUTAWAY_STATUS,
+  SUPPLIER_STATE,
 } from '@herobm/shared';
-import { eq, like } from 'drizzle-orm';
 import { BadRequestException } from '@nestjs/common';
-import { InventoryMovementService } from './inventory-movement.service';
-import { InventoryQueryService } from './inventory-query.service';
+import { Test, TestingModule } from '@nestjs/testing';
+import { eq, like } from 'drizzle-orm';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { GlService } from '../gl/gl.service';
 import { WorkOrdersWriteService } from '../manufacturing/work-orders-write.service';
 import { BackordersService } from '../orders/backorders.service';
 import { ReturnsWriteService } from '../orders/returns-write.service';
 import { ProjectsInventoryService } from '../projects/projects-inventory.service';
+import { AppConfigService } from '../settings/app-config.service';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { InventoryMovementService } from './inventory-movement.service';
+import { InventoryQueryService } from './inventory-query.service';
+import { UomService } from './uom.service';
 
 describe('InventoryService - Quarantine', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

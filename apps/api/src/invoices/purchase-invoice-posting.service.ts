@@ -1,46 +1,45 @@
-import { randomUUID } from 'crypto';
-import { Decimal } from 'decimal.js';
 import {
-  Injectable,
-  Inject,
-  BadRequestException,
-  Logger,
-  NotFoundException,
-  forwardRef,
-} from '@nestjs/common';
-import { eq, sql, and, inArray } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  purchaseOrders,
-  purchaseInvoices,
-  purchaseInvoiceLines,
-  purchaseOrderLineItems,
-  suppliers,
-  supplierGroups,
   products as coreProducts,
-  productGroups,
   glAccounts,
   goodsReceivedLines,
+  productGroups,
+  purchaseInvoiceLines,
   purchaseInvoiceReceipts,
+  purchaseInvoices,
+  purchaseOrderLineItems,
+  purchaseOrders,
+  supplierGroups,
+  suppliers,
 } from '@herobm/db-schema';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { Decimal } from 'decimal.js';
+import { eq, inArray } from 'drizzle-orm';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { GlService } from '../gl/gl.service';
 import { evaluatePOLifecycleRules } from '../purchase-orders/purchase-order-lifecycle-rules';
-import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { AppConfigService } from '../settings/app-config.service';
+import { TaxCategoriesService } from '../tax/tax-categories.service';
 
 import {
   computeLinePriceForStorage,
-  PURCHASE_INVOICE_STATE,
-  MATCH_STATUS,
-  LineType,
   JOURNAL_ENTRY_SOURCE_TYPE,
+  LineType,
+  MATCH_STATUS,
+  PURCHASE_INVOICE_STATE,
 } from '@herobm/shared';
 import { resolveGlDimensions } from '../common/utils/gl-resolution.util';
-import { getAccountingStrategy } from '../inventory/inventory-accounting';
 import type { InventoryGlAccounts } from '../inventory/inventory-accounting';
+import { getAccountingStrategy } from '../inventory/inventory-accounting';
 import { PurchaseInvoiceCoreService } from './purchase-invoice-core.service';
 
 @Injectable()

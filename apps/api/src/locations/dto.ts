@@ -1,16 +1,16 @@
-import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  IsUUID,
-  IsBoolean,
-  IsIn,
-  IsArray,
-  ValidateNested,
-} from 'class-validator';
-import { Type } from 'class-transformer';
 import { binTypeEnum } from '@herobm/db-schema';
 import { PartialType } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsBoolean,
+  IsIn,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  ValidateNested,
+} from 'class-validator';
 
 export class CreateLocationDto {
   @IsString()

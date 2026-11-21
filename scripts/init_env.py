@@ -100,9 +100,29 @@ def main():
 
     if not non_interactive:
         print("\n\033[36m=== Regional Settings ===\033[0m")
-    home_currency = prompt("HOME_CURRENCY (ISO Code)", os.environ.get("HOME_CURRENCY") or "AUD", non_interactive=non_interactive)
-    if "HOME_CURRENCY=AUD" in content:
-        content = content.replace("HOME_CURRENCY=AUD", f"HOME_CURRENCY={home_currency}")
+    env_curr = (os.environ.get("HOME_CURRENCY") or "").strip().upper()
+    home_currency = prompt("HOME_CURRENCY (ISO Code, e.g. USD, EUR, AUD, GBP)", env_curr, non_interactive=non_interactive).strip().upper()
+    while not home_currency and not non_interactive:
+        print("\033[31mError: HOME_CURRENCY is required (e.g. USD, EUR, AUD, GBP). No default value is permitted.\033[0m")
+        home_currency = prompt("HOME_CURRENCY (ISO Code, e.g. USD, EUR, AUD, GBP)", "", non_interactive=False).strip().upper()
+
+    if not home_currency:
+        print("\033[31mError: HOME_CURRENCY must be provided via environment variable or interactive input.\033[0m")
+        sys.exit(1)
+    # Save setup currency choice for the bootstrap database seeding step
+    # (application settings are stored directly in PostgreSQL gl_settings, not .env)
+    setup_currency_file = os.path.join(root_dir, ".setup_currency")
+    try:
+        with open(setup_currency_file, "w", encoding="utf-8") as f:
+            f.write(f"{home_currency}\n")
+    except Exception as e:
+        print(f"\033[33mWarning: Could not write .setup_currency: {e}\033[0m")
+
+    if "HOME_CURRENCY=" in content:
+        import re
+        content = re.sub(r"^#?\s*HOME_CURRENCY=.*$", f"HOME_CURRENCY={home_currency}", content, flags=re.MULTILINE)
+    print(f"  Configured initial currency: {home_currency}")
+
 
     generated_vars = [
         "REDIS_PASSWORD",

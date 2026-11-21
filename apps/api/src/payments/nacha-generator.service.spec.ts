@@ -1,10 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import {
-  NachaGeneratorService,
-  NachaFileContext,
-} from './nacha-generator.service';
 import { BadRequestException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import { TransactionCode } from 'nacha-cheese';
+import {
+  NachaFileContext,
+  NachaGeneratorService,
+} from './nacha-generator.service';
 
 describe('NachaGeneratorService', () => {
   let service: NachaGeneratorService;

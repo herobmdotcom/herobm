@@ -5,13 +5,13 @@
  * All journal entry source types must reference the centralized `JOURNAL_ENTRY_SOURCE_TYPE`
  * constant object exported from `@herobm/shared`.
  */
-import * as fs from 'fs';
-import * as path from 'path';
 import {
   JOURNAL_ENTRY_SOURCE_TYPE,
-  USER_SELECTABLE_JOURNAL_SOURCE_TYPES,
   TAKE_ON_JOURNAL_SOURCE_TYPES,
+  USER_SELECTABLE_JOURNAL_SOURCE_TYPES,
 } from '@herobm/shared';
+import * as fs from 'fs';
+import * as path from 'path';
 
 function findFiles(dir: string, pattern: RegExp): string[] {
   const results: string[] = [];

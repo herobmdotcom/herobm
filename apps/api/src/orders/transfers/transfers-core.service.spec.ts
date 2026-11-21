@@ -1,33 +1,32 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { TransfersCoreService } from './transfers-core.service';
-import { DRIZZLE } from '../../drizzle/drizzle.module';
-import { setupPgliteSuite } from '../../test-utils/pglite-suite';
 import {
-  transferOrders,
+  bins,
+  customers,
   locations,
   products,
-  transferOrderLines,
-  transferOrderShipments,
-  warehouseEvents,
-  zones,
-  bins,
-  uomDictionary,
-  taxCategories,
   projects,
   projectTasks,
-  customers,
+  taxCategories,
+  transferOrderLines,
+  transferOrders,
+  transferOrderShipments,
+  uomDictionary,
+  warehouseEvents,
+  zones,
 } from '@herobm/db-schema';
-import { EntityType } from '../../common/event-types';
-import { eq } from 'drizzle-orm';
 import {
-  TRANSFER_ORDER_STATE,
-  PRODUCT_STATE,
-  SHIPMENT_STATE,
   CUSTOMER_STATE,
-  PROJECT_STATE,
+  PRODUCT_STATE,
   PROJECT_BILLING_TYPE,
+  PROJECT_STATE,
   PROJECT_TASK_STATE,
+  SHIPMENT_STATE,
+  TRANSFER_ORDER_STATE,
 } from '@herobm/shared';
+import { Test, TestingModule } from '@nestjs/testing';
+import { EntityType } from '../../common/event-types';
+import { DRIZZLE } from '../../drizzle/drizzle.module';
+import { setupPgliteSuite } from '../../test-utils/pglite-suite';
+import { TransfersCoreService } from './transfers-core.service';
 
 describe('TransfersCoreService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

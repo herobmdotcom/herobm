@@ -170,6 +170,7 @@ export default function TrialBalancePage() {
         id: 'accountCode',
         header: t('columns.accountCode'),
         accessor: 'accountCode',
+        width: '100px',
         className: 'font-mono text-xs text-[var(--text-secondary)]',
         exportValue: (r) => r.accountCode,
       },
@@ -184,6 +185,7 @@ export default function TrialBalancePage() {
         id: 'accountType',
         header: t('columns.accountType'),
         accessor: 'accountType',
+        width: '110px',
         render: (r) => typeBadge(r.accountType),
         exportValue: (r) => r.accountType,
       },
@@ -196,6 +198,7 @@ export default function TrialBalancePage() {
           id: 'openingBalance',
           header: t('columns.openingBalance'),
           isNumeric: true,
+          width: '130px',
           render: (r) => (
             <span className={r.openingBalance < 0 ? 'text-[var(--danger)]' : 'text-[var(--text-primary)]'}>
               {fmt(r.openingBalance)}
@@ -207,6 +210,7 @@ export default function TrialBalancePage() {
           id: 'periodDebit',
           header: t('columns.periodDebit'),
           isNumeric: true,
+          width: '130px',
           render: (r) => fmt(r.periodDebit),
           exportValue: (r) => r.periodDebit ?? 0,
         },
@@ -214,6 +218,7 @@ export default function TrialBalancePage() {
           id: 'periodCredit',
           header: t('columns.periodCredit'),
           isNumeric: true,
+          width: '130px',
           render: (r) => fmt(r.periodCredit),
           exportValue: (r) => r.periodCredit ?? 0,
         },
@@ -221,6 +226,7 @@ export default function TrialBalancePage() {
           id: 'closingBalance',
           header: t('columns.closingBalance'),
           isNumeric: true,
+          width: '130px',
           render: (r) => (
             <span className={`font-semibold ${r.closingBalance < 0 ? 'text-[var(--danger)]' : 'text-[var(--text-primary)]'}`}>
               {fmt(r.closingBalance)}
@@ -232,6 +238,7 @@ export default function TrialBalancePage() {
           id: 'ytdDebit',
           header: t('columns.ytdDebit'),
           isNumeric: true,
+          width: '130px',
           render: (r) => fmt(r.ytdDebit),
           exportValue: (r) => r.ytdDebit ?? 0,
         },
@@ -239,6 +246,7 @@ export default function TrialBalancePage() {
           id: 'ytdCredit',
           header: t('columns.ytdCredit'),
           isNumeric: true,
+          width: '130px',
           render: (r) => fmt(r.ytdCredit),
           exportValue: (r) => r.ytdCredit ?? 0,
         },
@@ -246,6 +254,7 @@ export default function TrialBalancePage() {
           id: 'ytdBalance',
           header: t('columns.ytdBalance'),
           isNumeric: true,
+          width: '130px',
           render: (r) => (
             <span className={`font-semibold ${r.ytdBalance < 0 ? 'text-[var(--danger)]' : 'text-[var(--text-primary)]'}`}>
               {fmt(r.ytdBalance)}
@@ -262,6 +271,7 @@ export default function TrialBalancePage() {
         id: 'periodDebit',
         header: t('columns.debit'),
         isNumeric: true,
+        width: '140px',
         render: (r) => fmt(r.periodDebit),
         exportValue: (r) => r.periodDebit ?? 0,
       },
@@ -269,6 +279,7 @@ export default function TrialBalancePage() {
         id: 'periodCredit',
         header: t('columns.credit'),
         isNumeric: true,
+        width: '140px',
         render: (r) => fmt(r.periodCredit),
         exportValue: (r) => r.periodCredit ?? 0,
       },
@@ -276,6 +287,7 @@ export default function TrialBalancePage() {
         id: 'closingBalance',
         header: t('columns.balance'),
         isNumeric: true,
+        width: '140px',
         render: (r) => (
           <span className={`font-semibold ${r.closingBalance < 0 ? 'text-[var(--danger)]' : 'text-[var(--text-primary)]'}`}>
             {fmt(r.closingBalance)}

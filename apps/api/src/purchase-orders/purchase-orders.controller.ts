@@ -1,53 +1,54 @@
 import {
-  SystemResource,
   DATA_SOURCE_CONTEXT,
   PurchaseOrderState,
+  SystemResource,
 } from '@herobm/shared';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiOkResponse,
-  ApiCreatedResponse,
-  ApiBody,
-  ApiQuery,
-} from '@nestjs/swagger';
-import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
+  Controller,
   Delete,
-  Param,
-  Query,
-  UseInterceptors,
+  Get,
   HttpCode,
   HttpException,
   HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseInterceptors,
 } from '@nestjs/common';
-import { PurchaseOrdersService } from './purchase-orders.service';
-import { PurchaseOrdersQueryService } from './purchase-orders-query.service';
-import { DocumentDispatchService } from '../notifications/document-dispatch.service';
-import { EntityType } from '../common/event-types';
-import { Idempotent } from '../common/idempotency/idempotent.decorator';
-import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interceptor';
-import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import {
-  CreatePurchaseOrderDto,
-  UpdatePurchaseOrderDto,
-  CreatePurchaseOrderLineDto,
-  UpdatePurchaseOrderLineDto,
-  PurchaseOrderResponseDto,
-  PurchaseOrderLineResponseDto,
-  EmptyBodyDto,
-  ChangeStateDto,
-  EmailDocumentDto,
-  UpdatePurchasingSettingsDto,
-  PurchasingSettingsResponseDto,
-} from './dto';
-import { AuthUser } from '../auth/auth-user.decorator';
+  ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { JwtUser } from '../auth/auth-user.decorator';
+import { AuthUser } from '../auth/auth-user.decorator';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
+import { EntityType } from '../common/event-types';
+import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interceptor';
+import { Idempotent } from '../common/idempotency/idempotent.decorator';
+import { ApiPaginatedResponse, PaginationQuery } from '../common/pagination';
+import { DocumentDispatchService } from '../notifications/document-dispatch.service';
+import {
+  ChangeStateDto,
+  CreatePurchaseOrderDto,
+  CreatePurchaseOrderLineDto,
+  ReorderPurchaseOrderLinesDto,
+  EmailDocumentDto,
+  EmptyBodyDto,
+  PurchaseOrderLineResponseDto,
+  PurchaseOrderResponseDto,
+  PurchasingSettingsResponseDto,
+  UpdatePurchaseOrderDto,
+  UpdatePurchaseOrderLineDto,
+  UpdatePurchasingSettingsDto,
+} from './dto';
+import { PurchaseOrdersQueryService } from './purchase-orders-query.service';
+import { PurchaseOrdersService } from './purchase-orders.service';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
@@ -207,6 +208,26 @@ export class PurchaseOrdersController {
     @AuthUser() user: JwtUser,
   ) {
     return this.purchaseOrdersService.addLine(id, body, user.username);
+  }
+
+  @Patch(':id/lines/reorder')
+  @ApiBody({ type: ReorderPurchaseOrderLinesDto })
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Reorder Order Lines',
+    description: 'Reorder line items on a draft purchase order.',
+  })
+  @ApiOkResponse({ type: PurchaseOrderResponseDto })
+  async reorderLines(
+    @Param('id') id: string,
+    @Body() body: ReorderPurchaseOrderLinesDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.purchaseOrdersService.reorderLines(
+      id,
+      body.lineIds,
+      user.username,
+    );
   }
 
   @Patch(':id/lines/:lineId')

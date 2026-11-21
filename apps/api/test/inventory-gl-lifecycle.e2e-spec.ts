@@ -1,21 +1,17 @@
-import { TestingModule } from '@nestjs/testing';
-import { createE2eModule, setupE2eApp } from './utils/e2e-module';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import request from 'supertest';
-import * as crypto from 'crypto';
-import { eq, sql, and } from 'drizzle-orm';
 import {
-  glAccounts,
   bins,
-  zones,
-  purchaseInvoiceReceipts,
   purchaseInvoiceLines,
-  customers,
-  suppliers,
+  purchaseInvoiceReceipts,
+  zones,
 } from '@herobm/db-schema';
-import { CUSTOMER_STATE } from '@herobm/shared';
+import { INestApplication } from '@nestjs/common';
+import { TestingModule } from '@nestjs/testing';
+import * as crypto from 'crypto';
+import { and, eq, sql } from 'drizzle-orm';
+import request from 'supertest';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import { AppConfigService } from '../src/settings/app-config.service';
+import { createE2eModule, setupE2eApp } from './utils/e2e-module';
 
 describe('Inventory & GL Lifecycle (e2e)', () => {
   let app: INestApplication;

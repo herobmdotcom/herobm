@@ -1,21 +1,20 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { Decimal } from 'decimal.js';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { Inject } from '@nestjs/common';
-import { DRIZZLE } from '../drizzle/drizzle.module';
 import {
-  purchaseInvoices,
-  paymentEntries,
-  paymentAllocations,
-  suppliers,
   glSettings,
   organizations,
+  paymentAllocations,
+  paymentEntries,
+  purchaseInvoices,
+  suppliers,
 } from '@herobm/db-schema';
-import { eq, and, sql, isNull, inArray, lte, or, isNotNull } from 'drizzle-orm';
-import { v4 as uuidv4 } from 'uuid';
 import { PAYMENT_STATE, PAYMENT_TYPE } from '@herobm/shared';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { Decimal } from 'decimal.js';
+import { and, eq, inArray, or, sql } from 'drizzle-orm';
+import { v4 as uuidv4 } from 'uuid';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 
 @Injectable()
 export class PaymentRunGeneratorService {
@@ -116,7 +115,7 @@ export class PaymentRunGeneratorService {
           // Create Draft Payment
           const seq = new Decimal(generatedPayments).plus(1).toNumber();
           const paymentNumber = `PAY-${Date.now().toString().slice(-6)}-${seq}`;
-          const [payment] = await tx
+          const [_payment] = await tx
             .insert(paymentEntries)
             .values({
               paymentId,

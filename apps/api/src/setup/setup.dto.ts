@@ -1,16 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform, Type } from 'class-transformer';
 import {
-  IsString,
-  IsOptional,
-  IsNumber,
-  Min,
-  Max,
-  IsIn,
-  IsObject,
-  IsBoolean,
   IsArray,
+  IsBoolean,
+  IsIn,
+  IsNumber,
+  IsObject,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
 } from 'class-validator';
-import { Type, Transform } from 'class-transformer';
 
 export class ExportCsvQueryDto {
   @ApiProperty({

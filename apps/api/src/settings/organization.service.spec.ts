@@ -1,10 +1,10 @@
+import { tenantSettings } from '@herobm/db-schema';
+import { BadRequestException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { OrganizationService } from './organization.service';
 import { StorageService } from '../common/storage/storage.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { tenantSettings } from '@herobm/db-schema';
-import { BadRequestException } from '@nestjs/common';
+import { OrganizationService } from './organization.service';
 
 describe('OrganizationService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

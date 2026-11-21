@@ -1,13 +1,11 @@
+import {
+  BACKORDER_STATE,
+  PURCHASE_INVOICE_STATE,
+  RETURN_STATE,
+  SALES_ORDER_STATE,
+} from '@herobm/shared';
 import * as fs from 'fs';
 import * as path from 'path';
-import {
-  SALES_ORDER_STATE,
-  PURCHASE_ORDER_STATE,
-  BACKORDER_STATE,
-  RETURN_STATE,
-  PURCHASE_INVOICE_STATE,
-  SALES_INVOICE_STATE,
-} from '@herobm/shared';
 
 describe('State Constants Architecture', () => {
   const rootDir = path.resolve(__dirname, '../..'); // apps/api

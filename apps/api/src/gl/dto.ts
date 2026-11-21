@@ -1,23 +1,23 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  IsEnum,
-  IsNumber,
-  IsBoolean,
-  IsObject,
-  Min,
-  ValidateNested,
-  IsUUID,
-  IsArray,
-  IsIn,
-} from 'class-validator';
 import {
   USER_SELECTABLE_JOURNAL_SOURCE_TYPES,
   type JournalEntrySourceType,
 } from '@herobm/shared';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsIn,
+  IsNotEmpty,
+  IsNumber,
+  IsObject,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 
 export * from './dto/reconciliation.dto';
 export class JournalLineDto {

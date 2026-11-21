@@ -1,78 +1,54 @@
 import {
-  Injectable,
-  Inject,
-  BadRequestException,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
-import { eq, sql, desc, and, gte, or, inArray } from 'drizzle-orm';
-import { DRIZZLE } from '../../drizzle/drizzle.module';
-import type { DrizzleDB } from '../../drizzle/drizzle.module';
-import {
-  salesOrders,
-  salesOrderShipments,
-  salesOrderShipmentLines,
-  salesOrderLineItems,
   products as coreProducts,
-  bins,
-  inventoryEntries,
-  inventoryLedger,
-  customers as coreAccounts,
-  customerGroups,
-  backorders,
-  purchaseOrders,
-  systemEvents,
-  warehouseEvents,
-  salesOrderPicks,
-  transferOrders,
-  transferOrderShipments,
-  transferOrderShipmentLines,
-  transferOrderLines,
-  locations,
+  salesOrderLineItems,
+  salesOrders,
+  salesOrderShipmentLines,
+  salesOrderShipments,
 } from '@herobm/db-schema';
-import { AppConfigService } from '../../settings/app-config.service';
-import { getValuationStrategy } from '../../inventory/valuation';
-import { getAccountingStrategy } from '../../inventory/inventory-accounting';
 import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
+import { and, eq, inArray } from 'drizzle-orm';
+import type { JwtUser } from '../../auth/auth-user.decorator';
+import { AuditMode, calculateAuditTrail } from '../../common/audit';
+import { emitEvent } from '../../common/emit-event';
+import { EntityType, EventType } from '../../common/event-types';
+import { CustomersService } from '../../customers/customers.service';
+import type { DrizzleDB } from '../../drizzle/drizzle.module';
+import { DRIZZLE } from '../../drizzle/drizzle.module';
+import { GlService } from '../../gl/gl.service';
+import { DocumentDispatchService } from '../../notifications/document-dispatch.service';
+import { AppConfigService } from '../../settings/app-config.service';
+import {
+  AddShipmentLineDto,
+  CreateShipmentDto,
+  UpdateShipmentDto,
+  UpdateShipmentLineDto,
+} from '../dto';
+import {
+  assertShipmentQtyAvailable,
   findOrder,
   findOrderLine,
   findShipment,
   findShipmentLine,
-  assertShipmentQtyAvailable,
-  getInvoicedPerLine,
-  getCommittedPerLine,
 } from '../shipment-helpers';
-import { emitEvent } from '../../common/emit-event';
-import { EntityType, EventType } from '../../common/event-types';
-import { calculateAuditTrail, AuditMode } from '../../common/audit';
-import { evaluateLifecycleRules } from '../order-lifecycle-rules';
-import { GlService } from '../../gl/gl.service';
-import { CustomersService } from '../../customers/customers.service';
-import { DocumentDispatchService } from '../../notifications/document-dispatch.service';
-import type { JwtUser } from '../../auth/auth-user.decorator';
-import {
-  CreateShipmentDto,
-  UpdateShipmentDto,
-  AddShipmentLineDto,
-  UpdateShipmentLineDto,
-} from '../dto';
 
 import {
-  SHIPMENT_STATE,
-  SHIPMENT_TRANSITIONS as SHIPMENT_STATE_TRANSITIONS,
-  SALES_ORDER_STATE,
-  SALES_ORDER_PICK_STATE,
-  SALES_ORDER_PICK_TRANSITIONS,
   DATA_SOURCE_CONTEXT,
   getErrorMessage,
   getValidStates,
+  SALES_ORDER_STATE,
+  SHIPMENT_STATE,
+  SHIPMENT_TRANSITIONS as SHIPMENT_STATE_TRANSITIONS,
 } from '@herobm/shared';
-import type { SalesOrderPickState } from '@herobm/shared';
 import { InventoryMovementService } from '../../inventory/inventory-movement.service';
 import { ShipmentsCoreService } from './shipments-core.service';
 import { ShipmentsStateService } from './shipments-state.service';
 
-const VALID_SHIPMENT_STATES = getValidStates(SHIPMENT_STATE_TRANSITIONS);
+const _VALID_SHIPMENT_STATES = getValidStates(SHIPMENT_STATE_TRANSITIONS);
 
 // ============================================================================
 // DTOs

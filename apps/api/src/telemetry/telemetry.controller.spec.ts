@@ -1,8 +1,8 @@
+import { BadRequestException, Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { TelemetryController } from './telemetry.controller';
-import { Logger, BadRequestException } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ClientErrorDto } from './dto';
+import { TelemetryController } from './telemetry.controller';
 
 describe('TelemetryController', () => {
   let controller: TelemetryController;

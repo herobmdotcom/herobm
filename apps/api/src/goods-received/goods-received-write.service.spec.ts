@@ -1,42 +1,42 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { GoodsReceivedWriteService } from './goods-received-write.service';
-import { NotFoundException } from '@nestjs/common';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { GlService } from '../gl/gl.service';
-import { AppConfigService } from '../settings/app-config.service';
-import { BackordersService } from '../orders/backorders.service';
-import { PurchaseOrdersService } from '../purchase-orders/purchase-orders.service';
-import { PurchaseOrdersWriteService } from '../purchase-orders/purchase-orders-write.service';
-import { GoodsReceivedCoreService } from './goods-received-core.service';
-import { GoodsReceivedStateService } from './goods-received-state.service';
 import {
-  suppliers,
-  locations,
-  products,
-  purchaseOrders,
-  purchaseOrderLineItems,
+  binContents,
+  bins,
   goodsReceived,
   goodsReceivedLines,
-  zones,
-  bins,
-  binContents,
-  uomDictionary,
-  taxCategories,
+  locations,
   organizations,
+  products,
+  purchaseOrderLineItems,
+  purchaseOrders,
+  suppliers,
+  taxCategories,
+  uomDictionary,
+  zones,
 } from '@herobm/db-schema';
-import { eq, and, sql } from 'drizzle-orm';
 import {
-  PURCHASE_ORDER_STATE,
-  MATCH_STATUS,
-  PUTAWAY_STATUS,
   GOODS_RECEIVED_STATE,
-  SUPPLIER_STATE,
-  PRODUCT_STATE,
+  MATCH_STATUS,
   ORGANIZATION_STATE,
+  PRODUCT_STATE,
+  PURCHASE_ORDER_STATE,
+  PUTAWAY_STATUS,
+  SUPPLIER_STATE,
 } from '@herobm/shared';
+import { NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { and, eq, sql } from 'drizzle-orm';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { GlService } from '../gl/gl.service';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
 import { InventoryQueryService } from '../inventory/inventory-query.service';
+import { BackordersService } from '../orders/backorders.service';
+import { PurchaseOrdersWriteService } from '../purchase-orders/purchase-orders-write.service';
+import { PurchaseOrdersService } from '../purchase-orders/purchase-orders.service';
+import { AppConfigService } from '../settings/app-config.service';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { GoodsReceivedCoreService } from './goods-received-core.service';
+import { GoodsReceivedStateService } from './goods-received-state.service';
+import { GoodsReceivedWriteService } from './goods-received-write.service';
 
 jest.mock('../purchase-orders/purchase-order-lifecycle-rules', () => ({
   evaluatePOLifecycleRules: jest.fn().mockResolvedValue([]),

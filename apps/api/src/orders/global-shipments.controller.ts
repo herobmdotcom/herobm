@@ -1,23 +1,23 @@
-import { SystemResource, DATA_SOURCE_CONTEXT } from '@herobm/shared';
+import { DATA_SOURCE_CONTEXT, SystemResource } from '@herobm/shared';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiOkResponse,
-  ApiCreatedResponse,
-  ApiQuery,
   ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
 } from '@nestjs/swagger';
-import { Controller, Get, Post, Param, Query, Body, Req } from '@nestjs/common';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
+import { DocumentDispatchService } from '../notifications/document-dispatch.service';
+import { EmailDocumentDto, ShipmentResponseDto } from './dto';
 import { ShipmentsCoreService } from './shipments/shipments-core.service';
 import { ShipmentsWriteService } from './shipments/shipments-write.service';
-import { DocumentDispatchService } from '../notifications/document-dispatch.service';
-import { ShipmentResponseDto, EmailDocumentDto } from './dto';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
-import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
+import { AuthUser } from '../auth/auth-user.decorator';
 
 @ApiTags('Warehouse')
 @Controller('shipments')

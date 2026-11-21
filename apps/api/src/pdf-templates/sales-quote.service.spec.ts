@@ -1,10 +1,10 @@
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
-import { SalesQuoteService } from './sales-quote.service';
-import { OrdersService } from '../orders/orders.service';
-import { OrdersQueryService } from '../orders/orders-query.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
+import { OrdersQueryService } from '../orders/orders-query.service';
+import { OrdersService } from '../orders/orders.service';
 import { AppConfigService } from '../settings/app-config.service';
+import { SalesQuoteService } from './sales-quote.service';
 
 describe('SalesQuoteService', () => {
   let service: SalesQuoteService;

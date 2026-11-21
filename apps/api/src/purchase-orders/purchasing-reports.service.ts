@@ -1,22 +1,22 @@
-import { Injectable, Inject, OnModuleInit, Logger } from '@nestjs/common';
-import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
 import {
-  purchaseOrders,
-  purchaseOrderLineItems,
-  suppliers,
   organizations,
-  products,
   productGroups,
+  products,
+  purchaseOrderLineItems,
+  purchaseOrders,
+  suppliers,
 } from '@herobm/db-schema';
-import { sql, eq, and, gte, lte, asc, SQL } from 'drizzle-orm';
+import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { and, asc, eq, sql, SQL } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 import {
   getAggregationPeriod,
   getAggregationSql,
 } from '../common/utils/date-range.util';
+import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 
 @Injectable()
 export class PurchasingReportsService implements OnModuleInit {

@@ -114,17 +114,17 @@ describe('Architecture - Database Queries (No N+1)', () => {
   // When refactoring a subsystem to batch queries, remove resolved entries from this set.
   // ANY NEW N+1 query site outside of this baseline will fail the build immediately.
   const KNOWN_LEGACY_VIOLATIONS = new Set<string>([
-    'inventory/inventory-movement.service.ts:277',
-    'inventory/inventory-movement.service.ts:328',
-    'inventory/inventory-movement.service.ts:387',
-    'inventory/inventory-movement.service.ts:427',
-    'inventory/inventory-movement.service.ts:480',
-    'inventory/inventory-movement.service.ts:491',
-    'inventory/inventory-movement.service.ts:502',
-    'inventory/inventory-movement.service.ts:572',
-    'inventory/inventory-movement.service.ts:719',
-    'inventory/inventory-movement.service.ts:725',
-    'inventory/inventory-movement.service.ts:735',
+    'inventory/inventory-movement.service.ts:243',
+    'inventory/inventory-movement.service.ts:294',
+    'inventory/inventory-movement.service.ts:353',
+    'inventory/inventory-movement.service.ts:393',
+    'inventory/inventory-movement.service.ts:446',
+    'inventory/inventory-movement.service.ts:457',
+    'inventory/inventory-movement.service.ts:468',
+    'inventory/inventory-movement.service.ts:538',
+    'inventory/inventory-movement.service.ts:685',
+    'inventory/inventory-movement.service.ts:691',
+    'inventory/inventory-movement.service.ts:701',
   ]);
 
   it('should not contain any new un-batched N+1 queries in service files', () => {

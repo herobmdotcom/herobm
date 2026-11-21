@@ -1,7 +1,7 @@
-import { TestingModule } from '@nestjs/testing';
-import { createE2eModule, setupE2eApp } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
+import { TestingModule } from '@nestjs/testing';
 import request from 'supertest';
+import { createE2eModule, setupE2eApp } from './utils/e2e-module';
 
 describe('CRM Activities (e2e)', () => {
   let app: INestApplication;

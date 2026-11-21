@@ -36,6 +36,10 @@ export function DiscountCell({
           step="any"
           defaultValue={formattedDisc}
           key={`disc-${lineIdentifier}-${line.discountPercentage}`}
+          onFocus={(e) => e.target.select()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.currentTarget.blur();
+          }}
           onBlur={(e) => {
             const val = parseFloat(e.target.value);
             const clampedVal = isNaN(val) ? 0 : Math.min(Math.max(val, 0), 100);
@@ -57,6 +61,7 @@ export function DiscountCell({
         max="100"
         step="0.1"
         value={line.discountPercentage ?? ''}
+        onFocus={(e) => e.target.select()}
         onChange={(e) => {
           let sanitizedValue = e.target.value;
           const num = parseFloat(sanitizedValue);

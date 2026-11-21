@@ -6,14 +6,14 @@
  * symmetry, negative stock prevention, multi-UOM conversion precision, quarantine
  * isolation, polymorphic putaway lifecycle, and financial shrinkage/gain GL integration.
  */
-import { TestingModule } from '@nestjs/testing';
-import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
-import request from 'supertest';
+import { TestingModule } from '@nestjs/testing';
 import * as fc from 'fast-check';
 import postgres from 'postgres';
+import request from 'supertest';
 import { v4 as uuidv4 } from 'uuid';
 import { AppConfigService } from '../src/settings/app-config.service';
+import { createE2eModule, setupE2eApp } from './utils/e2e-module';
 
 interface TestBin {
   binId: string;
@@ -63,12 +63,19 @@ describe('API E2E — Inventory Ledger Fuzz & Robustness Suite', () => {
         name: `Fuzz Product ${prefix}`,
         listPrice: '100.00',
         standardCost: cost,
-        weightedAverageCost: cost,
         productType: 'inventory',
         baseUom,
       })
       .expect(201);
-    return res.body.productId as string;
+    const productId = res.body.productId as string;
+    if (sqlClient) {
+      await sqlClient`
+        UPDATE herobm_core.products
+        SET weighted_average_cost = ${cost}::numeric
+        WHERE product_id = ${productId}::uuid
+      `;
+    }
+    return productId;
   };
 
   const createIsolatedBins = async (
@@ -104,8 +111,9 @@ describe('API E2E — Inventory Ledger Fuzz & Robustness Suite', () => {
     ).compile();
 
     app = moduleFixture.createNestApplication();
-    app.setGlobalPrefix('api');
+    setupE2eApp(app);
     await app.init();
+    await app.listen(0);
 
     // 1. Admin Login
     const loginRes = await request(app.getHttpServer())
@@ -188,7 +196,7 @@ describe('API E2E — Inventory Ledger Fuzz & Robustness Suite', () => {
     await sqlClient`
       INSERT INTO herobm_core.bins (bin_id, bin_number, zone_id, bin_type, source, created_by)
       VALUES (${uuidv4()}::uuid, 'RECEIVING', ${handlingZoneId}::uuid, 'staging', 'test', 'system')
-      ON CONFLICT DO NOTHING
+      ON CONFLICT (bin_number, zone_id) DO NOTHING
     `;
 
     // Ensure standard Goods and Service UoMs exist in dictionary
@@ -543,7 +551,7 @@ describe('API E2E — Inventory Ledger Fuzz & Robustness Suite', () => {
           `;
           expect(parseFloat(prod2CacheRes[0].qty)).toEqual(50);
         }),
-        { numRuns: 10, seed: RANDOM_SEED },
+        { numRuns: NUM_RUNS },
       );
     });
   });
@@ -622,7 +630,7 @@ describe('API E2E — Inventory Ledger Fuzz & Robustness Suite', () => {
           `;
           expect(parseFloat(cacheRes[0].qty)).toEqual(q0);
         }),
-        { numRuns: 10, seed: RANDOM_SEED },
+        { numRuns: NUM_RUNS },
       );
     });
   });
@@ -735,7 +743,7 @@ describe('API E2E — Inventory Ledger Fuzz & Robustness Suite', () => {
             })
             .expect(201);
         }),
-        { numRuns: 10, seed: RANDOM_SEED },
+        { numRuns: NUM_RUNS },
       );
     });
   });
@@ -766,7 +774,7 @@ describe('API E2E — Inventory Ledger Fuzz & Robustness Suite', () => {
       await fc.assert(
         fc.asyncProperty(arbAdjustments, async ({ startQty, endQty }) => {
           // 1. Seed initial stock
-          await request(app.getHttpServer())
+          const seedRes = await request(app.getHttpServer())
             .post('/api/inventory/adjust')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({
@@ -892,7 +900,7 @@ describe('API E2E — Inventory Ledger Fuzz & Robustness Suite', () => {
             );
           }
         }),
-        { numRuns: 10, seed: RANDOM_SEED },
+        { numRuns: NUM_RUNS },
       );
     });
   });
@@ -972,7 +980,7 @@ describe('API E2E — Inventory Ledger Fuzz & Robustness Suite', () => {
           );
           expect(netSum).toBeCloseTo(0, 2);
         }),
-        { numRuns: 10, seed: RANDOM_SEED },
+        { numRuns: NUM_RUNS },
       );
     });
   });
@@ -1109,11 +1117,10 @@ describe('API E2E — Inventory Ledger Fuzz & Robustness Suite', () => {
       p9DestBin = bins[0];
       p9Product = await createProduct('P9-PUTAWAY');
 
-      // Resolve RECEIVING bin
+      // Resolve RECEIVING bin in handling zone
       const [rBin] = await sqlClient`
         SELECT bin_id FROM herobm_core.bins
-        JOIN herobm_core.zones ON bins.zone_id = zones.zone_id
-        WHERE zones.location_id = ${locationId}::uuid AND bins.bin_number = 'RECEIVING'
+        WHERE zone_id = ${handlingZoneId}::uuid AND bin_number = 'RECEIVING'
         LIMIT 1
       `;
       receivingBinId = rBin.bin_id;
@@ -1125,7 +1132,7 @@ describe('API E2E — Inventory Ledger Fuzz & Robustness Suite', () => {
       await fc.assert(
         fc.asyncProperty(arbPutawayQty, async (qty) => {
           // 1. Seed stock into RECEIVING bin
-          await request(app.getHttpServer())
+          const p9SeedRes = await request(app.getHttpServer())
             .post('/api/inventory/adjust')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({
@@ -1188,7 +1195,7 @@ describe('API E2E — Inventory Ledger Fuzz & Robustness Suite', () => {
           expect(parseFloat(destCacheRes[0].qty)).toBeGreaterThanOrEqual(qty);
 
           // Cleanup destination bin
-          await request(app.getHttpServer())
+          const cleanupRes = await request(app.getHttpServer())
             .post('/api/inventory/adjust')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({

@@ -138,7 +138,7 @@ describe('BalancesContent — client-side filtering and loading', () => {
     renderWithSwr(<BalancesContent />);
 
     await waitFor(() => {
-      expect(mockGetBalances).toHaveBeenCalledWith({ agingBasis: 'dueDate' });
+      expect(mockGetBalances).toHaveBeenCalledWith({ agingBasis: 'dueDate', limit: 1000 });
       expect(screen.getByTestId('row-count')).toHaveTextContent('4');
     });
 
@@ -221,7 +221,7 @@ describe('BalancesContent — client-side filtering and loading', () => {
 
     await waitFor(() => {
       expect(mockGetBalances).toHaveBeenCalledTimes(2);
-      expect(mockGetBalances).toHaveBeenLastCalledWith({ agingBasis: 'invoiceDate' });
+      expect(mockGetBalances).toHaveBeenLastCalledWith({ agingBasis: 'invoiceDate', limit: 1000 });
     });
   });
 });

@@ -1,14 +1,14 @@
+import { SystemResource } from '@herobm/shared';
 import { Controller, Get, Query } from '@nestjs/common';
 import {
-  ApiTags,
-  ApiOperation,
   ApiBearerAuth,
   ApiOkResponse,
+  ApiOperation,
+  ApiTags,
 } from '@nestjs/swagger';
-import { TaxReportsService } from './tax-reports.service';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
 import { TaxReportQueryDto, TaxReportResponseDto } from './tax-reports.dto';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
-import { SystemResource } from '@herobm/shared';
+import { TaxReportsService } from './tax-reports.service';
 
 @ApiTags('Tax')
 @ApiBearerAuth()

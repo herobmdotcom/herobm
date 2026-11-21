@@ -1,20 +1,18 @@
-import { TestingModule } from '@nestjs/testing';
-import { createE2eModule, setupE2eApp } from './utils/e2e-module';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import {
-  glJournalEntries,
-  glJournalLines,
   glAccounts,
-  users,
-  salesOrders,
-  salesInvoices,
   locations,
+  salesInvoices,
+  salesOrders,
+  users,
 } from '@herobm/db-schema';
-import { eq } from 'drizzle-orm';
-import * as crypto from 'crypto';
-import request from 'supertest';
+import { INestApplication } from '@nestjs/common';
+import { TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
+import { eq } from 'drizzle-orm';
+import request from 'supertest';
+import { DRIZZLE } from '../src/drizzle/drizzle.module';
+import { createE2eModule, setupE2eApp } from './utils/e2e-module';
 
 describe('Credit Control Lifecycle (e2e)', () => {
   let app: INestApplication;

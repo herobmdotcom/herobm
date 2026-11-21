@@ -193,3 +193,23 @@ export interface SalesInvoice {
     dueDate?: string;
     lines?: InvoiceLine[];
 }
+
+export type OrderLinesActiveTab = 'lines' | 'availability' | 'backorders' | 'pricing';
+
+export interface PricingHistoryEntry {
+    salesOrderId: string;
+    orderNumber: string;
+    orderName?: string | null;
+    customerId?: string | null;
+    customerName: string;
+    isCurrentCustomer: boolean;
+    stateCode: string;
+    orderDate: string;
+    lineNumber: number;
+    quantity: string;
+    unitOfMeasure?: string | null;
+    pricePerUnit: string;
+    discountPercentage?: string | null;
+    lineTotal?: string | null;
+    currencyCode: string;
+}

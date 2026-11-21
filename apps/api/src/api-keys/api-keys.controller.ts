@@ -1,21 +1,21 @@
 import { SystemResource } from '@herobm/shared';
+import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import {
-  ApiTags,
   ApiBearerAuth,
-  ApiOperation,
-  ApiOkResponse,
-  ApiCreatedResponse,
   ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
 } from '@nestjs/swagger';
-import { Controller, Get, Post, Delete, Param, Body } from '@nestjs/common';
-import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
+import { AuthUser } from '../auth/auth-user.decorator';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
 import {
-  CreateApiKeyDto,
-  ApiKeyResponseDto,
   ApiKeyCreatedResponseDto,
   ApiKeyFullResponseDto,
+  ApiKeyResponseDto,
+  CreateApiKeyDto,
 } from './dto';
 
 import { ApiKeysService } from './api-keys.service';

@@ -1,39 +1,39 @@
 import {
-  Injectable,
-  Inject,
-  BadRequestException,
-  forwardRef,
-} from '@nestjs/common';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  workOrders,
-  workOrderPicks,
-  bins,
   binContents,
-  zones,
+  bins,
   products,
+  workOrderPicks,
+  workOrders,
+  zones,
 } from '@herobm/db-schema';
-import { eq, and, sql, inArray } from 'drizzle-orm';
-import { isPickableBinCondition } from '../inventory/inventory-math.utils';
 import {
+  BIN_TYPE,
+  PUTAWAY_STATUS,
+  WORK_ORDER_PICK_STATE,
   WORK_ORDER_STATE,
   WORK_ORDER_TRANSITIONS,
-  WORK_ORDER_PICK_STATE,
-  PUTAWAY_STATUS,
-  BIN_TYPE,
   type WorkOrderState,
 } from '@herobm/shared';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import Decimal from 'decimal.js';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { GlService } from '../gl/gl.service';
+import { getAccountingStrategy } from '../inventory/inventory-accounting';
+import { isPickableBinCondition } from '../inventory/inventory-math.utils';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
-import { WorkOrdersQueryService } from './work-orders-query.service';
+import { getValuationStrategy } from '../inventory/valuation';
 import { BackordersService } from '../orders/backorders.service';
 import { AppConfigService } from '../settings/app-config.service';
-import { GlService } from '../gl/gl.service';
-import { getValuationStrategy } from '../inventory/valuation';
-import { getAccountingStrategy } from '../inventory/inventory-accounting';
+import { WorkOrdersQueryService } from './work-orders-query.service';
 
 @Injectable()
 export class WorkOrdersExecutionService {

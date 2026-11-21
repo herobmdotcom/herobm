@@ -71,7 +71,7 @@ ARG BUILD_TIME=""
 ENV APP_VERSION=${APP_VERSION}
 ENV BUILD_TIME=${BUILD_TIME}
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_OPTIONS="--max-old-space-size=2048"
+ENV NODE_OPTIONS="--max-old-space-size=1536"
 ENV NEXT_CPU_COUNT=1
 RUN cd apps/ops-portal && npm run build
 

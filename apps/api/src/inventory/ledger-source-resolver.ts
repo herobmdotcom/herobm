@@ -1,19 +1,19 @@
-import { aliasedTable, eq } from 'drizzle-orm';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
-  salesOrders,
-  salesOrderShipments,
-  salesOrderReturns,
   customers,
-  organizations,
-  locations,
-  transferOrders,
   goodsReceived,
   goodsReceivedLines,
+  locations,
+  organizations,
   purchaseOrders,
+  salesOrderReturns,
+  salesOrders,
+  salesOrderShipments,
   suppliers,
+  transferOrders,
   workOrders,
 } from '@herobm/db-schema';
+import { aliasedTable, eq } from 'drizzle-orm';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
 
 export interface LedgerRelatedEntities {
   relatedDocument: { number: string; link?: string } | null;

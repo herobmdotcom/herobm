@@ -11,13 +11,7 @@ import { Button } from '@/components/shared/Button';
 import ContactSelect, { Contact } from '@/components/shared/ContactSelect';
 import { useSettings } from '@/components/SettingsProvider';
 
-const parseInitialPhone = (val: string) => {
-  if (!val) return '';
-  if (val.startsWith('+')) return val;
-  const digits = val.replace(/\D/g, '');
-  if (digits.length > 0) return '+' + digits;
-  return '';
-};
+import { parseInitialPhone, toSupportedCountry } from '@/lib/phone';
 
 interface ContactSlideOverProps {
   isOpen: boolean;
@@ -309,7 +303,7 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
             </label>
             <PhoneInput
               international
-              defaultCountry={defaultCountry as Country}
+              defaultCountry={toSupportedCountry(defaultCountry)}
               className="input w-full flex items-center px-2 border border-[var(--border)] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--accent)]"
               value={parseInitialPhone(dto.phone)}
               onChange={(value) => setDto({ ...dto, phone: value || '' })}
@@ -329,7 +323,7 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
             </label>
             <PhoneInput
               international
-              defaultCountry={defaultCountry as Country}
+              defaultCountry={toSupportedCountry(defaultCountry)}
               className="input w-full flex items-center px-2 border border-[var(--border)] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--accent)]"
               value={parseInitialPhone(dto.mobile)}
               onChange={(value) => setDto({ ...dto, mobile: value || '' })}

@@ -1,31 +1,31 @@
 import { SystemResource } from '@herobm/shared';
 import {
-  ApiTags,
   ApiBearerAuth,
-  ApiOperation,
-  ApiOkResponse,
-  ApiCreatedResponse,
   ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
 } from '@nestjs/swagger';
 /* eslint-disable no-restricted-syntax -- globally skipping throttler guard */
 import {
+  Body,
   Controller,
+  Delete,
   Get,
+  Param,
   Post,
   Put,
-  Delete,
-  Body,
-  Param,
 } from '@nestjs/common';
-import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
+import { AuthUser } from '../auth/auth-user.decorator';
 
-import { CasbinResource, CasbinAction, SkipCasbin } from '../auth/casbin.guard';
+import { CasbinAction, CasbinResource, SkipCasbin } from '../auth/casbin.guard';
 import {
   CreateWebhookDto,
+  DeleteWebhookResponseDto,
   UpdateWebhookDto,
   WebhookResponseDto,
-  DeleteWebhookResponseDto,
 } from './dto';
 
 import { WebhooksService } from './webhooks.service';

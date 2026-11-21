@@ -1,24 +1,12 @@
-import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
-import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  IsBoolean,
-  IsIn,
-} from 'class-validator';
-import { eq, ne, and, inArray } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { taxCategories, appSettings } from '@herobm/db-schema';
-import { CreateTaxCategoryDto, UpdateTaxCategoryDto } from './dto';
+import { appSettings, taxCategories } from '@herobm/db-schema';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
+import { AuditMode, calculateAuditTrail } from '../common/audit';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
-import { calculateAuditTrail, AuditMode } from '../common/audit';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { CreateTaxCategoryDto, UpdateTaxCategoryDto } from './dto';
 
 @Injectable()
 export class TaxCategoriesService {

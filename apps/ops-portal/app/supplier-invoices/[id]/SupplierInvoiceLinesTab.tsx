@@ -1,14 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { MATCH_STATUS, PURCHASE_INVOICE_STATE, CUSTOM_LINE_ID } from '@herobm/shared';
 import POMatchingPanel from '@/components/shared/POMatchingPanel';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
+import ProductQuickAddBar from '@/components/shared/ProductQuickAddBar';
 import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
 import { Button } from '@/components/shared/Button';
 import { formatAmount } from '@/lib/currency';
 import type { PurchaseInvoiceDetails } from './useSupplierInvoice';
 import type { GlAccountResponseDto } from '@herobm/sdk';
+import CreateProductSlideOver from '@/components/products/CreateProductSlideOver';
+import AdjustProductPricesSlideOver from '@/components/products/AdjustProductPricesSlideOver';
 
 interface SupplierInvoiceLinesTabProps {
   invoice: PurchaseInvoiceDetails;
@@ -32,6 +35,8 @@ interface SupplierInvoiceLinesTabProps {
   addBlankLine: () => void;
   addRoundingLine: () => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API boundary
+  addProductLine?: (product: any, quantity?: string) => Promise<void> | void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API boundary
   handleProductSelect: (lineId: string, product: any) => void;
   handleUnresolve: (lineId: string) => void;
   editTaxAmount: string;
@@ -39,6 +44,7 @@ interface SupplierInvoiceLinesTabProps {
   saveHeader: (vendorId?: string) => void;
   saving: boolean;
   glAccounts: GlAccountResponseDto[];
+  canEditProducts?: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- next-intl hook
   t: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- next-intl hook
@@ -61,18 +67,49 @@ export default function SupplierInvoiceLinesTab({
   removeLine,
   addBlankLine,
   addRoundingLine,
+  addProductLine,
   handleProductSelect,
   handleUnresolve,
   editTaxAmount, setEditTaxAmount,
   saveHeader,
   saving,
   glAccounts,
+  canEditProducts = true,
   t, tCommon
 }: SupplierInvoiceLinesTabProps) {
+
+  const [isCreateProductOpen, setIsCreateProductOpen] = useState(false);
+  const [adjustPriceTarget, setAdjustPriceTarget] = useState<{
+    productId: string;
+    invoiceUnitCost: number;
+  } | null>(null);
+  const [knownStandardCosts, setKnownStandardCosts] = useState<Record<string, number>>({});
 
   const isEditable = invoice.stateCode === PURCHASE_INVOICE_STATE.DRAFT;
   const canEditLines = isEditable && !isMatchingMode;
   const matchIcon = isMatchingMode ? 'check' : 'link';
+
+  const isRealProduct = (productId?: string) =>
+    Boolean(
+      productId &&
+        productId !== CUSTOM_LINE_ID &&
+        productId !== '00000000-0000-0000-0000-000000000000',
+    );
+
+  const hasCostIncrease = (line: PurchaseInvoiceDetails['lines'][0]) => {
+    const unitCost = parseFloat(line.pricePerUnit || '0');
+    if (!Number.isFinite(unitCost) || unitCost <= 0) return false;
+    if (line.productId && knownStandardCosts[line.productId] !== undefined) {
+      return unitCost > knownStandardCosts[line.productId] + 0.001;
+    }
+    if (line.poLinePricePerUnit) {
+      const poPrice = parseFloat(line.poLinePricePerUnit);
+      if (Number.isFinite(poPrice) && poPrice > 0) {
+        return unitCost > poPrice + 0.001;
+      }
+    }
+    return false;
+  };
 
   const InvoiceAllocationCell = ({ line }: { line: PurchaseInvoiceDetails['lines'][0] }) => {
     if (line.matchStatus === MATCH_STATUS.MATCHED) {
@@ -127,37 +164,77 @@ export default function SupplierInvoiceLinesTab({
     <>
       <div id="lines-section" className="flex gap-0 min-h-0">
         <div className="card flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h3 className="section-heading mb-0">
               {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
               <span className="material-symbols-outlined">list</span>
               {t('lineItems')}
             </h3>
             {isEditable && (
-              <div className="flex gap-2">
+              <div className="flex flex-wrap items-center gap-2 flex-1 justify-end">
+                {!isMatchingMode && addProductLine && (
+                  <div className="flex-1 min-w-[240px] max-w-md">
+                    <ProductQuickAddBar
+                      onAdd={async (product, qty) => {
+                        if (product.standardCost) {
+                          const parsed = parseFloat(product.standardCost);
+                          if (Number.isFinite(parsed)) {
+                            setKnownStandardCosts((prev) => ({
+                              ...prev,
+                              [product.productId]: parsed,
+                            }));
+                          }
+                        }
+                        await addProductLine(product, qty);
+                      }}
+                      placeholder={t('placeholders.searchProduct')}
+                      disabled={saving}
+                      enableShortcut={!isMatchingMode}
+                    />
+                  </div>
+                )}
                 <Button
-                  size="sm" variant={isMatchingMode ? 'primary' : 'secondary'}
+                  size="icon"
+                  variant={isMatchingMode ? 'primary' : 'secondary'}
+                  icon={matchIcon}
+                  iconClassName="text-[18px]"
                   onClick={() => setIsMatchingMode(!isMatchingMode)}
                   disabled={saving}
-                >
-                  {isMatchingMode ? t('matching.panelTitle') : t('matching.panelTitle')}
-                </Button>
+                  title={t('matching.panelTitle')}
+                  aria-label={t('matching.panelTitle')}
+                />
                 {!isMatchingMode && (
                   <>
                     <Button
-                      variant="secondary" size="sm"
+                      variant="secondary"
+                      size="icon"
+                      icon="add_box"
+                      iconClassName="text-[18px]"
+                      onClick={() => setIsCreateProductOpen(true)}
+                      disabled={saving}
+                      title={t('supplierInvoice.addProduct')}
+                      aria-label={t('supplierInvoice.addProduct')}
+                    />
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      icon="playlist_add"
+                      iconClassName="text-[18px]"
                       onClick={addBlankLine}
                       disabled={saving}
-                    >
-                      {t('addLine')}
-                    </Button>
+                      title={t('addLine')}
+                      aria-label={t('addLine')}
+                    />
                     <Button
-                      variant="secondary" size="sm"
+                      variant="secondary"
+                      size="icon"
+                      icon="exposure"
+                      iconClassName="text-[18px]"
                       onClick={addRoundingLine}
                       disabled={saving}
-                    >
-                      {t('addRoundingAdj')}
-                    </Button>
+                      title={t('addRoundingAdj')}
+                      aria-label={t('addRoundingAdj')}
+                    />
                   </>
                 )}
               </div>
@@ -174,7 +251,7 @@ export default function SupplierInvoiceLinesTab({
                 <th className="w-[90px] text-right">{t('columns.qtyToBill')}</th>
                 <th className="w-[110px] text-right">{t('columns.unitPrice')}</th>
                 <th className="w-[110px] text-right">{t('columns.amount')}</th>
-                {!isMatchingMode && isEditable && <th className="w-[50px]"></th>}
+                {!isMatchingMode && (isEditable || canEditProducts) && <th className="w-[84px]"></th>}
                 {isMatchingMode && <th className="w-[70px] text-center">{t('columns.status')}</th>}
               </tr>
             </thead>
@@ -268,16 +345,49 @@ export default function SupplierInvoiceLinesTab({
                     <td className="text-right font-semibold tabular-nums">
                       {formatAmount(parseFloat(line.amount), invoice.currencyCode)}
                     </td>
-                    {canEditLines && (
+                    {!isMatchingMode && (isEditable || canEditProducts) && (
                       <td className="text-center">
-                        <Button
-                          variant="ghost"
-                          className="text-gray-400 hover:text-red-500"
-                          onClick={() => removeLine(line.lineId)}
-                          title="Remove Line"
-                        >
-                          {'✕'}
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          {canEditProducts && isRealProduct(line.productId) && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="relative !p-1.5 text-[var(--text-muted)] hover:text-[var(--accent)]"
+                              onClick={() =>
+                                setAdjustPriceTarget({
+                                  productId: line.productId!,
+                                  invoiceUnitCost: parseFloat(line.pricePerUnit || '0') || 0,
+                                })
+                              }
+                              title={
+                                hasCostIncrease(line)
+                                  ? t('supplierInvoice.costIncreasedHint')
+                                  : t('supplierInvoice.adjustPrices')
+                              }
+                              aria-label={t('supplierInvoice.adjustPrices')}
+                            >
+                              {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                              <span className="material-symbols-outlined text-[18px]">sell</span>
+                              {hasCostIncrease(line) && (
+                                <span
+                                  className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-500"
+                                  aria-hidden="true"
+                                />
+                              )}
+                            </Button>
+                          )}
+                          {canEditLines && (
+                            <Button
+                              variant="ghost"
+                              className="text-gray-400 hover:text-red-500 !p-1.5"
+                              onClick={() => removeLine(line.lineId)}
+                              title="Remove Line"
+                            >
+                              {'✕'}
+                            </Button>
+                          )}
+                        </div>
                       </td>
                     )}
                     {isMatchingMode && (
@@ -294,7 +404,7 @@ export default function SupplierInvoiceLinesTab({
               })}
               {(!invoice.lines || invoice.lines.length === 0) && (
                 <tr>
-                  <td colSpan={isEditable ? 8 : 7} className="text-center text-[var(--text-muted)] py-5">
+                  <td colSpan={(!isMatchingMode && (isEditable || canEditProducts)) ? 8 : 7} className="text-center text-[var(--text-muted)] py-5">
                     {t('noItems')}
                   </td>
                 </tr>
@@ -306,7 +416,7 @@ export default function SupplierInvoiceLinesTab({
                 <td className="text-right font-semibold tabular-nums">
                   {formatAmount(parseFloat(invoice.totalAmount) - parseFloat(invoice.taxAmount), invoice.currencyCode)}
                 </td>
-                {isEditable && <td></td>}
+                {!isMatchingMode && (isEditable || canEditProducts) && <td></td>}
               </tr>
               <tr>
                 <td colSpan={6} className="text-right font-semibold text-[var(--text-muted)]">
@@ -337,7 +447,7 @@ export default function SupplierInvoiceLinesTab({
                     formatAmount(parseFloat(invoice.taxAmount), invoice.currencyCode)
                   )}
                 </td>
-                {isEditable && <td></td>}
+                {!isMatchingMode && (isEditable || canEditProducts) && <td></td>}
               </tr>
               <tr className="bg-blue-500/[0.02]">
                 <td colSpan={6} className="text-right font-bold text-[13px] text-[var(--text-primary)]">
@@ -346,7 +456,7 @@ export default function SupplierInvoiceLinesTab({
                 <td className="text-right font-extrabold text-[14px] text-[var(--accent)] tabular-nums">
                   {formatAmount(parseFloat(invoice.totalAmount), invoice.currencyCode)}
                 </td>
-                {isEditable && <td></td>}
+                {!isMatchingMode && (isEditable || canEditProducts) && <td></td>}
               </tr>
             </tbody>
           </table>
@@ -379,11 +489,43 @@ export default function SupplierInvoiceLinesTab({
                         ) : (
                           <span className="font-medium text-slate-500">{t('customItem')}</span>
                         )}
-                        {canEditLines && (
-                          <Button variant="ghost" className="text-gray-400 hover:text-red-500 ml-auto" onClick={(e) => { e.stopPropagation(); removeLine(line.lineId); }}>
-                            <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
-                          </Button>
-                        )}
+                        <div className="flex items-center gap-1 ml-auto">
+                          {canEditProducts && isRealProduct(line.productId) && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="relative !p-1.5 text-[var(--text-muted)] hover:text-[var(--accent)]"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setAdjustPriceTarget({
+                                  productId: line.productId!,
+                                  invoiceUnitCost: parseFloat(line.pricePerUnit || '0') || 0,
+                                });
+                              }}
+                              title={
+                                hasCostIncrease(line)
+                                  ? t('supplierInvoice.costIncreasedHint')
+                                  : t('supplierInvoice.adjustPrices')
+                              }
+                              aria-label={t('supplierInvoice.adjustPrices')}
+                            >
+                              {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                              <span className="material-symbols-outlined text-[18px]">sell</span>
+                              {hasCostIncrease(line) && (
+                                <span
+                                  className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-500"
+                                  aria-hidden="true"
+                                />
+                              )}
+                            </Button>
+                          )}
+                          {canEditLines && (
+                            <Button variant="ghost" className="text-gray-400 hover:text-red-500" onClick={(e) => { e.stopPropagation(); removeLine(line.lineId); }}>
+                              <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     }
                     subtitle={
@@ -461,9 +603,9 @@ export default function SupplierInvoiceLinesTab({
                     ]}
                   >
                     {!isMatchingMode && (
-                      <div className="pt-2 mt-2 border-t border-slate-100">
-                        <label className="text-[11px] uppercase tracking-wider font-medium text-slate-500 mb-1.5 block">{t('columns.allocation')}</label>
-                        <div className="border border-slate-200 rounded p-2 bg-[var(--bg-primary)]">
+                      <div className="pt-2 mt-2 border-t border-[var(--border)]">
+                        <label className="text-[11px] uppercase tracking-wider font-medium text-[var(--text-muted)] mb-1.5 block">{t('columns.allocation')}</label>
+                        <div className="border border-[var(--border)] rounded p-2 bg-[var(--bg-primary)]">
                           <InvoiceAllocationCell line={line} />
                         </div>
                       </div>
@@ -542,35 +684,35 @@ export default function SupplierInvoiceLinesTab({
         )}
 
         {showDiscrepancyModal && (
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl w-full max-w-2xl flex flex-col overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-                <h2 className="text-xl font-semibold text-gray-900">{t('invoiceDiscrepancies')}</h2>
-                <Button variant="ghost" onClick={() => setShowDiscrepancyModal(false)} className="text-gray-400 hover:text-gray-600">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border)] shadow-2xl rounded-xl w-full max-w-2xl flex flex-col overflow-hidden">
+              <div className="px-6 py-4 border-b border-[var(--border)] flex justify-between items-center bg-[var(--bg-secondary)]">
+                <h2 className="text-xl font-semibold text-[var(--text-primary)]">{t('invoiceDiscrepancies')}</h2>
+                <Button variant="ghost" size="icon" onClick={() => setShowDiscrepancyModal(false)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
                   <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
                 </Button>
               </div>
 
               <div className="p-6 flex flex-col gap-4">
-                <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
+                <div className="max-h-96 overflow-y-auto border border-[var(--border)] rounded-lg">
                   <table className="w-full text-left border-collapse">
-                    <thead className="bg-gray-50 sticky top-0">
+                    <thead className="bg-[var(--bg-secondary)] sticky top-0">
                       <tr>
-                        <th className="px-4 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">{t('columns.line')}</th>
-                        <th className="px-4 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">{t('columns.issueType')}</th>
-                        <th className="px-4 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">{t('columns.details')}</th>
+                        <th className="px-4 py-2 text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border)]">{t('columns.line')}</th>
+                        <th className="px-4 py-2 text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border)]">{t('columns.issueType')}</th>
+                        <th className="px-4 py-2 text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border)]">{t('columns.details')}</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200 bg-white">
+                    <tbody className="divide-y divide-[var(--border)] bg-[var(--bg-card)]">
                       {discrepancies.map((d, i) => {
                         const lineIdx = invoice.lines.findIndex(l => l.lineId === d.lineId);
                         return (
-                          <tr key={i} className="hover:bg-gray-50 transition-colors">
-                            <td className="px-4 py-3 text-xs text-gray-500 font-medium">{lineIdx + 1}</td>
-                            <td className="px-4 py-3 text-xs text-gray-900 font-medium uppercase tracking-tight">
+                          <tr key={i} className="hover:bg-[var(--bg-card-hover)] transition-colors">
+                            <td className="px-4 py-3 text-xs text-[var(--text-muted)] font-medium">{lineIdx + 1}</td>
+                            <td className="px-4 py-3 text-xs text-[var(--text-primary)] font-medium uppercase tracking-tight">
                               {(d as { type?: string }).type?.replace(/_/g, ' ')}
                             </td>
-                            <td className="px-4 py-3 text-xs text-gray-600">{(d as { message?: string }).message}</td>
+                            <td className="px-4 py-3 text-xs text-[var(--text-secondary)]">{(d as { message?: string }).message}</td>
                           </tr>
                         );
                       })}
@@ -578,7 +720,7 @@ export default function SupplierInvoiceLinesTab({
                   </table>
                 </div>
 
-                <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
+                <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-[var(--border)]">
                   <Button
                     variant="secondary"
                     size="sm"
@@ -605,6 +747,38 @@ export default function SupplierInvoiceLinesTab({
           </div>
         )}
       </div>
+
+      <CreateProductSlideOver
+        isOpen={isCreateProductOpen}
+        onClose={() => setIsCreateProductOpen(false)}
+        onSuccess={(prod) => {
+          if (addProductLine) {
+            addProductLine(prod);
+          }
+          setIsCreateProductOpen(false);
+        }}
+        vendorId={invoice.vendorId}
+        vendorName={invoice.vendorName}
+      />
+
+      <AdjustProductPricesSlideOver
+        isOpen={Boolean(adjustPriceTarget)}
+        onClose={() => setAdjustPriceTarget(null)}
+        productId={adjustPriceTarget?.productId ?? null}
+        invoiceUnitCost={adjustPriceTarget?.invoiceUnitCost ?? 0}
+        currencyCode={invoice.currencyCode}
+        onSaved={(updated) => {
+          if (updated.standardCost !== undefined) {
+            const parsed = parseFloat(updated.standardCost);
+            if (Number.isFinite(parsed)) {
+              setKnownStandardCosts((prev) => ({
+                ...prev,
+                [updated.productId]: parsed,
+              }));
+            }
+          }
+        }}
+      />
     </>
   );
 }

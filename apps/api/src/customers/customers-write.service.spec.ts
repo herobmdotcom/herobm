@@ -1,20 +1,12 @@
+import { customers, organizations } from '@herobm/db-schema';
+import { CUSTOMER_STATE, ORGANIZATION_STATE } from '@herobm/shared';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { CustomersWriteService } from './customers-write.service';
+import { eq } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
-import {
-  BadRequestException,
-  NotFoundException,
-  ConflictException,
-} from '@nestjs/common';
 import { AppConfigService } from '../settings/app-config.service';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { customers, masterDataEvents, organizations } from '@herobm/db-schema';
-import { eq, sql } from 'drizzle-orm';
-import {
-  getErrorMessage,
-  CUSTOMER_STATE,
-  ORGANIZATION_STATE,
-} from '@herobm/shared';
+import { CustomersWriteService } from './customers-write.service';
 
 describe('CustomersWriteService', () => {
   const pg = setupPgliteSuite();
@@ -245,6 +237,115 @@ describe('CustomersWriteService', () => {
           'admin',
         ),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('bulkUpdate', () => {
+    it('should bulk update fields across multiple customers', async () => {
+      const c1 = await service.create(
+        {
+          customerNumber: 'BCUST001',
+          name: 'Bulk Cust 1',
+          currencyCode: 'EUR',
+          billingAddressCountry: 'AU',
+        },
+        'actor',
+      );
+      const c2 = await service.create(
+        {
+          customerNumber: 'BCUST002',
+          name: 'Bulk Cust 2',
+          currencyCode: 'EUR',
+          billingAddressCountry: 'AU',
+        },
+        'actor',
+      );
+
+      const res = await service.bulkUpdate(
+        {
+          ids: [c1.customerId, c2.customerId],
+          priceTier: 'tier_2',
+        },
+        'actor',
+        'admin',
+      );
+
+      expect(res).toEqual({ updatedCount: 2, skippedCount: 0 });
+
+      const updated = await pg.db
+        .select()
+        .from(customers)
+        .where(eq(customers.customerId, c1.customerId));
+      expect(updated[0].priceTier).toBe('tier_2');
+    });
+
+    it('should skip customers when field values are identical', async () => {
+      const c = await service.create(
+        {
+          customerNumber: 'BCUST003',
+          name: 'Bulk Cust 3',
+          currencyCode: 'EUR',
+          billingAddressCountry: 'AU',
+        },
+        'actor',
+      );
+
+      const res1 = await service.bulkUpdate(
+        { ids: [c.customerId], priceTier: 'tier_3' },
+        'actor',
+        'admin',
+      );
+      expect(res1.updatedCount).toBe(1);
+
+      const res2 = await service.bulkUpdate(
+        { ids: [c.customerId], priceTier: 'tier_3' },
+        'actor',
+        'admin',
+      );
+      expect(res2).toEqual({ updatedCount: 0, skippedCount: 1 });
+    });
+
+    it('should throw ForbiddenException if credit fields modified without permission', async () => {
+      const c = await service.create(
+        {
+          customerNumber: 'BCUST004',
+          name: 'Bulk Cust 4',
+          currencyCode: 'EUR',
+          billingAddressCountry: 'AU',
+        },
+        'actor',
+      );
+
+      // Enforce false for credit control
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          CustomersWriteService,
+          { provide: DRIZZLE, useValue: pg.db },
+          {
+            provide: AppConfigService,
+            useValue: {
+              homeCurrency: () => 'EUR',
+              taxProviderMappings: () => ({}),
+            },
+          },
+          {
+            provide: 'CASBIN_ENFORCER',
+            useValue: { enforce: jest.fn().mockResolvedValue(false) },
+          },
+        ],
+      }).compile();
+
+      const restrictedService = module.get<CustomersWriteService>(
+        CustomersWriteService,
+      );
+
+      await expect(
+        restrictedService.bulkUpdate(
+          { ids: [c.customerId], isOnCreditHold: true },
+          'actor',
+          'viewer',
+        ),
+      ).rejects.toThrow();
     });
   });
 });

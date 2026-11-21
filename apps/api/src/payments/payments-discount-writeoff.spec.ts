@@ -1,7 +1,7 @@
+import { PURCHASE_INVOICE_STATE, SALES_INVOICE_STATE } from '@herobm/shared';
 import Decimal from 'decimal.js';
-import { autoTransitionSalesInvoiceBasedOnOutstandingAmount } from '../invoices/sales-invoice-lifecycle-rules';
 import { autoTransitionPurchaseInvoiceBasedOnOutstandingAmount } from '../invoices/purchase-invoice-lifecycle-rules';
-import { SALES_INVOICE_STATE, PURCHASE_INVOICE_STATE } from '@herobm/shared';
+import { autoTransitionSalesInvoiceBasedOnOutstandingAmount } from '../invoices/sales-invoice-lifecycle-rules';
 
 describe('Payment Discounts & Small-Balance Write-Off Tolerances (Unit)', () => {
   describe('Early Payment Discount Math', () => {

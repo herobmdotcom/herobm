@@ -91,6 +91,7 @@ export default function AccountGroupsAdmin() {
                 className={`w-10 h-[22px] rounded-[11px] relative transition-colors duration-200 ${isActive ? 'bg-[var(--success)]' : 'bg-[var(--danger)]'} ${isEditing ? 'opacity-100' : 'opacity-70'}`}
               >
                 <div
+                  // dark-mode-ok: white toggle switch thumb
                   className={`w-4 h-4 rounded-full bg-white absolute top-[3px] transition-all duration-200 ${isActive ? 'left-[21px]' : 'left-[3px]'}`}
                 />
               </div>
@@ -246,11 +247,7 @@ export default function AccountGroupsAdmin() {
         groupType="customer"
         ownerLabel={financialGroup ? `${financialGroup.groupCode} — ${financialGroup.name}` : ''}
         data={financialGroup}
-        onSave={async (d) => {
-          await api.customerGroupsControllerUpdate(d.customerGroupId as string, d);
-          setGroups((prev) => prev.map((g) => (g.customerGroupId === d.customerGroupId ? { ...g, ...d } : g)));
-          mutate('ref-customer-groups');
-        }}
+        onSave={(data) => handleSave(data, false)}
         glAccountOptions={glAccountOptions}
         costCenterOptions={costCenterOptions}
         activityOptions={activityOptions}

@@ -1,5 +1,3 @@
-import postgres from 'postgres';
-
 jest.setTimeout(120000);
 
 beforeAll(async () => {

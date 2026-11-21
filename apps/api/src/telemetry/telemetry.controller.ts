@@ -1,22 +1,21 @@
 import {
-  ApiTags,
-  ApiOperation,
-  ApiOkResponse,
-  ApiCreatedResponse,
-  ApiBody,
-} from '@nestjs/swagger';
-import {
-  Controller,
-  Post,
+  BadRequestException,
   Body,
+  Controller,
   HttpCode,
   Logger,
-  BadRequestException,
+  Post,
   UseGuards,
 } from '@nestjs/common';
+import {
+  ApiBody,
+  ApiCreatedResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { SkipCasbin } from '../auth/casbin.guard';
 import { Public } from '../auth/public.decorator';
-import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 import { RATE_LIMITS } from '../common/config/throttler.config';
 
 // Maximum field lengths (truncated silently to prevent log injection / disk exhaustion)
@@ -25,7 +24,6 @@ const MAX_STACK_LEN = 2000;
 const MAX_URL_LEN = 500;
 const MAX_COMPONENT_LEN = 100;
 
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 import { ClientErrorDto, EmptyBodyDto } from './dto';
 
 /**

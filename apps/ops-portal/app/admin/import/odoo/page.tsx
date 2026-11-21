@@ -218,14 +218,18 @@ export default function OdooImportPage() {
           if (progress.logs && progress.logs.length > 0) {
              setLogs([`--- Initializing Odoo Extract-Load-Transform pipeline ---`, `Submitting secure authorized configuration...`, ...progress.logs]);
           }
+
+          const hasExitedSuccessfully = progress.logs?.some((l: string) =>
+            typeof l === 'string' && (l.includes('DATA IMPORT COMPLETED SUCCESSFULLY') || l.includes('[ RECONCILIATION SUMMARY REPORT SAVED ]'))
+          );
           
-          if (progress.status === 'completed' || progress.status === 'done') {
+          if (progress.status === 'completed' || progress.status === 'done' || hasExitedSuccessfully) {
             setStatus('completed');
             clearInterval(pollTimerRef.current);
             try {
               const stateRes = await api.setupControllerGetResumeStateOdoo();
               const count = stateRes.data.completedTables?.length || 0;
-              setLogs(prev => [...prev, `Extraction finished. Successfully extracted ${count} tables.`]);
+              setLogs(prev => [...prev, `Import pipeline completed successfully. ${count} tables staged and verified.`]);
             } catch(e) { /* ignore */ }
           } else if (progress.status === 'failed') {
             setStatus('failed');

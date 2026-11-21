@@ -56,6 +56,7 @@ export const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
         <span
           aria-hidden="true"
           className={cn(
+            // dark-mode-ok: white toggle switch thumb
             'pointer-events-none inline-block transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out',
             sizeClasses.thumb,
             checked ? sizeClasses.translate : 'translate-x-0'

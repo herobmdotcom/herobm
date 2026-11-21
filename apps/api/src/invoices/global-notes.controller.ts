@@ -1,15 +1,15 @@
+import { SystemResource } from '@herobm/shared';
 import { Controller, Get, Query } from '@nestjs/common';
 import {
-  ApiTags,
+  ApiOkResponse,
   ApiOperation,
   ApiQuery,
-  ApiOkResponse,
+  ApiTags,
 } from '@nestjs/swagger';
-import { GlobalNotesService } from './global-notes.service';
-import { GlobalNotesListResponseDto } from './dto';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
 import { PaginationQuery } from '../common/pagination';
-import { SystemResource } from '@herobm/shared';
+import { GlobalNotesListResponseDto } from './dto';
+import { GlobalNotesService } from './global-notes.service';
 
 @Controller('global-notes')
 @CasbinResource(SystemResource.SALES_CREDIT_NOTES) // Adjust if necessary, as both are needed, but we'll re-use this resource for simplicity

@@ -1,15 +1,15 @@
-import { Injectable, Inject, NotFoundException, Logger } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { customerDeliveryAddresses, customers } from '@herobm/db-schema';
-import {
-  CreateDeliveryAddressDto,
-  UpdateDeliveryAddressDto,
-  DeliveryAddressResponseDto,
-} from './dto';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import {
+  CreateDeliveryAddressDto,
+  DeliveryAddressResponseDto,
+  UpdateDeliveryAddressDto,
+} from './dto';
 
 @Injectable()
 export class DeliveryAddressesService {

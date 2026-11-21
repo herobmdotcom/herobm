@@ -1,48 +1,45 @@
 import {
-  SystemResource,
-  PRODUCT_STATE,
+  activities,
+  appSettings,
+  costCenters,
+  customers,
+  glAccounts,
+  GLReportCategory,
+  glSettings,
+  organizations,
+  pdfTemplateContexts,
+  pdfTemplateHooks,
+  pdfTemplates,
+  products,
+  suppliers,
+  taxCategories,
+  tenantSettings,
+  tradingTerms,
+  uomDictionary,
+  users,
+} from '@herobm/db-schema';
+import {
   CUSTOMER_STATE,
-  SUPPLIER_STATE,
-  ORGANIZATION_STATE,
-  DEFAULT_ORGANIZATION_CONTACT_ROLES,
-  ORGANIZATION_CONTACT_ROLE,
-  DEFAULT_OPPORTUNITY_STAGES,
-  DEFAULT_OPPORTUNITY_TYPES,
-  DEFAULT_PROJECT_STAGES,
   DEFAULT_OPPORTUNITY_CONTACT_ROLES,
   DEFAULT_OPPORTUNITY_ORGANIZATION_ROLES,
+  DEFAULT_OPPORTUNITY_STAGES,
+  DEFAULT_OPPORTUNITY_TYPES,
+  DEFAULT_ORGANIZATION_CONTACT_ROLES,
   DEFAULT_ORGANIZATION_TAGS,
+  DEFAULT_PROJECT_STAGES,
   DEFAULT_REFERRAL_MODES,
+  ORGANIZATION_STATE,
+  PRODUCT_STATE,
+  SUPPLIER_STATE,
+  SystemResource,
 } from '@herobm/shared';
-import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
+import { eq, sql } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as readline from 'readline';
 import type { SeedDB } from '../run';
-import {
-  users,
-  uomDictionary,
-  products,
-  costCenters,
-  activities,
-  tenantSettings,
-  taxCategories,
-  tradingTerms,
-  glSettings,
-  appSettings,
-  glAccounts,
-  pdfTemplates,
-  pdfTemplateHooks,
-  pdfTemplateContexts,
-  locations,
-  zones,
-  bins,
-  customers,
-  suppliers,
-  organizations,
-  GLReportCategory,
-} from '@herobm/db-schema';
-import { eq, sql } from 'drizzle-orm';
 
 const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
 
@@ -87,12 +84,15 @@ export async function runCoreSeeds(db: SeedDB, dryRun = false) {
 
   await seedCasbinPolicies(db, dryRun);
   await seedUsers(db, dryRun);
+  await seedBaseGlSettings(db, dryRun);
   await seedSystemEntities(db, dryRun);
   await seedOrganization(db, dryRun);
-  await seedBaseGlSettings(db, dryRun);
+
   await seedAppSettings(db, dryRun);
   await seedFinancialDimensions(db, dryRun);
   await seedReports(db, dryRun);
+
+  cleanupSetupCurrency();
 
   console.log('\nDone.');
 }
@@ -952,6 +952,20 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
     {
       ptype: 'p',
       v0: 'admin',
+      v1: SystemResource.BULK_WRITE,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.BULK_WRITE,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
       v1: SystemResource.CREDIT_CONTROL,
       v2: 'read',
       v3: 'allow',
@@ -1513,6 +1527,12 @@ async function seedSystemEntities(db: SeedDB, dryRun: boolean) {
     return;
   }
 
+  const [existingGl] = await db
+    .select({ baseCurrency: glSettings.baseCurrency })
+    .from(glSettings)
+    .limit(1);
+  const baseCurrency =
+    existingGl?.baseCurrency || (await resolveInitialCurrency());
   const standardUoms = [
     { uomCode: 'EA', description: 'Each', category: 'goods' },
     { uomCode: 'BOX', description: 'Box', category: 'goods' },
@@ -1588,7 +1608,7 @@ async function seedSystemEntities(db: SeedDB, dryRun: boolean) {
       customerId: walkInCustomerId,
       organizationId: walkInOrganizationId,
       customerNumber: 'WALK-IN',
-      currencyCode: sql<string>`COALESCE((SELECT base_currency FROM herobm_core.gl_settings LIMIT 1), 'AUD')`,
+      currencyCode: sql<string>`COALESCE((SELECT base_currency FROM herobm_core.gl_settings LIMIT 1), ${baseCurrency})`,
       creditLimit: '0',
       stateCode: CUSTOMER_STATE.ACTIVE,
       source: 'app',
@@ -1967,7 +1987,157 @@ function loadCoaSettings(
   ) as TaxCategoriesAndTermsSettings;
 }
 
+export function getInitialCurrency(): string {
+  if (process.env.HOME_CURRENCY) {
+    return process.env.HOME_CURRENCY.trim().toUpperCase();
+  }
+  let cur = __dirname;
+  for (let i = 0; i < 8; i++) {
+    const candidate = path.join(cur, '.setup_currency');
+    if (fs.existsSync(candidate)) {
+      try {
+        const val = fs.readFileSync(candidate, 'utf-8').trim().toUpperCase();
+        if (val) return val;
+      } catch {
+        // Fallback
+      }
+    }
+    const parent = path.dirname(cur);
+    if (parent === cur) break;
+    cur = parent;
+  }
+  throw new Error(
+    'Initial currency is not configured. A home currency must be specified via HOME_CURRENCY environment variable or .setup_currency during installation.',
+  );
+}
+
+export function cleanupSetupCurrency(): void {
+  try {
+    let cur = __dirname;
+    for (let i = 0; i < 8; i++) {
+      const candidate = path.join(cur, '.setup_currency');
+      if (fs.existsSync(candidate)) {
+        fs.unlinkSync(candidate);
+        break;
+      }
+      const parent = path.dirname(cur);
+      if (parent === cur) break;
+      cur = parent;
+    }
+  } catch {
+    // Ignore cleanup error
+  }
+}
+
+function persistSetupCurrencyFile(currency: string): void {
+  try {
+    let cur = __dirname;
+    for (let i = 0; i < 8; i++) {
+      if (
+        fs.existsSync(path.join(cur, 'package.json')) &&
+        fs.existsSync(path.join(cur, 'Makefile'))
+      ) {
+        fs.writeFileSync(
+          path.join(cur, '.setup_currency'),
+          `${currency}\n`,
+          'utf-8',
+        );
+        break;
+      }
+      const parent = path.dirname(cur);
+      if (parent === cur) break;
+      cur = parent;
+    }
+  } catch {
+    // Ignore error writing setup currency file
+  }
+}
+
+export async function promptUserForCurrency(): Promise<string> {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  const ask = (promptText: string): Promise<string> =>
+    new Promise((resolve) => rl.question(promptText, resolve));
+
+  try {
+    let attempts = 0;
+    while (attempts < 3) {
+      attempts++;
+      const answer = await ask(
+        attempts === 1
+          ? '\nInitial home currency is not configured. Please enter home currency (ISO Code, e.g. AUD, USD, EUR, GBP): '
+          : 'Please enter a valid 3-letter currency code (e.g. AUD, USD, EUR, GBP): ',
+      );
+      const code = (answer || '').trim().toUpperCase();
+      if (/^[A-Z]{3}$/.test(code)) {
+        persistSetupCurrencyFile(code);
+        console.log(`  Configured initial currency: ${code}`);
+        return code;
+      }
+      console.log(
+        `\x1b[31mError: "${answer}" is not a valid 3-letter currency code.\x1b[0m`,
+      );
+    }
+    throw new Error('Failed to obtain a valid currency code after 3 attempts.');
+  } finally {
+    rl.close();
+  }
+}
+
+export async function resolveInitialCurrency(
+  prompter?: () => Promise<string>,
+): Promise<string> {
+  if (process.env.HOME_CURRENCY) {
+    return process.env.HOME_CURRENCY.trim().toUpperCase();
+  }
+
+  // 1. Check .setup_currency on disk
+  let cur = __dirname;
+  for (let i = 0; i < 8; i++) {
+    const candidate = path.join(cur, '.setup_currency');
+    if (fs.existsSync(candidate)) {
+      try {
+        const val = fs.readFileSync(candidate, 'utf-8').trim().toUpperCase();
+        if (val && val.length === 3) return val;
+      } catch {
+        // Fallback
+      }
+    }
+    const parent = path.dirname(cur);
+    if (parent === cur) break;
+    cur = parent;
+  }
+
+  // 2. Ask user interactively if prompter provided or in an interactive terminal
+  if (prompter) {
+    return await prompter();
+  }
+
+  const isInteractive =
+    Boolean(process.stdin.isTTY) &&
+    process.env.NODE_ENV !== 'test' &&
+    !process.env.JEST_WORKER_ID &&
+    !process.env.CI;
+
+  if (isInteractive) {
+    return await promptUserForCurrency();
+  }
+
+  throw new Error(
+    'Initial currency is not configured. A home currency must be specified via .setup_currency during installation or interactive prompt.',
+  );
+}
+
 async function seedBaseGlSettings(db: SeedDB, dryRun: boolean) {
+  const [existingGl] = await db
+    .select({ baseCurrency: glSettings.baseCurrency })
+    .from(glSettings)
+    .limit(1);
+  const baseCurrency =
+    existingGl?.baseCurrency || (await resolveInitialCurrency());
   if (dryRun) {
     console.log('  [DRY RUN] Would seed base gl_settings');
     return;
@@ -1984,14 +2154,16 @@ async function seedBaseGlSettings(db: SeedDB, dryRun: boolean) {
     .values({
       settingsId: '4e185bce-d31a-4caa-8462-73c261864eff', // Use same constant ID
       fiscalYearStartMonth: 7, // default
-      baseCurrency: 'AUD', // fallback
+      baseCurrency,
       bankMatchDateToleranceDays: 3,
       revenueRoutingPrecedence: 'product_first',
       expenseRoutingPrecedence: 'product_first',
     })
     .onConflictDoNothing();
 
-  console.log('  Seeded base gl_settings (without accounts)');
+  console.log(
+    `  Seeded base gl_settings (without accounts, baseCurrency: ${baseCurrency})`,
+  );
 }
 
 export async function seedCoaAccounts(

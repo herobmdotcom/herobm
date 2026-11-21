@@ -1,16 +1,16 @@
-import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
-import { eq, and } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { products as coreProducts, productComponents } from '@herobm/db-schema';
-import { EntityType, EventType } from '../common/event-types';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { and, eq } from 'drizzle-orm';
 import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { AddProductComponentDto, UpdateProductComponentDto } from './dto';
 
 @Injectable()

@@ -8,13 +8,7 @@ import { getErrorMessage, COUNTRIES } from '@herobm/shared';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 
-const parseInitialPhone = (val: string) => {
-  if (!val) return '';
-  if (val.startsWith('+')) return val;
-  const digits = val.replace(/\D/g, '');
-  if (digits.length > 0) return '+' + digits;
-  return '';
-};
+import { parseInitialPhone, toSupportedCountry } from '@/lib/phone';
 
 interface DeliveryAddressSlideOverProps {
   isOpen: boolean;
@@ -239,7 +233,7 @@ const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> = ({
             </label>
             <PhoneInput
               international
-              defaultCountry={defaultCountry as import('react-phone-number-input').Country}
+              defaultCountry={toSupportedCountry(defaultCountry)}
               className="input w-full flex items-center px-2 border border-[var(--border)] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--accent)]"
               value={parseInitialPhone(dto.recipientPhone)}
               onChange={(value) => handleChange('recipientPhone', value || '')}
@@ -337,7 +331,7 @@ const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> = ({
           <input
             type="checkbox"
             id="isPrimaryDeliveryAddress"
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-[var(--border)] rounded cursor-pointer"
             checked={dto.isPrimary}
             onChange={(e) => handleChange('isPrimary', e.target.checked)}
           />

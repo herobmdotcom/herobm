@@ -3,8 +3,8 @@
  * and drizzle module can read POSTGRES_*, ADMIN_PASSWORD etc.
  */
 export {};
-import * as path from 'path';
 import * as fs from 'fs';
+import * as path from 'path';
 
 const rootDir = path.resolve(__dirname, '..', '..', '..');
 
@@ -50,3 +50,12 @@ if (!process.env.ADMIN_PASSWORD) {
 
 // Ensure NODE_ENV is test so throttlers use higher limits during tests
 process.env.NODE_ENV = 'test';
+
+// Guard localhost and ephemeral ports against ambient proxy interception
+const loopbackBypass = 'localhost,127.0.0.1,::1';
+process.env.NO_PROXY = process.env.NO_PROXY
+  ? `${process.env.NO_PROXY},${loopbackBypass}`
+  : loopbackBypass;
+process.env.no_proxy = process.env.no_proxy
+  ? `${process.env.no_proxy},${loopbackBypass}`
+  : loopbackBypass;

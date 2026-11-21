@@ -1,27 +1,27 @@
-import { Decimal } from 'decimal.js';
-import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   bankStatementLines,
-  glJournalLines,
-  glJournalEntries,
   glAccounts,
+  glJournalEntries,
+  glJournalLines,
   glMatchGroups,
   reconciliationRules,
 } from '@herobm/db-schema';
-import { eq, and, desc, inArray, SQL } from 'drizzle-orm';
-import { v4 as uuidv4 } from 'uuid';
-import { CreateBankStatementLineDto } from './dto/bank-statement.dto';
-import { GlService } from './gl.service';
 import { JOURNAL_ENTRY_SOURCE_TYPE } from '@herobm/shared';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { Decimal } from 'decimal.js';
+import { and, desc, eq, inArray, SQL } from 'drizzle-orm';
+import { v4 as uuidv4 } from 'uuid';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { CreateBankStatementLineDto } from './dto/bank-statement.dto';
+import { GlService } from './gl.service';
 
 @Injectable()
 export class BankStatementService {

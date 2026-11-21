@@ -1,19 +1,19 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { OrganizationsService } from './organizations.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
-  organizations,
-  organizationContactLinks,
-  organizationOrganizationLinks,
-  organizationNotes,
   contacts,
+  organizationContactLinks,
+  organizationNotes,
+  organizationOrganizationLinks,
+  organizations,
   users,
 } from '@herobm/db-schema';
-import { ORGANIZATION_STATE, CONTACT_STATE } from '@herobm/shared';
+import { CONTACT_STATE, ORGANIZATION_STATE } from '@herobm/shared';
 import { NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { OrganizationsService } from './organizations.service';
 
 describe('OrganizationsService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

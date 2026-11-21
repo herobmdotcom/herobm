@@ -1,11 +1,11 @@
 import { SystemResource } from '@herobm/shared';
-import { ApiTags, ApiOperation, ApiOkResponse, ApiBody } from '@nestjs/swagger';
-import { Controller, Patch, Body, Get } from '@nestjs/common';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
+import { Body, Controller, Get, Patch } from '@nestjs/common';
+import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
+import { EncryptionService } from '../common/encryption.service';
 import { AppConfigService } from './app-config.service';
 import { AppConfigResponseDto, UpdateAppConfigDto } from './dto';
-import { EncryptionService } from '../common/encryption.service';
 
 type AppConfigResponse = Partial<AppConfigResponseDto> & {
   smtpPassEncrypted?: string | null;

@@ -1,60 +1,34 @@
 // security-ignore: sql-raw
 import {
+  appSettings,
+  glAccounts,
+  glSettings,
+  locations,
+  pipelineJobs,
+} from '@herobm/db-schema';
+import { getErrorMessage } from '@herobm/shared';
+import {
+  BadRequestException,
   Inject,
   Injectable,
   Logger,
-  BadRequestException,
 } from '@nestjs/common';
-import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  getCountryCode,
-  getErrorMessage,
-  parseLocalDate,
-  toInputDateFormat,
-} from '@herobm/shared';
-import { sql } from 'drizzle-orm';
-import {
-  appSettings,
-  glSettings,
-  locations,
-  glAccounts,
-  pipelineJobs,
-  tradingTerms,
-  systemEvents,
-} from '@herobm/db-schema';
-import {
-  ExecuteSetupDto,
-  TestAbmConnectionDto,
-  TestOdooConnectionDto,
-  ExecuteEltDto,
-  ExportCsvQueryDto,
-  ActiveJob,
-  MetadataSchema,
-} from './setup.dto';
+import { and, eq, getTableColumns, isNotNull, lt, sql } from 'drizzle-orm';
 import type { Response } from 'express';
-import { AppConfigService } from '../settings/app-config.service';
-import * as fs from 'fs';
-import * as path from 'path';
-import {
-  eq,
-  getTableColumns,
-  getTableName,
-  isNotNull,
-  and,
-  lt,
-} from 'drizzle-orm';
-import { Readable } from 'stream';
-import { parsePhoneNumberFromString } from 'libphonenumber-js';
-import * as bcrypt from 'bcrypt';
-import { parse } from 'csv-parse';
-import { EntityType, EventType } from '../common/event-types';
 import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
+import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
+import { AppConfigService } from '../settings/app-config.service';
+import { executeCsvEngine, exportCsvEngine } from './setup-csv-engine';
+import { getAllCsvProjections } from './setup-csv-projections';
 import { buildCsvRegistry, CsvRegistryEntry } from './setup-csv-registry';
 import {
-  getAllCsvProjections,
-  getCsvProjection,
-  hasCsvProjection,
-} from './setup-csv-projections';
+  ExecuteEltDto,
+  ExportCsvQueryDto,
+  MetadataSchema,
+  TestAbmConnectionDto,
+  TestOdooConnectionDto,
+} from './setup.dto';
 
 @Injectable()
 export class SetupService {
@@ -430,51 +404,6 @@ export class SetupService {
     );
   }
 
-  private formatCsvCell(val: unknown): string {
-    if (val === null || val === undefined) {
-      return '';
-    }
-    if (typeof val === 'boolean') {
-      return val ? 'true' : 'false';
-    }
-    if (val instanceof Date) {
-      return val.toISOString();
-    }
-    if (typeof val === 'number' || typeof val === 'bigint') {
-      return val.toString();
-    }
-    if (typeof val === 'string') {
-      if (
-        val.includes(',') ||
-        val.includes('"') ||
-        val.includes('\n') ||
-        val.includes('\r')
-      ) {
-        return `"${val.replace(/"/g, '""')}"`;
-      }
-      return val;
-    }
-    if (typeof val === 'object') {
-      const str = JSON.stringify(val);
-      return `"${str.replace(/"/g, '""')}"`;
-    }
-    const str =
-      typeof val === 'string'
-        ? val
-        : typeof val === 'number' || typeof val === 'bigint'
-          ? val.toString()
-          : JSON.stringify(val);
-    if (
-      str.includes(',') ||
-      str.includes('"') ||
-      str.includes('\n') ||
-      str.includes('\r')
-    ) {
-      return `"${str.replace(/"/g, '""')}"`;
-    }
-    return str;
-  }
-
   // @herobm-skip-audit
   async exportCsv(
     tableName: string,
@@ -482,125 +411,14 @@ export class SetupService {
     res?: Response,
     username: string = 'system',
   ): Promise<string | void> {
-    const projection = getCsvProjection(tableName);
-    if (projection) {
-      const { headers, rows } = await projection.execute(this.db, options);
-      const lines: string[] = [headers.join(',')];
-      for (const row of rows) {
-        const line = headers.map((h) => this.formatCsvCell(row[h])).join(',');
-        lines.push(line);
-      }
-      const csvContent = lines.join('\n') + '\n';
-
-      if (res) {
-        const dateStr = new Date().toISOString().slice(0, 10);
-        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-        res.setHeader(
-          'Content-Disposition',
-          `attachment; filename="${tableName}_export_${dateStr}.csv"`,
-        );
-        res.write(csvContent);
-        res.end();
-      }
-
-      await this.db.insert(systemEvents).values({
-        entityType: 'system',
-        entityId: '00000000-0000-0000-0000-000000000000',
-        eventType: 'csv_export_generated',
-        entityDisplayName: `CSV Export: ${projection.name}`,
-        payload: {
-          table: tableName,
-          rowCount: rows.length,
-          includeArchived: !!options.includeArchived,
-        },
-        actor: username || 'system',
-      });
-
-      if (!res) {
-        return csvContent;
-      }
-      return;
-    }
-
-    const registryEntry = this.csvRegistry.find((r) => r.id === tableName);
-    if (!registryEntry) throw new BadRequestException('Unsupported table');
-
-    const excludedColumns = [
-      'created_by',
-      'created_on',
-      'modified_on',
-      'updated_on',
-    ];
-
-    const tableCols = getTableColumns(registryEntry.table);
-    const propToColMap: { prop: string; colName: string }[] = Object.keys(
-      tableCols,
-    )
-      .filter(
-        (k) =>
-          !excludedColumns.includes(
-            (tableCols as Record<string, { name: string }>)[k].name,
-          ),
-      )
-      .map((k) => ({
-        prop: k,
-        colName: (tableCols as Record<string, { name: string }>)[k].name,
-      }));
-
-    const headers = propToColMap.map((m) => m.colName).join(',');
-
-    let query = this.db.select().from(registryEntry.table).$dynamic();
-    const stateCol = (tableCols as unknown as Record<string, unknown>)[
-      'stateCode'
-    ];
-    if (!options.includeArchived && stateCol) {
-      query = query.where(sql`${stateCol} != 'archived'`);
-    }
-
-    if (options.limit && options.limit > 0) {
-      query = query.limit(options.limit);
-    }
-
-    const rows = (await query) as Record<string, unknown>[];
-
-    const lines: string[] = [headers];
-    for (const row of rows) {
-      const line = propToColMap
-        .map((m) => this.formatCsvCell(row[m.prop]))
-        .join(',');
-      lines.push(line);
-    }
-    const csvContent = lines.join('\n') + '\n';
-
-    if (res) {
-      const dateStr = new Date().toISOString().slice(0, 10);
-      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename="${tableName}_export_${dateStr}.csv"`,
-      );
-      res.write(csvContent);
-      res.end();
-    }
-
-    // Direct audit recording for CSV export downloads
-    const schemaTableName = getTableName(registryEntry.table) || tableName;
-    await this.db.insert(systemEvents).values({
-      entityType: 'system',
-      entityId: '00000000-0000-0000-0000-000000000000',
-      eventType: 'csv_export_generated',
-      entityDisplayName: `CSV Export: ${registryEntry.name}`,
-      payload: {
-        table: schemaTableName,
-        rowCount: rows.length,
-        includeArchived: !!options.includeArchived,
-      },
-      actor: username || 'system',
+    return exportCsvEngine({
+      db: this.db,
+      csvRegistry: this.csvRegistry,
+      tableName,
+      options,
+      res,
+      username,
     });
-
-    if (!res) {
-      return csvContent;
-    }
   }
 
   // @herobm-skip-audit
@@ -609,305 +427,17 @@ export class SetupService {
     strategy: string,
     file: Express.Multer.File,
   ) {
-    if (hasCsvProjection(tableName)) {
-      throw new BadRequestException(
-        'Extended views are export-only and cannot be imported directly',
-      );
-    }
-    const registryEntry = this.csvRegistry.find((r) => r.id === tableName);
-    if (!registryEntry) throw new BadRequestException('Unsupported table');
-
-    await this.failStaleJobs();
-    const [runningJob] = await this.db
-      .select()
-      .from(pipelineJobs)
-      .where(eq(pipelineJobs.status, 'running'))
-      .limit(1);
-    if (runningJob) throw new BadRequestException('A job is already running');
-
-    const jobId = Math.random().toString(36).substring(7);
-    await this.db.insert(pipelineJobs).values({
-      jobId,
-      type: 'csv',
-      status: 'running',
-      progressJson: [
-        { step: 1, name: `Importing CSV to ${tableName}`, status: 'running' },
-      ],
-      logsJson: [`--- Initializing CSV Import for ${tableName} ---`],
+    return executeCsvEngine({
+      db: this.db,
+      csvRegistry: this.csvRegistry,
+      tableName,
+      strategy,
+      file,
+      failStaleJobs: () => this.failStaleJobs(),
+      log: this.log.bind(this),
+      updateJobProgress: this.updateJobProgress.bind(this),
+      logger: this.logger,
     });
-
-    this.runCsvCore(registryEntry, strategy, file, jobId).catch(async (err) => {
-      this.logger.error(`CSV job ${jobId} failed`, err);
-      await this.log(
-        jobId,
-        `FATAL: CSV Import failed: ${err.message}`,
-        'error',
-      );
-      await this.db
-        .update(pipelineJobs)
-        .set({ status: 'failed', updatedAt: new Date() })
-        .where(eq(pipelineJobs.jobId, jobId));
-      await this.updateJobProgress(jobId, 0, 'failed');
-    });
-
-    return { jobId };
-  }
-
-  private async runCsvCore(
-    entry: CsvRegistryEntry,
-    strategy: string,
-    file: Express.Multer.File,
-    jobId: string,
-  ) {
-    const mapCurrencyCode = (val: string | null): string | null => {
-      if (!val) return null;
-      const up = val.toUpperCase().trim();
-      if (up === 'AU') return 'AUD'; // HOME_CURRENCY
-      if (up === 'US') return 'USD'; // HOME_CURRENCY
-      if (up === 'GB') return 'GBP'; // HOME_CURRENCY
-      if (up === 'EU') return 'EUR'; // HOME_CURRENCY
-      if (up === 'NZ') return 'NZD'; // HOME_CURRENCY
-      return val;
-    };
-
-    const parsePhone = (val: string | null): string | null => {
-      if (!val) return null;
-      try {
-        const phoneNumber = parsePhoneNumberFromString(val);
-        if (phoneNumber) {
-          return phoneNumber.format('E.164');
-        }
-        return val;
-      } catch (err) {
-        return val;
-      }
-    };
-
-    const tableCols = getTableColumns(entry.table);
-    const colMappings = Object.keys(tableCols).map((propKey) => ({
-      propKey,
-      colName: (tableCols as Record<string, { name: string }>)[propKey].name,
-    }));
-
-    const tradingTermsMap = new Map<string, string>();
-    if (
-      colMappings.some(
-        (m) =>
-          m.colName === 'terms_description' || m.propKey === 'termsDescription',
-      )
-    ) {
-      const allTerms = await this.db.select().from(tradingTerms);
-      for (const term of allTerms) {
-        tradingTermsMap.set(
-          term.code.toLowerCase(),
-          `${term.code} - ${term.description}`,
-        );
-      }
-    }
-
-    this.log(jobId, `Starting CSV parsing for strategy: ${strategy}...`);
-
-    const records: Record<string, unknown>[] = [];
-    const parser = Readable.from(file.buffer).pipe(
-      parse({
-        columns: (header: string[]) => header.map((h) => h.replace(/\*$/, '')),
-        skip_empty_lines: true,
-        trim: true,
-      }),
-    );
-
-    let parsedCount = 0;
-    for await (const record of parser) {
-      // Map back to db columns, stripping unknown columns and casting empty strings to null for text fields
-      const dbRecord: Record<string, unknown> = {};
-      for (const { propKey, colName } of colMappings) {
-        const colDef = (
-          tableCols as Record<
-            string,
-            {
-              primary?: boolean;
-              hasDefault?: boolean;
-              dataType?: string;
-              columnType?: string;
-            }
-          >
-        )[propKey];
-        const val =
-          record[colName] !== undefined ? record[colName] : record[propKey];
-        if (val !== undefined) {
-          const isEmpty = val === '' || val === null;
-          if (isEmpty && (colDef?.primary || colDef?.hasDefault)) {
-            // Omit so database default (e.g. defaultRandom()) applies
-            continue;
-          }
-          dbRecord[propKey] = isEmpty ? null : val;
-          if (
-            (propKey === 'address1Country' || colName === 'address1_country') &&
-            dbRecord[propKey]
-          ) {
-            dbRecord[propKey] =
-              getCountryCode(dbRecord[propKey] as string) || dbRecord[propKey];
-          }
-          if (
-            (propKey === 'termsDescription' ||
-              colName === 'terms_description') &&
-            dbRecord[propKey]
-          ) {
-            const raw = (dbRecord[propKey] as string).trim();
-            dbRecord[propKey] = tradingTermsMap.get(raw.toLowerCase()) || raw;
-          }
-          if (propKey === 'currencyCode' || colName === 'currency_code') {
-            dbRecord[propKey] = mapCurrencyCode(
-              dbRecord[propKey] as string | null,
-            );
-          }
-          if (
-            (propKey === 'phone' ||
-              colName === 'phone' ||
-              propKey === 'mobile' ||
-              colName === 'mobile') &&
-            dbRecord[propKey]
-          ) {
-            dbRecord[propKey] = parsePhone(dbRecord[propKey] as string | null);
-          }
-          const colMeta = colDef as unknown as {
-            dataType?: string;
-            columnType?: string;
-          };
-          const isDateColumn =
-            colMeta?.dataType === 'date' ||
-            colMeta?.columnType === 'PgTimestamp' ||
-            colMeta?.columnType === 'PgDate' ||
-            colName.endsWith('_date') ||
-            colName.endsWith('_on') ||
-            colName.endsWith('_at') ||
-            colName === 'date' ||
-            propKey.endsWith('Date') ||
-            propKey.endsWith('On') ||
-            propKey.endsWith('At');
-
-          if (isDateColumn && typeof dbRecord[propKey] === 'string') {
-            const parsed = parseLocalDate(dbRecord[propKey]);
-            if (parsed) {
-              if (
-                colMeta?.columnType === 'PgDate' &&
-                colMeta?.dataType === 'string'
-              ) {
-                dbRecord[propKey] = toInputDateFormat(parsed);
-              } else {
-                dbRecord[propKey] = parsed;
-              }
-            }
-          }
-        }
-      }
-      records.push(dbRecord);
-      parsedCount++;
-      if (parsedCount % 1000 === 0) {
-        this.log(jobId, `Parsed ${parsedCount} rows...`);
-      }
-    }
-
-    this.log(
-      jobId,
-      `Completed parsing. Total rows: ${records.length}. Starting DB insertion...`,
-    );
-
-    // Batch insert
-    const BATCH_SIZE = 500;
-    let insertedCount = 0;
-
-    for (let i = 0; i < records.length; i += BATCH_SIZE) {
-      const batch = records.slice(i, i + BATCH_SIZE);
-
-      const uniqueKeyProp =
-        Object.keys(tableCols).find(
-          (k) =>
-            (tableCols as Record<string, { name: string }>)[k].name ===
-              entry.uniqueKey || k === entry.uniqueKey,
-        ) || entry.uniqueKey;
-
-      const conflictTarget =
-        (entry.table as unknown as Record<string, unknown>)[uniqueKeyProp] ||
-        (tableCols as Record<string, unknown>)[uniqueKeyProp];
-
-      if ((strategy === 'upsert' || strategy === 'ignore') && !conflictTarget) {
-        throw new BadRequestException(
-          `Cannot execute ${strategy} import: no conflict target found for ${entry.id}`,
-        );
-      }
-
-      if (strategy === 'upsert') {
-        // Build set object for DO UPDATE
-        const updateSet: Record<string, unknown> = {};
-        for (const { propKey, colName } of colMappings) {
-          const colDef = (
-            tableCols as Record<
-              string,
-              { primary?: boolean; hasDefault?: boolean }
-            >
-          )[propKey];
-          if (
-            colName !== entry.uniqueKey &&
-            propKey !== entry.uniqueKey &&
-            !colDef?.primary &&
-            colName !== 'created_by' &&
-            colName !== 'created_on'
-          ) {
-            updateSet[propKey] = sql`EXCLUDED.${sql.identifier(colName)}`;
-          }
-        }
-
-        await this.db
-          .insert(entry.table)
-          .values(batch)
-          .onConflictDoUpdate({
-            target: conflictTarget as never,
-            set: updateSet,
-          });
-      } else if (strategy === 'ignore') {
-        await this.db
-          .insert(entry.table)
-          .values(batch)
-          .onConflictDoNothing({
-            target: conflictTarget as never,
-          });
-      } else {
-        await this.db.insert(entry.table).values(batch);
-      }
-
-      insertedCount += batch.length;
-      this.log(
-        jobId,
-        `Inserted/Upserted ${insertedCount} / ${records.length} rows...`,
-      );
-    }
-
-    this.log(jobId, 'DATA IMPORT COMPLETED SUCCESSFULLY');
-
-    // Emit a single event for the entire CSV import
-    const tableName = getTableName(entry.table) || 'unknown_table';
-    // @sync-ignore
-    await emitEvent(this.db as unknown as Parameters<typeof emitEvent>[0], {
-      entityType: EntityType.SYSTEM,
-      entityId: '00000000-0000-0000-0000-000000000000',
-      eventType: 'csv_import_completed',
-      entityDisplayName: `CSV Import: ${tableName}`,
-      payload: {
-        table: tableName,
-        rowsImported: insertedCount,
-        strategy,
-      },
-      actor: 'system',
-    });
-
-    if (jobId) {
-      await this.db
-        .update(pipelineJobs)
-        .set({ status: 'done', updatedAt: new Date() })
-        .where(eq(pipelineJobs.jobId, jobId));
-      await this.updateJobProgress(jobId, 0, 'done');
-    }
   }
 
   private async log(
@@ -941,7 +471,41 @@ export class SetupService {
       .from(pipelineJobs)
       .where(eq(pipelineJobs.status, 'running'))
       .limit(1);
-    if (runningJob) return { jobId: runningJob.jobId };
+    if (runningJob) {
+      const hasLocalResolver = Boolean(this.jobResolvers[runningJob.jobId]);
+      let isRunnerActive = false;
+      try {
+        const runnerUrl =
+          process.env.PIPELINE_RUNNER_URL || 'http://herobm-pipeline:8001';
+        const secret = process.env.PIPELINE_SECRET || '';
+        const res = await fetch(`${runnerUrl}/jobs`, {
+          headers: secret ? { 'X-Pipeline-Secret': secret } : {},
+          signal: AbortSignal.timeout(2000),
+        });
+        if (res.ok) {
+          const data = (await res.json()) as { jobs?: string[] };
+          isRunnerActive = (data.jobs || []).includes(runningJob.jobId);
+        }
+      } catch {
+        // Runner unreachable
+      }
+
+      if (hasLocalResolver || isRunnerActive) {
+        return { jobId: runningJob.jobId };
+      }
+
+      // Previous running job is dead/stale with no active process or resolver. Mark as failed and proceed with fresh execution.
+      await this.db
+        .update(pipelineJobs)
+        .set({ status: 'failed', updatedAt: new Date() })
+        .where(eq(pipelineJobs.jobId, runningJob.jobId));
+      await this.updateJobProgress(runningJob.jobId, 0, 'failed');
+      await this.log(
+        runningJob.jobId,
+        '[ERROR] Interrupted or dead job replaced by fresh import request.',
+        'error',
+      );
+    }
 
     const jobId = Math.random().toString(36).substring(7);
     await this.db.insert(pipelineJobs).values({
@@ -1095,39 +659,54 @@ export class SetupService {
       );
 
       if (dto.defaultLocationCode) {
-        const [loc] = await this.db
-          .select()
-          .from(locations)
-          .where(eq(locations.code, dto.defaultLocationCode))
-          .limit(1);
-        if (loc) {
-          const [existingApp] = await this.db
+        try {
+          const [loc] = await this.db
             .select()
-            .from(appSettings)
+            .from(locations)
+            .where(eq(locations.code, dto.defaultLocationCode))
             .limit(1);
-          if (existingApp) {
-            const [updatedApp] = await this.db
-              .update(appSettings)
-              .set({ defaultFulfillmentLocationId: loc.locationId })
-              .where(eq(appSettings.settingsId, existingApp.settingsId))
-              .returning();
-
-            await emitEvent(this.db, {
-              entityType: EntityType.APP_SETTINGS,
-              entityId: existingApp.settingsId,
-              eventType: EventType.UPDATED,
-              entityDisplayName: 'App Settings',
-              payload: {
-                defaultFulfillmentLocationId: loc.locationId,
-                defaultFulfillmentLocationName: loc.name,
-              },
-            });
+          if (loc) {
+            const [existingApp] = await this.db
+              .select()
+              .from(appSettings)
+              .limit(1);
+            if (existingApp) {
+              const [_updatedApp] = await this.db
+                .update(appSettings)
+                .set({ defaultFulfillmentLocationId: loc.locationId })
+                .where(eq(appSettings.settingsId, existingApp.settingsId))
+                .returning();
+              await emitEvent(this.db, {
+                entityType: EntityType.APP_SETTINGS,
+                entityId: existingApp.settingsId,
+                eventType: EventType.UPDATED,
+                entityDisplayName: 'App Settings',
+                payload: {
+                  defaultFulfillmentLocationId: loc.locationId,
+                  defaultFulfillmentLocationName: loc.name,
+                },
+              });
+            }
           }
+        } catch (locErr: unknown) {
+          await this.log(
+            jobId,
+            `Warning: Failed to set default fulfillment location: ${getErrorMessage(locErr)}`,
+            'error',
+          );
         }
       }
 
       if (dto.glImportMode !== 'none') {
-        await this.inferAndSaveGlMetadataSchema(jobId);
+        try {
+          await this.inferAndSaveGlMetadataSchema(jobId);
+        } catch (glErr: unknown) {
+          await this.log(
+            jobId,
+            `Warning: Failed to infer GL metadata: ${getErrorMessage(glErr)}`,
+            'error',
+          );
+        }
       }
 
       // Reload app config cache so API picks up the new settings
@@ -1229,6 +808,7 @@ export class SetupService {
     return { success: true };
   }
 
+  // @herobm-skip-audit
   async getJobProgress(jobId: string) {
     await this.failStaleJobs();
     const [job] = await this.db
@@ -1237,6 +817,30 @@ export class SetupService {
       .where(eq(pipelineJobs.jobId, jobId))
       .limit(1);
     if (!job) throw new BadRequestException('Job not found');
+
+    if (job.status === 'running' && Array.isArray(job.logsJson)) {
+      const logs = job.logsJson as string[];
+      const hasFinishedSuccessfully = logs.some(
+        (l) =>
+          typeof l === 'string' &&
+          (l.includes('DATA IMPORT COMPLETED SUCCESSFULLY') ||
+            (logs.some(
+              (x) =>
+                typeof x === 'string' &&
+                x.includes('Running Transformations & Report...'),
+            ) &&
+              l.includes('[ RECONCILIATION SUMMARY REPORT SAVED ]'))),
+      );
+      if (hasFinishedSuccessfully) {
+        await this.db
+          .update(pipelineJobs)
+          .set({ status: 'done', updatedAt: new Date() })
+          .where(eq(pipelineJobs.jobId, jobId));
+        await this.updateJobProgress(jobId, 0, 'done');
+        job.status = 'done';
+      }
+    }
+
     return {
       status: job.status,
       type: job.type,
@@ -1369,8 +973,10 @@ export class SetupService {
     });
   }
 
+  // @herobm-skip-audit
   public async handleWebhook(payload: {
     jobId: string;
+    stage?: string;
     logLine?: string;
     status: string;
   }) {
@@ -1379,9 +985,22 @@ export class SetupService {
     }
 
     if (payload.status === 'done') {
-      if (this.jobResolvers[payload.jobId]) {
-        this.jobResolvers[payload.jobId].resolve();
+      const resolver = this.jobResolvers[payload.jobId];
+      if (resolver) {
+        resolver.resolve();
         delete this.jobResolvers[payload.jobId];
+      } else if (
+        payload.stage === 'transform' ||
+        payload.stage === 'elt-no-extract'
+      ) {
+        await this.log(payload.jobId, 'DATA IMPORT COMPLETED SUCCESSFULLY');
+        if (payload.jobId) {
+          await this.db
+            .update(pipelineJobs)
+            .set({ status: 'done', updatedAt: new Date() })
+            .where(eq(pipelineJobs.jobId, payload.jobId));
+          await this.updateJobProgress(payload.jobId, 0, 'done');
+        }
       }
     } else if (payload.status === 'failed') {
       if (this.jobResolvers[payload.jobId]) {
@@ -1389,6 +1008,12 @@ export class SetupService {
           new Error(payload.logLine || 'Pipeline failed'),
         );
         delete this.jobResolvers[payload.jobId];
+      } else if (payload.jobId) {
+        await this.db
+          .update(pipelineJobs)
+          .set({ status: 'failed', updatedAt: new Date() })
+          .where(eq(pipelineJobs.jobId, payload.jobId));
+        await this.updateJobProgress(payload.jobId, 0, 'failed');
       }
     }
   }

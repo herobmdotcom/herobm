@@ -1,16 +1,17 @@
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
+  binContents,
+  bins,
+  products as coreProducts,
   purchaseOrderReturns,
   purchaseOrderReturnShipments,
-  bins,
-  binContents,
   zones,
-  products as coreProducts,
 } from '@herobm/db-schema';
-import { sql, eq, and, inArray } from 'drizzle-orm';
+import { resolveProductUnitCost } from '@herobm/shared';
 import { BadRequestException } from '@nestjs/common';
-import { getValuationStrategy } from '../inventory/valuation';
+import { and, eq, inArray, sql } from 'drizzle-orm';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
 import type { InventoryMovementService } from '../inventory/inventory-movement.service';
+import { getValuationStrategy } from '../inventory/valuation';
 
 export async function generateReturnNumber(db: DrizzleDB): Promise<string> {
   const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -105,11 +106,7 @@ export async function recalculateShipReturnWac(
     if (!product) continue;
 
     const qty = Math.abs(line.quantity);
-    const unitCost =
-      line.unitCost ||
-      product.weightedAverageCost ||
-      product.standardCost ||
-      '0';
+    const unitCost = line.unitCost || resolveProductUnitCost(product);
 
     const productData = {
       ...product,
@@ -159,7 +156,7 @@ export async function recalculateUnshipReturnWac(
   const valuationStrategy = getValuationStrategy(valuationMethodCode);
   const unitCost = pricePerUnit
     ? String(pricePerUnit)
-    : product.weightedAverageCost || product.standardCost || '0';
+    : resolveProductUnitCost(product);
   const productData = {
     ...product,
     standardCost: product.standardCost || '0',

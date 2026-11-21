@@ -1,32 +1,32 @@
 import {
-  Injectable,
-  Inject,
-  BadRequestException,
-  NotFoundException,
-  Logger,
-} from '@nestjs/common';
-import { DRIZZLE } from '../../drizzle/drizzle.module';
-import type { DrizzleDB } from '../../drizzle/drizzle.module';
-import {
-  transferOrders,
-  transferOrderLines,
   backorders,
-  salesOrderLineItems,
   locations,
+  salesOrderLineItems,
+  transferOrderLines,
+  transferOrders,
 } from '@herobm/db-schema';
-import { eq, and, inArray, sql } from 'drizzle-orm';
+import { BACKORDER_STATE, TRANSFER_ORDER_STATE } from '@herobm/shared';
 import {
-  CreateTransferOrderDto,
-  UpdateTransferOrderDto,
-  CreateTransferOrderLineDto,
-  UpdateTransferOrderLineDto,
-} from './dto';
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { and, eq, inArray, sql } from 'drizzle-orm';
+import { v4 as uuidv4 } from 'uuid';
 import { emitEvent } from '../../common/emit-event';
 import { EntityType, EventType } from '../../common/event-types';
-import { BACKORDER_STATE, TRANSFER_ORDER_STATE } from '@herobm/shared';
-import { v4 as uuidv4 } from 'uuid';
-import { TransfersCoreService } from './transfers-core.service';
+import type { DrizzleDB } from '../../drizzle/drizzle.module';
+import { DRIZZLE } from '../../drizzle/drizzle.module';
 import { BackordersService } from '../backorders.service';
+import {
+  CreateTransferOrderDto,
+  CreateTransferOrderLineDto,
+  UpdateTransferOrderDto,
+  UpdateTransferOrderLineDto,
+} from './dto';
+import { TransfersCoreService } from './transfers-core.service';
 
 @Injectable()
 export class TransfersWriteService {

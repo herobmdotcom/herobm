@@ -1,74 +1,38 @@
 import {
-  Injectable,
-  Inject,
-  BadRequestException,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
-import { eq, sql, desc, and, gte, or, inArray, type SQL } from 'drizzle-orm';
-import { alias } from 'drizzle-orm/pg-core';
-import { DRIZZLE } from '../../drizzle/drizzle.module';
-import type { DrizzleDB } from '../../drizzle/drizzle.module';
-import {
-  salesOrders,
-  salesOrderShipments,
-  salesOrderShipmentLines,
-  salesOrderLineItems,
-  products as coreProducts,
-  bins,
-  inventoryEntries,
-  inventoryLedger,
-  customers as coreAccounts,
-  customerGroups,
   backorders,
-  purchaseOrders,
-  systemEvents,
-  warehouseEvents,
-  salesOrderPicks,
-  transferOrders,
-  transferOrderShipments,
-  transferOrderShipmentLines,
-  transferOrderLines,
+  bins,
+  customers as coreAccounts,
+  products as coreProducts,
   locations,
   organizations,
   projects,
+  purchaseOrders,
+  salesOrderLineItems,
+  salesOrders,
+  salesOrderShipmentLines,
+  salesOrderShipments,
+  transferOrderLines,
+  transferOrders,
+  transferOrderShipmentLines,
+  transferOrderShipments,
+  warehouseEvents,
 } from '@herobm/db-schema';
-import { AppConfigService } from '../../settings/app-config.service';
-import { getValuationStrategy } from '../../inventory/valuation';
-import { getAccountingStrategy } from '../../inventory/inventory-accounting';
-import {
-  findOrder,
-  findOrderLine,
-  findShipment,
-  findShipmentLine,
-  assertShipmentQtyAvailable,
-  getInvoicedPerLine,
-  getCommittedPerLine,
-} from '../shipment-helpers';
-import { emitEvent } from '../../common/emit-event';
-import { EntityType, EventType } from '../../common/event-types';
-import { calculateAuditTrail, AuditMode } from '../../common/audit';
-import { evaluateLifecycleRules } from '../order-lifecycle-rules';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { and, desc, eq, gte, inArray, sql, type SQL } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
+import { EntityType } from '../../common/event-types';
+import type { DrizzleDB } from '../../drizzle/drizzle.module';
+import { DRIZZLE } from '../../drizzle/drizzle.module';
 import { GlService } from '../../gl/gl.service';
-import {
-  CreateShipmentDto,
-  UpdateShipmentDto,
-  AddShipmentLineDto,
-  UpdateShipmentLineDto,
-} from '../dto';
+import { AppConfigService } from '../../settings/app-config.service';
 
 import {
-  SHIPMENT_STATE,
-  SHIPMENT_TRANSITIONS as SHIPMENT_STATE_TRANSITIONS,
-  SALES_ORDER_STATE,
-  SALES_ORDER_PICK_STATE,
-  SALES_ORDER_PICK_TRANSITIONS,
   getValidStates,
+  SHIPMENT_TRANSITIONS as SHIPMENT_STATE_TRANSITIONS,
 } from '@herobm/shared';
-import type { SalesOrderPickState } from '@herobm/shared';
 import { InventoryMovementService } from '../../inventory/inventory-movement.service';
 
-const VALID_SHIPMENT_STATES = getValidStates(SHIPMENT_STATE_TRANSITIONS);
+const _VALID_SHIPMENT_STATES = getValidStates(SHIPMENT_STATE_TRANSITIONS);
 
 // ============================================================================
 // DTOs

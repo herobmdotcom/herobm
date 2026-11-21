@@ -1,63 +1,63 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ProjectsService } from './projects.service';
-import { ProjectsResourcesService } from './projects-resources.service';
-import { ProjectsInventoryService } from './projects-inventory.service';
-import { ProjectsTasksService } from './projects-tasks.service';
-import { ProjectsBudgetService } from './projects-budget.service';
-import { ProjectsLedgerService } from './projects-ledger.service';
-import { ProjectsNotesService } from './projects-notes.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
-  projects,
-  projectTasks,
-  projectResources,
-  projectResourceAssignments,
+  binContents,
+  bins,
+  customers,
+  inventoryEntries,
+  inventoryLedger,
+  locations,
+  opportunities,
+  products,
+  productSuppliers,
   projectBudgetLines,
   projectLedgerEntries,
   projectNotes,
-  customers,
-  opportunities,
-  users,
-  suppliers,
-  productSuppliers,
-  products,
-  inventoryEntries,
-  inventoryLedger,
-  binContents,
-  bins,
-  zones,
-  locations,
-  uomDictionary,
-  salesInvoices,
+  projectResourceAssignments,
+  projectResources,
+  projects,
+  projectTasks,
   salesInvoiceLines,
+  salesInvoices,
+  suppliers,
+  uomDictionary,
+  users,
+  zones,
 } from '@herobm/db-schema';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { randomUUID } from 'crypto';
-import { eq, and } from 'drizzle-orm';
 import {
-  PROJECT_STATE,
-  PROJECT_RESOURCE_STATE,
-  PROJECT_TASK_STATE,
-  PROJECT_BILLING_TYPE,
-  RESOURCE_TYPE,
-  PROJECT_LINE_TYPE,
-  PROJECT_LEDGER_ENTRY_TYPE,
-  PROJECT_SOURCE_TYPE,
+  BIN_TYPE,
   CUSTOMER_STATE,
-  SUPPLIER_STATE,
   OPPORTUNITY_STATE,
   PRODUCT_STATE,
-  BIN_TYPE,
+  PROJECT_BILLING_TYPE,
+  PROJECT_LEDGER_ENTRY_TYPE,
+  PROJECT_LINE_TYPE,
+  PROJECT_RESOURCE_STATE,
+  PROJECT_SOURCE_TYPE,
+  PROJECT_STATE,
+  PROJECT_TASK_STATE,
+  RESOURCE_TYPE,
   SALES_INVOICE_STATE,
+  SUPPLIER_STATE,
 } from '@herobm/shared';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { randomUUID } from 'crypto';
+import { and, eq } from 'drizzle-orm';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { GlService } from '../gl/gl.service';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
 import { UomService } from '../inventory/uom.service';
-import { AppConfigService } from '../settings/app-config.service';
-import { GlService } from '../gl/gl.service';
 import { WorkOrdersWriteService } from '../manufacturing/work-orders-write.service';
 import { BackordersService } from '../orders/backorders.service';
 import { ReturnsWriteService } from '../orders/returns-write.service';
+import { AppConfigService } from '../settings/app-config.service';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { ProjectsBudgetService } from './projects-budget.service';
+import { ProjectsInventoryService } from './projects-inventory.service';
+import { ProjectsLedgerService } from './projects-ledger.service';
+import { ProjectsNotesService } from './projects-notes.service';
+import { ProjectsResourcesService } from './projects-resources.service';
+import { ProjectsTasksService } from './projects-tasks.service';
+import { ProjectsService } from './projects.service';
 
 jest.mock('../common/emit-event', () => ({
   emitEvent: jest.fn().mockResolvedValue(undefined),

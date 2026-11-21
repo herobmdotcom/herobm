@@ -1,35 +1,33 @@
-import { Injectable, Inject, Logger, NotFoundException } from '@nestjs/common';
-import { eq, asc, and, ne, sql } from 'drizzle-orm';
-import { alias } from 'drizzle-orm/pg-core';
-import { OrdersService } from '../orders/orders.service';
-import { OrdersQueryService } from '../orders/orders-query.service';
-import { SalesQuoteData } from './sales-quote.service';
-import { resolveOrderDetail, assembleOrderData } from './report-data.helper';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
-  salesInvoices,
-  salesInvoiceLines,
-  projects,
   customers,
   organizations,
   products,
   projectLedgerEntries,
   projectResources,
+  projects,
+  salesInvoiceLines,
+  salesInvoices,
+  salesOrderLineItems,
+  salesOrders,
 } from '@herobm/db-schema';
 import {
   SALES_INVOICE_STATE,
-  LineType,
-  computeLinePrice,
   computeOrderTotals,
   formatReportDate,
   formatReportDateTime,
   toDecimal,
-  formatMoneyString,
-  roundCurrency,
 } from '@herobm/shared';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { and, asc, eq, ne, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { OrdersQueryService } from '../orders/orders-query.service';
+import { OrdersService } from '../orders/orders.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { RunHookOptionsDto } from './dto';
+import { assembleOrderData, resolveOrderDetail } from './report-data.helper';
+import { SalesQuoteData } from './sales-quote.service';
 
 @Injectable()
 export class SalesInvoiceService {
@@ -48,6 +46,10 @@ export class SalesInvoiceService {
     invoiceId?: string,
     options?: RunHookOptionsDto & Record<string, unknown>,
   ): Promise<SalesQuoteData> {
+    if (invoiceId) {
+      return this.assembleInvoiceData(invoiceId, options);
+    }
+
     const orderDetail = await resolveOrderDetail(
       this.ordersQueryService,
       this.ordersService,
@@ -56,158 +58,22 @@ export class SalesInvoiceService {
     );
 
     const customText = options?.customPdfText || options?.quoteIntroText;
-
-    if (!invoiceId) {
-      const data = assembleOrderData(
-        orderDetail,
-        this.appConfig.homeCurrency(),
-      );
-      if (customText) {
-        data.customPdfText = customText;
-        data.quoteIntroText = customText;
-      }
-      return data;
-    }
-
-    // Fetch the specific invoice and its lines
-    const [invoice] = await this.db
-      .select({
-        invoiceId: salesInvoices.invoiceId,
-        invoiceNumber: salesInvoices.invoiceNumber,
-        salesOrderId: salesInvoices.salesOrderId,
-        projectId: salesInvoices.projectId,
-        projectNumber: projects.projectNumber,
-        customerNameDisplay: salesInvoices.customerNameDisplay,
-        dueDate: salesInvoices.dueDate,
-        stateCode: salesInvoices.stateCode,
-        createdOn: salesInvoices.createdOn,
-      })
-      .from(salesInvoices)
-      .leftJoin(projects, eq(salesInvoices.projectId, projects.projectId))
-      .where(eq(salesInvoices.invoiceId, invoiceId));
-
-    if (!invoice || invoice.salesOrderId !== orderId) {
-      throw new NotFoundException(
-        `Invoice ${invoiceId} not found for order ${orderId}`,
-      );
-    }
-
-    const invLines = await this.db
-      .select()
-      .from(salesInvoiceLines)
-      .where(eq(salesInvoiceLines.invoiceId, invoiceId));
-
-    // Build a lookup: salesOrderLineId → invoiced quantity & price
-    const invLineMap = new Map(
-      invLines.map((il) => [
-        il.salesOrderLineId,
-        {
-          quantity: il.quantityInvoiced,
-          pricePerUnit: il.pricePerUnit,
-        },
-      ]),
-    );
-
-    const filteredLines = orderDetail.lines
-      .filter(
-        (l) =>
-          invLineMap.has(l.salesOrderLineId) ||
-          l.lineType === (LineType.COMMENT as string),
-      )
-      .map((l) => {
-        if (l.lineType === (LineType.COMMENT as string)) {
-          return {
-            ...l,
-            quantity: '0',
-            pricePerUnit: '0',
-            amount: '0',
-            tax: '0',
-            totalAmount: '0',
-          };
-        }
-
-        const inv = invLineMap.get(l.salesOrderLineId)!;
-        const lAmtDec = toDecimal(l.amount);
-        const lTaxDec = toDecimal(l.tax);
-        const lineTaxRate =
-          lAmtDec.greaterThan(0) && lTaxDec.greaterThan(0)
-            ? lTaxDec.div(lAmtDec).times(100).toNumber()
-            : 0;
-        const linePricing = computeLinePrice({
-          quantity: toDecimal(inv.quantity).toNumber(),
-          pricePerUnit: toDecimal(
-            inv.pricePerUnit || l.pricePerUnit,
-          ).toNumber(),
-          discountPercentage: toDecimal(l.discountPercentage).toNumber(),
-          taxRate: lineTaxRate,
-        });
-
-        return {
-          ...l,
-          quantity: inv.quantity,
-          pricePerUnit: inv.pricePerUnit,
-          amount: linePricing.amount.toFixed(2),
-          tax: linePricing.tax.toFixed(2),
-          totalAmount: linePricing.totalAmount.toFixed(2),
-        };
-      });
-
-    // Build the invoice-specific report data
-    const invoiceData = assembleOrderData(
-      {
-        ...orderDetail,
-        projectNumber: invoice.projectNumber || undefined,
-        customerName: invoice.customerNameDisplay || orderDetail.customerName,
-        lines: filteredLines,
-      },
-      this.appConfig.homeCurrency(),
-    );
-
+    const data = assembleOrderData(orderDetail, this.appConfig.homeCurrency());
     if (customText) {
-      invoiceData.customPdfText = customText;
-      invoiceData.quoteIntroText = customText;
+      data.customPdfText = customText;
+      data.quoteIntroText = customText;
     }
-
-    // Compute the full (unfiltered) order total for comparison
-    const fullOrderData = assembleOrderData(
-      orderDetail,
-      this.appConfig.homeCurrency(),
-    );
-
-    // Determine this invoice's ordinal position among all invoices for the order
-    const allOrderInvoices = await this.db
-      .select({
-        invoiceId: salesInvoices.invoiceId,
-        invoiceNumber: salesInvoices.invoiceNumber,
-      })
-      .from(salesInvoices)
-      .where(
-        and(
-          eq(salesInvoices.salesOrderId, orderId),
-          ne(salesInvoices.stateCode, SALES_INVOICE_STATE.CANCELLED),
-        ),
-      )
-      .orderBy(asc(salesInvoices.createdOn));
-
-    const totalInvoices = allOrderInvoices.length;
-    const sequenceNumber =
-      allOrderInvoices.findIndex((i) => i.invoiceId === invoiceId) + 1;
-
-    return {
-      ...invoiceData,
-      invoiceMeta: {
-        invoiceNumber: invoice.invoiceNumber,
-        dueDate: invoice.dueDate
-          ? formatReportDate(invoice.dueDate, undefined, '')
-          : null,
-        sequenceNumber,
-        totalInvoices,
-        orderTotal: fullOrderData.summary.totalAmount,
-      },
-    } as SalesQuoteData;
+    return data;
   }
 
   async assembleProjectInvoiceData(
+    invoiceId: string,
+    options?: RunHookOptionsDto & Record<string, unknown>,
+  ): Promise<SalesQuoteData> {
+    return this.assembleInvoiceData(invoiceId, options);
+  }
+
+  async assembleInvoiceData(
     invoiceId: string,
     options?: RunHookOptionsDto & Record<string, unknown>,
   ): Promise<SalesQuoteData> {
@@ -217,6 +83,19 @@ export class SalesInvoiceService {
       .select({
         invoiceId: salesInvoices.invoiceId,
         invoiceNumber: salesInvoices.invoiceNumber,
+        salesOrderId: salesInvoices.salesOrderId,
+        orderNumber: salesOrders.orderNumber,
+        orderCustomerOrderNumber: salesOrders.customerOrderNumber,
+        orderTotalAmount: salesOrders.baseTotalAmount,
+        deliveryName: salesOrders.deliveryName,
+        deliveryCompanyName: salesOrders.deliveryCompanyName,
+        deliveryPhone: salesOrders.deliveryPhone,
+        deliveryAddressLine1: salesOrders.deliveryAddressLine1,
+        deliveryAddressLine2: salesOrders.deliveryAddressLine2,
+        deliveryCity: salesOrders.deliveryCity,
+        deliveryState: salesOrders.deliveryState,
+        deliveryPostalCode: salesOrders.deliveryPostalCode,
+        deliveryCountry: salesOrders.deliveryCountry,
         customerOrderNumber: salesInvoices.customerOrderNumber,
         projectId: salesInvoices.projectId,
         projectNumber: projects.projectNumber,
@@ -226,6 +105,12 @@ export class SalesInvoiceService {
         >`COALESCE(${salesInvoices.customerNameDisplay}, ${organizations.name})`.as(
           'customer_name',
         ),
+        customerAddressLine1: organizations.headquartersAddressLine1,
+        customerAddressLine2: organizations.headquartersAddressLine2,
+        customerCity: organizations.headquartersCity,
+        customerState: organizations.headquartersStateOrProvince,
+        customerPostalCode: organizations.headquartersPostalCode,
+        customerCountry: organizations.headquartersCountry,
         currencyCode: salesInvoices.currencyCode,
         invoiceDate: salesInvoices.invoiceDate,
         dueDate: salesInvoices.dueDate,
@@ -234,11 +119,15 @@ export class SalesInvoiceService {
         taxAmount: salesInvoices.taxAmount,
       })
       .from(salesInvoices)
+      .leftJoin(
+        salesOrders,
+        eq(salesInvoices.salesOrderId, salesOrders.salesOrderId),
+      )
       .leftJoin(projects, eq(salesInvoices.projectId, projects.projectId))
       .leftJoin(
         customers,
         eq(
-          sql`COALESCE(${salesInvoices.customerId}, ${projects.customerId})`,
+          sql`COALESCE(${salesInvoices.customerId}, ${salesOrders.customerId}, ${projects.customerId})`,
           customers.customerId,
         ),
       )
@@ -252,6 +141,7 @@ export class SalesInvoiceService {
       throw new NotFoundException(`Invoice ${invoiceId} not found`);
     }
 
+    const soProducts = alias(products, 'so_products');
     const ledgerProducts = alias(products, 'ledger_products');
     const resourceProducts = alias(products, 'resource_products');
 
@@ -263,16 +153,28 @@ export class SalesInvoiceService {
         amount: salesInvoiceLines.amount,
         taxAmount: salesInvoiceLines.taxAmount,
         discountPercentage: salesInvoiceLines.discountPercentage,
+        unitOfMeasure: salesOrderLineItems.unitOfMeasure,
         productId: sql<
           string | null
-        >`COALESCE(${salesInvoiceLines.productId}, ${projectLedgerEntries.productId}, ${projectResources.serviceProductId})`,
+        >`COALESCE(${salesInvoiceLines.productId}, ${salesOrderLineItems.productId}, ${projectLedgerEntries.productId}, ${projectResources.serviceProductId})`,
         productNumber: sql<
           string | null
-        >`COALESCE(${products.productNumber}, ${ledgerProducts.productNumber}, ${resourceProducts.productNumber}, ${projectResources.resourceNumber})`,
-        description: sql<string>`COALESCE(${salesInvoiceLines.description}, ${products.name}, ${ledgerProducts.name}, ${resourceProducts.name}, '—')`,
+        >`COALESCE(${products.productNumber}, ${soProducts.productNumber}, ${ledgerProducts.productNumber}, ${resourceProducts.productNumber}, ${projectResources.resourceNumber})`,
+        description: sql<string>`COALESCE(${salesInvoiceLines.description}, ${salesOrderLineItems.productDescription}, ${products.name}, ${soProducts.name}, ${ledgerProducts.name}, ${resourceProducts.name}, '—')`,
       })
       .from(salesInvoiceLines)
+      .leftJoin(
+        salesOrderLineItems,
+        eq(
+          salesInvoiceLines.salesOrderLineId,
+          salesOrderLineItems.salesOrderLineId,
+        ),
+      )
       .leftJoin(products, eq(salesInvoiceLines.productId, products.productId))
+      .leftJoin(
+        soProducts,
+        eq(salesOrderLineItems.productId, soProducts.productId),
+      )
       .leftJoin(
         projectLedgerEntries,
         eq(
@@ -292,7 +194,11 @@ export class SalesInvoiceService {
         resourceProducts,
         eq(projectResources.serviceProductId, resourceProducts.productId),
       )
-      .where(eq(salesInvoiceLines.invoiceId, invoiceId));
+      .where(eq(salesInvoiceLines.invoiceId, invoiceId))
+      .orderBy(
+        asc(sql`COALESCE(${salesOrderLineItems.lineNumber}, 999999)`),
+        asc(salesInvoiceLines.invoiceLineId),
+      );
 
     const invoiceTax = toDecimal(invoice.taxAmount);
     const invoiceSubtotal = linesRaw.reduce(
@@ -325,7 +231,7 @@ export class SalesInvoiceService {
         tax: lineTax.toFixed(2),
         amount: lineAmt.toFixed(2),
         totalAmount: lineAmt.plus(lineTax).toFixed(2),
-        unitOfMeasure: 'EA',
+        unitOfMeasure: line.unitOfMeasure || 'EA',
       };
     });
 
@@ -334,7 +240,26 @@ export class SalesInvoiceService {
 
     let sequenceNumber = 1;
     let totalInvoices = 1;
-    if (invoice.projectId) {
+    let orderTotal: number | undefined = undefined;
+
+    if (invoice.salesOrderId) {
+      const allOrderInvoices = await this.db
+        .select({ invoiceId: salesInvoices.invoiceId })
+        .from(salesInvoices)
+        .where(
+          and(
+            eq(salesInvoices.salesOrderId, invoice.salesOrderId),
+            ne(salesInvoices.stateCode, SALES_INVOICE_STATE.CANCELLED),
+          ),
+        )
+        .orderBy(asc(salesInvoices.createdOn));
+      totalInvoices = allOrderInvoices.length;
+      sequenceNumber =
+        allOrderInvoices.findIndex((i) => i.invoiceId === invoiceId) + 1;
+      if (invoice.orderTotalAmount) {
+        orderTotal = toDecimal(invoice.orderTotalAmount).toNumber();
+      }
+    } else if (invoice.projectId) {
       const allProjectInvoices = await this.db
         .select({ invoiceId: salesInvoices.invoiceId })
         .from(salesInvoices)
@@ -350,12 +275,37 @@ export class SalesInvoiceService {
         allProjectInvoices.findIndex((i) => i.invoiceId === invoiceId) + 1;
     }
 
+    const billingAddressParts = [
+      invoice.customerAddressLine1,
+      invoice.customerAddressLine2,
+      [invoice.customerCity, invoice.customerState, invoice.customerPostalCode]
+        .filter(Boolean)
+        .join(' '),
+      invoice.customerCountry,
+    ].filter(Boolean);
+    const billingAddress = billingAddressParts.join(', ');
+
+    const deliveryAddressParts = [
+      invoice.deliveryAddressLine1,
+      invoice.deliveryAddressLine2,
+      [invoice.deliveryCity, invoice.deliveryState, invoice.deliveryPostalCode]
+        .filter(Boolean)
+        .join(' '),
+      invoice.deliveryCountry,
+    ].filter(Boolean);
+    const deliveryAddress = deliveryAddressParts.join(', ');
+
+    const customerAddress = billingAddress || deliveryAddress || undefined;
+
     return {
       header: {
-        orderNumber: '',
+        orderNumber: invoice.orderNumber || '',
         projectNumber: invoice.projectNumber || '',
         customerName: invoice.customerName || '',
-        customerOrderNumber: invoice.customerOrderNumber || '',
+        customerAddress,
+        billingAddress: billingAddress || undefined,
+        customerOrderNumber:
+          invoice.customerOrderNumber || invoice.orderCustomerOrderNumber || '',
         orderDate: formatReportDate(
           invoice.invoiceDate || invoice.createdOn,
           undefined,
@@ -380,6 +330,7 @@ export class SalesInvoiceService {
           : null,
         sequenceNumber: sequenceNumber > 0 ? sequenceNumber : 1,
         totalInvoices: totalInvoices > 0 ? totalInvoices : 1,
+        orderTotal,
       },
     };
   }

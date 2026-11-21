@@ -1,12 +1,12 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
 import { apiKeys } from '@herobm/db-schema';
-import { eq } from 'drizzle-orm';
+import { Inject, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
-import { CreateApiKeyDto } from './dto';
+import { eq } from 'drizzle-orm';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
+import { CreateApiKeyDto } from './dto';
 
 @Injectable()
 export class ApiKeysService {

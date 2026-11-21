@@ -562,9 +562,9 @@ export default function AccountDetailPage({
                   {dto.overrideCreditHoldUntil && new Date(dto.overrideCreditHoldUntil) > new Date() && (
                     <Button
                       type="button"
-                      variant="secondary"
+                      variant="danger"
                       size="sm"
-                      className="shrink-0 text-red-600 hover:bg-red-50 hover:border-red-200 bg-white"
+                      className="shrink-0"
                       onClick={() => {
                         updateField("overrideCreditHoldUntil", null);
                         saveField("overrideCreditHoldUntil", null);
@@ -580,7 +580,7 @@ export default function AccountDetailPage({
                     </span>
                     <input
                       type="date"
-                      className="input text-sm w-full md:w-auto bg-white"
+                      className="input text-sm w-full md:w-auto"
                       value={toInputDateFormat(dto.overrideCreditHoldUntil)}
                       min={toInputDateFormat(new Date())}
                       disabled={!isEditable}

@@ -1,18 +1,39 @@
+import { customerGroups, customers } from '@herobm/db-schema';
+import { CUSTOMER_STATE, CustomerState } from '@herobm/shared';
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
   ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { customerGroups, customers } from '@herobm/db-schema';
-import { CreateCustomerGroupDto, UpdateCustomerGroupDto } from './dto';
 import { emitEvent } from '../common/emit-event';
-import { buildUpdatePayload } from '../common/utils/drizzle-utils';
 import { EntityType, EventType } from '../common/event-types';
-import { CUSTOMER_STATE, CustomerState } from '@herobm/shared';
+import { buildUpdatePayload } from '../common/utils/drizzle-utils';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { CreateCustomerGroupDto, UpdateCustomerGroupDto } from './dto';
+
+function sanitizeCustomerGroupPayload<T extends object>(dto: T): T {
+  const sanitized = { ...dto } as Record<string, unknown>;
+  const nullableEmptyFields = [
+    'defaultArAccountId',
+    'defaultRevenueAccountId',
+    'defaultCostCenterId',
+    'defaultActivityId',
+    'tradingTermsId',
+    'taxPositionId',
+    'creditLimit',
+    'earlyPaymentDiscount',
+    'earlyPaymentDiscountDays',
+  ];
+  for (const field of nullableEmptyFields) {
+    if (sanitized[field] === '') {
+      sanitized[field] = null;
+    }
+  }
+  return sanitized as T;
+}
 
 @Injectable()
 export class CustomerGroupsService {
@@ -45,13 +66,15 @@ export class CustomerGroupsService {
   }
 
   async create(dto: CreateCustomerGroupDto, userId?: string) {
+    const sanitizedDto = sanitizeCustomerGroupPayload(dto);
     return await this.db.transaction(async (tx) => {
       const rows = await tx
         .insert(customerGroups)
         .values({
-          ...dto,
-          isOnCreditHold: dto.isOnCreditHold ?? false,
-          stateCode: (dto.stateCode as CustomerState) || CUSTOMER_STATE.ACTIVE,
+          ...sanitizedDto,
+          isOnCreditHold: sanitizedDto.isOnCreditHold ?? false,
+          stateCode:
+            (sanitizedDto.stateCode as CustomerState) || CUSTOMER_STATE.ACTIVE,
         } as typeof customerGroups.$inferInsert)
         .returning();
 
@@ -69,13 +92,14 @@ export class CustomerGroupsService {
   }
 
   async update(id: string, dto: UpdateCustomerGroupDto, userId?: string) {
+    const sanitizedDto = sanitizeCustomerGroupPayload(dto);
     return await this.db.transaction(async (tx) => {
       await this.findOne(id, tx); // ensure exists
 
       const rows = await tx
         .update(customerGroups)
         .set(
-          buildUpdatePayload(dto) as Partial<
+          buildUpdatePayload(sanitizedDto) as Partial<
             typeof customerGroups.$inferInsert
           >,
         )

@@ -288,4 +288,78 @@ describe('FinancialTable', () => {
     expect(writeXlsxFile).toHaveBeenCalled();
     expect(onExportExcelSpy).toHaveBeenCalledTimes(1);
   });
+
+  it('applies sticky header, sticky footer, and scrollable container classes by default', () => {
+    const { container } = render(
+      <FinancialTable
+        columns={sampleColumns}
+        data={sampleData}
+        keyExtractor={(r) => r.code}
+        totals={{
+          label: 'Total',
+          values: { balance: '$3,000.00' },
+        }}
+      />,
+    );
+
+    const thead = container.querySelector('thead');
+    expect(thead).toHaveClass('sticky', 'top-0');
+
+    const thElements = container.querySelectorAll('th');
+    thElements.forEach((th) => {
+      expect(th).toHaveClass('sticky', 'top-0');
+    });
+
+    const tfoot = container.querySelector('tfoot');
+    expect(tfoot).toHaveClass('sticky', 'bottom-0');
+
+    const card = container.querySelector('.card');
+    expect(card).toHaveClass('overflow-auto', 'max-h-[calc(100vh-280px)]');
+  });
+
+  it('allows disabling sticky headers and footers with stickyHeader={false} and stickyFooter={false}', () => {
+    const { container } = render(
+      <FinancialTable
+        columns={sampleColumns}
+        data={sampleData}
+        keyExtractor={(r) => r.code}
+        stickyHeader={false}
+        stickyFooter={false}
+        totals={{
+          label: 'Total',
+          values: { balance: '$3,000.00' },
+        }}
+      />,
+    );
+
+    const thead = container.querySelector('thead');
+    expect(thead).not.toHaveClass('sticky');
+
+    const thElements = container.querySelectorAll('th');
+    thElements.forEach((th) => {
+      expect(th).not.toHaveClass('sticky');
+    });
+
+    const tfoot = container.querySelector('tfoot');
+    expect(tfoot).not.toHaveClass('sticky');
+
+    const card = container.querySelector('.card');
+    expect(card).toHaveClass('overflow-x-auto');
+    expect(card).not.toHaveClass('overflow-auto');
+    expect(card).not.toHaveClass('max-h-[calc(100vh-280px)]');
+  });
+
+  it('applies custom maxHeight to scrollable container when specified', () => {
+    const { container } = render(
+      <FinancialTable
+        columns={sampleColumns}
+        data={sampleData}
+        keyExtractor={(r) => r.code}
+        maxHeight="500px"
+      />,
+    );
+
+    const card = container.querySelector('.card');
+    expect(card).toHaveStyle({ maxHeight: '500px' });
+  });
 });

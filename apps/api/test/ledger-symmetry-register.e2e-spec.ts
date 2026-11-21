@@ -1,13 +1,11 @@
-import { TestingModule } from '@nestjs/testing';
-import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
+import { TestingModule } from '@nestjs/testing';
 import * as crypto from 'crypto';
+import { createE2eModule } from './utils/e2e-module';
 
+import { sql } from 'drizzle-orm';
 import request from 'supertest';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
-import { sql } from 'drizzle-orm';
-import { salesOrders, salesOrderLineItems } from '@herobm/db-schema';
-import { eq } from 'drizzle-orm';
 
 interface LedgerSnapshot {
   trialBalance: Record<string, number>;

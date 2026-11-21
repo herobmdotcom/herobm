@@ -1,14 +1,14 @@
-import { inArray, eq, and, sql, lte } from 'drizzle-orm';
+import { binContents, bins, products, zones } from '@herobm/db-schema';
+import { BIN_TYPE, resolveProductUnitCost } from '@herobm/shared';
 import { BadRequestException } from '@nestjs/common';
-import { products, bins, binContents, zones } from '@herobm/db-schema';
-import { BIN_TYPE } from '@herobm/shared';
-import { UomService } from './uom.service';
+import Decimal from 'decimal.js';
+import { eq, inArray } from 'drizzle-orm';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { GlService } from '../gl/gl.service';
 import { AppConfigService } from '../settings/app-config.service';
-import { getValuationStrategy } from './valuation';
 import { getAccountingStrategy } from './inventory-accounting';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import Decimal from 'decimal.js';
+import { UomService } from './uom.service';
+import { getValuationStrategy } from './valuation';
 
 export interface MovementLineInput {
   productId: string;
@@ -79,7 +79,7 @@ export async function prepareMovementLines(
     const unitCostStr =
       line.unitCost !== undefined && line.unitCost !== null
         ? String(line.unitCost)
-        : prod?.weightedAverageCost || prod?.standardCost || '0';
+        : resolveProductUnitCost(prod);
 
     const totalValStr =
       line.totalValue !== undefined && line.totalValue !== null

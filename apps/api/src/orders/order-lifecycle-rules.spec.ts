@@ -1,43 +1,41 @@
 import {
-  autoShipWhenFullyShipped,
-  revertToPickingOnShipmentCancel,
-  autoInvoiceWhenFullyInvoiced,
-  revertInvoicedWhenInvoiceCancelled,
-  evaluateLifecycleRules,
-  LifecycleTrigger,
-} from './order-lifecycle-rules';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import {
-  salesOrders,
-  salesOrderLineItems,
-  salesOrderShipments,
-  salesOrderShipmentLines,
-  salesOrderPicks,
-  salesInvoices,
-  salesInvoiceLines,
-  products,
-  uomDictionary,
   locations,
-  taxCategories,
-  salesEvents,
   outbox,
+  products,
+  salesEvents,
+  salesInvoiceLines,
+  salesInvoices,
+  salesOrderLineItems,
+  salesOrderPicks,
+  salesOrders,
+  salesOrderShipmentLines,
+  salesOrderShipments,
+  taxCategories,
+  uomDictionary,
 } from '@herobm/db-schema';
-import { eq } from 'drizzle-orm';
 import {
-  SALES_ORDER_STATE,
-  SHIPMENT_STATE,
+  PRODUCT_STATE,
   SALES_INVOICE_STATE,
   SALES_ORDER_PICK_STATE,
-  PRODUCT_STATE,
+  SALES_ORDER_STATE,
+  SHIPMENT_STATE,
   type SalesInvoiceState,
 } from '@herobm/shared';
+import { eq } from 'drizzle-orm';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import {
+  autoInvoiceWhenFullyInvoiced,
+  autoShipWhenFullyShipped,
+  evaluateLifecycleRules,
+  LifecycleTrigger,
+  revertInvoicedWhenInvoiceCancelled,
+  revertToPickingOnShipmentCancel,
+} from './order-lifecycle-rules';
 
 // Mock emitEvent to avoid needing event emitter setup
 jest.mock('../common/emit-event', () => ({
   emitEvent: jest.fn().mockResolvedValue(undefined),
 }));
-
-import { emitEvent } from '../common/emit-event';
 
 describe('Order Lifecycle Rules', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

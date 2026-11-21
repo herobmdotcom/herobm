@@ -41,6 +41,7 @@ export function SecretModal({ secret, onClose }: SecretModalProps) {
           </Button>
           <Button
             variant="primary"
+            // dark-mode-ok: high-contrast black text on bright amber warning button
             className="bg-[var(--warning)] hover:brightness-110 border-none text-black"
             onClick={() => {
               navigator.clipboard.writeText(secret);

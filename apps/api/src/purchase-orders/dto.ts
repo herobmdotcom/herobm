@@ -1,16 +1,17 @@
-import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  IsArray,
-  ValidateNested,
-  IsNumberString,
-  IsUUID,
-  IsEmail,
-  IsObject,
-} from 'class-validator';
-import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsInt,
+  IsNotEmpty,
+  IsNumberString,
+  IsObject,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 import { IsPercentage } from '../common/validators/is-percentage.decorator';
 
 // ── PO Line DTOs ──
@@ -44,6 +45,23 @@ export class CreatePurchaseOrderLineDto {
   @IsOptional()
   @IsString()
   taxCategoryId?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Optional 1-based line number at which to insert the new line. Existing lines at or after this position will shift down.',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  insertAtLineNumber?: number;
+}
+
+export class ReorderPurchaseOrderLinesDto {
+  @ApiProperty({ type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  lineIds!: string[];
 }
 
 export class UpdatePurchaseOrderLineDto {

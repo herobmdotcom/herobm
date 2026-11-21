@@ -1,11 +1,11 @@
-import { beforeAll, beforeEach, afterEach, afterAll } from '@jest/globals';
+import { PGlite } from '@electric-sql/pglite';
+import * as schema from '@herobm/db-schema';
+import { afterAll, afterEach, beforeAll } from '@jest/globals';
+import { drizzle } from 'drizzle-orm/pglite';
 import * as fs from 'fs';
 import * as path from 'path';
 import { createMemoryDb } from '../../test/utils/memory-db';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { PGlite } from '@electric-sql/pglite';
-import { drizzle } from 'drizzle-orm/pglite';
-import * as schema from '@herobm/db-schema';
 
 export interface PgliteTestContext {
   readonly db: DrizzleDB;

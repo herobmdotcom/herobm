@@ -1,27 +1,21 @@
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+  products,
+  salesInvoiceLines,
+  salesInvoices,
+  salesOrderLineItems,
+  salesOrderPicks,
+  salesOrders,
+  salesOrderShipmentLines,
+  salesOrderShipments,
+} from '@herobm/db-schema';
 import {
-  SHIPMENT_STATE,
   SALES_ORDER_PICK_STATE,
+  SHIPMENT_STATE,
   toDecimal,
 } from '@herobm/shared';
-import { eq, sql, and } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { and, eq, sql } from 'drizzle-orm';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  salesOrders,
-  salesOrderLineItems,
-  salesOrderShipments,
-  salesOrderShipmentLines,
-  salesInvoices,
-  salesInvoiceLines,
-  salesOrderPicks,
-  products,
-} from '@herobm/db-schema';
 
 // ============================================================================
 // Shared query helpers for picking & shipment services

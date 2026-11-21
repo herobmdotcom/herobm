@@ -10,20 +10,20 @@
  *     3. Inventory Conservation & Valuation: Physical bin levels match ledger and GL entries.
  *     4. Subledger Consistency: AP and AR subledger clearing via payments.
  */
-import { TestingModule } from '@nestjs/testing';
-import { createE2eModule, setupE2eApp } from './utils/e2e-module';
+import {
+  purchaseInvoiceLines,
+  purchaseInvoiceReceipts,
+} from '@herobm/db-schema';
 import { INestApplication } from '@nestjs/common';
-import request from 'supertest';
-import * as fc from 'fast-check';
-import postgres from 'postgres';
+import { TestingModule } from '@nestjs/testing';
 import * as crypto from 'crypto';
 import { eq } from 'drizzle-orm';
-import {
-  purchaseInvoiceReceipts,
-  purchaseInvoiceLines,
-} from '@herobm/db-schema';
+import * as fc from 'fast-check';
+import postgres from 'postgres';
+import request from 'supertest';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import { AppConfigService } from '../src/settings/app-config.service';
+import { createE2eModule, setupE2eApp } from './utils/e2e-module';
 
 describe('API E2E — End-to-End Cross-Ledger Lifecycle Fuzz Suite', () => {
   let app: INestApplication;
@@ -59,6 +59,7 @@ describe('API E2E — End-to-End Cross-Ledger Lifecycle Fuzz Suite', () => {
     app = moduleFixture.createNestApplication();
     setupE2eApp(app);
     await app.init();
+    await app.listen(0);
 
     // 1. Admin Login
     const loginRes = await request(app.getHttpServer())
@@ -341,8 +342,8 @@ describe('API E2E — End-to-End Cross-Ledger Lifecycle Fuzz Suite', () => {
 
           const grnDetailRes = await request(app.getHttpServer())
             .get(`/api/gl/journal-entries/${grnSummary.journalEntryId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
-            .expect(200);
+            .set('Authorization', `Bearer ${adminToken}`);
+          expect(grnDetailRes.status).toBe(200);
           const grnEntry = grnDetailRes.body;
           const grnDSum = grnEntry.lines.reduce(
             (s: number, l: any) => s + parseFloat(l.debit),
@@ -442,8 +443,8 @@ describe('API E2E — End-to-End Cross-Ledger Lifecycle Fuzz Suite', () => {
 
           const piDetailRes = await request(app.getHttpServer())
             .get(`/api/gl/journal-entries/${piSummary.journalEntryId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
-            .expect(200);
+            .set('Authorization', `Bearer ${adminToken}`);
+          expect(piDetailRes.status).toBe(200);
           const piEntry = piDetailRes.body;
           const piDSum = piEntry.lines.reduce(
             (s: number, l: any) => s + parseFloat(l.debit),
@@ -483,15 +484,15 @@ describe('API E2E — End-to-End Cross-Ledger Lifecycle Fuzz Suite', () => {
           // Verify Payment Journal Entry (DR AP, CR Bank)
           const payGlRes = await request(app.getHttpServer())
             .get(`/api/gl/journal-entries?sourceId=${paymentId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
-            .expect(200);
+            .set('Authorization', `Bearer ${adminToken}`);
+          expect(payGlRes.status).toBe(200);
           expect(payGlRes.body.data.length).toBeGreaterThan(0);
           const paySummary = payGlRes.body.data[0];
 
           const payDetailRes = await request(app.getHttpServer())
             .get(`/api/gl/journal-entries/${paySummary.journalEntryId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
-            .expect(200);
+            .set('Authorization', `Bearer ${adminToken}`);
+          expect(payDetailRes.status).toBe(200);
           const payEntry = payDetailRes.body;
           const payDSum = payEntry.lines.reduce(
             (s: number, l: any) => s + parseFloat(l.debit),

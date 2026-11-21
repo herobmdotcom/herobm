@@ -4,6 +4,8 @@ import {
   computeReturnCreditSummary,
   getTaxLabel,
   resolveEffectiveDiscount,
+  resolveProductUnitCost,
+  resolveProductUnitPrice,
 } from './pricing';
 
 // ---------------------------------------------------------------------------
@@ -362,6 +364,76 @@ describe('resolveEffectiveDiscount', () => {
       },
     ];
     expect(resolveEffectiveDiscount(rules, 'pg-1')).toBe('0');
+  });
+});
+
+describe('resolveProductUnitPrice', () => {
+  it('ignores "0.00" string prices and falls back to the first positive price', () => {
+    expect(
+      resolveProductUnitPrice({
+        listPrice: '0.00',
+        tradePrice: '45.50',
+      }),
+    ).toBe(45.5);
+
+    expect(
+      resolveProductUnitPrice({
+        listPrice: '89.95',
+        tradePrice: '0.00',
+      }),
+    ).toBe(89.95);
+  });
+
+  it('respects customer priceScale (1=List, 2=Trade, 3=Level3, 4=Level4) with safe fallbacks', () => {
+    const product = {
+      listPrice: '100.00',
+      tradePrice: '80.00',
+      priceLevel3: '70.00',
+      priceLevel4: '60.00',
+    };
+    expect(resolveProductUnitPrice(product, { priceScale: 1 })).toBe(100);
+    expect(resolveProductUnitPrice(product, { priceScale: 2 })).toBe(80);
+    expect(resolveProductUnitPrice(product, { priceScale: 3 })).toBe(70);
+    expect(resolveProductUnitPrice(product, { priceScale: 4 })).toBe(60);
+    // Falls back if the requested scale is 0.00
+    expect(
+      resolveProductUnitPrice({ listPrice: '100.00', tradePrice: '0.00' }, { priceScale: 2 }),
+    ).toBe(100);
+  });
+
+  it('prioritizes standardCost and weightedAverageCost in purchase mode', () => {
+    expect(
+      resolveProductUnitPrice(
+        { standardCost: '0.00', weightedAverageCost: '32.40', listPrice: '90.00' },
+        { mode: 'purchase' },
+      ),
+    ).toBe(32.4);
+    expect(
+      resolveProductUnitPrice(
+        { standardCost: '25.00', weightedAverageCost: '32.40' },
+        { mode: 'purchase' },
+      ),
+    ).toBe(25);
+  });
+
+  it('returns 0 for null or unpriced products', () => {
+    expect(resolveProductUnitPrice(null)).toBe(0);
+    expect(resolveProductUnitPrice({ listPrice: '0.00', tradePrice: null })).toBe(0);
+  });
+});
+
+describe('resolveProductUnitCost', () => {
+  it('prefers positive weightedAverageCost over standardCost and preserves precision', () => {
+    expect(
+      resolveProductUnitCost({ weightedAverageCost: '12.3456', standardCost: '10.00' }),
+    ).toBe('12.3456');
+  });
+
+  it('falls back to standardCost when weightedAverageCost is 0.00 or null', () => {
+    expect(
+      resolveProductUnitCost({ weightedAverageCost: '0.00', standardCost: '10.50' }),
+    ).toBe('10.50');
+    expect(resolveProductUnitCost(null)).toBe('0');
   });
 });
 

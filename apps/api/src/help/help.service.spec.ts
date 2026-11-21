@@ -1,7 +1,7 @@
-import { HelpService } from './help.service';
-import { parseHelpMarkdown } from './help-parser';
 import * as fs from 'fs';
 import * as path from 'path';
+import { parseHelpMarkdown } from './help-parser';
+import { HelpService } from './help.service';
 
 describe('HelpService & HelpParser', () => {
   describe('parseHelpMarkdown', () => {

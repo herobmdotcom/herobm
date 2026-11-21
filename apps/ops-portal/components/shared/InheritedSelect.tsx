@@ -24,9 +24,16 @@ export default function InheritedSelect({
 
   // Find the label of the inherited value
   const inheritedOption = options.find((opt) => opt.value === inheritedValue);
-  const resolvedLabel = inheritedOption ? inheritedOption.label : '';
+  const resolvedLabel = inheritedOption
+    ? inheritedOption.label
+    : inheritedValue !== undefined && inheritedValue !== null
+      ? String(inheritedValue)
+      : '';
 
   const hasInherited = !!inheritedValue && !!inheritedSourceLabel;
+  const inheritedTitle = hasInherited && !value
+    ? t('options.inheritValue', { label: resolvedLabel, source: inheritedSourceLabel })
+    : undefined;
 
   return (
     <select
@@ -34,6 +41,7 @@ export default function InheritedSelect({
       disabled={disabled}
       value={value || ''}
       onChange={(e) => onChange(e.target.value)}
+      title={inheritedTitle}
     >
       {hasInherited ? (
         <option value="" className="italic text-muted">

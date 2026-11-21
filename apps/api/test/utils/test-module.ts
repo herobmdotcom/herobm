@@ -1,7 +1,7 @@
 import { Test, TestingModuleBuilder } from '@nestjs/testing';
 import { DRIZZLE } from '../../src/drizzle/drizzle.module';
-import { AppConfigService } from '../../src/settings/app-config.service';
 import { GlService } from '../../src/gl/gl.service';
+import { AppConfigService } from '../../src/settings/app-config.service';
 import { MockDrizzle } from './mock-drizzle';
 
 export class MockAppConfigService {

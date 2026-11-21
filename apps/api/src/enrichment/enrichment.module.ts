@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { AuthModule } from '../auth/auth.module';
+import { EncryptionService } from '../common/encryption.service';
+import { IntegrationLoggerService } from '../common/integration-logger.service';
 import { EnrichmentController } from './enrichment.controller';
 import { EnrichmentService } from './enrichment.service';
 import { AbrProvider } from './providers/abr.provider';
 import { TaxJarProvider } from './providers/taxjar.provider';
-import { AuthModule } from '../auth/auth.module';
-import { EncryptionService } from '../common/encryption.service';
-import { ConfigModule } from '@nestjs/config';
-import { IntegrationLoggerService } from '../common/integration-logger.service';
 
 @Module({
   imports: [AuthModule, ConfigModule],

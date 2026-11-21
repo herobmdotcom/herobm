@@ -1,69 +1,66 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException } from '@nestjs/common';
-import { UomService } from './uom.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { GlService } from '../gl/gl.service';
-import { AppConfigService } from '../settings/app-config.service';
-import { emitEvent } from '../common/emit-event';
-import { EventType } from '../common/event-types';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
-  products,
-  locations,
-  zones,
-  bins,
-  inventoryEntries,
-  inventoryLedger,
   binContents,
-  uomDictionary,
-  productUoms,
-  productComponents,
-  projects,
-  projectTasks,
-  transferOrders,
-  transferOrderLines,
-  transferOrderReceipts,
-  transferOrderReceiptLines,
+  bins,
   customers,
-  suppliers,
-  purchaseOrders,
-  purchaseOrderLineItems,
   goodsReceived,
   goodsReceivedLines,
-  salesOrders,
-  salesOrderLineItems,
-  salesOrderReturns,
-  salesOrderReturnLines,
-  productDefaultBins,
-  productGroups,
-  productSuppliers,
+  inventoryEntries,
+  inventoryLedger,
+  locations,
   organizations,
+  productComponents,
+  productDefaultBins,
+  products,
+  productSuppliers,
+  productUoms,
+  projects,
+  projectTasks,
+  purchaseOrderLineItems,
+  purchaseOrders,
+  salesOrderLineItems,
+  salesOrderReturnLines,
+  salesOrderReturns,
+  salesOrders,
+  suppliers,
+  transferOrderLines,
+  transferOrderReceiptLines,
+  transferOrderReceipts,
+  transferOrders,
+  uomDictionary,
+  zones,
 } from '@herobm/db-schema';
 import {
+  CUSTOMER_STATE,
+  GOODS_RECEIVED_STATE,
+  MATCH_STATUS,
+  ORGANIZATION_STATE,
   PRODUCT_STATE,
+  PROJECT_BILLING_TYPE,
   PROJECT_STATE,
   PROJECT_TASK_STATE,
-  PROJECT_BILLING_TYPE,
-  CUSTOMER_STATE,
-  SUPPLIER_STATE,
-  PUTAWAY_STATUS,
-  TRANSFER_ORDER_STATE,
-  MATCH_STATUS,
-  GOODS_RECEIVED_STATE,
   PURCHASE_ORDER_STATE,
-  SALES_ORDER_STATE,
+  PUTAWAY_STATUS,
   RETURN_STATE,
-  BIN_TYPE,
-  ORGANIZATION_STATE,
+  SALES_ORDER_STATE,
+  SUPPLIER_STATE,
+  TRANSFER_ORDER_STATE,
 } from '@herobm/shared';
-import { and, eq, sql } from 'drizzle-orm';
-import { InventoryMovementService } from './inventory-movement.service';
-import { InventoryQueryService } from './inventory-query.service';
-import { DemandQueryService } from './demand-query.service';
+import { BadRequestException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { and, eq } from 'drizzle-orm';
+import { emitEvent } from '../common/emit-event';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { GlService } from '../gl/gl.service';
 import { WorkOrdersWriteService } from '../manufacturing/work-orders-write.service';
 import { BackordersService } from '../orders/backorders.service';
 import { ReturnsWriteService } from '../orders/returns-write.service';
 import { ProjectsInventoryService } from '../projects/projects-inventory.service';
+import { AppConfigService } from '../settings/app-config.service';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { DemandQueryService } from './demand-query.service';
+import { InventoryMovementService } from './inventory-movement.service';
+import { InventoryQueryService } from './inventory-query.service';
+import { UomService } from './uom.service';
 
 jest.mock('../common/emit-event', () => ({
   emitEvent: jest.fn().mockResolvedValue(undefined),

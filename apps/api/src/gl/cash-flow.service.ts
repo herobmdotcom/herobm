@@ -1,15 +1,15 @@
-import { Injectable, Inject, Logger, NotFoundException } from '@nestjs/common';
+import { glFiscalPeriods, glSettings, tenantSettings } from '@herobm/db-schema';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { createHash } from 'crypto';
-import { sql, eq } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
+import { eq, sql } from 'drizzle-orm';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { tenantSettings, glSettings, glFiscalPeriods } from '@herobm/db-schema';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import {
-  calculateCashFlowStatement,
   calculateCashFlowLineDrilldown,
   CalculateCashFlowOptions,
-  CashFlowStatementResult,
+  calculateCashFlowStatement,
   CashFlowDrilldownStatementResult,
+  CashFlowStatementResult,
 } from './gl-cash-flow.utils';
 
 export interface CashFlowStatementData {

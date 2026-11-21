@@ -1,8 +1,8 @@
 import {
-  isPickableBin,
-  filterPickableBins,
   calculatePickableOnHand,
   calculateSuggestedRestockQuantity,
+  filterPickableBins,
+  isPickableBin,
   isPickableBinSqlCondition,
 } from './inventory-math.utils';
 

@@ -9,14 +9,13 @@
  * Run with: npm run test:e2e -- --testPathPatterns purchase-returns
  * Requires: Docker stack running with Postgres + populated marts.
  */
-import { TestingModule } from '@nestjs/testing';
-import { createE2eModule, setupE2eApp } from './utils/e2e-module';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { AppModule } from '../src/app.module';
-import { PURCHASE_ORDER_STATE, PURCHASE_RETURN_STATE } from '@herobm/shared';
-import { DRIZZLE, DrizzleDB } from '../src/drizzle/drizzle.module';
 import { bins, zones } from '@herobm/db-schema';
-import { eq, and } from 'drizzle-orm';
+import { PURCHASE_ORDER_STATE, PURCHASE_RETURN_STATE } from '@herobm/shared';
+import { INestApplication } from '@nestjs/common';
+import { TestingModule } from '@nestjs/testing';
+import { and, eq } from 'drizzle-orm';
+import { DRIZZLE, DrizzleDB } from '../src/drizzle/drizzle.module';
+import { createE2eModule, setupE2eApp } from './utils/e2e-module';
 
 import request from 'supertest';
 

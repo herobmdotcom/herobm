@@ -26,6 +26,7 @@ import { ProductInventoryTab } from './ProductInventoryTab';
 import { ProductPurchaseOrdersTab } from './ProductPurchaseOrdersTab';
 import { ProductSalesTab } from './ProductSalesTab';
 import { ProductCostSummary } from './ProductCostSummary';
+import { ProductPricingSummary } from './ProductPricingSummary';
 import ProductImageUploader from '@/components/products/ProductImageUploader';
 import CopyProductModal from '@/components/products/CopyProductModal';
 import { DynamicForm } from '@/components/DynamicForm';
@@ -541,6 +542,14 @@ export default function ProductDetailPage() {
                   }}
                 />
               </div>
+            </div>
+
+            <div className="mt-6 pt-5 border-t border-[var(--border)]">
+              <ProductPricingSummary
+                productId={product.productId}
+                productNumber={product.productNumber}
+                productDescription={product.name}
+              />
             </div>
           </div>
 

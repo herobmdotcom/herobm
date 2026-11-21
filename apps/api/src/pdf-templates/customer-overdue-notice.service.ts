@@ -1,17 +1,17 @@
-import { Injectable, Inject, Logger, NotFoundException } from '@nestjs/common';
-import { eq, and, notInArray, asc, sql } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { AppConfigService } from '../settings/app-config.service';
 import {
-  customers,
   customerGroups,
-  organizations,
-  tradingTerms,
-  salesInvoices,
+  customers,
   glAccounts,
+  organizations,
+  salesInvoices,
+  tradingTerms,
 } from '@herobm/db-schema';
 import { SALES_INVOICE_STATE, formatReportDate } from '@herobm/shared';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { and, asc, eq, notInArray, sql } from 'drizzle-orm';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { AppConfigService } from '../settings/app-config.service';
 
 export interface CustomerOverdueNoticeData {
   header: {

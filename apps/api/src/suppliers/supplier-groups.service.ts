@@ -1,17 +1,38 @@
+import { supplierGroups, suppliers } from '@herobm/db-schema';
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
   ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { supplierGroups, suppliers } from '@herobm/db-schema';
-import { CreateSupplierGroupDto, UpdateSupplierGroupDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { buildUpdatePayload } from '../common/utils/drizzle-utils';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { CreateSupplierGroupDto, UpdateSupplierGroupDto } from './dto';
+
+function sanitizeSupplierGroupPayload<T extends object>(dto: T): T {
+  const sanitized = { ...dto } as Record<string, unknown>;
+  const nullableEmptyFields = [
+    'defaultApAccountId',
+    'defaultExpenseAccountId',
+    'defaultCostCenterId',
+    'defaultActivityId',
+    'tradingTermsId',
+    'taxPositionId',
+    'creditLimit',
+    'earlyPaymentDiscount',
+    'earlyPaymentDiscountDays',
+  ];
+  for (const field of nullableEmptyFields) {
+    if (sanitized[field] === '') {
+      sanitized[field] = null;
+    }
+  }
+  return sanitized as T;
+}
 
 @Injectable()
 export class SupplierGroupsService {
@@ -44,13 +65,14 @@ export class SupplierGroupsService {
   }
 
   async create(dto: CreateSupplierGroupDto, userId?: string) {
+    const sanitizedDto = sanitizeSupplierGroupPayload(dto);
     return await this.db.transaction(async (tx) => {
       const rows = await tx
         .insert(supplierGroups)
         .values({
-          ...dto,
-          isPurchasingBlocked: dto.isPurchasingBlocked ?? false,
-          isPaymentBlocked: dto.isPaymentBlocked ?? false,
+          ...sanitizedDto,
+          isPurchasingBlocked: sanitizedDto.isPurchasingBlocked ?? false,
+          isPaymentBlocked: sanitizedDto.isPaymentBlocked ?? false,
         } as typeof supplierGroups.$inferInsert)
         .returning();
 
@@ -68,12 +90,13 @@ export class SupplierGroupsService {
   }
 
   async update(id: string, dto: UpdateSupplierGroupDto, userId?: string) {
+    const sanitizedDto = sanitizeSupplierGroupPayload(dto);
     return await this.db.transaction(async (tx) => {
       await this.findOne(id, tx);
 
       const rows = await tx
         .update(supplierGroups)
-        .set(buildUpdatePayload(dto))
+        .set(buildUpdatePayload(sanitizedDto))
         .where(eq(supplierGroups.supplierGroupId, id))
         .returning();
 

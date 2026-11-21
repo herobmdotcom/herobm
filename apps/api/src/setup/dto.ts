@@ -1,5 +1,5 @@
-import { IsString, IsNotEmpty, MaxLength, IsOptional } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class WebhookPayloadDto {
   @ApiProperty()
@@ -7,6 +7,12 @@ export class WebhookPayloadDto {
   @IsNotEmpty()
   @MaxLength(255)
   jobId!: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  @MaxLength(255)
+  stage?: string;
 
   @ApiProperty()
   @IsString()

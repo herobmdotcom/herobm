@@ -1,8 +1,7 @@
-import { TestingModule } from '@nestjs/testing';
-import { createE2eModule } from './utils/e2e-module';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { AppModule } from '../src/app.module';
+import { TestingModule } from '@nestjs/testing';
 import { FileLoggerService } from '../src/common/file-logger.service';
+import { createE2eModule } from './utils/e2e-module';
 
 import request from 'supertest';
 

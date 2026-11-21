@@ -399,12 +399,18 @@ export function usePurchaseOrder(id: string) {
     }
   };
 
-  const addLineFromProduct = async (p: Product) => {
+  const addLineFromProduct = async (
+    p: Product,
+    quantity: string = '1',
+    insertAtLineNumber?: number,
+  ) => {
     setSaving(true);
     try {
       await api.purchaseOrdersControllerAddLine(id, {
         productId: p.productId,
         productDescription: p.name,
+        quantity: quantity || '1',
+        ...(insertAtLineNumber ? { insertAtLineNumber } : {}),
       });
       await loadOrder(undefined, false);
     } catch (err) {
@@ -414,7 +420,7 @@ export function usePurchaseOrder(id: string) {
     }
   };
 
-  const addBlankLine = async () => {
+  const addBlankLine = async (insertAtLineNumber?: number) => {
     setSaving(true);
     try {
       await api.purchaseOrdersControllerAddLine(id, {
@@ -424,6 +430,7 @@ export function usePurchaseOrder(id: string) {
         pricePerUnit: '0.00',
         discountPercentage: '0',
         unitOfMeasure: 'EA',
+        ...(insertAtLineNumber ? { insertAtLineNumber } : {}),
       });
       await loadOrder(undefined, false);
     } catch (err) {
@@ -433,7 +440,7 @@ export function usePurchaseOrder(id: string) {
     }
   };
 
-  const addCommentLine = async () => {
+  const addCommentLine = async (insertAtLineNumber?: number) => {
     setSaving(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- LineType DTO compatibility
@@ -442,11 +449,24 @@ export function usePurchaseOrder(id: string) {
         productDescription: '',
         quantity: '0',
         pricePerUnit: '0',
+        ...(insertAtLineNumber ? { insertAtLineNumber } : {}),
       };
       await api.purchaseOrdersControllerAddLine(id, payload);
       await loadOrder(undefined, false);
     } catch (err) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToAddLine'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const reorderLines = async (lineIds: string[]) => {
+    setSaving(true);
+    try {
+      await api.purchaseOrdersControllerReorderLines(id, { lineIds });
+      await loadOrder(undefined, false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateLine'));
     } finally {
       setSaving(false);
     }
@@ -513,6 +533,7 @@ export function usePurchaseOrder(id: string) {
     updateLine,
     updateLineFields,
     removeLine,
+    reorderLines,
     addLineFromProduct,
     addBlankLine,
     addCommentLine,

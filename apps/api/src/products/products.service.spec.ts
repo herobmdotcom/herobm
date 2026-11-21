@@ -1,27 +1,17 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ProductsService } from './products.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
 import {
-  NotFoundException,
-  BadRequestException,
-  ConflictException,
-} from '@nestjs/common';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import {
-  products,
   masterDataEvents,
-  uomDictionary,
+  products,
   projectResources,
+  uomDictionary,
   users,
 } from '@herobm/db-schema';
-import { eq } from 'drizzle-orm';
-import {
-  PRODUCT_STATE,
-  SALES_ORDER_STATE,
-  CUSTOMER_STATE,
-  RESOURCE_TYPE,
-} from '@herobm/shared';
-import { EventType, EntityType } from '../common/event-types';
+import { PRODUCT_STATE, RESOURCE_TYPE } from '@herobm/shared';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { EntityType, EventType } from '../common/event-types';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { ProductsService } from './products.service';
 
 describe('ProductsService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

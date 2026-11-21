@@ -1,6 +1,6 @@
 import Decimal from 'decimal.js';
-import { getAccountingStrategy } from '../inventory/inventory-accounting';
 import type { InventoryGlAccounts } from '../inventory/inventory-accounting';
+import { getAccountingStrategy } from '../inventory/inventory-accounting';
 
 describe('Work Order Cost Capitalization & Absorption Invariants (Unit)', () => {
   const accts: InventoryGlAccounts = {

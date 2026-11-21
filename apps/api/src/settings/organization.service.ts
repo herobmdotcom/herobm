@@ -1,11 +1,11 @@
-import { Injectable, Inject, BadRequestException } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { tenantSettings } from '@herobm/db-schema';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { StorageService } from '../common/storage/storage.service';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { UpdateOrganizationSettingsDto } from './dto';
 
 @Injectable()

@@ -1,18 +1,18 @@
 import {
-  Controller,
-  Post,
   Body,
-  UseGuards,
+  Controller,
   HttpCode,
   HttpStatus,
+  Post,
+  UseGuards,
 } from '@nestjs/common';
-import { SetupService } from './setup.service';
-import { ApiExcludeController, ApiCreatedResponse } from '@nestjs/swagger';
+import { ApiCreatedResponse, ApiExcludeController } from '@nestjs/swagger';
+import { SkipThrottle, ThrottlerGuard } from '@nestjs/throttler';
 import { SkipCasbin } from '../auth/casbin.guard';
 import { Public as InternalPublic } from '../auth/public.decorator';
-import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
+import { SetupService } from './setup.service';
 
-import { WebhookPayloadDto, SuccessResponseDto } from './dto';
+import { SuccessResponseDto, WebhookPayloadDto } from './dto';
 import { PipelineSecretGuard } from './pipeline-secret.guard';
 
 @ApiExcludeController()

@@ -1,59 +1,52 @@
 import {
-  Injectable,
-  Logger,
-  HttpException,
-  HttpStatus,
-  NotFoundException,
-  BadRequestException,
-  Inject,
-  forwardRef,
-} from '@nestjs/common';
-import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  salesOrders,
-  salesOrderLineItems,
+  appSettings,
   backorders,
-  purchaseOrders,
-  purchaseOrderLineItems,
-  productSuppliers,
   products as coreProducts,
   suppliers as coreSuppliers,
-  taxCategories,
   locations,
-  appSettings,
   organizations,
   productComponents,
+  purchaseOrderLineItems,
+  purchaseOrders,
+  salesOrderLineItems,
+  salesOrders,
+  taxCategories,
   workOrders,
-  workOrderComponents,
 } from '@herobm/db-schema';
-import { emitEvent } from '../common/emit-event';
-import { EntityType, EventType } from '../common/event-types';
-import { eq, sql, and, inArray } from 'drizzle-orm';
 import {
   BACKORDER_STATE,
-  PURCHASE_ORDER_STATE,
-  TRANSFER_ORDER_STATE,
-  OPEN_PURCHASE_ORDER_STATES,
   BACKORDER_TRANSITIONS,
-  WORK_ORDER_STATE,
-  CUSTOM_LINE_ID,
+  OPEN_PURCHASE_ORDER_STATES,
+  calculateInventoryGaps,
   isStockedProductLine,
   toDecimal,
-  calculateInventoryGaps,
   type InventoryGap,
-  type PurchaseOrderState,
 } from '@herobm/shared';
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  forwardRef,
+} from '@nestjs/common';
+import { and, eq, inArray, sql } from 'drizzle-orm';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
+import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
 
-import { AppConfigService } from '../settings/app-config.service';
 import { InventoryQueryService } from '../inventory/inventory-query.service';
 import { WorkOrdersWriteService } from '../manufacturing/work-orders-write.service';
 import { PurchaseOrdersWriteService } from '../purchase-orders/purchase-orders-write.service';
+import { AppConfigService } from '../settings/app-config.service';
 import {
-  executeUnlinkDemandForPoLine,
-  executeUnlinkDemandForPurchaseOrder,
   executeCancelDemandForSalesOrder,
   executeCancelDemandForWorkOrder,
   executeLinkDemandToTransferOrder,
+  executeUnlinkDemandForPoLine,
+  executeUnlinkDemandForPurchaseOrder,
   executeUnlinkDemandForTransferOrder,
 } from './backorders-helpers';
 
@@ -128,7 +121,7 @@ export class BackordersService {
   /**
    * Helper to generate a unique PO number inside a transaction.
    */
-  private async generatePurchaseOrderNumber(tx: DrizzleDB): Promise<string> {
+  private async generatePurchaseOrderNumber(_tx?: DrizzleDB): Promise<string> {
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const prefix = `PO-${today}-`;
 

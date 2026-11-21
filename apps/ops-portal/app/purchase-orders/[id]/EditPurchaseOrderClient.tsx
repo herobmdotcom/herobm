@@ -94,7 +94,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
     taxCategories, activeTab, setActiveTab, inventoryData, inventoryLoading,
     invoices, setInvoicing,
     clearError, setError, saveHeader, changeState, archivePurchaseOrder, unarchivePurchaseOrder, copyOrder,
-    updateLine, updateLineFields, removeLine, addLineFromProduct, addBlankLine, addCommentLine,
+    updateLine, updateLineFields, removeLine, reorderLines, addLineFromProduct, addBlankLine, addCommentLine,
     loadOrder, loadInvoices, loadAllocations, allocations, allocationsLoading,
     purchaseOrderMetadataSchema,
   } = o;
@@ -687,6 +687,7 @@ export default function EditPurchaseOrderClient({ id }: { id: string }) {
                 updateLine={updateLine}
                 updateLineFields={updateLineFields}
                 removeLine={removeLine}
+                reorderLines={reorderLines}
                 addLineFromProduct={addLineFromProduct}
                 addBlankLine={addBlankLine}
                 addCommentLine={addCommentLine}

@@ -1,86 +1,57 @@
-import Decimal from 'decimal.js';
-import { HttpException, HttpStatus } from '@nestjs/common';
-import { BackordersService } from './backorders.service';
-import { TaxResolutionEngine } from '../tax/tax-resolution.engine';
 import {
-  InventoryGap,
-  SALES_ORDER_STATE,
-  CUSTOMER_STATE,
-  PRODUCT_STATE,
-  getErrorMessage,
-} from '@herobm/shared';
-import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-  Logger,
-  InternalServerErrorException,
-} from '@nestjs/common';
-import { eq, sql, inArray, getTableColumns } from 'drizzle-orm';
-import { randomUUID } from 'crypto';
-import { AppConfigService } from '../settings/app-config.service';
-import { OrganizationService } from '../settings/organization.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  salesOrders,
-  salesOrderLineItems,
-  salesEvents,
-  customers as coreAccounts,
-  customerGroups,
-  organizations,
-  opportunities,
-  products as coreProducts,
   backorders,
-  purchaseOrders,
-  transferOrders,
-  locations,
+  customers as coreAccounts,
+  products as coreProducts,
+  customerGroups,
+  opportunities,
+  organizations,
   productUoms,
-  productComponents,
-  tradingTerms,
-  taxCategories,
+  purchaseOrders,
+  salesEvents,
+  salesOrderLineItems,
+  salesOrders,
+  transferOrders,
 } from '@herobm/db-schema';
 import {
-  CreateOrderDto,
-  UpdateOrderDto,
-  CreateOrderLineDto as AddLineDto, // Renamed to match usage
-  UpdateOrderLineDto as UpdateLineDto,
-} from './dto';
-import { calculateAuditTrail, AuditMode } from '../common/audit';
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import Decimal from 'decimal.js';
+import { and, asc, desc, eq, inArray, ne, sql } from 'drizzle-orm';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { AppConfigService } from '../settings/app-config.service';
+import { OrganizationService } from '../settings/organization.service';
+import { TaxResolutionEngine } from '../tax/tax-resolution.engine';
+import { BackordersService } from './backorders.service';
 import { findOrderLine as sharedFindOrderLine } from './shipment-helpers';
-import { emitEvent } from '../common/emit-event';
-import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
-import { EntityType, EventType } from '../common/event-types';
-import { getExchangeRateForCurrency } from '../common/fx-helper';
 
-import { TaxCategoriesService } from '../tax/tax-categories.service';
-import { EnrichmentService } from '../enrichment/enrichment.service';
-import { verifySystemHealth } from '../common/utils/security.util';
-import { PickingService } from './picking.service';
-import { CustomersService } from '../customers/customers.service';
-import { CreditAssessmentService } from '../customers/credit-assessment.service';
-import { ProductsService } from '../products/products.service';
 import {
+  SALES_ORDER_STATE,
   SALES_ORDER_TRANSITIONS as STATE_TRANSITIONS,
   getValidStates,
-  computeLinePriceForStorage,
 } from '@herobm/shared';
-import {
-  resolveEffectiveCreditHold,
-  resolveEffectiveCreditLimit,
-  resolveEffectiveTradingTermsId,
-} from '../customers/credit-control.utils';
-import { getCreditBlockedSql } from './orders.sql';
-import { PdfTemplatesService } from '../pdf-templates/pdf-templates.service';
+import { CreditAssessmentService } from '../customers/credit-assessment.service';
+import { CustomersService } from '../customers/customers.service';
 import { EmailService } from '../email/email.service';
-import { EmailDocumentDto } from './dto';
-import type { JwtUser } from '../auth/auth-user.decorator';
+import { EnrichmentService } from '../enrichment/enrichment.service';
+import { PdfTemplatesService } from '../pdf-templates/pdf-templates.service';
+import { ProductsService } from '../products/products.service';
+import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { OrdersCoreService } from './orders-core.service';
+import { getCreditBlockedSql } from './orders.sql';
+import { PickingService } from './picking.service';
 
-const VALID_STATES = getValidStates(STATE_TRANSITIONS);
+const _VALID_STATES = getValidStates(STATE_TRANSITIONS);
 
-// DTOs imported from ./dto
+import type {
+  GetPricingHistoryQueryDto,
+  PaginatedPricingHistoryResponseDto,
+  PricingHistoryEntryDto,
+} from './dto';
 
 @Injectable()
 export class OrdersQueryService {
@@ -260,6 +231,12 @@ export class OrdersQueryService {
         order: salesOrders,
         customerName: organizations.name,
         country: organizations.headquartersCountry,
+        customerAddressLine1: organizations.headquartersAddressLine1,
+        customerAddressLine2: organizations.headquartersAddressLine2,
+        customerCity: organizations.headquartersCity,
+        customerState: organizations.headquartersStateOrProvince,
+        customerPostalCode: organizations.headquartersPostalCode,
+        customerCountry: organizations.headquartersCountry,
         isCreditBlocked: getCreditBlockedSql(),
         opportunityName: opportunities.name,
       })
@@ -290,6 +267,12 @@ export class OrdersQueryService {
       ...rows[0].order,
       customerName: rows[0].customerName,
       country: rows[0].country,
+      customerAddressLine1: rows[0].customerAddressLine1,
+      customerAddressLine2: rows[0].customerAddressLine2,
+      customerCity: rows[0].customerCity,
+      customerState: rows[0].customerState,
+      customerPostalCode: rows[0].customerPostalCode,
+      customerCountry: rows[0].customerCountry,
       isCreditBlocked: rows[0].isCreditBlocked,
       opportunityName: rows[0].opportunityName ?? null,
     };
@@ -297,5 +280,110 @@ export class OrdersQueryService {
 
   async findLine(lineId: string, orderId: string) {
     return sharedFindOrderLine(this.db, lineId, orderId);
+  }
+
+  /**
+   * Fetch full paginated order pricing history for a specific product,
+   * ranking orders for the specified customer first.
+   */
+  async getProductPricingHistory(
+    query: GetPricingHistoryQueryDto,
+  ): Promise<PaginatedPricingHistoryResponseDto> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const offset = (page - 1) * limit;
+
+    const conditions = [
+      eq(salesOrderLineItems.productId, query.productId),
+      ne(salesOrders.stateCode, SALES_ORDER_STATE.CANCELLED),
+    ];
+    if (query.excludeOrderId) {
+      conditions.push(ne(salesOrders.salesOrderId, query.excludeOrderId));
+    }
+    if (query.customerOnly && query.customerId) {
+      conditions.push(eq(salesOrders.customerId, query.customerId));
+    }
+
+    const whereClause = and(...conditions);
+
+    const [{ count }] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(salesOrderLineItems)
+      .innerJoin(
+        salesOrders,
+        eq(salesOrderLineItems.salesOrderId, salesOrders.salesOrderId),
+      )
+      .where(whereClause);
+
+    const orderBys = query.customerId
+      ? [
+          asc(
+            sql<number>`CASE WHEN ${salesOrders.customerId} = ${query.customerId} THEN 0 ELSE 1 END`,
+          ),
+          desc(salesOrders.createdOn),
+        ]
+      : [desc(salesOrders.createdOn)];
+
+    const rows = await this.db
+      .select({
+        salesOrderId: salesOrders.salesOrderId,
+        orderNumber: salesOrders.orderNumber,
+        orderName: salesOrders.name,
+        customerId: salesOrders.customerId,
+        customerName: sql<string>`coalesce(${organizations.name}, ${coreAccounts.customerNumber}, 'Unknown')`,
+        stateCode: salesOrders.stateCode,
+        createdOn: salesOrders.createdOn,
+        lineNumber: salesOrderLineItems.lineNumber,
+        quantity: salesOrderLineItems.quantity,
+        unitOfMeasure: salesOrderLineItems.unitOfMeasure,
+        pricePerUnit: salesOrderLineItems.pricePerUnit,
+        discountPercentage: salesOrderLineItems.discountPercentage,
+        totalAmount: salesOrderLineItems.totalAmount,
+        currencyCode: salesOrders.currencyCode,
+      })
+      .from(salesOrderLineItems)
+      .innerJoin(
+        salesOrders,
+        eq(salesOrderLineItems.salesOrderId, salesOrders.salesOrderId),
+      )
+      .leftJoin(
+        coreAccounts,
+        eq(salesOrders.customerId, coreAccounts.customerId),
+      )
+      .leftJoin(
+        organizations,
+        eq(coreAccounts.organizationId, organizations.organizationId),
+      )
+      .where(whereClause)
+      .orderBy(...orderBys)
+      .limit(limit)
+      .offset(offset);
+
+    const data: PricingHistoryEntryDto[] = rows.map((row) => ({
+      salesOrderId: row.salesOrderId,
+      orderNumber: row.orderNumber,
+      orderName: row.orderName,
+      customerId: row.customerId,
+      customerName: row.customerName,
+      isCurrentCustomer: query.customerId
+        ? row.customerId === query.customerId
+        : false,
+      stateCode: row.stateCode,
+      orderDate: row.createdOn ? new Date(row.createdOn).toISOString() : '',
+      lineNumber: row.lineNumber,
+      quantity: row.quantity,
+      unitOfMeasure: row.unitOfMeasure,
+      pricePerUnit: row.pricePerUnit,
+      discountPercentage: row.discountPercentage,
+      lineTotal: row.totalAmount,
+      currencyCode: row.currencyCode,
+    }));
+
+    return {
+      data,
+      total: Number(count),
+      page,
+      limit,
+    };
   }
 }

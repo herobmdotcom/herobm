@@ -1,15 +1,12 @@
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
-  salesOrderReturns,
-  salesOrderReturnLines,
   products as coreProducts,
-  bins,
-  zones,
+  salesOrderReturnLines,
+  salesOrderReturns,
 } from '@herobm/db-schema';
-import { sql, eq, and, inArray } from 'drizzle-orm';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { RETURN_STATE } from '@herobm/shared';
+import { RETURN_STATE, resolveProductUnitCost } from '@herobm/shared';
 import Decimal from 'decimal.js';
+import { and, eq, sql } from 'drizzle-orm';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
 import type { ValuationStrategy } from '../inventory/valuation';
 
 export async function generateReturnNumber(db: DrizzleDB): Promise<string> {
@@ -74,11 +71,7 @@ export async function recalculateSalesReturnWac(
     const product = productMap.get(line.productId);
     if (!product) continue;
 
-    const unitCost =
-      line.unitCost ||
-      product.weightedAverageCost ||
-      product.standardCost ||
-      '0';
+    const unitCost = line.unitCost || resolveProductUnitCost(product);
     const productData = {
       ...product,
       standardCost: product.standardCost || '0',

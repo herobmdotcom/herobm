@@ -1,36 +1,36 @@
 import {
-  Injectable,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
-import { Inject } from '@nestjs/common';
-import { DRIZZLE } from '../../drizzle/drizzle.module';
-import type { DrizzleDB } from '../../drizzle/drizzle.module';
-import {
-  transferOrders,
+  bins,
+  products,
   transferOrderLines,
   transferOrderPicks,
-  transferOrderShipments,
+  transferOrders,
   transferOrderShipmentLines,
-  bins,
+  transferOrderShipments,
   zones,
-  products,
 } from '@herobm/db-schema';
-import { eq, and, inArray, sql } from 'drizzle-orm';
-import { CreateShipmentDto } from '../dto';
-import { emitEvent } from '../../common/emit-event';
-import { EntityType, EventType } from '../../common/event-types';
 import {
-  TRANSFER_ORDER_STATE,
-  TRANSFER_ORDER_PICK_STATE,
   SHIPMENT_STATE,
   toDecimal,
+  TRANSFER_ORDER_PICK_STATE,
+  TRANSFER_ORDER_STATE,
 } from '@herobm/shared';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
+import { emitEvent } from '../../common/emit-event';
+import { EntityType, EventType } from '../../common/event-types';
+import type { DrizzleDB } from '../../drizzle/drizzle.module';
+import { DRIZZLE } from '../../drizzle/drizzle.module';
 import { InventoryMovementService } from '../../inventory/inventory-movement.service';
+import { CreateShipmentDto } from '../dto';
+import { changeTransferOrderState } from './transfer-state.helper';
 import { TransfersCoreService } from './transfers-core.service';
 import { TransfersPickingService } from './transfers-picking.service';
-import { changeTransferOrderState } from './transfer-state.helper';
 
 @Injectable()
 export class TransfersShipmentService {

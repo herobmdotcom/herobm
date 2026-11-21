@@ -1,28 +1,28 @@
 import { SystemResource } from '@herobm/shared';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiOkResponse,
-  ApiCreatedResponse,
-  ApiBody,
-} from '@nestjs/swagger';
-import {
+  Body,
   Controller,
+  Delete,
   Get,
   Param,
-  Post,
   Patch,
-  Body,
-  Delete,
+  Post,
 } from '@nestjs/common';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
+import {
+  ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
 import { CustomerGroupsService } from './customer-groups.service';
 import {
   CreateCustomerGroupDto,
-  UpdateCustomerGroupDto,
   CustomerGroupResponseDto,
   DeleteCustomerGroupResponseDto,
+  UpdateCustomerGroupDto,
 } from './dto';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';

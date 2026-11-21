@@ -1,23 +1,20 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { GlService } from './gl.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { AppConfigService } from '../settings/app-config.service';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
 import {
-  glAccounts,
-  glJournalEntries,
-  glJournalLines,
-  glFiscalPeriods,
-  glSettings,
-  costCenters,
   activities,
+  costCenters,
   financialEvents,
+  glAccounts,
+  glSettings,
   outbox,
 } from '@herobm/db-schema';
-import { eq } from 'drizzle-orm';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import { randomUUID } from 'crypto';
+import { eq } from 'drizzle-orm';
+import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { AppConfigService } from '../settings/app-config.service';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { GlService } from './gl.service';
 
 describe('GL Fiscal Periods & Period Governance', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

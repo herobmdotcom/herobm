@@ -1,47 +1,47 @@
 import { SystemResource } from '@herobm/shared';
 import {
-  ApiTags,
-  ApiConsumes,
-  ApiOperation,
-  ApiOkResponse,
-  ApiCreatedResponse,
-  ApiBody,
-} from '@nestjs/swagger';
-import {
-  Controller,
-  Get,
-  Post,
-  Delete,
   Body,
+  Controller,
+  Delete,
+  Get,
   Param,
+  Post,
   Query,
   Res,
+  UploadedFile,
   UseGuards,
   UseInterceptors,
-  UploadedFile,
 } from '@nestjs/common';
-import type { Response } from 'express';
-import { SetupService } from './setup.service';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
-import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
-import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
-import {
-  ExecuteCsvDto,
-  ExportCsvQueryDto,
-  TestAbmConnectionDto,
-  TestOdooConnectionDto,
-  ExecuteEltDto,
-  TestConnectionResultDto,
-  ResumeStateDto,
-  JobResultDto,
-  ImportSummaryDto,
-  CsvMetadataDto,
-  JobProgressDto,
-  SetupValidationDto,
-  ActiveJobDto,
-  SuccessResponseDto,
-} from './setup.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  ApiBody,
+  ApiConsumes,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+import { SkipThrottle, ThrottlerGuard } from '@nestjs/throttler';
+import type { Response } from 'express';
+import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
+import {
+  ActiveJobDto,
+  CsvMetadataDto,
+  ExecuteCsvDto,
+  ExecuteEltDto,
+  ExportCsvQueryDto,
+  ImportSummaryDto,
+  JobProgressDto,
+  JobResultDto,
+  ResumeStateDto,
+  SetupValidationDto,
+  SuccessResponseDto,
+  TestAbmConnectionDto,
+  TestConnectionResultDto,
+  TestOdooConnectionDto,
+} from './setup.dto';
+import { SetupService } from './setup.service';
 
 @ApiTags('System')
 @Controller('setup')

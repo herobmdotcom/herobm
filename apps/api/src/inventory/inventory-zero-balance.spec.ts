@@ -1,8 +1,8 @@
 import Decimal from 'decimal.js';
 import {
-  WeightedAverageStrategy,
-  StandardCostStrategy,
   ProductCostData,
+  StandardCostStrategy,
+  WeightedAverageStrategy,
 } from './valuation';
 
 describe('Inventory Fractional UOM & Zero-Balance Residual Absorption (Unit)', () => {

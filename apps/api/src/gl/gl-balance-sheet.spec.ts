@@ -1,16 +1,16 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { GlService } from './gl.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { AppConfigService } from '../settings/app-config.service';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
 import {
   glAccounts,
   glJournalEntries,
   glJournalLines,
   glSettings,
 } from '@herobm/db-schema';
+import { Test, TestingModule } from '@nestjs/testing';
 import { randomUUID } from 'crypto';
+import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { AppConfigService } from '../settings/app-config.service';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { GlService } from './gl.service';
 
 describe('Balance Sheet Movements (MTD, YTD, Last YTD)', () => {
   const pg = setupPgliteSuite();

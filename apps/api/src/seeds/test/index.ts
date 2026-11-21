@@ -1,32 +1,35 @@
 import {
-  BIN_TYPE,
-  SUPPLIER_STATE,
-  CUSTOMER_STATE,
-  PRODUCT_STATE,
-  ORGANIZATION_STATE,
-} from '@herobm/shared';
-import {
-  glAccounts,
-  locations,
-  zones,
   bins,
-  suppliers,
   customers,
-  organizations,
-  products,
-  taxCategories,
-  tradingTerms,
-  uomDictionary,
+  financialEvents,
+  glAccounts,
   glJournalEntries,
   glJournalLines,
-  financialEvents,
+  locations,
+  organizations,
+  products,
+  suppliers,
+  tradingTerms,
+  uomDictionary,
+  zones,
 } from '@herobm/db-schema';
-import { eq, sql } from 'drizzle-orm';
+import {
+  BIN_TYPE,
+  CUSTOMER_STATE,
+  ORGANIZATION_STATE,
+  PRODUCT_STATE,
+  SUPPLIER_STATE,
+} from '@herobm/shared';
+import { sql } from 'drizzle-orm';
 import { seedCoaAccounts, seedCoaSettings } from '../prod/core';
 
 import type { SeedDB } from '../run';
 
 export async function runTestSeeds(db: SeedDB, dryRun = false) {
+  if (!process.env.HOME_CURRENCY) {
+    process.env.HOME_CURRENCY = 'AUD';
+  }
+
   if (dryRun) {
     console.log('  [DRY RUN] Would seed test data');
     return;
@@ -59,7 +62,7 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
       city: 'Test City',
       stateOrProvince: 'TX',
       postalCode: '12345',
-      country: 'USA',
+      country: 'US',
       source: 'app',
       createdBy: 'system',
     })

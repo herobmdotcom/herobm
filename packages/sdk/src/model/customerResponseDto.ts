@@ -61,6 +61,17 @@ export interface CustomerResponseDto {
   deliveryAddresses?: CustomerResponseDtoDeliveryAddressesItem[];
   creditAssessment?: CustomerResponseDtoCreditAssessment;
   effectiveCreditLimit?: string;
+  /** @nullable */
+  effectiveTradingTermsId?: string | null;
+  /** @nullable */
+  customerGroupTradingTermsId?: string | null;
+  /** @nullable */
+  customerGroupCreditLimit?: string | null;
+  customerGroupIsOnCreditHold?: boolean;
+  /** @nullable */
+  effectiveEarlyPaymentDiscount?: string | null;
+  /** @nullable */
+  effectiveEarlyPaymentDiscountDays?: number | null;
   totalOutstanding?: number;
   uninvoicedOrdersTotal?: number;
 }

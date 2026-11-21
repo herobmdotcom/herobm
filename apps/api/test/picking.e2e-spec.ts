@@ -7,14 +7,13 @@
  * Run with: npm run test:e2e -- --testPathPatterns picking
  * Requires: Docker stack running with Postgres + populated marts.
  */
-import { TestingModule } from '@nestjs/testing';
-import { createE2eModule } from './utils/e2e-module';
-import { INestApplication } from '@nestjs/common';
-import { AppModule } from '../src/app.module';
-import { DRIZZLE } from '../src/drizzle/drizzle.module';
-import { sql, eq, and } from 'drizzle-orm';
 import { binContents, bins, zones } from '@herobm/db-schema';
-import { parsePickBarcode, CUSTOMER_STATE } from '@herobm/shared';
+import { parsePickBarcode } from '@herobm/shared';
+import { INestApplication } from '@nestjs/common';
+import { TestingModule } from '@nestjs/testing';
+import { and, eq, sql } from 'drizzle-orm';
+import { DRIZZLE } from '../src/drizzle/drizzle.module';
+import { createE2eModule } from './utils/e2e-module';
 
 import request from 'supertest';
 

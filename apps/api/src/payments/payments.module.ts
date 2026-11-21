@@ -1,24 +1,24 @@
-import { Module, Inject, OnModuleInit } from '@nestjs/common';
-import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
-import { sql } from 'drizzle-orm';
 import { paymentEntries } from '@herobm/db-schema';
-import { DRIZZLE, DrizzleModule } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
+import { Inject, Module, OnModuleInit } from '@nestjs/common';
+import { sql } from 'drizzle-orm';
 import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
-import { PaymentsController } from './payments.controller';
-import { PaymentsCoreService } from './payments-core.service';
-import { PaymentsWriteService } from './payments-write.service';
-import { PaymentsAllocationService } from './payments-allocation.service';
-import { PaymentsPostingService } from './payments-posting.service';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE, DrizzleModule } from '../drizzle/drizzle.module';
 import { GlModule } from '../gl/gl.module';
-import { SuppliersModule } from '../suppliers/suppliers.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { SuppliersModule } from '../suppliers/suppliers.module';
+import { PaymentsAllocationService } from './payments-allocation.service';
+import { PaymentsCoreService } from './payments-core.service';
+import { PaymentsPostingService } from './payments-posting.service';
+import { PaymentsWriteService } from './payments-write.service';
+import { PaymentsController } from './payments.controller';
 
+import { CustomerPaymentReceiptService } from '../pdf-templates/customer-payment-receipt.service';
+import { SupplierRemittanceAdviceService } from '../pdf-templates/supplier-remittance-advice.service';
 import { AbaGeneratorService } from './aba-generator.service';
 import { NachaGeneratorService } from './nacha-generator.service';
 import { PaymentRunGeneratorService } from './payment-run-generator.service';
-import { SupplierRemittanceAdviceService } from '../pdf-templates/supplier-remittance-advice.service';
-import { CustomerPaymentReceiptService } from '../pdf-templates/customer-payment-receipt.service';
 
 @Module({
   imports: [DrizzleModule, GlModule, SuppliersModule, NotificationsModule],

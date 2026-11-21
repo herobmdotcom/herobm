@@ -29,6 +29,7 @@ export default function EditSupplierInvoiceClient({ id }: { id: string }) {
   const tCommon = useTranslations('common');
   const { permissions } = useAuth();
   const canManageGL = permissions.some(p => p.resource === 'gl' && p.action === 'write');
+  const canEditProducts = permissions.some(p => p.resource === 'products' && p.action === 'write');
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
   const [markingPaid, setMarkingPaid] = useState(false);
 
@@ -58,6 +59,7 @@ export default function EditSupplierInvoiceClient({ id }: { id: string }) {
     removeLine,
     addBlankLine,
     addRoundingLine,
+    addProductLine,
     handleProductSelect,
     handleUnresolve,
     loadInvoice,
@@ -339,7 +341,7 @@ export default function EditSupplierInvoiceClient({ id }: { id: string }) {
                   placeholder={tCommon('notesCardPlaceholder')}
                 />
               ) : invoice.notes ? (
-                <div className="text-sm bg-gray-50 p-3 rounded">{invoice.notes}</div>
+                <div className="text-sm bg-[var(--bg-secondary)] p-3 rounded">{invoice.notes}</div>
               ) : (
                 <div className="text-sm text-[var(--text-muted)]">—</div>
               )}
@@ -366,6 +368,7 @@ export default function EditSupplierInvoiceClient({ id }: { id: string }) {
           removeLine={removeLine}
           addBlankLine={addBlankLine}
           addRoundingLine={addRoundingLine}
+          addProductLine={addProductLine}
           handleProductSelect={handleProductSelect}
           handleUnresolve={handleUnresolve}
           editTaxAmount={editTaxAmount}
@@ -373,6 +376,7 @@ export default function EditSupplierInvoiceClient({ id }: { id: string }) {
           saveHeader={saveHeader}
           saving={saving}
           glAccounts={glAccounts}
+          canEditProducts={canEditProducts}
           t={t}
           tCommon={tCommon}
         />

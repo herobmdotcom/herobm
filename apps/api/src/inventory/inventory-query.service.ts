@@ -1,90 +1,64 @@
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
-import {
-  ilike,
-  or,
-  eq,
-  inArray,
-  sql,
-  and,
-  isNull,
-  isNotNull,
-  desc,
-  asc,
-  lte,
-  aliasedTable,
-} from 'drizzle-orm';
-import { AppConfigService } from '../settings/app-config.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { resolveLedgerRelatedEntities } from './ledger-source-resolver';
-import {
-  inventoryLevels,
-  products,
-  bins,
   binContents,
-  inventoryEntries,
-  inventoryLedger,
-  outbox,
-  zones,
-  locations,
-  salesOrders,
-  salesOrderShipments,
-  salesOrderReturns,
-  salesOrderReturnLines,
-  salesOrderLineItems,
-  customers,
-  purchaseOrders,
-  suppliers,
-  productUoms,
-  productDefaultBins,
+  bins,
   goodsReceived,
   goodsReceivedLines,
-  purchaseOrderLineItems,
-  transferOrders,
-  transferOrderReceipts,
-  transferOrderReceiptLines,
-  organizations,
+  inventoryEntries,
+  inventoryLedger,
+  inventoryLevels,
+  locations,
   productComponents,
-  productGroups,
-  productSuppliers,
-  workOrders,
+  productDefaultBins,
+  products,
+  productUoms,
   projects,
+  salesOrderLineItems,
+  salesOrderReturnLines,
+  salesOrderReturns,
+  salesOrders,
+  transferOrderReceiptLines,
+  transferOrderReceipts,
+  transferOrders,
+  workOrders,
+  zones,
 } from '@herobm/db-schema';
-import { randomUUID } from 'crypto';
-import { emitEvent } from '../common/emit-event';
-import { EntityType, EventType } from '../common/event-types';
+import {
+  calculateAvailableQuantity,
+  compareBinNumbers,
+  PUTAWAY_STATUS,
+  toDecimal,
+  WORK_ORDER_STATE,
+} from '@herobm/shared';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  aliasedTable,
+  and,
+  asc,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  isNotNull,
+  or,
+  sql,
+} from 'drizzle-orm';
 import {
   PaginationQuery,
   parsePagination,
   withCursorPagination,
 } from '../common/pagination';
-import {
-  calculateAvailableQuantity,
-  compareBinNumbers,
-  MATCH_STATUS,
-  PUTAWAY_STATUS,
-  RETURN_STATE,
-  WORK_ORDER_STATE,
-  toDecimal,
-} from '@herobm/shared';
-import {
-  isPickableBinSqlCondition,
-  filterPickableBins,
-  calculatePickableOnHand,
-  isQuarantineBinCondition,
-  isPickableBinCondition,
-} from './inventory-math.utils';
-import { BIN_TYPE } from '@herobm/shared';
-import { UomService } from './uom.service';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { GlService } from '../gl/gl.service';
-import { getValuationStrategy } from './valuation';
-import { getAccountingStrategy } from './inventory-accounting';
+import { AppConfigService } from '../settings/app-config.service';
+import {
+  filterPickableBins,
+  isPickableBinCondition,
+  isPickableBinSqlCondition,
+  isQuarantineBinCondition,
+} from './inventory-math.utils';
+import { resolveLedgerRelatedEntities } from './ledger-source-resolver';
+import { UomService } from './uom.service';
 
 @Injectable()
 export class InventoryQueryService {

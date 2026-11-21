@@ -1,13 +1,17 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import DataGrid from '@/components/DataGrid';
 import { formatLocalDate } from '@/lib/date';
 import { Button } from '@/components/shared/Button';
+import { CURRENCIES, hasPermission, SUPPLIER_STATE, SystemResource } from '@herobm/shared';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
+import { useAuth } from '@/components/AuthGate';
+import { useSupplierGroups, useTaxPositions, useTradingTerms } from '@/hooks/useReferenceData';
+import BulkEditSlideOver, { type BulkEditFieldDef } from '@/components/shared/BulkEditSlideOver';
+import * as api from '@herobm/sdk';
 
 interface UnifiedSupplierRow {
   vendorId: string;
@@ -28,7 +32,18 @@ interface UnifiedSupplierRow {
 }
 
 export default function SuppliersContent() {
-  const router = useRouter();
+  const { permissions } = useAuth();
+  const canBulkWrite = hasPermission(permissions, SystemResource.BULK_WRITE, 'write');
+
+  const [isBulkMode, setIsBulkMode] = useState(false);
+  const [selectedSuppliers, setSelectedSuppliers] = useState<UnifiedSupplierRow[]>([]);
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const { supplierGroups } = useSupplierGroups();
+  const { tradingTerms } = useTradingTerms();
+  const { taxPositions } = useTaxPositions();
+
   const tCommon = useTranslations('common');
   const tStates = useTranslations('common.states');
   const tSuppliers = useTranslations('suppliers');
@@ -90,28 +105,178 @@ export default function SuppliersContent() {
     { field: 'productCount', headerName: tSuppliers('columns.productCount'), width: 100, type: 'numericColumn', hide: true },
   ], [tCommon, tStates, tSuppliers]);
 
+  const gridColumns = useMemo<ColDef[]>(() => {
+    if (!isBulkMode) return columns;
+    const checkboxCol: ColDef = {
+      colId: '__select',
+      width: 48,
+      minWidth: 48,
+      maxWidth: 48,
+      resizable: false,
+      sortable: false,
+      filter: false,
+      pinned: 'left',
+      checkboxSelection: true,
+      headerCheckboxSelection: true,
+      headerCheckboxSelectionFilteredOnly: true,
+    };
+    return [checkboxCol, ...columns];
+  }, [isBulkMode, columns]);
 
+  const bulkFields = useMemo<BulkEditFieldDef[]>(() => [
+    {
+      key: 'supplierGroupId',
+      label: tCommon('columns.group'),
+      type: 'select',
+      nullable: true,
+      options: supplierGroups.map((g) => ({
+        label: g.name,
+        value: g.supplierGroupId,
+      })),
+      placeholder: 'Select Supplier Group...',
+    },
+    {
+      key: 'tradingTermsId',
+      label: tSuppliers('columns.paymentTerms'),
+      type: 'select',
+      nullable: true,
+      options: tradingTerms.map((tt) => ({
+        label: tt.description || tt.code,
+        value: tt.tradingTermsId,
+      })),
+      placeholder: 'Select Trading Terms...',
+    },
+    {
+      key: 'taxPositionId',
+      label: tCommon('columns.taxPosition'),
+      type: 'select',
+      nullable: true,
+      options: taxPositions.map((tp) => ({
+        label: tp.title || tp.code,
+        value: tp.taxPositionId,
+      })),
+      placeholder: 'Select Tax Position...',
+    },
+    {
+      key: 'currencyCode',
+      label: tCommon('columns.currency'),
+      type: 'select',
+      nullable: false,
+      options: CURRENCIES.map((c) => ({
+        label: `${c.code} (${c.name})`,
+        value: c.code,
+      })),
+      placeholder: 'Select Currency...',
+    },
+    {
+      key: 'isPurchasingBlocked',
+      label: 'Purchasing Blocked',
+      type: 'boolean',
+      nullable: false,
+      helpText: 'Toggle to prevent purchase orders from being placed with selected suppliers.',
+    },
+    {
+      key: 'isPaymentBlocked',
+      label: 'Payment Blocked',
+      type: 'boolean',
+      nullable: false,
+      helpText: 'Toggle to prevent outgoing payments to selected suppliers.',
+    },
+    {
+      key: 'stateCode',
+      label: tCommon('columns.status'),
+      type: 'select',
+      nullable: false,
+      options: [
+        { label: tCommon('states.active'), value: SUPPLIER_STATE.ACTIVE },
+        { label: tCommon('states.inactive'), value: SUPPLIER_STATE.INACTIVE },
+        { label: tCommon('states.archived'), value: SUPPLIER_STATE.ARCHIVED },
+      ],
+      placeholder: 'Select Status...',
+    },
+  ], [supplierGroups, tradingTerms, taxPositions, tCommon, tSuppliers]);
+
+  const handleBulkApply = async (payload: Record<string, unknown>) => {
+    const ids = selectedSuppliers.map((s) => s.vendorId);
+    const res = await api.suppliersControllerBulkUpdate({
+      ids,
+      ...payload,
+    });
+    setRefreshTrigger((prev) => prev + 1);
+    setSelectedSuppliers([]);
+    setIsBulkMode(false);
+    return res.data;
+  };
 
   return (
-    <DataGrid<UnifiedSupplierRow>
-      endpoint="/api/suppliers"
-      columns={columns}
-      customFieldEntityType="suppliers"
-      gridKey="suppliers"
-      searchPlaceholder={tSuppliers('placeholders.searchSuppliers')}
-      exportFileName="suppliers"
-      showArchivedToggle
-      rowIdField="vendorId"
-      rowHref={(row) => `/suppliers/${encodeURIComponent(row.vendorId)}`}
-      pageTitle={tSuppliers('title')}
-      defaultSortModel={[{ colId: 'vendorNumber', sort: 'asc' }]}
-      headerActions={
-        <Button asChild variant="primary">
-          <Link href="/suppliers/new">
-            {tSuppliers('buttons.createSupplier')}
-          </Link>
-        </Button>
-      }
-    />
+    <>
+      <DataGrid<UnifiedSupplierRow>
+        endpoint="/api/suppliers"
+        columns={gridColumns}
+        customFieldEntityType="suppliers"
+        gridKey="suppliers"
+        searchPlaceholder={tSuppliers('placeholders.searchSuppliers')}
+        exportFileName="suppliers"
+        showArchivedToggle
+        rowIdField="vendorId"
+        rowSelection={isBulkMode ? 'multiple' : 'single'}
+        fetchAll={isBulkMode}
+        onSelectionChanged={isBulkMode ? (rows) => setSelectedSuppliers(rows) : undefined}
+        rowHref={isBulkMode ? undefined : (row) => `/suppliers/${encodeURIComponent(row.vendorId)}`}
+        pageTitle={tSuppliers('title')}
+        defaultSortModel={[{ colId: 'vendorNumber', sort: 'asc' }]}
+        refreshTrigger={refreshTrigger}
+        headerActions={
+          <div className="flex items-center gap-2">
+            {canBulkWrite && (
+              <Button
+                type="button"
+                variant={isBulkMode ? 'secondary' : 'ghost'}
+                onClick={() => {
+                  setIsBulkMode(!isBulkMode);
+                  setSelectedSuppliers([]);
+                }}
+              >
+                {isBulkMode ? tCommon('bulkEdit.exit') : tCommon('bulkEdit.toggle')}
+              </Button>
+            )}
+            <Button asChild variant="primary">
+              <Link href="/suppliers/new">
+                {tSuppliers('buttons.createSupplier')}
+              </Link>
+            </Button>
+          </div>
+        }
+        secondaryHeader={
+          isBulkMode ? (
+            <div className="flex items-center gap-3 py-1">
+              <span className="text-xs font-semibold px-2.5 py-1 rounded bg-[var(--bg-secondary)] border border-[var(--border)] text-[var(--text-primary)]">
+                {tCommon('bulkEdit.selectedCount', { count: selectedSuppliers.length })}
+              </span>
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                disabled={selectedSuppliers.length === 0}
+                onClick={() => setIsBulkOpen(true)}
+              >
+                {tCommon('bulkEdit.editSelected', { count: selectedSuppliers.length })}
+              </Button>
+            </div>
+          ) : undefined
+        }
+      />
+
+      {isBulkOpen && (
+        <BulkEditSlideOver
+          isOpen={isBulkOpen}
+          onClose={() => setIsBulkOpen(false)}
+          entityName={tSuppliers('title')}
+          selectedCount={selectedSuppliers.length}
+          fields={bulkFields}
+          onApply={handleBulkApply}
+        />
+      )}
+    </>
   );
 }

@@ -127,6 +127,11 @@ INVARIANT_CHECKS = [
         "Order line quantities must always be non-negative"
     ),
     (
+        "Negative Sales Line Price",
+        "SELECT count(*) FROM herobm_core.sales_order_lines WHERE price_per_unit < 0 AND coalesce(product_description, '') NOT ILIKE '%rebate%' AND coalesce(product_description, '') NOT ILIKE '%discount%' AND coalesce(product_description, '') NOT ILIKE '%fee%' AND coalesce(product_description, '') NOT ILIKE '%freight%' AND coalesce(product_description, '') NOT ILIKE '%prep%' AND coalesce(product_description, '') NOT ILIKE '%rounding%' AND sales_order_id NOT IN ('00000000-0000-0000-0000-000000000001', '00000000-0000-4000-8000-000000000001')",
+        "Standard sales order lines must never have negative unit prices"
+    ),
+    (
         "Negative Purchase Line Qty",
         "SELECT count(*) FROM herobm_core.purchase_order_lines WHERE quantity < 0 AND purchase_order_id NOT IN ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002', '00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000002')",
         "Purchase line quantities must always be non-negative"

@@ -394,6 +394,87 @@ export function computeReturnCreditSummary(
 
 
 // ---------------------------------------------------------------------------
+// Product Unit Price Resolution
+// ---------------------------------------------------------------------------
+
+export interface ProductPriceFields {
+  listPrice?: Decimal | number | string | null;
+  tradePrice?: Decimal | number | string | null;
+  priceLevel3?: Decimal | number | string | null;
+  priceLevel4?: Decimal | number | string | null;
+  standardCost?: Decimal | number | string | null;
+  weightedAverageCost?: Decimal | number | string | null;
+}
+
+export interface ResolveProductPriceOptions {
+  /** 'sales' prioritizes selling prices; 'purchase' prioritizes standardCost first. Defaults to 'sales'. */
+  mode?: 'sales' | 'purchase';
+  /** Optional customer price scale (1 = List, 2 = Trade, 3 = Level 3, 4 = Level 4). */
+  priceScale?: number | string | null;
+}
+
+/**
+ * Resolves the default unit price for a product using strict Decimal > 0 checks
+ * (never treating '0.00' as truthy). Respects optional customer priceScale on sales.
+ */
+export function resolveProductUnitPrice(
+  product?: ProductPriceFields | null,
+  options?: ResolveProductPriceOptions,
+): number {
+  if (!product) return 0;
+  const mode = options?.mode ?? 'sales';
+
+  const pickFirstPositive = (
+    candidates: Array<Decimal | number | string | null | undefined>,
+  ): number => {
+    for (const raw of candidates) {
+      const d = toFinancialDecimal(raw);
+      if (d.gt(0)) {
+        return d.toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toNumber();
+      }
+    }
+    return 0;
+  };
+
+  if (mode === 'purchase') {
+    return pickFirstPositive([
+      product.standardCost,
+      product.weightedAverageCost,
+      product.tradePrice,
+      product.listPrice,
+    ]);
+  }
+
+  // Sales mode: honor customer priceScale (1=List, 2=Trade, 3=Level 3, 4=Level 4), falling back safely
+  const scale = Number(options?.priceScale);
+  const scalePreferred: Array<Decimal | number | string | null | undefined> =
+    scale === 2
+      ? [product.tradePrice, product.listPrice, product.priceLevel3, product.priceLevel4]
+      : scale === 3
+        ? [product.priceLevel3, product.tradePrice, product.listPrice, product.priceLevel4]
+        : scale === 4
+          ? [product.priceLevel4, product.priceLevel3, product.tradePrice, product.listPrice]
+          : [product.listPrice, product.tradePrice, product.priceLevel3, product.priceLevel4];
+
+  return pickFirstPositive(scalePreferred);
+}
+
+/**
+ * Resolves the inventory valuation unit cost for a product (WAC -> Standard Cost -> '0'),
+ * preserving full Decimal precision and never treating '0.00' as truthy.
+ */
+export function resolveProductUnitCost(
+  product?: Pick<ProductPriceFields, 'weightedAverageCost' | 'standardCost'> | null,
+): string {
+  if (!product) return '0';
+  const wac = toFinancialDecimal(product.weightedAverageCost);
+  if (wac.gt(0)) return String(product.weightedAverageCost);
+  const std = toFinancialDecimal(product.standardCost);
+  if (std.gt(0)) return String(product.standardCost);
+  return '0';
+}
+
+// ---------------------------------------------------------------------------
 // Discount Matrix Resolution
 // ---------------------------------------------------------------------------
 

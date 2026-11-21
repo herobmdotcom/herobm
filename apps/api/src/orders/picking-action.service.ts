@@ -1,18 +1,10 @@
-import { Injectable, Inject, BadRequestException } from '@nestjs/common';
-import { eq, and, sql } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
-  salesOrders,
-  products as coreProducts,
   bins,
-  zones,
+  products as coreProducts,
   salesOrderPicks,
+  salesOrders,
+  zones,
 } from '@herobm/db-schema';
-import { findOrder, findOrderLine } from './shipment-helpers';
-import { emitEvent } from '../common/emit-event';
-import { EntityType, EventType } from '../common/event-types';
-import { evaluateLifecycleRules } from './order-lifecycle-rules';
 import {
   SALES_ORDER_PICK_STATE,
   SALES_ORDER_PICK_TRANSITIONS,
@@ -20,8 +12,16 @@ import {
   getValidStates,
   toDecimal,
 } from '@herobm/shared';
-import { InventoryMovementService } from '../inventory/inventory-movement.service';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { and, eq, sql } from 'drizzle-orm';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { isPickableBin } from '../inventory/inventory-math.utils';
+import { InventoryMovementService } from '../inventory/inventory-movement.service';
+import { evaluateLifecycleRules } from './order-lifecycle-rules';
+import { findOrder, findOrderLine } from './shipment-helpers';
 
 const VALID_PICK_STATES = getValidStates(SALES_ORDER_PICK_TRANSITIONS);
 

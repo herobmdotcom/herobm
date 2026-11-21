@@ -10,7 +10,7 @@ routes:
   - "/sales-orders"
   - "/sales-orders/new"
   - "/sales-orders/:id"
-tags: ["sales", "orders", "fulfillment", "pricing", "reservations", "credit-limit", "email", "analysis-codes", "customer-hold", "rules"]
+tags: ["sales", "orders", "fulfillment", "pricing", "reservations", "credit-limit", "email", "analysis-codes", "customer-hold", "rules", "keyboard-shortcuts"]
 fields:
   customer_id:
     title: "Customer Account"
@@ -113,6 +113,19 @@ The order engine continuously monitors warehouse events to advance order states 
 6. Add items, quantities, and line discounts.
 7. Click **Confirm Order**. The system allocates inventory and queues the order for picking.
 8. Click **Email Order Confirmation** to send the branded Typst PDF confirmation.
+
+### 2. Rapid Keyboard Line Entry (No Mouse Required)
+On any editable order's **Line Items** tab, you can add items continuously using only the keyboard:
+
+| Key / Step | Action |
+| :--- | :--- |
+| **`/`** | Focus the **Add product** search box from anywhere on the page. |
+| **Type + `↑` / `↓`** | Search by SKU or name and move the highlight (top match is highlighted automatically). |
+| **`Enter`** | Stage the highlighted product and focus the **Qty** box with `1` pre-selected. |
+| **Type qty + `Enter`** | Add the line item and return focus to the product search box for the next item. *(Press `Enter` twice for qty `1`.)* |
+| **`Esc`** | Cancel a staged product (or close search results) and return to the search box. |
+
+*Tip: Focusing any existing **Qty**, **Unit Price**, **Unit Cost**, or **Disc %** cell auto-selects its value — type the new number and press **`Enter`** to save. On draft orders, click **`+`** next to any line number to insert a new line directly above it, or drag the **`⋮⋮`** handle to reorder existing lines.*
 
 ---
 

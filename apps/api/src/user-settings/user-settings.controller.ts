@@ -1,13 +1,13 @@
-import { Controller, Get, Patch, Body, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiOkResponse, ApiBody } from '@nestjs/swagger';
+import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
+import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { SkipCasbin } from '../auth/casbin.guard';
-import { UserSettingsService } from './user-settings.service';
 import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
+import { SkipCasbin } from '../auth/casbin.guard';
 import {
   UpdateUserSettingsDto,
   UserSettingsResponseDto,
 } from './user-settings.dto';
+import { UserSettingsService } from './user-settings.service';
 
 @ApiTags('System')
 @Controller('user-settings')

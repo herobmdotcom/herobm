@@ -1,5 +1,4 @@
-import { Project, SyntaxKind } from 'ts-morph';
-import * as path from 'path';
+import { Project } from 'ts-morph';
 
 const project = new Project();
 project.addSourceFilesAtPaths('src/**/*.controller.ts');

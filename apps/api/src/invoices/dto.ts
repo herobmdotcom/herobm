@@ -1,15 +1,15 @@
-import {
-  IsString,
-  IsOptional,
-  IsArray,
-  ValidateNested,
-  IsUUID,
-  IsNumber,
-  IsNotEmpty,
-  IsDateString,
-} from 'class-validator';
-import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsDateString,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  ValidateNested,
+} from 'class-validator';
 
 export class InvoiceLineResponseDto {
   @ApiProperty() lineId!: string;

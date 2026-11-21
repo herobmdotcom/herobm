@@ -1,40 +1,39 @@
-import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  IsUUID,
-  IsEnum,
-  IsBoolean,
-  IsNumber,
-  IsDateString,
-  Min,
-  Max,
-  IsObject,
-  IsArray,
-  ValidateNested,
-} from 'class-validator';
-import { Type } from 'class-transformer';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsPercentage } from '../common/validators/is-percentage.decorator';
 import type {
-  ProjectState,
-  ProjectTaskState,
   ProjectBillingType,
-  ResourceType,
+  ProjectLedgerEntryType,
   ProjectLineType,
   ProjectSourceType,
-  ProjectLedgerEntryType,
+  ProjectState,
+  ProjectTaskState,
+  ResourceType,
 } from '@herobm/shared';
 import {
-  PROJECT_STATE,
-  PROJECT_TASK_STATE,
   PROJECT_BILLING_TYPE,
-  RESOURCE_TYPE,
+  PROJECT_LEDGER_ENTRY_TYPE,
   PROJECT_LINE_TYPE,
   PROJECT_SOURCE_TYPE,
-  PROJECT_LEDGER_ENTRY_TYPE,
+  PROJECT_STATE,
+  PROJECT_TASK_STATE,
+  RESOURCE_TYPE,
 } from '@herobm/shared';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsBoolean,
+  IsDateString,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsObject,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 import { PaginationQuery } from '../common/pagination';
+import { IsPercentage } from '../common/validators/is-percentage.decorator';
 
 export class CreateProjectDto {
   @ApiPropertyOptional({

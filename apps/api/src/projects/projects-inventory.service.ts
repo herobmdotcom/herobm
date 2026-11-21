@@ -1,40 +1,41 @@
-import { Decimal } from 'decimal.js';
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-  Logger,
-  forwardRef,
-} from '@nestjs/common';
-import { eq, and, desc } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  projects,
-  projectTasks,
+  bins,
+  products,
   projectBudgetLines,
   projectLedgerEntries,
-  products,
-  bins,
+  projectTasks,
+  projects,
   zones,
 } from '@herobm/db-schema';
 import {
-  IssueInventoryDto,
-  ReturnInventoryDto,
-  ProjectProfitabilityResponseDto,
-} from './dto';
-import { emitEvent } from '../common/emit-event';
-import { EntityType, EventType } from '../common/event-types';
-import { InventoryMovementService } from '../inventory/inventory-movement.service';
-import {
-  PROJECT_LINE_TYPE,
   PROJECT_LEDGER_ENTRY_TYPE,
+  PROJECT_LINE_TYPE,
   PROJECT_SOURCE_TYPE,
   PROJECT_TASK_STATE,
   computeLinePrice,
+  resolveProductUnitPrice,
   toDecimal,
 } from '@herobm/shared';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  forwardRef,
+} from '@nestjs/common';
+import { Decimal } from 'decimal.js';
+import { and, desc, eq } from 'drizzle-orm';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { InventoryMovementService } from '../inventory/inventory-movement.service';
+import {
+  IssueInventoryDto,
+  ProjectProfitabilityResponseDto,
+  ReturnInventoryDto,
+} from './dto';
 
 function generateStockEntryNumber(prefix: string): string {
   const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -121,18 +122,16 @@ export class ProjectsInventoryService {
       const unitCost =
         dto.unitCost !== undefined
           ? new Decimal(dto.unitCost).toNumber()
-          : new Decimal(
-              product.standardCost ||
-                product.weightedAverageCost ||
-                product.tradePrice ||
-                0,
-            ).toNumber();
+          : resolveProductUnitPrice(product, { mode: 'purchase' });
+      const catalogSalesPrice = resolveProductUnitPrice(product, {
+        mode: 'sales',
+      });
       const unitPrice =
         dto.unitPrice !== undefined
           ? new Decimal(dto.unitPrice).toNumber()
-          : new Decimal(
-              product.listPrice || new Decimal(unitCost).mul(1.3).toNumber(),
-            ).toNumber();
+          : catalogSalesPrice > 0
+            ? catalogSalesPrice
+            : new Decimal(unitCost).mul(1.3).toNumber();
 
       let lineDiscount = 0;
       if (dto.discountPercentage !== undefined) {
@@ -343,17 +342,14 @@ export class ProjectsInventoryService {
       }
 
       if (unitCost === undefined) {
-        unitCost = new Decimal(
-          product.standardCost ||
-            product.weightedAverageCost ||
-            product.tradePrice ||
-            0,
-        ).toNumber();
+        unitCost = resolveProductUnitPrice(product, { mode: 'purchase' });
       }
       if (unitPrice === undefined) {
-        unitPrice = new Decimal(
-          product.listPrice || new Decimal(unitCost).mul(1.3).toNumber(),
-        ).toNumber();
+        const salesPrice = resolveProductUnitPrice(product, { mode: 'sales' });
+        unitPrice =
+          salesPrice > 0
+            ? salesPrice
+            : new Decimal(unitCost).mul(1.3).toNumber();
       }
 
       const totalCost = new Decimal(dto.quantity).mul(unitCost).toNumber();
@@ -587,17 +583,12 @@ export class ProjectsInventoryService {
     let unitPrice = params.unitPrice;
 
     if (unitCost === undefined) {
-      unitCost = new Decimal(
-        product.standardCost ||
-          product.weightedAverageCost ||
-          product.tradePrice ||
-          0,
-      ).toNumber();
+      unitCost = resolveProductUnitPrice(product, { mode: 'purchase' });
     }
     if (unitPrice === undefined) {
-      unitPrice = new Decimal(
-        product.listPrice || new Decimal(unitCost).mul(1.3).toNumber(),
-      ).toNumber();
+      const salesPrice = resolveProductUnitPrice(product, { mode: 'sales' });
+      unitPrice =
+        salesPrice > 0 ? salesPrice : new Decimal(unitCost).mul(1.3).toNumber();
     }
 
     const qty = Math.abs(params.quantity);
@@ -735,17 +726,12 @@ export class ProjectsInventoryService {
     }
 
     if (unitCost === undefined) {
-      unitCost = new Decimal(
-        product.standardCost ||
-          product.weightedAverageCost ||
-          product.tradePrice ||
-          0,
-      ).toNumber();
+      unitCost = resolveProductUnitPrice(product, { mode: 'purchase' });
     }
     if (unitPrice === undefined) {
-      unitPrice = new Decimal(
-        product.listPrice || new Decimal(unitCost).mul(1.3).toNumber(),
-      ).toNumber();
+      const salesPrice = resolveProductUnitPrice(product, { mode: 'sales' });
+      unitPrice =
+        salesPrice > 0 ? salesPrice : new Decimal(unitCost).mul(1.3).toNumber();
     }
 
     const qty = Math.abs(params.quantity);

@@ -1,17 +1,17 @@
-import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  IsArray,
-  ValidateNested,
-  IsNumberString,
-  IsIn,
-  IsUUID,
-  IsBoolean,
-} from 'class-validator';
-import { Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
 import { STOCKTAKE_STATE, type StocktakeState } from '@herobm/shared';
+import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsBoolean,
+  IsIn,
+  IsNotEmpty,
+  IsNumberString,
+  IsOptional,
+  IsString,
+  IsUUID,
+  ValidateNested,
+} from 'class-validator';
 
 export class CreateStocktakeDto {
   @ApiProperty({ description: 'Descriptive title for this stocktake' })

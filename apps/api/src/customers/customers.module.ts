@@ -1,19 +1,19 @@
-import { Module, Inject, OnModuleInit } from '@nestjs/common';
-import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
-import { sql } from 'drizzle-orm';
 import { customers } from '@herobm/db-schema';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
+import { Inject, Module, OnModuleInit } from '@nestjs/common';
+import { sql } from 'drizzle-orm';
 import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
-import { CustomersController } from './customers.controller';
-import { CustomersService } from './customers.service';
-import { CustomersWriteService } from './customers-write.service';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { CustomerOverdueNoticeService } from '../pdf-templates/customer-overdue-notice.service';
+import { CustomerStatementService } from '../pdf-templates/customer-statement.service';
+import { CreditAssessmentService } from './credit-assessment.service';
 import { CustomerGroupsController } from './customer-groups.controller';
 import { CustomerGroupsService } from './customer-groups.service';
-import { CreditAssessmentService } from './credit-assessment.service';
-import { CustomerStatementService } from '../pdf-templates/customer-statement.service';
-import { CustomerOverdueNoticeService } from '../pdf-templates/customer-overdue-notice.service';
-import { NotificationsModule } from '../notifications/notifications.module';
+import { CustomersWriteService } from './customers-write.service';
+import { CustomersController } from './customers.controller';
+import { CustomersService } from './customers.service';
 
 @Module({
   imports: [NotificationsModule],

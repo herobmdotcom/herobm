@@ -81,14 +81,14 @@ function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, 
             <div className="lg:hidden sm:relative" ref={ref}>
                 <Button variant="ghost"
                     onClick={() => setOpen(!open)}
-                    className={`flex items-center justify-center h-10 w-10 rounded-lg transition-all ${isActive ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'bg-white border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]'}`}
+                    className={`flex items-center justify-center h-10 w-10 rounded-lg transition-all ${isActive ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]'}`}
                     title="Filters"
                 >
                     { }
                     <span className="material-symbols-outlined text-[20px]">filter_list</span>
                 </Button>
                 {open && (
-                    <div className="absolute left-0 right-0 sm:left-auto sm:right-0 top-full mt-2 w-full sm:w-64 bg-white -[0_4px_24px_rgba(0,0,0,0.12)] rounded-xl border border-[var(--border)] p-4 z-50 flex flex-col gap-4">
+                    <div className="absolute left-0 right-0 sm:left-auto sm:right-0 top-full mt-2 w-full sm:w-64 bg-[var(--bg-card)] shadow-xl rounded-xl border border-[var(--border)] p-4 z-50 flex flex-col gap-4">
                         <div className="flex flex-col gap-1.5">
                             <select
                                 value={selectedLocationId}

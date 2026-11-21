@@ -1,44 +1,44 @@
 import { SystemResource } from '@herobm/shared';
 import {
-  ApiOperation,
-  ApiOkResponse,
+  Body,
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
+import {
   ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Query,
-  Param,
-  NotFoundException,
-} from '@nestjs/common';
-import { InventoryQueryService } from './inventory-query.service';
-import { DemandQueryService } from './demand-query.service';
-import { InventoryMovementService } from './inventory-movement.service';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
-import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
+import { ApiPaginatedResponse, PaginationQuery } from '../common/pagination';
+import { DemandQueryService } from './demand-query.service';
 import {
-  PutawayBulkDto,
-  QuarantineMoveDto,
-  MoveStockDto,
   AdjustStockDto,
-  InventoryResponseDto,
-  InventoryBinResponseDto,
-  PutawayContextResponseDto,
-  InventoryLedgerResponseDto,
-  InventoryEntryDetailsResponseDto,
   FindByProductIdsBulkDto,
+  InventoryBinResponseDto,
+  InventoryEntryDetailsResponseDto,
+  InventoryLedgerResponseDto,
   InventoryLocationResponseDto,
-  TopographyLocationResponseDto,
-  PendingPutawayResponseDto,
+  InventoryResponseDto,
   InventorySuccessResponseDto,
-  RestockResponseDto,
   MovementReportResponseDto,
+  MoveStockDto,
+  PendingPutawayResponseDto,
+  PutawayBulkDto,
+  PutawayContextResponseDto,
+  QuarantineMoveDto,
+  RestockResponseDto,
+  TopographyLocationResponseDto,
 } from './dto';
+import { InventoryMovementService } from './inventory-movement.service';
+import { InventoryQueryService } from './inventory-query.service';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 

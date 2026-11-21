@@ -7,13 +7,7 @@ import { formatLocationDisplay } from '@/lib/formatters';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 
-const parseInitialPhone = (val: string) => {
-    if (!val) return '';
-    if (val.startsWith('+')) return val;
-    const digits = val.replace(/\D/g, '');
-    if (digits.length > 0) return '+' + digits;
-    return '';
-};
+import { parseInitialPhone, toSupportedCountry } from '@/lib/phone';
 
 interface DeliveryCardProps {
     isOrderDetailsEditable: boolean;
@@ -151,7 +145,7 @@ export default function DeliveryCard({
                             <div>
                                 <PhoneInput
                                     international
-                                    defaultCountry={customerCountry as import('react-phone-number-input').Country}
+                                    defaultCountry={toSupportedCountry(customerCountry)}
                                     disabled={!isOrderDetailsEditable}
                                     className="input w-full flex items-center px-2 border border-[var(--border)] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--accent)]"
                                     value={parseInitialPhone(editDeliveryPhone)}

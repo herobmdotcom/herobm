@@ -1,8 +1,8 @@
-import { TestingModule } from '@nestjs/testing';
-import { createE2eModule } from './utils/e2e-module';
-import { INestApplication } from '@nestjs/common';
-import request from 'supertest';
 import { STOCKTAKE_STATE } from '@herobm/shared';
+import { INestApplication } from '@nestjs/common';
+import { TestingModule } from '@nestjs/testing';
+import request from 'supertest';
+import { createE2eModule } from './utils/e2e-module';
 
 describe('Stocktakes & Cycle Counting (e2e)', () => {
   let app: INestApplication;

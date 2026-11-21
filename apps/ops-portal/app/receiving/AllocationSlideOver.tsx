@@ -302,7 +302,7 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
                      <div className="font-semibold text-sm text-[var(--accent)]">
                       {line.productNumber || '—'}
                     </div>
-                    <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">
+                    <div className="text-xs text-[var(--text-muted)] bg-[var(--bg-secondary)] px-2 py-0.5 rounded font-medium">
                       {line.receiptNumber}
                     </div>
                   </div>
@@ -323,7 +323,7 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
                     } />
                   </div>
                   {isActive && state && !state.allocated && (
-                    <div className="mt-4 pt-4 border-t border-slate-200">
+                    <div className="mt-4 pt-4 border-t border-[var(--border)]">
                       <h4 className="text-xs font-bold mb-3 uppercase tracking-wider text-[var(--text-secondary)]">{t('allocation.eligiblePOs')}</h4>
                       <POCandidatesList grLine={line} state={state} toggleExpand={toggleExpand} handleAllocate={handleAllocate} />
                     </div>

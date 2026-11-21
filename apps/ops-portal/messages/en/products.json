@@ -6,7 +6,8 @@
   "baseUomLabel": "(Base: {uom})",
   "buttons": {
     "addProduct": "Add Product",
-    "copyProduct": "Copy Product"
+    "copyProduct": "Copy Product",
+    "viewHistory": "History"
   },
   "cards": {
     "classification": "Classification",
@@ -28,6 +29,7 @@
     "parentQuantity": "Parent Quantity",
     "priceLevel3": "Level 3",
     "priceLevel4": "Level 4",
+    "pricingHistory": "Pricing History",
     "productId": "Product ID",
     "productNumber": "Product # (SKU)",
     "purchaseTaxCategory": "Purchase Tax Category",
@@ -72,6 +74,15 @@
     "weightedAverageCostDesc": "Valuation basis"
   },
   "costs": "Costs",
+  "createSlideOver": {
+    "listPrice": "List Price",
+    "standardCost": "Standard Cost",
+    "submit": "New Product",
+    "subtitle": "Create a new product in the catalogue",
+    "success": "Product created successfully",
+    "supplierLinkNote": "Will automatically link to supplier: {vendorName}",
+    "title": "Add Product to Catalogue"
+  },
   "defaultPurchaseUom": "Default Purchase UoM",
   "defaultSalesUom": "Default Sales UoM",
   "editComponent": "Edit Component",
@@ -130,7 +141,49 @@
     "searchProduct": "Search for a product...",
     "searchProducts": "Search by name, product number, or barcode..."
   },
+  "priceAdjustment": {
+    "applyCostIncrease": "Apply {delta}%",
+    "baseUnitCost": "Invoice Base Cost (per {uom})",
+    "belowCostWarning": "Below new cost",
+    "billedUom": "Invoice Billed UOM",
+    "costComparison": "Cost Comparison",
+    "current": "Current: {price}",
+    "invoiceUnitCost": "Invoice Unit Cost",
+    "listPrice": "Retail / List Price",
+    "loadError": "Failed to load product pricing",
+    "maintainMargin": "Maintain Margin %",
+    "marginChange": "Margin: {old}% → {new}%",
+    "marginOnly": "Margin: {margin}%",
+    "noChanges": "No price changes to save",
+    "previousCost": "Previous Standard Cost",
+    "priceLevel3": "Price Level 3",
+    "priceLevel4": "Price Level 4",
+    "rounding": {
+      "end95": "End in .95",
+      "end99": "End in .99",
+      "label": "Rounding",
+      "nearest005": "Nearest .05",
+      "nearest1": "Nearest $1"
+    },
+    "saveButton": "Save Prices",
+    "saveError": "Failed to update product prices",
+    "saveSuccess": "Product prices updated",
+    "sellPrices": "Sell Prices",
+    "standardCost": "Standard Cost",
+    "subtitle": "Update product cost and sell prices immediately",
+    "title": "Adjust Product Prices",
+    "tradePrice": "Trade Price",
+    "uomConversionHint": "{invoicePrice} ÷ {ratio} = {basePrice} per {uom}",
+    "useInvoiceCost": "Use Invoice Cost",
+    "weightedAvgCost": "Weighted Avg Cost: {cost}"
+  },
   "pricing": "Pricing",
+  "pricingSummary": {
+    "noHistory": "No prior sales history found",
+    "title": "Recent Pricing History",
+    "viewAll": "View All",
+    "viewAllWithCount": "View All ({count})"
+  },
   "productGroup": "Product Group",
   "productName": "Product Name",
   "storage": {

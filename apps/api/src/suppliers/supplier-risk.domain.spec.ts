@@ -1,10 +1,10 @@
+import { SUPPLIER_STATE } from '@herobm/shared';
 import {
   resolveSupplierRiskProfile,
-  SupplierProfile,
-  SupplierGroupProfile,
   SupplierExpiry,
+  SupplierGroupProfile,
+  SupplierProfile,
 } from './supplier-risk.domain';
-import { SUPPLIER_STATE } from '@herobm/shared';
 
 describe('resolving Supplier Risk Profile', () => {
   it('should use default values if everything is empty', () => {

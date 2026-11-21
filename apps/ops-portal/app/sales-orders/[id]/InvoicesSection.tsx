@@ -200,13 +200,13 @@ export default function InvoicesSection({
                                         <div className="font-semibold text-sm text-[var(--accent)]">
                                             {origLine?.productNumber || origLine?.productId?.substring(0, 8) || '—'}
                                         </div>
-                                        <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">{origLine?.lineNumber}</div>
+                                        <div className="text-xs text-[var(--text-muted)] bg-[var(--bg-secondary)] px-2 py-0.5 rounded font-medium">{origLine?.lineNumber}</div>
                                     </div>
-                                    <div className="text-sm text-slate-600 font-medium mb-3">
+                                    <div className="text-sm text-[var(--text-secondary)] font-medium mb-3">
                                         {origLine?.productDescription || '—'}
                                     </div>
                                     
-                                    <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
+                                    <div className="flex flex-col gap-0 border-t border-[var(--border)] pt-1">
                                         <MobileCardField label={tSales('columns.ordered')} value={
                                             <span className="font-semibold">{origLine?.quantity}</span>
                                         } />

@@ -1,33 +1,50 @@
 import {
-  Injectable,
-  Inject,
-  forwardRef,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
-import { Decimal } from 'decimal.js';
-import { eq, sql, and, inArray } from 'drizzle-orm';
-import type { AnyPgColumn, PgTable } from 'drizzle-orm/pg-core';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  paymentEntries,
+  customerGroups,
+  customers,
   paymentAllocations,
-  salesInvoices,
+  paymentEntries,
+  purchaseDebitNotes,
   purchaseInvoices,
   salesCreditNotes,
-  purchaseDebitNotes,
-  customers,
-  customerGroups,
-  suppliers,
+  salesInvoices,
   supplierGroups,
+  suppliers,
 } from '@herobm/db-schema';
+import {
+  JOURNAL_ENTRY_SOURCE_TYPE,
+  PAYMENT_STATE,
+  PAYMENT_TYPE,
+  PURCHASE_DEBIT_NOTE_STATE,
+  PURCHASE_INVOICE_STATE,
+  type PaymentType,
+  SALES_CREDIT_NOTE_STATE,
+  SALES_INVOICE_STATE,
+} from '@herobm/shared';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+  forwardRef,
+} from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { Decimal } from 'decimal.js';
+import { and, eq, inArray, sql } from 'drizzle-orm';
+import type { AnyPgColumn, PgTable } from 'drizzle-orm/pg-core';
 import { emitEvent } from '../common/emit-event';
 import {
   EntityType,
   type EntityTypeValue,
   EventType,
 } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { JournalLineDto } from '../gl/dto';
+import { GlService } from '../gl/gl.service';
+import { evaluatePurchaseInvoiceLifecycleRules } from '../invoices/purchase-invoice-lifecycle-rules';
+import { evaluateSalesInvoiceLifecycleRules } from '../invoices/sales-invoice-lifecycle-rules';
+import { AllocatePaymentDto } from './dto';
+import { PaymentsCoreService } from './payments-core.service';
 
 interface AllocatableDoc {
   invoiceId?: string;
@@ -44,23 +61,6 @@ interface AllocatableDoc {
   debitNoteNumber?: string | null;
   [key: string]: unknown;
 }
-import { randomUUID } from 'crypto';
-import { GlService } from '../gl/gl.service';
-import { PaymentsCoreService } from './payments-core.service';
-import { AllocatePaymentDto } from './dto';
-import { JournalLineDto } from '../gl/dto';
-import { evaluateSalesInvoiceLifecycleRules } from '../invoices/sales-invoice-lifecycle-rules';
-import { evaluatePurchaseInvoiceLifecycleRules } from '../invoices/purchase-invoice-lifecycle-rules';
-import {
-  PAYMENT_STATE,
-  PAYMENT_TYPE,
-  type PaymentType,
-  SALES_INVOICE_STATE,
-  PURCHASE_INVOICE_STATE,
-  SALES_CREDIT_NOTE_STATE,
-  PURCHASE_DEBIT_NOTE_STATE,
-  JOURNAL_ENTRY_SOURCE_TYPE,
-} from '@herobm/shared';
 
 @Injectable()
 export class PaymentsAllocationService {

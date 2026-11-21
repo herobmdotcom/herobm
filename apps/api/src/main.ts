@@ -1,13 +1,13 @@
+import { Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { Logger, ValidationPipe, RequestMethod } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { json, urlencoded } from 'express';
 import helmet from 'helmet';
+import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
+import { EnvService } from './common/config/env.service';
 import { FileLoggerService } from './common/file-logger.service';
 import { ConvertEmptyStringsToNullMiddleware } from './common/middleware/convert-empty-strings-to-null.middleware';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { EnvService } from './common/config/env.service';
 
 async function bootstrap() {
   const fileLogger = new FileLoggerService();

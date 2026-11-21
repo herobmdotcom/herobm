@@ -1,49 +1,47 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
-import { SalesCreditNoteService } from './sales-credit-note.service';
-import { ReturnsWriteService } from '../orders/returns-write.service';
-import { GlService } from '../gl/gl.service';
-import { TaxCategoriesService } from '../tax/tax-categories.service';
-import { AppConfigService } from '../settings/app-config.service';
-import { OrganizationService } from '../settings/organization.service';
-import { EnrichmentService } from '../enrichment/enrichment.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
-  salesOrders,
-  salesOrderLineItems,
-  salesOrderReturns,
-  salesOrderReturnLines,
-  salesCreditNotes,
-  salesCreditNoteLines,
-  salesOrderShipments,
-  salesOrderShipmentLines,
   customers,
-  products,
-  locations,
-  organizations,
   glAccounts,
   glJournalEntries,
   glJournalLines,
-  glSettings,
-  uomDictionary,
-  taxCategories,
-  salesInvoices,
+  locations,
+  organizations,
+  products,
+  salesCreditNoteLines,
   salesInvoiceLines,
+  salesInvoices,
+  salesOrderLineItems,
+  salesOrderReturnLines,
+  salesOrderReturns,
+  salesOrders,
+  salesOrderShipmentLines,
+  salesOrderShipments,
+  taxCategories,
+  uomDictionary,
 } from '@herobm/db-schema';
-import { eq } from 'drizzle-orm';
 import {
-  SALES_ORDER_STATE,
-  RETURN_STATE,
-  RETURN_RESOLUTION,
   CUSTOMER_STATE,
-  PRODUCT_STATE,
-  SHIPMENT_STATE,
-  PUTAWAY_STATUS,
-  SALES_INVOICE_STATE,
-  SALES_CREDIT_NOTE_STATE,
   ORGANIZATION_STATE,
+  PRODUCT_STATE,
+  PUTAWAY_STATUS,
+  RETURN_RESOLUTION,
+  RETURN_STATE,
+  SALES_CREDIT_NOTE_STATE,
+  SALES_INVOICE_STATE,
+  SALES_ORDER_STATE,
+  SHIPMENT_STATE,
 } from '@herobm/shared';
+import { NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { eq } from 'drizzle-orm';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { EnrichmentService } from '../enrichment/enrichment.service';
+import { GlService } from '../gl/gl.service';
+import { ReturnsWriteService } from '../orders/returns-write.service';
+import { AppConfigService } from '../settings/app-config.service';
+import { OrganizationService } from '../settings/organization.service';
+import { TaxCategoriesService } from '../tax/tax-categories.service';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { SalesCreditNoteService } from './sales-credit-note.service';
 
 describe('SalesCreditNoteService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

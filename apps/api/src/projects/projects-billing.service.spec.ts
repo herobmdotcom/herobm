@@ -1,30 +1,30 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ProjectsBillingService } from './projects-billing.service';
-import { SalesInvoiceService } from '../invoices/sales-invoice.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
+  customers,
+  projectLedgerEntries,
   projects,
   projectTasks,
-  projectLedgerEntries,
-  salesInvoices,
   salesInvoiceLines,
-  customers,
+  salesInvoices,
   users,
 } from '@herobm/db-schema';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { randomUUID } from 'crypto';
-import { eq, sql } from 'drizzle-orm';
 import {
-  PROJECT_STATE,
+  CUSTOMER_STATE,
   PROJECT_BILLING_TYPE,
-  PROJECT_TASK_STATE,
   PROJECT_LEDGER_ENTRY_TYPE,
   PROJECT_LINE_TYPE,
   PROJECT_SOURCE_TYPE,
+  PROJECT_STATE,
+  PROJECT_TASK_STATE,
   SALES_INVOICE_STATE,
-  CUSTOMER_STATE,
 } from '@herobm/shared';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { randomUUID } from 'crypto';
+import { eq, sql } from 'drizzle-orm';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { SalesInvoiceService } from '../invoices/sales-invoice.service';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { ProjectsBillingService } from './projects-billing.service';
 
 jest.mock('../common/emit-event', () => ({
   emitEvent: jest.fn().mockResolvedValue(undefined),

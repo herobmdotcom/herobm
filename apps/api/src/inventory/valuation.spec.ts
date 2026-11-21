@@ -1,6 +1,6 @@
 import {
-  WeightedAverageStrategy,
   StandardCostStrategy,
+  WeightedAverageStrategy,
   getValuationStrategy,
 } from './valuation';
 

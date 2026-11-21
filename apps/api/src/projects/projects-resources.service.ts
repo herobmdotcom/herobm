@@ -1,45 +1,45 @@
-import { Decimal } from 'decimal.js';
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
-import { eq, or, and, asc, sql, ilike } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  projects,
-  projectTasks,
-  projectResources,
-  projectResourceAssignments,
+  productSuppliers,
   projectBudgetLines,
   projectLedgerEntries,
-  productSuppliers,
+  projectResourceAssignments,
+  projectResources,
+  projects,
+  projectTasks,
 } from '@herobm/db-schema';
 import {
-  CreateProjectResourceDto,
-  UpdateProjectResourceDto,
-  ProjectResourceQueryDto,
-  ProjectResourceResponseDto,
-  AssignProjectResourceDto,
-  ProjectResourceAssignmentResponseDto,
-  ConsumeResourceDto,
-  ProjectLedgerEntryResponseDto,
-} from './dto';
-import { emitEvent } from '../common/emit-event';
-import { EntityType, EventType } from '../common/event-types';
-import {
-  PROJECT_RESOURCE_STATE,
-  RESOURCE_TYPE,
-  PROJECT_STATE,
+  computeLinePrice,
   PROJECT_LEDGER_ENTRY_TYPE,
   PROJECT_LINE_TYPE,
+  PROJECT_RESOURCE_STATE,
   PROJECT_SOURCE_TYPE,
-  computeLinePrice,
+  PROJECT_STATE,
+  RESOURCE_TYPE,
   toDecimal,
 } from '@herobm/shared';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { Decimal } from 'decimal.js';
+import { and, asc, eq, ilike, or, sql } from 'drizzle-orm';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import {
+  AssignProjectResourceDto,
+  ConsumeResourceDto,
+  CreateProjectResourceDto,
+  ProjectLedgerEntryResponseDto,
+  ProjectResourceAssignmentResponseDto,
+  ProjectResourceQueryDto,
+  ProjectResourceResponseDto,
+  UpdateProjectResourceDto,
+} from './dto';
 
 function generateResourceNumber(): string {
   const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -477,7 +477,7 @@ export class ProjectsResourcesService {
       discountPercentage: lineDiscount,
       taxRate: 0,
     });
-    const totalPrice = computedPrice.amount;
+    const _totalPrice = computedPrice.amount;
 
     const postingDate = dto.postingDate
       ? new Date(dto.postingDate)

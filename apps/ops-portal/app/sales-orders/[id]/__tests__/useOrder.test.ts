@@ -132,6 +132,20 @@ describe('useOrder — computed values', () => {
         expect(result.current.subtotal).toBe(950);
     });
 
+    it('manages activeTab including pricing tab', async () => {
+        const order = makeOrder();
+        setupMocks(order);
+
+        const { result } = renderHook(() => useOrder('so-001'));
+        await waitFor(() => expect(result.current.order).toBeTruthy());
+
+        expect(result.current.activeTab).toBe('lines');
+        act(() => {
+            result.current.setActiveTab('pricing');
+        });
+        expect(result.current.activeTab).toBe('pricing');
+    });
+
     it('calculates totalTax from order lines', async () => {
         const order = makeOrder();
         setupMocks(order);

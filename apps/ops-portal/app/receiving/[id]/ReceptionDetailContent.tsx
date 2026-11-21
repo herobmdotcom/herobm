@@ -257,7 +257,7 @@ export default function ReceptionDetailContent({ id }: { id: string }) {
           );
         }
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[var(--bg-secondary)] text-[var(--text-secondary)] border border-[var(--border)]">
             Unmatched
           </span>
         );

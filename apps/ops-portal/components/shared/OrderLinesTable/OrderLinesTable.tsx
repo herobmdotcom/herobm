@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { DataTable, MobileCardField, type DataTableColumn } from '@/components/shared/DataTable';
 import { Button } from '@/components/shared/Button';
@@ -50,9 +50,16 @@ export function OrderLinesTable<T extends OrderLineItem = OrderLineItem>({
   onUpdateLineFields,
   onRemoveLine,
   onCalculateTaxes,
+  insertAtLineNumber,
+  onInsertAbove,
+  onReorderLines,
 }: OrderLinesTableProps<T>) {
   const tSales = useTranslations('salesOrders');
   const tPurchase = useTranslations('purchaseOrders');
+  const tProductSearch = useTranslations('common.productSearch');
+
+  const [draggedLineId, setDraggedLineId] = useState<string | null>(null);
+  const [dragOverLineId, setDragOverLineId] = useState<string | null>(null);
 
   const getLineIdentifier = (line: T, idx: number): string | number => {
     return line.salesOrderLineId || line.purchaseOrderLineId || line.id || (line.key ?? idx);
@@ -126,17 +133,46 @@ export function OrderLinesTable<T extends OrderLineItem = OrderLineItem>({
   }, [lines, taxCategories, passedSubtotal, passedTotalTax, passedTotalDiscount, passedGrandTotal]);
 
   const columns: DataTableColumn<T>[] = useMemo(() => {
+    const showLineControls = Boolean(isEditable && (onInsertAbove || onReorderLines));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic DataTable column definition
     const cols: any[] = [
       {
         id: 'lineNumber',
         header: tSales('columns.lineNumber'),
-        width: 32,
-        render: (line: T, idx: number) => (
-          <span className="text-[var(--text-muted)] font-normal text-xs relative">
-            {line.lineNumber ?? idx + 1}
-          </span>
-        ),
+        width: showLineControls ? 72 : 32,
+        render: (line: T, idx: number) => {
+          const lineNum = Number(line.lineNumber ?? idx + 1);
+          const canControlRow = isEditable && !line.parentLineId;
+          return (
+            <div className="flex items-center gap-1">
+              {canControlRow && onReorderLines && (
+                <span
+                  className="material-symbols-outlined text-[14px] text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-grab active:cursor-grabbing select-none"
+                  title={tProductSearch('dragToReorder')}
+                >
+                  drag_indicator
+                </span>
+              )}
+              <span className="text-[var(--text-muted)] font-normal text-xs tabular-nums min-w-[14px]">
+                {lineNum}
+              </span>
+              {canControlRow && onInsertAbove && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onInsertAbove(lineNum)}
+                  disabled={isSaving}
+                  title={tProductSearch('insertLineAbove', { lineNumber: lineNum })}
+                  aria-label={tProductSearch('insertLineAbove', { lineNumber: lineNum })}
+                  className="opacity-35 group-hover:opacity-100 focus:opacity-100 hover:text-[var(--accent)] hover:bg-[var(--accent-subtle)]/30 text-[var(--text-muted)] !rounded !w-4 !h-4 !p-0 !border-0 inline-flex items-center justify-center text-xs font-bold leading-none transition-opacity cursor-pointer disabled:opacity-20"
+                >
+                  <span aria-hidden="true">{'+'}</span>
+                </Button>
+              )}
+            </div>
+          );
+        },
       },
       {
         id: 'product',
@@ -308,8 +344,9 @@ export function OrderLinesTable<T extends OrderLineItem = OrderLineItem>({
     cols.push({
       id: 'amount',
       header: tSales('columns.amount'),
-      width: 85,
+      width: 105,
       align: 'right',
+      className: 'whitespace-nowrap',
       render: (line: T) => (
         <AmountCell
           line={line}
@@ -358,10 +395,43 @@ export function OrderLinesTable<T extends OrderLineItem = OrderLineItem>({
     onRemoveLine,
     onUpdateLine,
     onUpdateLineFields,
+    isEditable,
+    onInsertAbove,
+    onReorderLines,
+    tProductSearch,
   ]);
+
+  const handleDropOnRow = (targetLineId: string) => {
+    if (!draggedLineId || !onReorderLines || draggedLineId === targetLineId) {
+      setDraggedLineId(null);
+      setDragOverLineId(null);
+      return;
+    }
+
+    const topLevelIds = (lines || [])
+      .filter((l) => !l.parentLineId)
+      .map((l, i) => String(getLineIdentifier(l, i)));
+
+    const fromIdx = topLevelIds.indexOf(draggedLineId);
+    const toIdx = topLevelIds.indexOf(targetLineId);
+    if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) {
+      setDraggedLineId(null);
+      setDragOverLineId(null);
+      return;
+    }
+
+    const reordered = [...topLevelIds];
+    const [moved] = reordered.splice(fromIdx, 1);
+    reordered.splice(toIdx, 0, moved);
+
+    setDraggedLineId(null);
+    setDragOverLineId(null);
+    void onReorderLines(reordered);
+  };
 
   const amountColIndex = columns.findIndex((c) => c.id === 'amount');
   const footerColSpan = amountColIndex !== -1 ? amountColIndex : 8;
+  const enableRowInteractivity = Boolean(isEditable && (onReorderLines || onInsertAbove));
 
   return (
     <DataTable<T>
@@ -369,6 +439,83 @@ export function OrderLinesTable<T extends OrderLineItem = OrderLineItem>({
       keyExtractor={(line: T, idx: number) => String(getLineIdentifier(line, idx))}
       columns={columns}
       emptyMessage={customEmptyMessage || tSales('noLineItems')}
+      renderCustomRow={
+        enableRowInteractivity
+          ? (line, idx, visibleCols) => {
+              const rowId = String(getLineIdentifier(line, idx));
+              const lineNum = Number(line.lineNumber ?? idx + 1);
+              const canDrag = Boolean(isEditable && onReorderLines && !line.parentLineId && !isSaving);
+              const isDragging = draggedLineId === rowId;
+              const isDragOver = dragOverLineId === rowId && draggedLineId !== rowId;
+              const isInsertTarget = insertAtLineNumber === lineNum;
+
+              const draggedIdx = draggedLineId
+                ? (lines || []).findIndex((l, i) => String(getLineIdentifier(l, i)) === draggedLineId)
+                : -1;
+              const dropIndicatorClass = isDragOver
+                ? draggedIdx > idx
+                  ? 'border-t-2 border-t-[var(--accent)]'
+                  : 'border-b-2 border-b-[var(--accent)]'
+                : isInsertTarget
+                  ? 'border-t-2 border-t-[var(--accent)]'
+                  : '';
+
+              return (
+                <tr
+                  key={rowId}
+                  draggable={canDrag}
+                  onDragStart={(e) => {
+                    if (!canDrag) return;
+                    setDraggedLineId(rowId);
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', rowId);
+                  }}
+                  onDragOver={(e) => {
+                    if (!canDrag || !draggedLineId) return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    if (dragOverLineId !== rowId) {
+                      setDragOverLineId(rowId);
+                    }
+                  }}
+                  onDragLeave={() => {
+                    if (dragOverLineId === rowId) {
+                      setDragOverLineId(null);
+                    }
+                  }}
+                  onDrop={(e) => {
+                    if (!canDrag) return;
+                    e.preventDefault();
+                    handleDropOnRow(rowId);
+                  }}
+                  onDragEnd={() => {
+                    setDraggedLineId(null);
+                    setDragOverLineId(null);
+                  }}
+                  className={`group ${isDragging ? 'opacity-40' : ''} ${dropIndicatorClass}`}
+                >
+                  {visibleCols.map((col, j) => {
+                    const content = col.render
+                      ? col.render(line, idx)
+                      : col.accessor
+                        ? typeof col.accessor === 'function'
+                          ? col.accessor(line)
+                          : String(line[col.accessor as keyof T] as unknown)
+                        : null;
+                    return (
+                      <td
+                        key={col.id || j}
+                        className={`${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'} ${col.className || ''}`}
+                      >
+                        {content}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            }
+          : undefined
+      }
       mobileCard={(line: T, idx: number) => {
         const lineId = getLineIdentifier(line, idx);
         const actionCol = hasActionColumn && isLineEditable(line) ? (
@@ -385,12 +532,12 @@ export function OrderLinesTable<T extends OrderLineItem = OrderLineItem>({
               <div className="font-semibold text-sm text-[var(--accent)]">
                 <ProductCell line={line} />
               </div>
-              <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">
+              <div className="text-xs text-[var(--text-muted)] bg-[var(--bg-secondary)] px-2 py-0.5 rounded font-medium">
                 {line.lineNumber ?? idx + 1}
               </div>
             </div>
 
-            <div className="text-xs text-slate-600 font-medium mb-3 [&_.input]:w-full [&_.input]:!text-xs [&_.input]:h-7 [&_.input]:!py-1">
+            <div className="text-xs text-[var(--text-secondary)] font-medium mb-3 [&_.input]:w-full [&_.input]:!text-xs [&_.input]:h-7 [&_.input]:!py-1">
               <DescriptionCell
                 line={line}
                 lineIdentifier={lineId}
@@ -400,7 +547,7 @@ export function OrderLinesTable<T extends OrderLineItem = OrderLineItem>({
               />
             </div>
 
-            <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
+            <div className="flex flex-col gap-0 border-t border-[var(--border)] pt-1">
               {columns
                 .filter((c) =>
                   [

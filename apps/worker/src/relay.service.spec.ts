@@ -158,6 +158,7 @@ describe('relay.service', () => {
           method: 'POST',
           headers: expect.objectContaining({
             'Content-Type': 'application/json',
+            'Accept-Encoding': 'identity',
             'x-herobm-signature': expect.any(String)
           }),
           body: expect.any(String)

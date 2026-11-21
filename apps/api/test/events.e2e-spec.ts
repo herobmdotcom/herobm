@@ -1,14 +1,14 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { apiKeys, outbox, webhooks } from '@herobm/db-schema';
 import { INestApplication } from '@nestjs/common';
-import request from 'supertest';
-import { AppModule } from '../src/app.module';
-import { DrizzleDB, DRIZZLE } from '../src/drizzle/drizzle.module';
-import { apiKeys, webhooks, outbox } from '@herobm/db-schema';
+import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
-import { processEvent } from '../../worker/src/relay.service';
 import express from 'express';
+import request from 'supertest';
 import { WebhookReceiver } from '../../../packages/sdk/src/server/WebhookReceiver';
+import { processEvent } from '../../worker/src/relay.service';
+import { AppModule } from '../src/app.module';
+import { DRIZZLE, DrizzleDB } from '../src/drizzle/drizzle.module';
 
 describe('Events (e2e)', () => {
   let app: INestApplication;

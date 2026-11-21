@@ -1,18 +1,18 @@
-import { Injectable, Inject, Logger, NotFoundException } from '@nestjs/common';
-import { eq, and, sql } from 'drizzle-orm';
-import { createHash } from 'crypto';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
-  glFiscalPeriods,
-  tenantSettings,
   financialEvents,
+  glFiscalPeriods,
   glSettings,
+  tenantSettings,
 } from '@herobm/db-schema';
-import { GlService } from '../gl/gl.service';
-import { calculateSubledgerReconciliation } from '../gl/gl-reconciliation.utils';
-import { classifyAndAggregateTrialBalance } from '../gl/gl-financial-statements.utils';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { createHash } from 'crypto';
+import { and, eq, sql } from 'drizzle-orm';
 import { EntityType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { classifyAndAggregateTrialBalance } from '../gl/gl-financial-statements.utils';
+import { calculateSubledgerReconciliation } from '../gl/gl-reconciliation.utils';
+import { GlService } from '../gl/gl.service';
 
 export interface PeriodCloseAuditData {
   header: {

@@ -1,32 +1,32 @@
 import {
-  Injectable,
-  Inject,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
-import { eq, and, or, sql, inArray } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  locations,
-  zones,
-  bins,
-  binContents,
-  salesOrders,
-  salesOrderLineItems,
-  purchaseOrders,
-  inventoryLedger,
   appSettings,
+  binContents,
+  bins,
+  inventoryLedger,
+  locations,
   productDefaultBins,
+  purchaseOrders,
+  salesOrderLineItems,
+  salesOrders,
+  zones,
 } from '@herobm/db-schema';
 import {
-  CreateLocationDto,
-  CreateZoneDto,
-  CreateBinDto,
-  CreateBinBulkDto,
-} from './dto';
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import {
+  CreateBinBulkDto,
+  CreateBinDto,
+  CreateLocationDto,
+  CreateZoneDto,
+} from './dto';
 
 @Injectable()
 export class LocationsService {

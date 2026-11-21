@@ -1,20 +1,20 @@
-import { TestingModule } from '@nestjs/testing';
-import { createE2eModule } from './utils/e2e-module';
-import { INestApplication } from '@nestjs/common';
-import './suite-setup';
-import request from 'supertest';
-import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import {
-  glAccounts,
   bankStatementLines,
+  financialEvents,
+  glAccounts,
   glJournalEntries,
   glJournalLines,
   glReconciliations,
-  financialEvents,
 } from '@herobm/db-schema';
-import { eq, ne, and } from 'drizzle-orm';
 import { RECONCILIATION_STATE } from '@herobm/shared';
+import { INestApplication } from '@nestjs/common';
+import { TestingModule } from '@nestjs/testing';
 import * as crypto from 'crypto';
+import { and, eq, ne } from 'drizzle-orm';
+import request from 'supertest';
+import { DRIZZLE } from '../src/drizzle/drizzle.module';
+import './suite-setup';
+import { createE2eModule } from './utils/e2e-module';
 
 describe('BankStatementController (e2e)', () => {
   let app: INestApplication;

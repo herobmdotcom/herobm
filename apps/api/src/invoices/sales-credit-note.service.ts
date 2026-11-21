@@ -1,75 +1,72 @@
 import {
-  Injectable,
-  Inject,
+  customers as coreAccounts,
+  products as coreProducts,
+  customerGroups,
+  glAccounts,
+  glJournalEntries,
+  glJournalLines,
+  organizations,
+  salesCreditNoteLines,
+  salesCreditNotes,
+  salesEvents,
+  salesInvoices,
+  salesOrderLineItems,
+  salesOrderReturnLines,
+  salesOrderReturns,
+  salesOrders,
+} from '@herobm/db-schema';
+import {
+  JOURNAL_ENTRY_SOURCE_TYPE,
+  RETURN_STATE,
+  SALES_CREDIT_NOTE_STATE,
+  SALES_CREDIT_NOTE_TRANSITIONS,
+  computeLinePrice,
+  computeReturnCreditSummary,
+  getErrorMessage,
+  getValidStates,
+} from '@herobm/shared';
+import {
   BadRequestException,
+  Inject,
+  Injectable,
   Logger,
   NotFoundException,
   forwardRef,
 } from '@nestjs/common';
 import { Decimal } from 'decimal.js';
 import {
-  eq,
-  sql,
-  desc,
-  asc,
   and,
-  or,
+  asc,
+  desc,
+  eq,
+  getTableColumns,
   ilike,
   inArray,
-  getTableColumns,
+  or,
+  sql,
 } from 'drizzle-orm';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
 import {
   PaginationQuery,
   parsePagination,
   withCursorPagination,
 } from '../common/pagination';
-import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  salesCreditNotes,
-  salesCreditNoteLines,
-  salesOrderReturns,
-  salesOrderReturnLines,
-  salesOrderLineItems,
-  salesOrders,
-  salesInvoices,
-  glAccounts,
-  glJournalEntries,
-  glJournalLines,
-  customers as coreAccounts,
-  products as coreProducts,
-  customerGroups,
-  organizations,
-  salesEvents,
-} from '@herobm/db-schema';
-import { emitEvent } from '../common/emit-event';
-import { EntityType, EventType } from '../common/event-types';
-import { GlService } from '../gl/gl.service';
-import { JournalLineDto } from '../gl/dto';
-import { TaxCategoriesService } from '../tax/tax-categories.service';
-import { OrganizationService } from '../settings/organization.service';
-import { AppConfigService } from '../settings/app-config.service';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { EnrichmentService } from '../enrichment/enrichment.service';
-import { ReturnsWriteService } from '../orders/returns-write.service';
-import { CreateSalesCreditNoteDto } from './sales-credit-notes.dto';
-import {
-  computeLinePrice,
-  computeReturnCreditSummary,
-  JOURNAL_ENTRY_SOURCE_TYPE,
-} from '@herobm/shared';
-import {
-  SALES_CREDIT_NOTE_STATE,
-  SALES_CREDIT_NOTE_TRANSITIONS,
-  SALES_INVOICE_STATE,
-  RETURN_STATE,
-  getErrorMessage,
-  getValidStates,
-} from '@herobm/shared';
+import { JournalLineDto } from '../gl/dto';
+import { GlService } from '../gl/gl.service';
 import { getAvailableToCredit } from '../orders/order-math.utils';
+import { ReturnsWriteService } from '../orders/returns-write.service';
 import {
   getCommittedPerLine,
   getInvoicedPerLine,
 } from '../orders/shipment-helpers';
+import { AppConfigService } from '../settings/app-config.service';
+import { OrganizationService } from '../settings/organization.service';
+import { TaxCategoriesService } from '../tax/tax-categories.service';
+import { CreateSalesCreditNoteDto } from './sales-credit-notes.dto';
 
 const VALID_CN_STATES = getValidStates(SALES_CREDIT_NOTE_TRANSITIONS);
 

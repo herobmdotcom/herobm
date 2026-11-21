@@ -1,9 +1,9 @@
+import { SystemResource } from '@herobm/shared';
 import { Controller, Get, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
 import { CrmMapService } from './crm-map.service';
 import { CrmMapQueryDto, CrmMapResponseDto } from './dto';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
-import { SystemResource } from '@herobm/shared';
 
 @ApiTags('CRM Map')
 @Controller('crm-map')

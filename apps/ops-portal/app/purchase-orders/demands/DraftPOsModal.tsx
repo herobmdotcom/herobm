@@ -122,15 +122,14 @@ export default function DraftPOsModal({ isOpen, onClose, selectedDemands, onSucc
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-xl">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border)] shadow-2xl rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+        <div className="px-6 py-4 border-b border-[var(--border)] flex justify-between items-center bg-[var(--bg-secondary)] rounded-t-xl">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">{t('demands.reviewDraftPos')}</h2>
-            <p className="text-sm text-gray-500 mt-1">{t('demands.reviewDraftPosDesc')}</p>
+            <h2 className="text-xl font-bold text-[var(--text-primary)]">{t('demands.reviewDraftPos')}</h2>
+            <p className="text-sm text-[var(--text-muted)] mt-1">{t('demands.reviewDraftPosDesc')}</p>
           </div>
-          <Button variant="ghost" onClick={onClose} className="text-gray-400 hover:text-gray-600">
-
+          <Button variant="ghost" size="icon" onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
             <span className="material-symbols-outlined">close</span>
           </Button>
         </div>
@@ -206,7 +205,7 @@ export default function DraftPOsModal({ isOpen, onClose, selectedDemands, onSucc
           ))}
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+        <div className="px-6 py-4 border-t border-[var(--border)] bg-[var(--bg-secondary)] flex justify-end gap-3 rounded-b-xl">
           <Button 
             onClick={onClose}
             variant="secondary"

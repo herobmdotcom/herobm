@@ -167,6 +167,9 @@ p, admin, events, archive, allow
 p, admin, data-export, read, allow
 p, admin, data-export, write, allow
 
+p, admin, bulk_write, read, allow
+p, admin, bulk_write, write, allow
+
 # system — bootstrap role for setup execution only
 p, system, setup, execute, allow
 p, system, setup, read, allow

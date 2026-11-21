@@ -1,7 +1,7 @@
-import { CustomerStatementService } from './customer-statement.service';
 import { NotFoundException } from '@nestjs/common';
+import { CustomerStatementService } from './customer-statement.service';
 
-import { CUSTOMER_STATE, SALES_INVOICE_STATE } from '@herobm/shared';
+import { CUSTOMER_STATE } from '@herobm/shared';
 
 describe('CustomerStatementService', () => {
   let service: CustomerStatementService;

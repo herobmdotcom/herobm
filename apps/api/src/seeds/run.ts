@@ -1,9 +1,9 @@
-import { Pool } from 'pg';
-import { drizzle } from 'drizzle-orm/node-postgres';
-import * as path from 'path';
-import * as dotenv from 'dotenv';
 import * as schema from '@herobm/db-schema';
+import * as dotenv from 'dotenv';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
+import * as path from 'path';
+import { Pool } from 'pg';
 
 // Load environment variables from the root .env file
 dotenv.config({
@@ -51,6 +51,9 @@ async function main() {
       const { runDemoSeeds } = await import('./demo/index.js');
       await runDemoSeeds(db, dryRun);
     } else if (mode === 'test') {
+      if (!process.env.HOME_CURRENCY) {
+        process.env.HOME_CURRENCY = 'AUD';
+      }
       const { runProdSeeds } = await import('./prod/index.js');
       await runProdSeeds(db, dryRun);
 

@@ -1,15 +1,15 @@
+import { users } from '@herobm/db-schema';
 import {
-  Injectable,
   Inject,
-  UnauthorizedException,
+  Injectable,
   Logger,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { eq, sql } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { users } from '@herobm/db-schema';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { TwoFactorService } from './two-factor.service';
 
 @Injectable()

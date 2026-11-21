@@ -1,15 +1,14 @@
 /**
  * E2E Tests — Trading Terms, Due Dates, and Live GL Overdue Assessment
  */
-import { TestingModule } from '@nestjs/testing';
-import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
+import { TestingModule } from '@nestjs/testing';
 import { CreditAssessmentService } from '../src/customers/credit-assessment.service';
+import { createE2eModule, setupE2eApp } from './utils/e2e-module';
 
-import { DRIZZLE } from '../src/drizzle/drizzle.module';
-import { salesOrders, salesInvoices, locations } from '@herobm/db-schema';
-import * as crypto from 'crypto';
+import { locations, salesInvoices, salesOrders } from '@herobm/db-schema';
 import request from 'supertest';
+import { DRIZZLE } from '../src/drizzle/drizzle.module';
 
 describe('Trading Terms and Credit Assessments (e2e)', () => {
   let app: INestApplication;
@@ -28,7 +27,7 @@ describe('Trading Terms and Credit Assessments (e2e)', () => {
       await createE2eModule()
     ).compile();
     app = moduleFixture.createNestApplication();
-    app.setGlobalPrefix('api');
+    setupE2eApp(app);
     await app.init();
 
     creditAssessmentService = app.get(CreditAssessmentService);
@@ -73,7 +72,9 @@ describe('Trading Terms and Credit Assessments (e2e)', () => {
   }, 120_000);
 
   afterAll(async () => {
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   describe('System Setup', () => {
@@ -129,8 +130,6 @@ describe('Trading Terms and Credit Assessments (e2e)', () => {
           vendorNumber: `V-NET30-${Date.now()}`,
           name: 'Net 30 Supplier',
           tradingTermsId: net30TermId,
-          defaultApAccountId: arAccountId, // doesn't matter for this test
-          defaultExpenseAccountId: salesAccountId, // doesn't matter for this test
           address1Country: 'AU',
         })
         .expect(201);
@@ -173,8 +172,6 @@ describe('Trading Terms and Credit Assessments (e2e)', () => {
           vendorNumber: `V-EOM30-${Date.now()}`,
           name: 'EOM 30 Supplier',
           tradingTermsId: eom30TermId,
-          defaultApAccountId: arAccountId,
-          defaultExpenseAccountId: salesAccountId,
           address1Country: 'AU',
         })
         .expect(201);

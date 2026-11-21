@@ -87,10 +87,10 @@ export function OrderBackordersTab({ order }: OrderBackordersTabProps) {
                                 <div className="font-semibold text-sm text-[var(--text-primary)]">
                                     {bo.productNumber || '—'}
                                 </div>
-                                <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">{bo.lineNumber || '—'}</div>
+                                <div className="text-xs text-[var(--text-muted)] bg-[var(--bg-secondary)] px-2 py-0.5 rounded font-medium">{bo.lineNumber || '—'}</div>
                             </div>
                             
-                            <div className="flex flex-col gap-0 border-t border-slate-100 pt-1 mt-2">
+                            <div className="flex flex-col gap-0 border-t border-[var(--border)] pt-1 mt-2">
                                 <MobileCardField label={tSales('columns.allocatedTo')} value={
                                     isAllocated ? (
                                         <Link 

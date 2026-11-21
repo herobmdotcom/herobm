@@ -1,6 +1,6 @@
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { salesInvoices } from '@herobm/db-schema';
 import { sql } from 'drizzle-orm';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
 
 /**
  * Generates a structural sequence number for the AR invoice natively in HeroBM.

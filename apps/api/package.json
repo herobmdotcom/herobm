@@ -1,6 +1,6 @@
 {
   "name": "api",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "description": "HeroBM: Core Backend API Gateway & Domain Services",
   "private": true,
   "author": "Norbe Systems <support@herobm.com>",
@@ -38,7 +38,7 @@
     "seed": "tsx src/seeds/run.ts --mode=prod",
     "seed:dry": "tsx src/seeds/run.ts --mode=prod --dry-run",
     "seed:demo": "tsx src/seeds/run.ts --mode=demo",
-    "seed:test": "tsx src/seeds/run.ts --mode=test",
+    "seed:test": "cross-env HOME_CURRENCY=AUD tsx src/seeds/run.ts --mode=test",
     "seed:sim": "tsx src/seeds/run.ts --mode=sim"
   },
   "dependencies": {

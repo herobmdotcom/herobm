@@ -1,36 +1,36 @@
-import { TransfersStateService } from './transfers-state.service';
-import { TransfersCoreService } from './transfers-core.service';
-import { InventoryMovementService } from '../../inventory/inventory-movement.service';
-import { setupPgliteSuite } from '../../test-utils/pglite-suite';
 import {
-  transferOrders,
+  binContents,
+  bins,
+  customers,
   locations,
   products,
-  transferOrderLines,
-  transferOrderShipments,
-  transferOrderReceiptLines,
-  warehouseEvents,
-  uomDictionary,
-  taxCategories,
-  zones,
-  bins,
-  binContents,
   projects,
-  customers,
+  taxCategories,
+  transferOrderLines,
+  transferOrderReceiptLines,
+  transferOrders,
+  transferOrderShipments,
+  uomDictionary,
+  warehouseEvents,
+  zones,
 } from '@herobm/db-schema';
-import { eq } from 'drizzle-orm';
 import {
-  TRANSFER_ORDER_STATE,
-  PRODUCT_STATE,
-  SHIPMENT_STATE,
-  CUSTOMER_STATE,
-  PROJECT_STATE,
-  PROJECT_BILLING_TYPE,
-  PUTAWAY_STATUS,
   BIN_TYPE,
+  CUSTOMER_STATE,
+  PRODUCT_STATE,
+  PROJECT_BILLING_TYPE,
+  PROJECT_STATE,
+  PUTAWAY_STATUS,
+  SHIPMENT_STATE,
+  TRANSFER_ORDER_STATE,
 } from '@herobm/shared';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
+import { InventoryMovementService } from '../../inventory/inventory-movement.service';
+import { setupPgliteSuite } from '../../test-utils/pglite-suite';
 import { BackordersService } from '../backorders.service';
+import { TransfersCoreService } from './transfers-core.service';
+import { TransfersStateService } from './transfers-state.service';
 
 describe('TransfersStateService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

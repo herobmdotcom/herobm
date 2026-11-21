@@ -1,8 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { WebhooksService } from './webhooks.service';
 import { EncryptionService } from '../common/encryption.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
-import { NotFoundException } from '@nestjs/common';
+import { WebhooksService } from './webhooks.service';
 
 describe('WebhooksService Security & Encryption (BL-061)', () => {
   let service: WebhooksService;

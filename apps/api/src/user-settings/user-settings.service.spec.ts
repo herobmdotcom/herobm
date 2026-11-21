@@ -1,9 +1,9 @@
+import { userSettings, users } from '@herobm/db-schema';
 import { Test, TestingModule } from '@nestjs/testing';
-import { UserSettingsService } from './user-settings.service';
+import { eq } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { userSettings, users } from '@herobm/db-schema';
-import { eq } from 'drizzle-orm';
+import { UserSettingsService } from './user-settings.service';
 
 describe('UserSettingsService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

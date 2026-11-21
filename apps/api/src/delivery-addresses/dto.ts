@@ -1,12 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsString,
+  IsBoolean,
   IsNotEmpty,
   IsOptional,
+  IsString,
   IsUUID,
-  IsBoolean,
-  MaxLength,
   Length,
+  MaxLength,
 } from 'class-validator';
 
 export class CreateDeliveryAddressDto {

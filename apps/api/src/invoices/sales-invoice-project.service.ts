@@ -1,43 +1,46 @@
-import { randomUUID } from 'crypto';
-import { Decimal } from 'decimal.js';
 import {
-  Injectable,
-  Inject,
+  products as coreProducts,
+  customerGroups,
+  customers,
+  glAccounts,
+  organizations,
+  productGroups,
+  salesInvoiceLines,
+  salesInvoices,
+  tradingTerms,
+} from '@herobm/db-schema';
+import {
+  computeLinePrice,
+  JOURNAL_ENTRY_SOURCE_TYPE,
+  SALES_INVOICE_STATE,
+} from '@herobm/shared';
+import {
   BadRequestException,
+  Inject,
+  Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { Decimal } from 'decimal.js';
 import { eq, sql } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  salesInvoices,
-  salesInvoiceLines,
-  customers,
-  glAccounts,
-  products as coreProducts,
-  customerGroups,
-  productGroups,
-  tradingTerms,
-  organizations,
-} from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { getExchangeRateForCurrency } from '../common/fx-helper';
 import { resolveGlDimensions } from '../common/utils/gl-resolution.util';
-import { calculateDueDate } from '../settings/trading-terms.utils';
 import {
-  resolveEffectiveTradingTermsId,
   resolveEffectiveEarlyPaymentDiscount,
+  resolveEffectiveTradingTermsId,
 } from '../customers/credit-control.utils';
-import { GlService } from '../gl/gl.service';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { JournalLineDto } from '../gl/dto';
-import { TaxCategoriesService } from '../tax/tax-categories.service';
-import { computeLinePrice, JOURNAL_ENTRY_SOURCE_TYPE } from '@herobm/shared';
+import { GlService } from '../gl/gl.service';
 import { AppConfigService } from '../settings/app-config.service';
-import { SALES_INVOICE_STATE } from '@herobm/shared';
-import { generateInvoiceNumber } from './sales-invoice-utils';
+import { calculateDueDate } from '../settings/trading-terms.utils';
+import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { changeSalesInvoiceStateHelper } from './sales-invoice-state.helper';
+import { generateInvoiceNumber } from './sales-invoice-utils';
 
 @Injectable()
 export class SalesInvoiceProjectService {

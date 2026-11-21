@@ -1,49 +1,47 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AppConfigService } from '../settings/app-config.service';
-import { ReturnsWriteService } from './returns-write.service';
 import { GlService } from '../gl/gl.service';
-import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { SalesCreditNoteService } from '../invoices/sales-credit-note.service';
+import { AppConfigService } from '../settings/app-config.service';
+import { TaxCategoriesService } from '../tax/tax-categories.service';
+import { ReturnsWriteService } from './returns-write.service';
 
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { emitEvent } from '../common/emit-event';
-import { EntityType } from '../common/event-types';
 import {
+  bins,
   locations,
+  products,
+  salesOrderLineItems,
+  salesOrderReturnLines,
   salesOrderReturns,
   taxCategories,
-  bins,
   zones,
-  salesOrderReturnLines,
-  salesOrderLineItems,
-  products,
 } from '@herobm/db-schema';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 
 jest.mock('../common/emit-event', () => ({
   emitEvent: jest.fn().mockResolvedValue(undefined),
 }));
 
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { eq, sql, and } from 'drizzle-orm';
+import type { ReturnState, SalesOrderState } from '@herobm/shared';
+import {
+  RETURN_RESOLUTION,
+  RETURN_STATE,
+  SALES_ORDER_STATE,
+} from '@herobm/shared';
+import { and, eq } from 'drizzle-orm';
 import {
   createTestCustomer,
   createTestProduct,
-  createTestSalesOrder,
-  createTestSalesOrderLine,
   createTestReturn,
   createTestReturnLine,
+  createTestSalesOrder,
+  createTestSalesOrderLine,
   createTestShipment,
   createTestShipmentLine,
 } from '../../test/fixtures';
-import {
-  SALES_ORDER_STATE,
-  RETURN_STATE,
-  RETURN_RESOLUTION,
-} from '@herobm/shared';
-import type { ReturnState, SalesOrderState } from '@herobm/shared';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
 import { InventoryQueryService } from '../inventory/inventory-query.service';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 
 // Shared test data
 const INVOICED_ORDER = {

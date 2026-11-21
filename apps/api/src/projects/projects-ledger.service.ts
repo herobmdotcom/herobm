@@ -1,44 +1,43 @@
-import { Decimal } from 'decimal.js';
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
-import { eq, and, desc, asc, sql, ilike, inArray, or } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
+  projectBudgetLines,
+  projectLedgerEntries,
   projects,
   projectTasks,
-  projectLedgerEntries,
-  projectBudgetLines,
-  salesInvoices,
   salesInvoiceLines,
+  salesInvoices,
 } from '@herobm/db-schema';
 import {
-  ConsumeExpenseDto,
-  UpdateProjectLedgerEntryDto,
-  ProjectLedgerQueryDto,
-  ProjectLedgerEntryResponseDto,
-} from './dto';
-import {
-  withCursorPagination,
-  PaginatedResponse,
-  parsePagination,
-} from '../common/pagination';
-import { emitEvent } from '../common/emit-event';
-import { EntityType, EventType } from '../common/event-types';
-import {
-  PROJECT_STATE,
+  computeLinePrice,
   PROJECT_LEDGER_ENTRY_TYPE,
   PROJECT_LINE_TYPE,
   PROJECT_SOURCE_TYPE,
-  ProjectLedgerEntryType,
-  computeLinePrice,
+  PROJECT_STATE,
   toDecimal,
 } from '@herobm/shared';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { Decimal } from 'decimal.js';
+import { and, asc, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
+import {
+  PaginatedResponse,
+  parsePagination,
+  withCursorPagination,
+} from '../common/pagination';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import {
+  ConsumeExpenseDto,
+  ProjectLedgerEntryResponseDto,
+  ProjectLedgerQueryDto,
+  UpdateProjectLedgerEntryDto,
+} from './dto';
 
 @Injectable()
 export class ProjectsLedgerService {
@@ -346,7 +345,7 @@ export class ProjectsLedgerService {
       discountPercentage: lineDiscount,
       taxRate: 0,
     });
-    const totalPrice = computedPrice.amount;
+    const _totalPrice = computedPrice.amount;
 
     const postingDate =
       dto.postingDate || dto.expenseDate
@@ -507,7 +506,7 @@ export class ProjectsLedgerService {
       discountPercentage: lineDiscount,
       taxRate: 0,
     });
-    const totalPrice = computedPrice.amount;
+    const _totalPrice = computedPrice.amount;
 
     const updateData: Partial<typeof projectLedgerEntries.$inferInsert> = {
       quantity: String(quantity),

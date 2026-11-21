@@ -1,10 +1,10 @@
+import { businessReports } from '@herobm/db-schema';
 import { Test, TestingModule } from '@nestjs/testing';
-import { BusinessReportsService } from './business-reports.service';
+import { CASBIN_ENFORCER } from '../auth/casbin.provider';
+import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
-import { CASBIN_ENFORCER } from '../auth/casbin.provider';
-import { businessReports } from '@herobm/db-schema';
+import { BusinessReportsService } from './business-reports.service';
 
 describe('BusinessReportsService', () => {
   const pg = setupPgliteSuite();

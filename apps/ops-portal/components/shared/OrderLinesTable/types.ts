@@ -21,6 +21,7 @@ export interface OrderLineItem {
   salesOrderLineId?: string;
   purchaseOrderLineId?: string;
   lineNumber?: number | string;
+  parentLineId?: string | null;
   lineType?: string | null;
   productId?: string | null;
   productNumber?: string;
@@ -79,4 +80,7 @@ export interface OrderLinesTableProps<T extends OrderLineItem = OrderLineItem> {
   onUpdateLineFields?: (indexOrId: string | number, fields: Record<string, unknown>) => void | Promise<void>;
   onRemoveLine?: (indexOrId: string | number) => void | Promise<void>;
   onCalculateTaxes?: () => void | Promise<void>;
+  insertAtLineNumber?: number | null;
+  onInsertAbove?: (lineNumber: number) => void;
+  onReorderLines?: (lineIds: string[]) => void | Promise<void>;
 }

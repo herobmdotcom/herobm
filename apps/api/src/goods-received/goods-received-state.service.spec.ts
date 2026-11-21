@@ -1,12 +1,12 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { GoodsReceivedStateService } from './goods-received-state.service';
+import { goodsReceived, locations, suppliers } from '@herobm/db-schema';
+import { GOODS_RECEIVED_STATE, SUPPLIER_STATE } from '@herobm/shared';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { eq } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { goodsReceived, suppliers, locations } from '@herobm/db-schema';
-import { eq } from 'drizzle-orm';
-import { GOODS_RECEIVED_STATE, SUPPLIER_STATE } from '@herobm/shared';
 import { GoodsReceivedCoreService } from './goods-received-core.service';
+import { GoodsReceivedStateService } from './goods-received-state.service';
 
 describe('GoodsReceivedStateService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

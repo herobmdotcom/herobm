@@ -1,5 +1,5 @@
-import { HelpTopic, HelpFieldDefinition } from './help.types';
 import * as path from 'path';
+import { HelpFieldDefinition, HelpTopic } from './help.types';
 
 /**
  * Parses frontmatter YAML block and markdown body from raw file contents.
@@ -38,12 +38,10 @@ export function parseHelpMarkdown(
 
   const extractFirstParagraph = (content: string): string | undefined => {
     const lines = content.split('\n');
-    let inHeading = false;
     for (const raw of lines) {
       const trimmed = raw.trim();
       if (!trimmed) continue;
       if (trimmed.startsWith('#')) {
-        inHeading = true;
         continue;
       }
       if (

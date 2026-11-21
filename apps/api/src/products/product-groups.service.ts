@@ -1,17 +1,17 @@
+import { productGroups, products } from '@herobm/db-schema';
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
   ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { productGroups, products } from '@herobm/db-schema';
-import { CreateProductGroupDto, UpdateProductGroupDto } from './dto';
+import { AuditMode, calculateAuditTrail } from '../common/audit';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
-import { calculateAuditTrail, AuditMode } from '../common/audit';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { CreateProductGroupDto, UpdateProductGroupDto } from './dto';
 
 @Injectable()
 export class ProductGroupsService {

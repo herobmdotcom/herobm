@@ -1,18 +1,16 @@
-import { TestingModule } from '@nestjs/testing';
-import { createE2eModule } from './utils/e2e-module';
-import { INestApplication } from '@nestjs/common';
-import request from 'supertest';
-import { eq, sql, and } from 'drizzle-orm';
 import {
   glAccounts,
-  bins,
-  zones,
-  purchaseInvoiceReceipts,
-  purchaseInvoiceLines,
   glSettings,
+  purchaseInvoiceLines,
+  purchaseInvoiceReceipts,
 } from '@herobm/db-schema';
+import { INestApplication } from '@nestjs/common';
+import { TestingModule } from '@nestjs/testing';
+import { eq, sql } from 'drizzle-orm';
+import request from 'supertest';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import { AppConfigService } from '../src/settings/app-config.service';
+import { createE2eModule } from './utils/e2e-module';
 
 describe('FX Lifecycle (e2e)', () => {
   let app: INestApplication;

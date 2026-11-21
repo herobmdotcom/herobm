@@ -1,15 +1,15 @@
-import { Injectable, Inject, Logger, OnModuleInit } from '@nestjs/common';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { eq } from 'drizzle-orm';
-import { glSettings, appSettings } from '@herobm/db-schema';
+import { appSettings, glSettings } from '@herobm/db-schema';
 import {
-  type RevenueRoutingStrategy,
   type ExpenseRoutingStrategy,
+  type RevenueRoutingStrategy,
   DEFAULT_CRM_ACTIVITY_TYPES,
 } from '@herobm/shared';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 
 /**
  * Boot-time settings cache.

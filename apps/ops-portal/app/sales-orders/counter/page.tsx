@@ -14,6 +14,8 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import BarcodeScannerCard from '@/components/shared/BarcodeScannerCard';
 import type { BarcodeScannerSearchResult, BarcodeScannerFeedback } from '@/components/shared/BarcodeScannerCard';
 import CustomerSelect, { Customer } from '@/components/shared/CustomerSelect';
+import ProductQuickAddBar from '@/components/shared/ProductQuickAddBar';
+import type { Product } from '@/components/shared/ProductSearchInput';
 import { OrderLinesTable } from '@/components/shared/OrderLinesTable';
 import { formatAmount } from '@/lib/currency';
 import { reportError } from '@/lib/api';
@@ -23,6 +25,9 @@ import {
   getErrorMessage,
   computeLinePrice,
   computeOrderTotals,
+  resolveProductUnitPrice,
+  resolveEffectiveDiscount,
+  type DiscountRule,
   toFinancialDecimal,
   roundMoney,
   SALES_ORDER_STATE,
@@ -41,8 +46,11 @@ interface CounterProduct {
   productNumber?: string;
   name?: string;
   description?: string;
-  listPrice?: string;
-  tradePrice?: string;
+  listPrice?: string | null;
+  tradePrice?: string | null;
+  priceLevel3?: string | null;
+  priceLevel4?: string | null;
+  productGroupId?: string | null;
   baseUom?: string | null;
   salesTaxCategoryId?: string | null;
 }
@@ -91,9 +99,12 @@ export default function CounterSalesPage() {
   const [glSettings, setGlSettings] = useState<api.SettingsResponseDto | null>(null);
   const [defaultCustomerId, setDefaultCustomerId] = useState<string>('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [customerDiscountRules, setCustomerDiscountRules] = useState<DiscountRule[]>([]);
   const [orderNotes, setOrderNotes] = useState<string>('');
 
   const [lines, setLines] = useState<CounterLineItem[]>([]);
+  const [insertAtLineNumber, setInsertAtLineNumber] = useState<number | null>(null);
+  const [focusTrigger, setFocusTrigger] = useState<number>(0);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [feedback, setFeedback] = useState<BarcodeScannerFeedback | null>(null);
 
@@ -106,6 +117,31 @@ export default function CounterSalesPage() {
   const [completedSale, setCompletedSale] = useState<CompletedSaleDetails | null>(null);
 
   const isWalkIn = selectedCustomer?.customerNumber === 'WALK-IN' || selectedCustomer?.name === 'Walk-In Customer';
+
+  // Resolve discount matrix rules whenever the selected customer changes
+  useEffect(() => {
+    const custId = selectedCustomer?.customerId;
+    if (!custId || typeof api.discountMatrixControllerResolve !== 'function') {
+      setCustomerDiscountRules([]);
+      return;
+    }
+    let active = true;
+    api.discountMatrixControllerResolve({
+      customerId: custId,
+      customerGroupId: selectedCustomer?.customerGroupId || undefined,
+    })
+      .then((res) => {
+        if (active) {
+          setCustomerDiscountRules(Array.isArray(res.data) ? (res.data as unknown as DiscountRule[]) : []);
+        }
+      })
+      .catch(() => {
+        if (active) setCustomerDiscountRules([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [selectedCustomer?.customerId, selectedCustomer?.customerGroupId]);
 
   // Audio Beep generator for scanner feedback
   const playBeep = useCallback((success: boolean) => {
@@ -243,25 +279,37 @@ export default function CounterSalesPage() {
 
   // Add Product to line items (allows adding even with shortages, displaying standard warning)
   const handleAddProduct = useCallback(
-    async (product: CounterProduct) => {
+    async (product: CounterProduct, quantity: string = '1', targetLineNumber?: number) => {
       playBeep(true);
 
       const onHand = await fetchStockOnHand(product.productId);
-      const customerDiscount = parseFloat(selectedCustomer?.customerDiscount || '0');
-      const basePrice = parseFloat(product.tradePrice || product.listPrice || '0');
+      const matrixDiscount = resolveEffectiveDiscount(customerDiscountRules, product.productGroupId ?? null);
+      const fallbackDiscount = parseFloat(selectedCustomer?.customerDiscount || '0');
+      const effectiveDiscount =
+        parseFloat(matrixDiscount) > 0
+          ? matrixDiscount
+          : fallbackDiscount > 0
+            ? String(fallbackDiscount)
+            : '0';
+      const basePrice = resolveProductUnitPrice(product, {
+        mode: 'sales',
+        priceScale: selectedCustomer?.priceScale,
+      });
+      const parsedQty = parseFloat(quantity || '1');
+      const qtyToAdd = !isNaN(parsedQty) && parsedQty > 0 ? parsedQty : 1;
 
       const defaultTaxCat = taxCategories.find((c) => (c.type === 'tax_applies' || parseFloat(c.rate || '0') > 0)) || taxCategories[0];
       const selectedTaxCat = taxCategories.find((c) => c.taxCategoryId === product.salesTaxCategoryId) || defaultTaxCat;
       const initialTaxRate = selectedTaxCat ? parseFloat(selectedTaxCat.rate || '0') : 0;
 
       setLines((prev) => {
-        const existingIdx = prev.findIndex((l) => l.productId === product.productId);
+        const existingIdx = targetLineNumber ? -1 : prev.findIndex((l) => l.productId === product.productId);
         if (existingIdx >= 0) {
           const updated = [...prev];
           const qtyVal = parseFloat(updated[existingIdx].quantity || '0');
           updated[existingIdx] = {
             ...updated[existingIdx],
-            quantity: String(qtyVal + 1),
+            quantity: String(qtyVal + qtyToAdd),
             onHand,
           };
           return updated;
@@ -273,14 +321,19 @@ export default function CounterSalesPage() {
           productId: product.productId,
           productNumber: product.productNumber || '',
           productDescription: product.name || product.description || '',
-          quantity: '1',
+          quantity: String(qtyToAdd),
           pricePerUnit: basePrice.toFixed(2),
-          discountPercentage: customerDiscount > 0 ? String(customerDiscount) : '0',
+          discountPercentage: effectiveDiscount,
           taxCategoryId: selectedTaxCat?.taxCategoryId || '',
           taxRate: initialTaxRate,
           unitOfMeasure: product.baseUom || 'EA',
           onHand,
         };
+        if (targetLineNumber && targetLineNumber >= 1 && targetLineNumber <= prev.length) {
+          const next = [...prev];
+          next.splice(targetLineNumber - 1, 0, newLine);
+          return next;
+        }
         return [...prev, newLine];
       });
 
@@ -290,7 +343,7 @@ export default function CounterSalesPage() {
         detail: onHand > 0 ? `Stock on hand: ${onHand} ${product.baseUom || 'EA'}` : 'Shortage: 0 on hand (backorder)',
       });
     },
-    [fetchStockOnHand, playBeep, selectedCustomer, taxCategories],
+    [customerDiscountRules, fetchStockOnHand, playBeep, selectedCustomer, taxCategories],
   );
 
   // Direct Hardware Barcode Scan handler
@@ -348,7 +401,10 @@ export default function CounterSalesPage() {
         id: prod.productId,
         primaryText: prod.productNumber || prod.name || '',
         secondaryText: prod.name || prod.description || '',
-        extraText: formatAmount(parseFloat(prod.tradePrice || prod.listPrice || '0'), baseCurrency),
+        extraText: formatAmount(
+          resolveProductUnitPrice(prod, { mode: 'sales', priceScale: selectedCustomer?.priceScale }),
+          baseCurrency,
+        ),
         data: prod,
       }));
     } catch {
@@ -364,44 +420,97 @@ export default function CounterSalesPage() {
 
   // Add Custom Line Item
   const addCustomLine = () => {
-    const customerDiscount = parseFloat(selectedCustomer?.customerDiscount || '0');
+    const matrixDiscount = resolveEffectiveDiscount(customerDiscountRules, null);
+    const fallbackDiscount = parseFloat(selectedCustomer?.customerDiscount || '0');
+    const effectiveDiscount =
+      parseFloat(matrixDiscount) > 0
+        ? matrixDiscount
+        : fallbackDiscount > 0
+          ? String(fallbackDiscount)
+          : '0';
     const defaultTaxCat = taxCategories.find((c) => (c.type === 'tax_applies' || parseFloat(c.rate || '0') > 0)) || taxCategories[0];
-    setLines((prev) => [
-      ...prev,
-      {
-        key: ++lineCounter,
-        lineType: LineType.PRODUCT,
-        productId: CUSTOM_LINE_ID,
-        productNumber: '',
-        productDescription: '',
-        quantity: '1',
-        pricePerUnit: '0.00',
-        discountPercentage: customerDiscount > 0 ? String(customerDiscount) : '0',
-        taxCategoryId: defaultTaxCat?.taxCategoryId || '',
-        taxRate: defaultTaxCat ? parseFloat(defaultTaxCat.rate || '0') : 0,
-        unitOfMeasure: 'EA',
-      },
-    ]);
+    const target = insertAtLineNumber;
+    const newLine: CounterLineItem = {
+      key: ++lineCounter,
+      lineType: LineType.PRODUCT,
+      productId: CUSTOM_LINE_ID,
+      productNumber: '',
+      productDescription: '',
+      quantity: '1',
+      pricePerUnit: '0.00',
+      discountPercentage: effectiveDiscount,
+      taxCategoryId: defaultTaxCat?.taxCategoryId || '',
+      taxRate: defaultTaxCat ? parseFloat(defaultTaxCat.rate || '0') : 0,
+      unitOfMeasure: 'EA',
+    };
+    setLines((prev) => {
+      if (target && target >= 1 && target <= prev.length) {
+        const next = [...prev];
+        next.splice(target - 1, 0, newLine);
+        return next;
+      }
+      return [...prev, newLine];
+    });
+    if (target !== null) setInsertAtLineNumber(null);
   };
 
   // Add Comment Line Item
   const addCommentLine = () => {
-    setLines((prev) => [
-      ...prev,
-      {
-        key: ++lineCounter,
-        lineType: LineType.COMMENT,
-        productId: '',
-        productNumber: '',
-        productDescription: '',
-        quantity: '0',
-        pricePerUnit: '0.00',
-        discountPercentage: '0',
-        taxCategoryId: '',
-        taxRate: 0,
-        unitOfMeasure: 'EA',
-      },
-    ]);
+    const target = insertAtLineNumber;
+    const newLine: CounterLineItem = {
+      key: ++lineCounter,
+      lineType: LineType.COMMENT,
+      productId: '',
+      productNumber: '',
+      productDescription: '',
+      quantity: '0',
+      pricePerUnit: '0.00',
+      discountPercentage: '0',
+      taxCategoryId: '',
+      taxRate: 0,
+      unitOfMeasure: 'EA',
+    };
+    setLines((prev) => {
+      if (target && target >= 1 && target <= prev.length) {
+        const next = [...prev];
+        next.splice(target - 1, 0, newLine);
+        return next;
+      }
+      return [...prev, newLine];
+    });
+    if (target !== null) setInsertAtLineNumber(null);
+  };
+
+  const handleQuickAddProduct = async (product: Product, quantity: string) => {
+    const target = insertAtLineNumber ?? undefined;
+    await handleAddProduct(product as CounterProduct, quantity, target);
+    if (target !== undefined) setInsertAtLineNumber(null);
+  };
+
+  const handleInsertAbove = (lineNum: number) => {
+    setInsertAtLineNumber(lineNum);
+    setFocusTrigger((prev) => prev + 1);
+  };
+
+  const reorderLines = (lineIds: string[]) => {
+    setLines((prev) => {
+      const byKey = new Map(prev.map((l) => [String(l.key), l]));
+      const ordered: CounterLineItem[] = [];
+      const seen = new Set<string>();
+      for (const id of lineIds) {
+        const item = byKey.get(id);
+        if (item && !seen.has(id)) {
+          seen.add(id);
+          ordered.push(item);
+        }
+      }
+      for (const item of prev) {
+        if (!seen.has(String(item.key))) {
+          ordered.push(item);
+        }
+      }
+      return ordered;
+    });
   };
 
   // Line item modifications
@@ -774,38 +883,58 @@ export default function CounterSalesPage() {
 
         {/* Standard Order Lines Card */}
         <div className="card">
-          <div className="flex items-center justify-between gap-4 mb-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
             <h3 className="section-heading !mb-0 shrink-0">
               {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
               <span className="material-symbols-outlined">list</span>
               {tSales('tabs.lines')}
             </h3>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-start lg:justify-end">
+              <div className="flex-1 min-w-[260px] max-w-md">
+                <ProductQuickAddBar
+                  onAdd={handleQuickAddProduct}
+                  placeholder={tSales('placeholders.searchProduct')}
+                  className="w-full"
+                  fulfillmentLocationId={selectedLocationId || undefined}
+                  disabled={isSubmitting}
+                  enableShortcut={true}
+                  insertAtLineNumber={insertAtLineNumber}
+                  onCancelInsert={() => setInsertAtLineNumber(null)}
+                  focusTrigger={focusTrigger}
+                />
+              </div>
               <Button
                 variant="secondary"
-                size="sm"
+                size="icon"
+                icon="playlist_add"
+                iconClassName="text-[18px]"
                 onClick={addCustomLine}
-                className="text-xs font-medium py-1 px-2.5"
-              >
-                {tSales('buttons.customLine')}
-              </Button>
+                title={tSales('buttons.customLine')}
+                aria-label={tSales('buttons.customLine')}
+              />
               <Button
                 variant="secondary"
-                size="sm"
+                size="icon"
+                icon="add_comment"
+                iconClassName="text-[18px]"
                 onClick={addCommentLine}
-                className="text-xs font-medium py-1 px-2.5"
-              >
-                {tSales('buttons.commentLine')}
-              </Button>
+                title={tSales('buttons.commentLine')}
+                aria-label={tSales('buttons.commentLine')}
+              />
               {lines.length > 0 && (
                 <Button
                   variant="secondary"
-                  size="sm"
-                  onClick={() => setLines([])}
-                  className="text-xs text-red-600 hover:text-red-700 font-medium py-1 px-2.5 ml-1"
-                >
-                  Clear All
-                </Button>
+                  size="icon"
+                  icon="delete_sweep"
+                  iconClassName="text-[18px]"
+                  onClick={() => {
+                    setLines([]);
+                    setInsertAtLineNumber(null);
+                  }}
+                  className="text-red-600 hover:text-red-700 ml-1"
+                  title="Clear All"
+                  aria-label="Clear All"
+                />
               )}
             </div>
           </div>
@@ -823,6 +952,9 @@ export default function CounterSalesPage() {
             onUpdateLine={(key: string | number, field: string, val: unknown) => updateLine(Number(key), { [field]: val })}
             onUpdateLineFields={(key: string | number, fields: Record<string, unknown>) => updateLine(Number(key), fields)}
             onRemoveLine={(key: string | number) => removeLine(Number(key))}
+            onReorderLines={reorderLines}
+            insertAtLineNumber={insertAtLineNumber}
+            onInsertAbove={handleInsertAbove}
           />
         </div>
 

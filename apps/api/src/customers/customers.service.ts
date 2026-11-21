@@ -1,48 +1,48 @@
 // security-ignore: sql-raw
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import {
-  eq,
-  ilike,
-  or,
-  sql,
+  contacts,
+  customerDeliveryAddresses,
+  customerGroups,
+  customers,
+  masterDataEvents,
+  organizationContactLinks,
+  organizationOrganizationLinks,
+  organizations,
+  taxPositions,
+} from '@herobm/db-schema';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
   and,
   asc,
   desc,
+  eq,
   getTableColumns,
+  ilike,
+  or,
+  sql,
 } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  customers,
-  masterDataEvents,
-  customerGroups,
-  taxPositions,
-  contacts,
-  organizationContactLinks,
-  organizations,
-  customerDeliveryAddresses,
-  organizationOrganizationLinks,
-} from '@herobm/db-schema';
+import { alias } from 'drizzle-orm/pg-core';
 import {
   PaginationQuery,
   parsePagination,
   withCursorPagination,
 } from '../common/pagination';
-import { alias } from 'drizzle-orm/pg-core';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 
-import { CUSTOMER_STATE, SALES_INVOICE_STATE } from '@herobm/shared';
-import { CreditAssessmentService } from './credit-assessment.service';
+import { CUSTOMER_STATE } from '@herobm/shared';
 import { AppConfigService } from '../settings/app-config.service';
-import {
-  resolveCustomerRiskProfile,
-  ResolvedCustomerRiskProfile,
-  CustomerProfile,
-  CustomerGroupProfile,
-} from './customer-risk.domain';
+import { CreditAssessmentService } from './credit-assessment.service';
 import {
   AgedBalanceResult,
   calculateCustomerBalances,
 } from './customer-balances.util';
+import {
+  CustomerGroupProfile,
+  CustomerProfile,
+  resolveCustomerRiskProfile,
+  ResolvedCustomerRiskProfile,
+} from './customer-risk.domain';
 
 @Injectable()
 export class CustomersService {
@@ -345,6 +345,9 @@ export class CustomersService {
         isSalesBlocked: risk.isSalesBlocked,
         salesBlockReasons: risk.salesBlockReasons,
         effectiveCreditLimit: risk.effectiveCreditLimit,
+        effectiveTradingTermsId: risk.effectiveTradingTermsId,
+        effectiveEarlyPaymentDiscount: risk.earlyPaymentDiscount,
+        effectiveEarlyPaymentDiscountDays: risk.earlyPaymentDiscountDays,
       };
     });
 
@@ -371,6 +374,13 @@ export class CustomersService {
         name: organizations.name,
         gstCategoryName: taxPositions.code,
         customerGroupTaxPositionId: customerGroups.taxPositionId,
+        customerGroupTradingTermsId: customerGroups.tradingTermsId,
+        customerGroupCreditLimit: customerGroups.creditLimit,
+        customerGroupIsOnCreditHold: customerGroups.isOnCreditHold,
+        customerGroupEarlyPaymentDiscount: customerGroups.earlyPaymentDiscount,
+        customerGroupEarlyPaymentDiscountDays:
+          customerGroups.earlyPaymentDiscountDays,
+        customerGroupStateCode: customerGroups.stateCode,
         businessNumber: organizations.businessNumber,
         isTaxRegistered: organizations.isTaxRegistered,
         billingAddressLine1: organizations.headquartersAddressLine1,
@@ -532,6 +542,12 @@ export class CustomersService {
           isOnCreditHold: groups[0].isOnCreditHold,
           creditLimit: groups[0].creditLimit?.toString() || null,
           tradingTermsId: groups[0].tradingTermsId,
+          earlyPaymentDiscount:
+            groups[0].earlyPaymentDiscount !== null &&
+            groups[0].earlyPaymentDiscount !== undefined
+              ? String(groups[0].earlyPaymentDiscount)
+              : null,
+          earlyPaymentDiscountDays: groups[0].earlyPaymentDiscountDays,
         };
       }
     }
@@ -567,6 +583,22 @@ export class CustomersService {
       salesBlockReasons: risk.salesBlockReasons,
       creditAssessment,
       effectiveCreditLimit: risk.effectiveCreditLimit,
+      effectiveTradingTermsId: risk.effectiveTradingTermsId,
+      customerGroupTradingTermsId:
+        customer.customerGroupTradingTermsId ??
+        groupProfile?.tradingTermsId ??
+        null,
+      customerGroupCreditLimit:
+        customer.customerGroupCreditLimit !== null &&
+        customer.customerGroupCreditLimit !== undefined
+          ? String(customer.customerGroupCreditLimit)
+          : (groupProfile?.creditLimit ?? null),
+      customerGroupIsOnCreditHold:
+        customer.customerGroupIsOnCreditHold ??
+        groupProfile?.isOnCreditHold ??
+        false,
+      effectiveEarlyPaymentDiscount: risk.earlyPaymentDiscount,
+      effectiveEarlyPaymentDiscountDays: risk.earlyPaymentDiscountDays,
       parentCustomerId:
         parentResult.length > 0 ? parentResult[0].customerId : null,
       parentCustomerName: parentResult.length > 0 ? parentResult[0].name : null,
@@ -589,15 +621,15 @@ export class CustomersService {
 
     let conditions = sql`1=1`;
     if (searchTerm) {
-      conditions = sql`${conditions} AND (ci.customer_name ILIKE ${searchTerm} OR ci.customer_number ILIKE ${searchTerm})`;
+      conditions = sql`${conditions} AND (b.customer_name ILIKE ${searchTerm} OR b.customer_number ILIKE ${searchTerm})`;
     }
 
     if (quickFilter === 'discrepancy') {
-      conditions = sql`${conditions} AND ABS(COALESCE(cgl.gl_balance, 0) - ci.total_outstanding) > 0.01`;
+      conditions = sql`${conditions} AND ABS(b.gl_balance - ((b.inv_current - b.rem4) + b.days1_to_30 + b.days31_to_60 + b.days61_to_90 + b.days90_plus)) > 0.01`;
     } else if (quickFilter === 'overdue') {
-      conditions = sql`${conditions} AND (ci.total_outstanding - ci.current) > 0.01`;
+      conditions = sql`${conditions} AND (b.days1_to_30 + b.days31_to_60 + b.days61_to_90 + b.days90_plus) > 0.01`;
     } else if (quickFilter === 'overLimit') {
-      conditions = sql`${conditions} AND COALESCE(ci.c_credit_limit, ci.g_credit_limit) IS NOT NULL AND ci.total_outstanding > COALESCE(ci.c_credit_limit, ci.g_credit_limit)`;
+      conditions = sql`${conditions} AND COALESCE(b.c_credit_limit, b.g_credit_limit) IS NOT NULL AND ((b.inv_current - b.rem4) + b.days1_to_30 + b.days31_to_60 + b.days61_to_90 + b.days90_plus) > COALESCE(b.c_credit_limit, b.g_credit_limit)`;
     }
 
     let orderBy = sql`"customerName" ASC`;
@@ -605,7 +637,7 @@ export class CustomersService {
       const sortMap: Record<string, string> = {
         customerNumber: 'customerNumber',
         customerName: 'customerName',
-        creditLimit: 'creditLimit',
+        creditLimit: 'cCreditLimit',
         current: 'current',
         days1To30: 'days1To30',
         days31To60: 'days31To60',
@@ -625,7 +657,69 @@ export class CustomersService {
     }
 
     const cteQuery = sql`
-      WITH customer_invoices AS (
+      WITH 
+      cust_inv AS (
+        SELECT 
+          COALESCE(i.customer_id, so.customer_id) as customer_id,
+          COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} >= CURRENT_DATE THEN i.outstanding_amount ELSE 0 END), 0) as inv_current,
+          COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} < CURRENT_DATE AND i.${sql.identifier(basisCol)} >= CURRENT_DATE - INTERVAL '30 days' THEN i.outstanding_amount ELSE 0 END), 0) as inv_days1_to_30,
+          COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} < CURRENT_DATE - INTERVAL '30 days' AND i.${sql.identifier(basisCol)} >= CURRENT_DATE - INTERVAL '60 days' THEN i.outstanding_amount ELSE 0 END), 0) as inv_days31_to_60,
+          COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} < CURRENT_DATE - INTERVAL '60 days' AND i.${sql.identifier(basisCol)} >= CURRENT_DATE - INTERVAL '90 days' THEN i.outstanding_amount ELSE 0 END), 0) as inv_days61_to_90,
+          COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} < CURRENT_DATE - INTERVAL '90 days' OR i.${sql.identifier(basisCol)} IS NULL THEN i.outstanding_amount ELSE 0 END), 0) as inv_days90_plus,
+          COALESCE(SUM(i.outstanding_amount), 0) as inv_total
+        FROM herobm_core.sales_invoices i
+        LEFT JOIN herobm_core.sales_orders so ON i.sales_order_id = so.sales_order_id
+        WHERE i.outstanding_amount > 0 AND i.state_code NOT IN ('draft', 'cancelled', 'paid')
+        GROUP BY COALESCE(i.customer_id, so.customer_id)
+      ),
+      cust_cn AS (
+        SELECT 
+          cn.customer_id,
+          COALESCE(SUM(cn.outstanding_amount), 0) as cn_total
+        FROM herobm_core.sales_credit_notes cn
+        WHERE cn.outstanding_amount > 0 AND cn.state_code NOT IN ('draft', 'cancelled', 'paid', 'void')
+        GROUP BY cn.customer_id
+      ),
+      cust_pe AS (
+        SELECT 
+          pe.party_id as customer_id,
+          COALESCE(SUM(CASE WHEN pe.payment_type = 'customer_receipt' THEN pe.unallocated_amount ELSE -pe.unallocated_amount END), 0) as pe_unallocated_total
+        FROM herobm_core.payment_entries pe
+        WHERE pe.state_code = 'posted' AND pe.unallocated_amount > 0 AND pe.payment_type IN ('customer_receipt', 'customer_refund')
+        GROUP BY pe.party_id
+      ),
+      cust_gl AS (
+        SELECT 
+          l.party_id::uuid as customer_id,
+          COALESCE(SUM(l.debit), 0) - COALESCE(SUM(l.credit), 0) as gl_balance
+        FROM herobm_core.gl_journal_lines l
+        JOIN herobm_core.gl_journal_entries e ON l.journal_entry_id = e.journal_entry_id
+        WHERE l.party_type = 'customer' AND l.party_id IS NOT NULL
+        GROUP BY l.party_id
+        HAVING COALESCE(SUM(l.debit), 0) - COALESCE(SUM(l.credit), 0) != 0
+      ),
+      cust_uninvoiced AS (
+        SELECT
+          so.customer_id,
+          SUM(
+            COALESCE((SELECT SUM(sol.total_amount) FROM herobm_core.sales_order_lines sol WHERE sol.sales_order_id = so.sales_order_id), 0)
+            -
+            COALESCE((SELECT SUM(si.total_amount) FROM herobm_core.sales_invoices si WHERE si.sales_order_id = so.sales_order_id AND si.state_code NOT IN ('draft', 'cancelled')), 0)
+          ) as uninvoiced_total
+        FROM herobm_core.sales_orders so
+        WHERE so.state_code IN ('confirmed', 'picking', 'shipped')
+        GROUP BY so.customer_id
+      ),
+      all_customers AS (
+        SELECT customer_id FROM cust_inv
+        UNION
+        SELECT customer_id FROM cust_cn
+        UNION
+        SELECT customer_id FROM cust_pe
+        UNION
+        SELECT customer_id FROM cust_gl
+      ),
+      customer_raw_balances AS (
         SELECT 
           c.customer_id,
           a.name as customer_name,
@@ -638,66 +732,76 @@ export class CustomersService {
           c.customer_group_id,
           g.is_on_credit_hold as g_is_on_credit_hold,
           g.credit_limit as g_credit_limit,
-          COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} >= CURRENT_DATE THEN i.outstanding_amount ELSE 0 END), 0) as current,
-          COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} < CURRENT_DATE AND i.${sql.identifier(basisCol)} >= CURRENT_DATE - INTERVAL '30 days' THEN i.outstanding_amount ELSE 0 END), 0) as days1_to_30,
-          COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} < CURRENT_DATE - INTERVAL '30 days' AND i.${sql.identifier(basisCol)} >= CURRENT_DATE - INTERVAL '60 days' THEN i.outstanding_amount ELSE 0 END), 0) as days31_to_60,
-          COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} < CURRENT_DATE - INTERVAL '60 days' AND i.${sql.identifier(basisCol)} >= CURRENT_DATE - INTERVAL '90 days' THEN i.outstanding_amount ELSE 0 END), 0) as days61_to_90,
-          COALESCE(SUM(CASE WHEN i.${sql.identifier(basisCol)} < CURRENT_DATE - INTERVAL '90 days' OR i.${sql.identifier(basisCol)} IS NULL THEN i.outstanding_amount ELSE 0 END), 0) as days90_plus,
-          COALESCE(SUM(i.outstanding_amount), 0) as total_outstanding
-        FROM herobm_core.sales_invoices i
-        LEFT JOIN herobm_core.sales_orders so ON i.sales_order_id = so.sales_order_id
-        JOIN herobm_core.customers c ON c.customer_id = COALESCE(i.customer_id, so.customer_id)
+          COALESCE(ci.inv_current, 0) as inv_current,
+          COALESCE(ci.inv_days1_to_30, 0) as inv_days1_to_30,
+          COALESCE(ci.inv_days31_to_60, 0) as inv_days31_to_60,
+          COALESCE(ci.inv_days61_to_90, 0) as inv_days61_to_90,
+          COALESCE(ci.inv_days90_plus, 0) as inv_days90_plus,
+          COALESCE(ci.inv_total, 0) as inv_total,
+          COALESCE(cn.cn_total, 0) + COALESCE(pe.pe_unallocated_total, 0) as credits_total,
+          COALESCE(cg.gl_balance, 0) as gl_balance,
+          COALESCE(cu.uninvoiced_total, 0) as uninvoiced_total
+        FROM all_customers ac
+        JOIN herobm_core.customers c ON ac.customer_id = c.customer_id
         LEFT JOIN herobm_core.organizations a ON c.organization_id = a.organization_id
         LEFT JOIN herobm_core.customer_groups g ON c.customer_group_id = g.customer_group_id
-        WHERE i.outstanding_amount > 0 AND i.state_code NOT IN ('draft', 'cancelled', 'paid')
-        GROUP BY c.customer_id, a.name, c.customer_number, c.currency_code, c.state_code, c.is_on_credit_hold, c.credit_limit, c.override_credit_hold_until, c.customer_group_id, g.is_on_credit_hold, g.credit_limit
+        LEFT JOIN cust_inv ci ON ac.customer_id = ci.customer_id
+        LEFT JOIN cust_cn cn ON ac.customer_id = cn.customer_id
+        LEFT JOIN cust_pe pe ON ac.customer_id = pe.customer_id
+        LEFT JOIN cust_gl cg ON ac.customer_id = cg.customer_id
+        LEFT JOIN cust_uninvoiced cu ON ac.customer_id = cu.customer_id
       ),
-      customer_gl AS (
+      customer_aged AS (
         SELECT 
-          l.party_id,
-          COALESCE(SUM(l.debit), 0) - COALESCE(SUM(l.credit), 0) as gl_balance
-        FROM herobm_core.gl_journal_lines l
-        JOIN herobm_core.gl_journal_entries e ON l.journal_entry_id = e.journal_entry_id
-        WHERE l.party_type = 'customer'
-        GROUP BY l.party_id
+          b.*,
+          CASE WHEN b.inv_days90_plus >= b.credits_total THEN b.inv_days90_plus - b.credits_total ELSE 0 END as days90_plus,
+          GREATEST(0, b.credits_total - b.inv_days90_plus) as rem1
+        FROM customer_raw_balances b
       ),
-      customer_uninvoiced AS (
-        SELECT
-          so.customer_id,
-          SUM(
-            COALESCE((SELECT SUM(sol.total_amount) FROM herobm_core.sales_order_lines sol WHERE sol.sales_order_id = so.sales_order_id), 0)
-            -
-            COALESCE((SELECT SUM(si.total_amount) FROM herobm_core.sales_invoices si WHERE si.sales_order_id = so.sales_order_id AND si.state_code NOT IN ('draft', 'cancelled')), 0)
-          ) as uninvoiced_total
-        FROM herobm_core.sales_orders so
-        WHERE so.state_code IN ('confirmed', 'picking', 'shipped')
-        GROUP BY so.customer_id
+      customer_aged_2 AS (
+        SELECT 
+          b.*,
+          CASE WHEN b.inv_days61_to_90 >= b.rem1 THEN b.inv_days61_to_90 - b.rem1 ELSE 0 END as days61_to_90,
+          GREATEST(0, b.rem1 - b.inv_days61_to_90) as rem2
+        FROM customer_aged b
+      ),
+      customer_aged_3 AS (
+        SELECT 
+          b.*,
+          CASE WHEN b.inv_days31_to_60 >= b.rem2 THEN b.inv_days31_to_60 - b.rem2 ELSE 0 END as days31_to_60,
+          GREATEST(0, b.rem2 - b.inv_days31_to_60) as rem3
+        FROM customer_aged_2 b
+      ),
+      customer_aged_4 AS (
+        SELECT 
+          b.*,
+          CASE WHEN b.inv_days1_to_30 >= b.rem3 THEN b.inv_days1_to_30 - b.rem3 ELSE 0 END as days1_to_30,
+          GREATEST(0, b.rem3 - b.inv_days1_to_30) as rem4
+        FROM customer_aged_3 b
       ),
       combined AS (
         SELECT 
-          ci.customer_id as "customerId",
-          ci.customer_name as "customerName",
-          ci.customer_number as "customerNumber",
-          ci.currency_code as "currencyCode",
-          ci.state_code as "stateCode",
-          ci.c_is_on_credit_hold as "cIsOnCreditHold",
-          ci.c_credit_limit as "cCreditLimit",
-          ci.c_override as "cOverride",
-          ci.customer_group_id as "customerGroupId",
-          ci.g_is_on_credit_hold as "gIsOnCreditHold",
-          ci.g_credit_limit as "gCreditLimit",
-          ci.current as "current",
-          ci.days1_to_30 as "days1To30",
-          ci.days31_to_60 as "days31To60",
-          ci.days61_to_90 as "days61To90",
-          ci.days90_plus as "days90Plus",
-          ci.total_outstanding as "totalOutstanding",
-          COALESCE(cgl.gl_balance, 0) as "glBalance",
-          ABS(COALESCE(cgl.gl_balance, 0) - ci.total_outstanding) as "discrepancyAmount",
-          COALESCE(cu.uninvoiced_total, 0) as "uninvoicedOrdersTotal"
-        FROM customer_invoices ci
-        LEFT JOIN customer_gl cgl ON ci.customer_id::text = cgl.party_id
-        LEFT JOIN customer_uninvoiced cu ON ci.customer_id = cu.customer_id
+          b.customer_id as "customerId",
+          b.customer_name as "customerName",
+          b.customer_number as "customerNumber",
+          b.currency_code as "currencyCode",
+          b.state_code as "stateCode",
+          b.c_is_on_credit_hold as "cIsOnCreditHold",
+          b.c_credit_limit as "cCreditLimit",
+          b.c_override as "cOverride",
+          b.customer_group_id as "customerGroupId",
+          b.g_is_on_credit_hold as "gIsOnCreditHold",
+          b.g_credit_limit as "gCreditLimit",
+          (b.inv_current - b.rem4) as "current",
+          b.days1_to_30 as "days1To30",
+          b.days31_to_60 as "days31To60",
+          b.days61_to_90 as "days61To90",
+          b.days90_plus as "days90Plus",
+          ((b.inv_current - b.rem4) + b.days1_to_30 + b.days31_to_60 + b.days61_to_90 + b.days90_plus) as "totalOutstanding",
+          b.gl_balance as "glBalance",
+          ABS(b.gl_balance - ((b.inv_current - b.rem4) + b.days1_to_30 + b.days31_to_60 + b.days61_to_90 + b.days90_plus)) as "discrepancyAmount",
+          b.uninvoiced_total as "uninvoicedOrdersTotal"
+        FROM customer_aged_4 b
         WHERE ${conditions}
       )
     `;
@@ -709,22 +813,38 @@ export class CustomersService {
       LIMIT ${limit} OFFSET ${offset}
     `;
 
-    const countQuery = sql`
+    const totalsQuery = sql`
       ${cteQuery}
-      SELECT COUNT(*) as total FROM combined
+      SELECT 
+        COUNT(*) as total,
+        COALESCE(SUM("current"), 0) as "current",
+        COALESCE(SUM("days1To30"), 0) as "days1To30",
+        COALESCE(SUM("days31To60"), 0) as "days31To60",
+        COALESCE(SUM("days61To90"), 0) as "days61To90",
+        COALESCE(SUM("days90Plus"), 0) as "days90Plus",
+        COALESCE(SUM("totalOutstanding"), 0) as "totalOutstanding"
+      FROM combined
     `;
 
-    const [dataRes, countRes] = await Promise.all([
+    const [dataRes, totalsRes] = await Promise.all([
       this.db.execute(dataQuery),
-      this.db.execute(countQuery),
+      this.db.execute(totalsQuery),
     ]);
 
     const dataRows = ((dataRes as unknown as Record<string, unknown>).rows ??
       dataRes) as Record<string, unknown>[];
-    const countRows = ((countRes as unknown as Record<string, unknown>).rows ??
-      countRes) as Record<string, unknown>[];
+    const totalsRows = ((totalsRes as unknown as Record<string, unknown>)
+      .rows ?? totalsRes) as Record<string, unknown>[];
 
-    const total = Number(countRows[0]?.total || 0);
+    const total = Number(totalsRows[0]?.total || 0);
+    const totals = {
+      current: Number(totalsRows[0]?.current || 0),
+      days1To30: Number(totalsRows[0]?.days1To30 || 0),
+      days31To60: Number(totalsRows[0]?.days31To60 || 0),
+      days61To90: Number(totalsRows[0]?.days61To90 || 0),
+      days90Plus: Number(totalsRows[0]?.days90Plus || 0),
+      totalOutstanding: Number(totalsRows[0]?.totalOutstanding || 0),
+    };
 
     const formattedData = dataRows.map((b) => {
       const custProfile = {
@@ -756,15 +876,16 @@ export class CustomersService {
         custProfile as CustomerProfile,
         groupProfile as CustomerGroupProfile,
         {
-          totalInvoiceBalance: Number(
-            b.totalInvoiceOutstanding ?? b.totalOutstanding,
-          ),
-          totalCreditNoteBalance: Number(b.totalCreditNoteOutstanding ?? 0),
-          unallocatedPaymentBalance: Number(b.unallocatedPaymentsTotal ?? 0),
+          totalInvoiceBalance: Number(b.totalOutstanding),
+          totalCreditNoteBalance: 0,
+          unallocatedPaymentBalance: 0,
           netOutstandingBalance: Number(b.totalOutstanding),
-          overdueInvoiceBalance: Number(b.totalOutstanding) - Number(b.current),
+          overdueInvoiceBalance: Math.max(
+            0,
+            Number(b.totalOutstanding) - Number(b.current),
+          ),
           glBalance: Number(b.glBalance),
-          isOverdue: Number(b.totalOutstanding) - Number(b.current) > 0,
+          isOverdue: Number(b.totalOutstanding) - Number(b.current) > 0.01,
         },
         0,
         'hard',
@@ -796,6 +917,7 @@ export class CustomersService {
       total,
       limit,
       page,
+      totals,
     };
   }
 }

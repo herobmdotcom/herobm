@@ -56,4 +56,5 @@ export const VALID_ACTIONS: Record<string, string[]> = {
   'import': ['read', 'write'],
   'events': ['write'],
   'system_logs': ['read'],
+  'bulk_write': ['write'],
 };

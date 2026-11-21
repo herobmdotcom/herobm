@@ -9,11 +9,13 @@ mock_quote_invoice = {
     "name": "Pre-Validation",
     "currencyCode": "EUR",
     "customerName": "Test Client Ltda",
+    "customerAddress": "123 Business Way, Suite 400, Madrid 28001, Spain",
     "orderDate": "2026-03-25",
     "customerOrderNumber": "TST-999"
   },
   "summary": {
     "subtotal": 1250.0,
+    "totalTax": 250.0,
     "taxAmount": 250.0,
     "totalAmount": 1500.0
   },

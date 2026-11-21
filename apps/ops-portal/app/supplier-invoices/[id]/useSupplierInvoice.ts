@@ -258,6 +258,28 @@ export function useSupplierInvoice(id: string) {
     }
   };
 
+  const addProductLine = async (
+    product: { productId: string; productNumber?: string; name: string; standardCost?: string | null },
+    quantity?: string,
+  ) => {
+    setSaving(true);
+    try {
+      const parsedQty = quantity ? parseFloat(quantity) : 1;
+      const finalQty = Number.isFinite(parsedQty) && parsedQty > 0 ? parsedQty : 1;
+      await api.invoiceDetailControllerAddInvoiceLine(id, {
+        productId: product.productId,
+        description: product.name,
+        quantityInvoiced: finalQty,
+        pricePerUnit: parseFloat(product.standardCost || '0') || 0,
+      });
+      loadInvoice();
+    } catch (err: unknown) {
+      alert(getErrorMessage(err) || 'Failed to add product line');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleProductSelect = async (lineId: string, product: { productId: string; productNumber: string; name: string }) => {
     setSaving(true);
     try {
@@ -371,6 +393,7 @@ export function useSupplierInvoice(id: string) {
     removeLine,
     addBlankLine,
     addRoundingLine,
+    addProductLine,
     handleProductSelect,
     handleUnresolve,
     loadInvoice

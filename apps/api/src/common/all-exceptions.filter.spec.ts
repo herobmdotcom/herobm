@@ -1,6 +1,10 @@
+import {
+  ArgumentsHost,
+  HttpException,
+  HttpStatus,
+  Logger,
+} from '@nestjs/common';
 import { AllExceptionsFilter } from './all-exceptions.filter';
-import { HttpException, HttpStatus, Logger } from '@nestjs/common';
-import { ArgumentsHost } from '@nestjs/common';
 
 describe('AllExceptionsFilter', () => {
   let filter: AllExceptionsFilter;

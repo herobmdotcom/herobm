@@ -1,10 +1,9 @@
-import { TestingModule } from '@nestjs/testing';
-import { createE2eModule } from './utils/e2e-module';
-import { AppModule } from '../src/app.module';
-import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import * as schema from '@herobm/db-schema';
+import { TestingModule } from '@nestjs/testing';
 import { is } from 'drizzle-orm';
 import { PgTable, PgView } from 'drizzle-orm/pg-core';
+import { DRIZZLE } from '../src/drizzle/drizzle.module';
+import { createE2eModule } from './utils/e2e-module';
 
 import { INestApplication } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';

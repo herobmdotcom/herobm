@@ -1,9 +1,9 @@
-import { Module, Global, OnApplicationShutdown, Inject } from '@nestjs/common';
+import * as coreSchema from '@herobm/db-schema';
+import { Global, Inject, Module, OnApplicationShutdown } from '@nestjs/common';
 import { drizzle, PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import * as coreSchema from '@herobm/db-schema';
-import { extensionSchemas } from '../generated/extension-schemas';
 import { EnvService } from '../common/config/env.service';
+import { extensionSchemas } from '../generated/extension-schemas';
 
 const schema = { ...coreSchema, ...extensionSchemas };
 

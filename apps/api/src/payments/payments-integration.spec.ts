@@ -1,48 +1,48 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { PaymentsCoreService } from './payments-core.service';
-import { PaymentsWriteService } from './payments-write.service';
-import { PaymentsAllocationService } from './payments-allocation.service';
-import { PaymentsPostingService } from './payments-posting.service';
-import { GlService } from '../gl/gl.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { SuppliersService } from '../suppliers/suppliers.service';
+import {
+  activities,
+  costCenters,
+  customerGroups,
+  customers,
+  exchangeRates,
+  glAccounts,
+  glJournalEntries,
+  glJournalLines,
+  glSettings,
+  locations,
+  organizations,
+  paymentAllocations,
+  paymentEntries,
+  purchaseInvoices,
+  salesInvoices,
+  salesOrders,
+  supplierGroups,
+  suppliers,
+} from '@herobm/db-schema';
+import {
+  CUSTOMER_STATE,
+  PAYMENT_STATE,
+  PAYMENT_TYPE,
+  SALES_INVOICE_STATE,
+  SALES_ORDER_STATE,
+  SUPPLIER_STATE,
+} from '@herobm/shared';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { randomUUID } from 'crypto';
 import { Decimal } from 'decimal.js';
+import { and, eq, inArray } from 'drizzle-orm';
+import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { GlService } from '../gl/gl.service';
 import { AppConfigService } from '../settings/app-config.service';
+import { SuppliersService } from '../suppliers/suppliers.service';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { AbaGeneratorService } from './aba-generator.service';
 import { NachaGeneratorService } from './nacha-generator.service';
-import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
-import {
-  glAccounts,
-  glSettings,
-  paymentEntries,
-  paymentAllocations,
-  salesInvoices,
-  purchaseInvoices,
-  customers,
-  customerGroups,
-  suppliers,
-  supplierGroups,
-  salesOrders,
-  locations,
-  costCenters,
-  activities,
-  glJournalEntries,
-  glJournalLines,
-  exchangeRates,
-  organizations,
-} from '@herobm/db-schema';
-import { eq, inArray, and } from 'drizzle-orm';
-import { randomUUID } from 'crypto';
-import {
-  PAYMENT_TYPE,
-  PAYMENT_STATE,
-  SALES_INVOICE_STATE,
-  SALES_ORDER_STATE,
-  CUSTOMER_STATE,
-  SUPPLIER_STATE,
-} from '@herobm/shared';
+import { PaymentsAllocationService } from './payments-allocation.service';
+import { PaymentsCoreService } from './payments-core.service';
+import { PaymentsPostingService } from './payments-posting.service';
+import { PaymentsWriteService } from './payments-write.service';
 
 describe('PaymentsService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

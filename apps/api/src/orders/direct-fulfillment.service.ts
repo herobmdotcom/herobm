@@ -1,53 +1,51 @@
 import {
-  Injectable,
-  Inject,
-  BadRequestException,
-  NotFoundException,
-  Logger,
-} from '@nestjs/common';
-import { eq, and, sql, inArray } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  salesOrders,
+  binContents,
+  bins,
+  customers as coreAccounts,
+  products as coreProducts,
+  customerGroups,
   salesOrderLineItems,
   salesOrderPicks,
-  salesOrderShipments,
   salesOrderShipmentLines,
-  products as coreProducts,
-  bins,
-  binContents,
+  salesOrderShipments,
+  salesOrders,
   zones,
-  locations,
-  customerGroups,
-  customers as coreAccounts,
 } from '@herobm/db-schema';
-import { AppConfigService } from '../settings/app-config.service';
-import { GlService } from '../gl/gl.service';
-import { InventoryMovementService } from '../inventory/inventory-movement.service';
-import { ShipmentsCoreService } from './shipments/shipments-core.service';
-import { getValuationStrategy } from '../inventory/valuation';
-import { getAccountingStrategy } from '../inventory/inventory-accounting';
-import Decimal from 'decimal.js';
-import { findOrder, getCommittedPerLine } from './shipment-helpers';
-import { emitEvent } from '../common/emit-event';
-import { EntityType, EventType } from '../common/event-types';
 import {
-  FulfillDirectOrderDto,
-  DirectFulfillmentResponseDto,
-  DirectFulfilledLineDto,
-} from './dto';
-import {
-  SALES_ORDER_STATE,
   SALES_ORDER_PICK_STATE,
+  SALES_ORDER_STATE,
   SHIPMENT_STATE,
   SalesOrderState,
   isStockedProductLine,
 } from '@herobm/shared';
 import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
+import Decimal from 'decimal.js';
+import { and, eq, inArray } from 'drizzle-orm';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { GlService } from '../gl/gl.service';
+import { getAccountingStrategy } from '../inventory/inventory-accounting';
+import {
   filterPickableBins,
   isPickableBinCondition,
 } from '../inventory/inventory-math.utils';
+import { InventoryMovementService } from '../inventory/inventory-movement.service';
+import { getValuationStrategy } from '../inventory/valuation';
+import { AppConfigService } from '../settings/app-config.service';
+import {
+  DirectFulfilledLineDto,
+  DirectFulfillmentResponseDto,
+  FulfillDirectOrderDto,
+} from './dto';
+import { findOrder, getCommittedPerLine } from './shipment-helpers';
+import { ShipmentsCoreService } from './shipments/shipments-core.service';
 
 @Injectable()
 export class DirectFulfillmentService {

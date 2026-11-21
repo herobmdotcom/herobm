@@ -1,18 +1,18 @@
-import { Reflector } from '@nestjs/core';
 import {
   ExecutionContext,
   ForbiddenException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { Enforcer, newEnforcer } from 'casbin';
+import * as fs from 'fs';
+import * as path from 'path';
 import {
-  CasbinGuard,
-  CASBIN_RESOURCE,
   CASBIN_ACTION,
+  CASBIN_RESOURCE,
+  CasbinGuard,
   SKIP_CASBIN,
 } from './casbin.guard';
-import { Enforcer, newEnforcer } from 'casbin';
-import * as path from 'path';
-import * as fs from 'fs';
 
 function resolveCasbinAsset(filename: string): string {
   const dirPath = path.join(__dirname, 'casbin', filename);
@@ -416,6 +416,58 @@ describe('CasbinGuard', () => {
         const result = await guard.canActivate(ctx);
         expect(result).toBe(true);
       }
+    });
+
+    describe('bulk_write horizontal permission', () => {
+      it('should allow admin role to perform bulk_write write', async () => {
+        const ctx = createMockContext({
+          metadata: {
+            [CASBIN_RESOURCE]: 'bulk_write',
+            [CASBIN_ACTION]: 'write',
+          },
+          user: { userId: '1', username: 'admin', role: 'admin' },
+        });
+
+        jest
+          .spyOn(reflector, 'getAllAndOverride')
+          .mockImplementation((key: string) => {
+            return ctx.__metadata[key];
+          });
+
+        const result = await guard.canActivate(ctx);
+        expect(result).toBe(true);
+      });
+
+      it('should deny non-admin roles from performing bulk_write write', async () => {
+        const nonAdminRoles = [
+          'sales',
+          'warehouse',
+          'procurement',
+          'viewer',
+          'accounts_payable',
+          'production',
+        ];
+
+        for (const role of nonAdminRoles) {
+          const ctx = createMockContext({
+            metadata: {
+              [CASBIN_RESOURCE]: 'bulk_write',
+              [CASBIN_ACTION]: 'write',
+            },
+            user: { userId: '99', username: role, role },
+          });
+
+          jest
+            .spyOn(reflector, 'getAllAndOverride')
+            .mockImplementation((key: string) => {
+              return ctx.__metadata[key];
+            });
+
+          await expect(guard.canActivate(ctx)).rejects.toThrow(
+            ForbiddenException,
+          );
+        }
+      });
     });
 
     describe('Deny-Override logic', () => {

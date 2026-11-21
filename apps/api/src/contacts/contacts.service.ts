@@ -1,41 +1,41 @@
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
+  contacts,
+  customers,
+  masterDataEvents,
+  opportunities,
+  opportunityContacts,
+  organizationContactLinks,
+  organizations,
+  suppliers,
+} from '@herobm/db-schema';
+import { CONTACT_STATE, ContactEntityType } from '@herobm/shared';
+import {
   BadRequestException,
+  Inject,
+  Injectable,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import {
-  eq,
-  ilike,
-  or,
-  sql,
   and,
   asc,
   desc,
+  eq,
   getTableColumns,
+  ilike,
+  or,
+  sql,
 } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  contacts,
-  organizationContactLinks,
-  customers,
-  suppliers,
-  organizations,
-  opportunities,
-  opportunityContacts,
-  masterDataEvents,
-} from '@herobm/db-schema';
-import { CreateContactDto, UpdateContactDto, ContactResponseDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
-import { CONTACT_STATE, ContactEntityType } from '@herobm/shared';
 import {
   PaginationQuery,
   parsePagination,
   withCursorPagination,
 } from '../common/pagination';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { ContactResponseDto, CreateContactDto, UpdateContactDto } from './dto';
 
 @Injectable()
 export class ContactsService {

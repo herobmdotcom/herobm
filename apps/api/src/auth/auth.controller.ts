@@ -1,37 +1,36 @@
 import {
-  ApiTags,
-  ApiOperation,
-  ApiOkResponse,
-  ApiCreatedResponse,
   ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
 } from '@nestjs/swagger';
 /* eslint-disable no-restricted-syntax -- globally skipping throttler guard */
-import { Controller, Post, Get, Body, Request } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { TwoFactorService } from './two-factor.service';
-import { SkipCasbin } from './casbin.guard';
+import { Body, Controller, Get, Inject, Post, Request } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import { Enforcer } from 'casbin';
 import { RATE_LIMITS } from '../common/config/throttler.config';
+import type { JwtUser } from './auth-user.decorator';
+import { AuthUser } from './auth-user.decorator';
+import { AuthService } from './auth.service';
+import { SkipCasbin } from './casbin.guard';
+import { CASBIN_ENFORCER } from './casbin.provider';
 import {
+  Disable2FaDto,
+  Disable2FaResponseDto,
+  EmptyBodyDto,
+  Enable2FaDto,
+  Enable2FaResponseDto,
   LoginDto,
   LoginResponseDto,
   MeResponseDto,
-  Verify2FaLoginDto,
-  Enable2FaDto,
-  Enable2FaResponseDto,
-  Disable2FaDto,
-  Disable2FaResponseDto,
   RegenerateBackupCodesDto,
   RegenerateBackupCodesResponseDto,
   TwoFactorSetupResponseDto,
   TwoFactorStatusDto,
-  EmptyBodyDto,
+  Verify2FaLoginDto,
 } from './dto';
-import { Enforcer } from 'casbin';
-import { CASBIN_ENFORCER } from './casbin.provider';
-import { Inject } from '@nestjs/common';
-import { AuthUser } from './auth-user.decorator';
-import type { JwtUser } from './auth-user.decorator';
+import { TwoFactorService } from './two-factor.service';
 
 import { Public } from './public.decorator';
 

@@ -1,11 +1,11 @@
+import { glAccounts, glSettings } from '@herobm/db-schema';
 import { Test, TestingModule } from '@nestjs/testing';
-import { CoaLoaderService } from './coa-loader.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
+import { count, eq } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as path from 'path';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { glAccounts, glSettings } from '@herobm/db-schema';
-import { count, eq } from 'drizzle-orm';
+import { CoaLoaderService } from './coa-loader.service';
 
 describe('CoaLoaderService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

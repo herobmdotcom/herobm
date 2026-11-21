@@ -1,8 +1,8 @@
+import { userEvents, users, userTwoFactor } from '@herobm/db-schema';
 import { Test, TestingModule } from '@nestjs/testing';
-import { UsersService } from './users.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { users, userTwoFactor, userEvents } from '@herobm/db-schema';
+import { UsersService } from './users.service';
 
 describe('UsersService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

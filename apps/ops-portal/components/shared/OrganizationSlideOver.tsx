@@ -237,7 +237,7 @@ export const OrganizationSlideOver: React.FC<OrganizationSlideOverProps> = ({
           />
         </div>
 
-        <div className="mt-2 pt-4 border-t border-gray-100">
+        <div className="mt-2 pt-4 border-t border-[var(--border)]">
           <label className="block text-sm font-medium mb-3 text-[var(--text-muted)]">
             Roles
           </label>

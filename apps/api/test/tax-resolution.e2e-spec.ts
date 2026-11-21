@@ -1,15 +1,15 @@
-import { TestingModule } from '@nestjs/testing';
-import { createE2eModule, setupE2eApp } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
-import { DRIZZLE } from '../src/drizzle/drizzle.module';
-import { sql } from 'drizzle-orm';
+import { TestingModule } from '@nestjs/testing';
 import * as dotenv from 'dotenv';
+import { sql } from 'drizzle-orm';
 import * as path from 'path';
+import { DRIZZLE } from '../src/drizzle/drizzle.module';
+import { createE2eModule, setupE2eApp } from './utils/e2e-module';
 
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
-import request from 'supertest';
 import { CUSTOMER_STATE } from '@herobm/shared';
+import request from 'supertest';
 
 describe('API E2E — Tax Resolution engine', () => {
   let app: INestApplication;

@@ -144,6 +144,7 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
                   className={`w-10 h-[22px] rounded-[11px] relative transition-colors duration-200 ${saving ? 'opacity-50' : ''} ${!formData.isOnCreditHold ? 'bg-[var(--success)]' : 'bg-[var(--danger)]'}`}
                 >
                   <div
+                    // dark-mode-ok: white toggle switch thumb
                     className={`w-4 h-4 rounded-full bg-white absolute top-[3px] transition-[left] duration-200 ${!formData.isOnCreditHold ? 'left-[21px]' : 'left-[3px]'}`}
                   />
                 </div>
@@ -194,6 +195,7 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
                     className={`w-10 h-[22px] rounded-[11px] relative transition-colors duration-200 ${saving ? 'opacity-50' : ''} ${!formData.isPurchasingBlocked ? 'bg-[var(--success)]' : 'bg-[var(--danger)]'}`}
                   >
                     <div
+                      // dark-mode-ok: white toggle switch thumb
                       className={`w-4 h-4 rounded-full bg-white absolute top-[3px] transition-[left] duration-200 ${!formData.isPurchasingBlocked ? 'left-[21px]' : 'left-[3px]'}`}
                     />
                   </div>
@@ -218,6 +220,7 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
                     className={`w-10 h-[22px] rounded-[11px] relative transition-colors duration-200 ${saving ? 'opacity-50' : ''} ${!formData.isPaymentBlocked ? 'bg-[var(--success)]' : 'bg-[var(--danger)]'}`}
                   >
                     <div
+                      // dark-mode-ok: white toggle switch thumb
                       className={`w-4 h-4 rounded-full bg-white absolute top-[3px] transition-[left] duration-200 ${!formData.isPaymentBlocked ? 'left-[21px]' : 'left-[3px]'}`}
                     />
                   </div>

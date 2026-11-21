@@ -1,11 +1,11 @@
-import { Request } from 'express';
-import { Injectable, Inject, UnauthorizedException } from '@nestjs/common';
+import { apiKeys } from '@herobm/db-schema';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
+import * as bcrypt from 'bcrypt';
+import { eq } from 'drizzle-orm';
+import { Request } from 'express';
 import { Strategy } from 'passport-custom';
 import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
-import { apiKeys } from '@herobm/db-schema';
-import { eq } from 'drizzle-orm';
-import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class ApiKeyStrategy extends PassportStrategy(Strategy, 'api-key') {

@@ -1,9 +1,9 @@
 import { Provider } from '@nestjs/common';
 import { newEnforcer } from 'casbin';
-import * as path from 'path';
 import * as fs from 'fs';
-import { DRIZZLE } from '../drizzle/drizzle.module';
+import * as path from 'path';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { DrizzleAdapter } from './casbin/drizzle-adapter';
 
 export const CASBIN_ENFORCER = 'CASBIN_ENFORCER';

@@ -1,6 +1,5 @@
-import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
-import { CreateOrderLineDto, UpdateOrderLineDto } from './dto';
+import { validate } from 'class-validator';
 import {
   CreateDiscountMatrixDto,
   UpdateDiscountMatrixDto,
@@ -9,6 +8,7 @@ import {
   CreatePurchaseOrderLineDto,
   UpdatePurchaseOrderLineDto,
 } from '../purchase-orders/dto';
+import { CreateOrderLineDto, UpdateOrderLineDto } from './dto';
 
 describe('Discount Bounds Validation (ADV-165)', () => {
   describe('Sales Order Line DTOs', () => {

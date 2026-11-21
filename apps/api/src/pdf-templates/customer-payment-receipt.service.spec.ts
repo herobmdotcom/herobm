@@ -1,5 +1,5 @@
-import { CustomerPaymentReceiptService } from './customer-payment-receipt.service';
 import { NotFoundException } from '@nestjs/common';
+import { CustomerPaymentReceiptService } from './customer-payment-receipt.service';
 
 describe('CustomerPaymentReceiptService', () => {
   let service: CustomerPaymentReceiptService;

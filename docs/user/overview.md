@@ -16,7 +16,7 @@ fields:
     summary: "Slide-over drawer providing immediate workflow instructions and field definitions for the screen you are viewing."
   keyboard_shortcuts:
     title: "Keyboard Shortcuts"
-    summary: "Press '?' anywhere to toggle Help. Press 'Esc' to close drawers and modals."
+    summary: "Press '?' anywhere to toggle Help, '/' on Order pages to jump to product search, and 'Esc' to close drawers or cancel entry."
 related:
   - "install-guide"
   - "architecture"

@@ -1,28 +1,27 @@
+import {
+  binContents,
+  bins,
+  inventoryLedger,
+  locations,
+  products,
+  productUoms,
+  uomDictionary,
+  zones,
+} from '@herobm/db-schema';
+import { PRODUCT_STATE } from '@herobm/shared';
 import { Test, TestingModule } from '@nestjs/testing';
-import { InventoryMovementService } from './inventory-movement.service';
-import { InventoryQueryService } from './inventory-query.service';
-import { UomService } from './uom.service';
-import { AppConfigService } from '../settings/app-config.service';
+import { eq } from 'drizzle-orm';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { GlService } from '../gl/gl.service';
 import { WorkOrdersWriteService } from '../manufacturing/work-orders-write.service';
 import { BackordersService } from '../orders/backorders.service';
 import { ReturnsWriteService } from '../orders/returns-write.service';
 import { ProjectsInventoryService } from '../projects/projects-inventory.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
+import { AppConfigService } from '../settings/app-config.service';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import {
-  products,
-  productUoms,
-  uomDictionary,
-  locations,
-  zones,
-  bins,
-  inventoryEntries,
-  inventoryLedger,
-  binContents,
-} from '@herobm/db-schema';
-import { PRODUCT_STATE, BIN_TYPE } from '@herobm/shared';
-import { eq } from 'drizzle-orm';
+import { InventoryMovementService } from './inventory-movement.service';
+import { InventoryQueryService } from './inventory-query.service';
+import { UomService } from './uom.service';
 
 describe('InventoryMovementService - ADV-INV-002 Immutability & Valuation', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

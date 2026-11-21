@@ -1,13 +1,13 @@
 import { PGlite } from '@electric-sql/pglite';
+import * as schema from '@herobm/db-schema';
 import { drizzle } from 'drizzle-orm/pglite';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as schema from '@herobm/db-schema';
 import {
-  seedCoaSettings,
-  seedCoaAccounts,
-  seedAccounts,
   runCoreSeeds,
+  seedAccounts,
+  seedCoaAccounts,
+  seedCoaSettings,
 } from '../../src/seeds/prod/core';
 import { seedTestLocations, seedTestUsers } from './test-seed';
 
@@ -79,6 +79,9 @@ export async function createMemoryDb(opts?: { skipSeeds?: boolean }) {
 
   // Run the standard application seeds against the in-memory PGLite DB
   if (!opts?.skipSeeds) {
+    if (!process.env.HOME_CURRENCY) {
+      process.env.HOME_CURRENCY = 'AUD';
+    }
     await runCoreSeeds(db, false);
     // Testing-only extension to seed COA defaults, accounts, and locations
     await seedCoaAccounts(db, false);

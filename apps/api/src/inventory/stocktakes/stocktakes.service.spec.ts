@@ -1,37 +1,33 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import {
-  BadRequestException,
-  NotFoundException,
-  ConflictException,
-} from '@nestjs/common';
-import { DRIZZLE } from '../../drizzle/drizzle.module';
-import { setupPgliteSuite } from '../../test-utils/pglite-suite';
-import {
-  products,
-  locations,
-  zones,
-  bins,
   binContents,
+  bins,
   inventoryEntries,
   inventoryLedger,
-  uomDictionary,
-  stocktakes,
-  stocktakeLines,
+  locations,
+  products,
   stocktakeCounts,
+  stocktakeLines,
+  stocktakes,
+  uomDictionary,
+  zones,
 } from '@herobm/db-schema';
-import { STOCKTAKE_STATE, PRODUCT_STATE } from '@herobm/shared';
+import { PRODUCT_STATE, STOCKTAKE_STATE } from '@herobm/shared';
+import { BadRequestException, ConflictException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import { eq } from 'drizzle-orm';
-import { StocktakesQueryService } from './stocktakes-query.service';
-import { StocktakesWriteService } from './stocktakes-write.service';
-import { StocktakesCountsWriteService } from './stocktakes-counts-write.service';
-import { InventoryMovementService } from '../inventory-movement.service';
-import { UomService } from '../uom.service';
+import { DRIZZLE } from '../../drizzle/drizzle.module';
 import { GlService } from '../../gl/gl.service';
-import { AppConfigService } from '../../settings/app-config.service';
 import { WorkOrdersWriteService } from '../../manufacturing/work-orders-write.service';
 import { BackordersService } from '../../orders/backorders.service';
 import { ReturnsWriteService } from '../../orders/returns-write.service';
 import { ProjectsInventoryService } from '../../projects/projects-inventory.service';
+import { AppConfigService } from '../../settings/app-config.service';
+import { setupPgliteSuite } from '../../test-utils/pglite-suite';
+import { InventoryMovementService } from '../inventory-movement.service';
+import { UomService } from '../uom.service';
+import { StocktakesCountsWriteService } from './stocktakes-counts-write.service';
+import { StocktakesQueryService } from './stocktakes-query.service';
+import { StocktakesWriteService } from './stocktakes-write.service';
 
 jest.mock('../../common/emit-event', () => ({
   emitEvent: jest.fn().mockResolvedValue(undefined),

@@ -321,7 +321,7 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
                   <Button 
                     variant="ghost"
                     size="icon"
-                    className="text-muted hover:text-gray-800 rounded-full bg-white border border-gray-200"
+                    className="text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-full bg-[var(--bg-card)] border border-[var(--border)]"
                     title={t('editField')}
                     onClick={(e) => { e.stopPropagation(); setEditingSnapshot(field); setEditingFieldId(field.id); }}
                   >
@@ -331,7 +331,7 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
                   <Button 
                     variant="ghost"
                     size="icon"
-                    className="text-[var(--danger)] hover:bg-red-50 rounded-full bg-white border border-gray-200"
+                    className="text-[var(--danger)] hover:bg-red-500/10 rounded-full bg-[var(--bg-card)] border border-[var(--border)]"
                     title={t('removeField')}
                     onClick={(e) => handleRemoveField(field.id, e)}
                   >

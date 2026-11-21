@@ -1,18 +1,18 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   glAccounts,
   glSettings,
   taxCategories,
   tradingTerms,
 } from '@herobm/db-schema';
-import { eq, count, sql } from 'drizzle-orm';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { count, eq } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as path from 'path';
 import { v5 as uuidv5 } from 'uuid';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 
 import { GLAccountType, GLReportCategory } from '@herobm/shared';
 

@@ -1,39 +1,39 @@
+import {
+  backorders,
+  bins,
+  inventoryLedger,
+  locations,
+  productComponents,
+  products,
+  uomDictionary,
+  workOrderComponents,
+  workOrderPicks,
+  workOrders,
+  zones,
+} from '@herobm/db-schema';
+import {
+  BACKORDER_STATE,
+  PRODUCT_STATE,
+  PUTAWAY_STATUS,
+  WORK_ORDER_STATE,
+} from '@herobm/shared';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { WorkOrdersService } from './work-orders.service';
-import { WorkOrdersQueryService } from './work-orders-query.service';
-import { WorkOrdersWriteService } from './work-orders-write.service';
-import { WorkOrdersExecutionService } from './work-orders-execution.service';
+import { randomUUID } from 'crypto';
+import { and, eq } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { GlService } from '../gl/gl.service';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
 import { UomService } from '../inventory/uom.service';
-import { AppConfigService } from '../settings/app-config.service';
-import { GlService } from '../gl/gl.service';
 import { BackordersService } from '../orders/backorders.service';
 import { ReturnsWriteService } from '../orders/returns-write.service';
 import { ProjectsInventoryService } from '../projects/projects-inventory.service';
-import {
-  products,
-  locations,
-  zones,
-  bins,
-  productComponents,
-  workOrders,
-  workOrderComponents,
-  workOrderPicks,
-  uomDictionary,
-  inventoryLedger,
-  backorders,
-} from '@herobm/db-schema';
-import {
-  PRODUCT_STATE,
-  WORK_ORDER_STATE,
-  PUTAWAY_STATUS,
-  BACKORDER_STATE,
-} from '@herobm/shared';
-import { eq, and } from 'drizzle-orm';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { randomUUID } from 'crypto';
+import { AppConfigService } from '../settings/app-config.service';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { WorkOrdersExecutionService } from './work-orders-execution.service';
+import { WorkOrdersQueryService } from './work-orders-query.service';
+import { WorkOrdersWriteService } from './work-orders-write.service';
+import { WorkOrdersService } from './work-orders.service';
 
 describe('WorkOrdersService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

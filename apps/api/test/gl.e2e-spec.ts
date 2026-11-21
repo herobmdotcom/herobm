@@ -1,10 +1,9 @@
 /**
  * E2E Tests — General Ledger & Trial Balance
  */
+import { INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { createE2eModule } from './utils/e2e-module';
-import { INestApplication } from '@nestjs/common';
-import { AppModule } from '../src/app.module';
 
 import request from 'supertest';
 

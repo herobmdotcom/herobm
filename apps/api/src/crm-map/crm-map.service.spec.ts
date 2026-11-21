@@ -1,29 +1,29 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { CrmMapService } from './crm-map.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
-  organizations,
   contacts,
-  opportunities,
   customers,
-  salesOrders,
-  projects,
-  organizationOrganizationLinks,
-  organizationContactLinks,
-  opportunityOrganizations,
-  opportunityContacts,
   locations,
+  opportunities,
+  opportunityContacts,
+  opportunityOrganizations,
+  organizationContactLinks,
+  organizationOrganizationLinks,
+  organizations,
+  projects,
+  salesOrders,
 } from '@herobm/db-schema';
 import {
-  ORGANIZATION_STATE,
   CONTACT_STATE,
-  OPPORTUNITY_STATE,
   CUSTOMER_STATE,
-  SALES_ORDER_STATE,
-  PROJECT_STATE,
+  OPPORTUNITY_STATE,
+  ORGANIZATION_STATE,
   PROJECT_BILLING_TYPE,
+  PROJECT_STATE,
+  SALES_ORDER_STATE,
 } from '@herobm/shared';
+import { Test, TestingModule } from '@nestjs/testing';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { CrmMapService } from './crm-map.service';
 
 describe('CrmMapService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

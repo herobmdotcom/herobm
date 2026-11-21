@@ -1,14 +1,11 @@
-import { TestingModule } from '@nestjs/testing';
-import { createE2eModule } from './utils/e2e-module';
-import { INestApplication } from '@nestjs/common';
-import { AppModule } from '../src/app.module';
-import { DRIZZLE } from '../src/drizzle/drizzle.module';
-import { sql } from 'drizzle-orm';
 import {
   CUSTOMER_STATE,
   PRODUCT_STATE,
   SALES_ORDER_STATE,
 } from '@herobm/shared';
+import { INestApplication } from '@nestjs/common';
+import { TestingModule } from '@nestjs/testing';
+import { createE2eModule } from './utils/e2e-module';
 
 import request from 'supertest';
 

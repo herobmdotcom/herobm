@@ -1,5 +1,5 @@
-import { getSchemaColumns, getDtoProperties } from './schema-parity.utils';
 import * as path from 'path';
+import { getDtoProperties, getSchemaColumns } from './schema-parity.utils';
 
 describe('Global DTO Completeness', () => {
   const mappings = [

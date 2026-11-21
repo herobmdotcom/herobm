@@ -12,7 +12,7 @@ import { AvailabilityTab, AvailabilityLineItem, AvailabilityInventoryLevel } fro
 import { OrderLinesTable, type OrderLineItem, type TaxCategory } from '@/components/shared/OrderLinesTable';
 import { formatAmount } from '@/lib/currency';
 import { toast } from 'react-hot-toast';
-import { computeLinePrice, getErrorMessage, calculateAvailableQuantity, LineType, type InventoryGap } from '@herobm/shared';
+import { computeLinePrice, getErrorMessage, calculateAvailableQuantity, resolveProductUnitPrice, LineType, type InventoryGap } from '@herobm/shared';
 
 export interface ProjectMaterialIssueLine extends OrderLineItem {
   id: string;
@@ -134,17 +134,14 @@ export function IssueProjectMaterialSlideOver({
     const defaultTax = taxCategories.find((t) => (t as unknown as { isDefault?: boolean }).isDefault) || taxCategories[0];
     const taxRate = defaultTax?.rate ? Number(defaultTax.rate) : 0;
 
-    const unitCost = Number(
-      (product as unknown as { standardCost?: string | number }).standardCost ||
-        (product as unknown as { weightedAverageCost?: string | number }).weightedAverageCost ||
-        (product as unknown as { tradePrice?: string | number }).tradePrice ||
-        0
-    );
-    const unitPrice = Number(
-      (product as unknown as { listPrice?: string | number }).listPrice ||
-        (product as unknown as { price?: string | number }).price ||
-        (unitCost > 0 ? unitCost * 1.3 : 0)
-    );
+    const unitCost = resolveProductUnitPrice(product, { mode: 'purchase' });
+    const catalogSalesPrice = resolveProductUnitPrice(product, { mode: 'sales' });
+    const unitPrice =
+      catalogSalesPrice > 0
+        ? catalogSalesPrice
+        : unitCost > 0
+          ? Number((unitCost * 1.3).toFixed(2))
+          : 0;
 
     const newLine: ProjectMaterialIssueLine = {
       id: `${product.productId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,

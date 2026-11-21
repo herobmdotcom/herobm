@@ -114,6 +114,12 @@ export interface FinancialTableProps<T = Record<string, unknown>> {
   cardClassName?: string;
   /** Custom CSS class for table element */
   tableClassName?: string;
+  /** Whether table headers stick to the top on vertical scroll (default: true) */
+  stickyHeader?: boolean;
+  /** Whether table grand totals footer sticks to the bottom on vertical scroll (default: true) */
+  stickyFooter?: boolean;
+  /** Custom max height for table scroll container when sticky headers are enabled (default: 'calc(100vh - 280px)') */
+  maxHeight?: string;
   /** Optional row click handler */
   onRowClick?: (row: T, index: number, sectionIndex?: number) => void;
   /** Predicate determining if a row is expanded */
@@ -155,6 +161,9 @@ export const FinancialTable = forwardRef(function FinancialTable<T>(
     className = '',
     cardClassName = '',
     tableClassName = '',
+    stickyHeader = true,
+    stickyFooter = true,
+    maxHeight,
     onRowClick,
     isRowExpanded,
     renderExpandedRow,
@@ -555,7 +564,7 @@ export const FinancialTable = forwardRef(function FinancialTable<T>(
 
   const getColAlignmentClass = (col: FinancialTableColumn<T>) => {
     if (col.align === 'right' || (col.isNumeric && col.align !== 'left' && col.align !== 'center')) {
-      return 'text-right font-mono tabular-nums';
+      return 'text-right font-mono tabular-nums whitespace-nowrap';
     }
     if (col.align === 'center') {
       return 'text-center';
@@ -590,16 +599,26 @@ export const FinancialTable = forwardRef(function FinancialTable<T>(
       )}
 
       {/* Main Table Card */}
-      <div className={`card overflow-x-auto bg-[var(--bg-card)] border border-[var(--border)] rounded-xl ${cardClassName}`}>
-        <table className={`w-full text-sm border-collapse ${tableClassName}`}>
-          <thead>
-            <tr className="border-b border-[var(--border)] bg-[var(--bg-secondary)]/50">
+      <div
+        className={`card ${
+          stickyHeader ? 'overflow-auto print:overflow-visible' : 'overflow-x-auto'
+        } bg-[var(--bg-card)] border border-[var(--border)] rounded-xl print:max-h-none ${
+          stickyHeader && !maxHeight ? 'max-h-[calc(100vh-280px)]' : ''
+        } ${cardClassName}`}
+        /* inline-style-allowed: Dynamic maxHeight constraint for sticky headers */
+        style={maxHeight ? { maxHeight } : undefined}
+      >
+        <table className={`min-w-full w-full text-sm border-collapse ${tableClassName}`}>
+          <thead className={stickyHeader ? 'sticky top-0 z-10 bg-[var(--bg-secondary)] shadow-[0_1px_0_0_var(--border)] print:static' : ''}>
+            <tr className="border-b border-[var(--border)] bg-[var(--bg-secondary)]">
               {visibleCols.map((col) => {
                 const alignClass = getColAlignmentClass(col);
                 return (
                   <th
                     key={col.id}
-                    className={`px-4 py-3 font-semibold text-[var(--text-secondary)] text-[11px] uppercase tracking-wider ${alignClass} ${col.headerClassName || ''}`}
+                    className={`px-4 py-3 font-semibold text-[var(--text-secondary)] text-[11px] uppercase tracking-wider whitespace-nowrap ${
+                      stickyHeader ? 'sticky top-0 bg-[var(--bg-secondary)] shadow-[0_1px_0_0_var(--border)] print:static' : ''
+                    } ${alignClass} ${col.headerClassName || ''}`}
                     /* inline-style-allowed: Dynamic column width specified by column definition */
                     style={col.width ? { width: col.width } : undefined}
                   >
@@ -770,7 +789,7 @@ export const FinancialTable = forwardRef(function FinancialTable<T>(
 
           {/* Grand Totals Footer */}
           {totalRowsList.length > 0 && !loading && (
-            <tfoot>
+            <tfoot className={stickyFooter ? 'sticky bottom-0 z-10 bg-[var(--bg-secondary)] shadow-[0_-1px_0_0_var(--border)] print:static' : ''}>
               {totalRowsList.map((tot, tIdx) => {
                 const colSpan = resolveColSpanLabel(tot);
                 return (
@@ -778,13 +797,23 @@ export const FinancialTable = forwardRef(function FinancialTable<T>(
                     key={tIdx}
                     className={`border-t-2 border-[var(--border)] bg-[var(--bg-secondary)] font-bold text-xs uppercase tracking-wider ${tot.className || ''}`}
                   >
-                    <td colSpan={colSpan} className="px-4 py-3 text-[var(--text-secondary)]">
+                    <td
+                      colSpan={colSpan}
+                      className={`px-4 py-3 text-[var(--text-secondary)] bg-[var(--bg-secondary)] whitespace-nowrap ${
+                        stickyFooter ? 'sticky bottom-0 bg-[var(--bg-secondary)] shadow-[0_-1px_0_0_var(--border)] print:static' : ''
+                      }`}
+                    >
                       {tot.label || tCommon('totals')}
                     </td>
                     {visibleCols.slice(colSpan).map((col) => {
                       const alignClass = getColAlignmentClass(col);
                       return (
-                        <td key={col.id} className={`px-4 py-3 text-[var(--text-primary)] ${alignClass}`}>
+                        <td
+                          key={col.id}
+                          className={`px-4 py-3 text-[var(--text-primary)] bg-[var(--bg-secondary)] whitespace-nowrap ${
+                            stickyFooter ? 'sticky bottom-0 bg-[var(--bg-secondary)] shadow-[0_-1px_0_0_var(--border)] print:static' : ''
+                          } ${alignClass}`}
+                        >
                           {tot.values[col.id] ?? null}
                         </td>
                       );

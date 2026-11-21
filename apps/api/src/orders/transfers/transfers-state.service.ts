@@ -1,40 +1,40 @@
 import {
-  Injectable,
+  bins,
+  products,
+  transferOrderLines,
+  transferOrderReceiptLines,
+  transferOrderReceipts,
+  transferOrderShipments,
+  transferOrders,
+  zones,
+} from '@herobm/db-schema';
+import type { TransferOrderState } from '@herobm/shared';
+import {
+  PUTAWAY_STATUS,
+  SHIPMENT_STATE,
+  TRANSFER_ORDER_STATE,
+} from '@herobm/shared';
+import {
   BadRequestException,
+  Inject,
+  Injectable,
   NotFoundException,
   Optional,
   forwardRef,
 } from '@nestjs/common';
-import { Inject } from '@nestjs/common';
-import { DRIZZLE } from '../../drizzle/drizzle.module';
-import type { DrizzleDB } from '../../drizzle/drizzle.module';
-import {
-  transferOrders,
-  transferOrderLines,
-  transferOrderReceipts,
-  transferOrderReceiptLines,
-  transferOrderShipments,
-  bins,
-  zones,
-  products,
-} from '@herobm/db-schema';
-import { eq, and, inArray } from 'drizzle-orm';
-import { CreateShipmentDto } from '../dto';
+import { and, eq, inArray } from 'drizzle-orm';
+import { v4 as uuidv4 } from 'uuid';
 import { emitEvent } from '../../common/emit-event';
 import { EntityType, EventType } from '../../common/event-types';
-import {
-  TRANSFER_ORDER_STATE,
-  SHIPMENT_STATE,
-  PUTAWAY_STATUS,
-} from '@herobm/shared';
-import type { TransferOrderState } from '@herobm/shared';
-import { v4 as uuidv4 } from 'uuid';
+import type { DrizzleDB } from '../../drizzle/drizzle.module';
+import { DRIZZLE } from '../../drizzle/drizzle.module';
 import { InventoryMovementService } from '../../inventory/inventory-movement.service';
-import { TransfersCoreService } from './transfers-core.service';
 import { BackordersService } from '../backorders.service';
+import { CreateShipmentDto } from '../dto';
+import { changeTransferOrderState } from './transfer-state.helper';
+import { TransfersCoreService } from './transfers-core.service';
 import { TransfersPickingService } from './transfers-picking.service';
 import { TransfersShipmentService } from './transfers-shipment.service';
-import { changeTransferOrderState } from './transfer-state.helper';
 
 @Injectable()
 export class TransfersStateService {

@@ -498,7 +498,7 @@ export default function BankMatchingView({
               <div className="text-lg font-medium text-[var(--text-primary)]">{formatCurrency(sumJournalLines)}</div>
             </div>
 
-            <div className="pl-8 border-l border-gray-200">
+            <div className="pl-8 border-l border-[var(--border)]">
               <div className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">{t('variance')}</div>
               <div className={`text-lg font-medium ${Math.abs(variance) < 0.001 ? 'text-[var(--success)]' : 'text-red-500'}`}>
                 {formatCurrency(variance)}

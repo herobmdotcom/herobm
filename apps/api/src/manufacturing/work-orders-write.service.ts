@@ -1,39 +1,39 @@
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-  Logger,
-  forwardRef,
-} from '@nestjs/common';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  workOrders,
+  bins,
+  locations,
+  productComponents,
+  products,
   workOrderComponents,
   workOrderPicks,
-  products,
-  locations,
-  bins,
+  workOrders,
   zones,
-  productComponents,
 } from '@herobm/db-schema';
-import { eq, and } from 'drizzle-orm';
 import {
-  WORK_ORDER_STATE,
-  WORK_ORDER_PICK_STATE,
   BIN_TYPE,
   type PutawayStatus,
+  WORK_ORDER_PICK_STATE,
+  WORK_ORDER_STATE,
   toDecimal,
 } from '@herobm/shared';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  forwardRef,
+} from '@nestjs/common';
 import Decimal from 'decimal.js';
+import { and, eq } from 'drizzle-orm';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
 import { CreateWorkOrderDto } from './dto/create-work-order.dto';
 import {
-  UpdateWorkOrderDto,
   UpdateWorkOrderComponentDto,
+  UpdateWorkOrderDto,
 } from './dto/update-work-order.dto';
 import { WorkOrdersQueryService } from './work-orders-query.service';
 

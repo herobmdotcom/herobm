@@ -1,44 +1,45 @@
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
-import { eq, sql, and } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
+  bins,
   products as coreProducts,
   masterDataEvents,
-  productUoms,
   productDefaultBins,
   productSuppliers,
-  bins,
+  productUoms,
   uomDictionary,
 } from '@herobm/db-schema';
+import {
+  PRODUCT_STATE,
+  PRODUCT_TRANSITIONS,
+  ProductState,
+  isServiceProductType,
+  normalizeUomCode,
+} from '@herobm/shared';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { and, eq, inArray, sql } from 'drizzle-orm';
+import { AuditMode, calculateAuditTrail } from '../common/audit';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import {
-  PRODUCT_TRANSITIONS,
-  PRODUCT_STATE,
-  ProductState,
-  normalizeUomCode,
-  isServiceProductType,
-} from '@herobm/shared';
-import { calculateAuditTrail, AuditMode } from '../common/audit';
-import {
-  CreateProductDto,
-  UpdateProductDto,
-  CopyProductDto,
-  AddSupplierDto,
-  LinkBinDto,
   AddProductComponentDto,
+  AddSupplierDto,
+  BulkUpdateProductsDto,
+  CopyProductDto,
+  CreateProductDto,
+  LinkBinDto,
   UpdateProductComponentDto,
+  UpdateProductDto,
 } from './dto';
 
-import { ProductCopyService } from './product-copy.service';
 import { ProductComponentsService } from './product-components.service';
+import { ProductCopyService } from './product-copy.service';
 import { ProductMediaService } from './product-media.service';
 
 @Injectable()
@@ -136,7 +137,7 @@ export class ProductsWriteService {
       throw new NotFoundException(`Product '${id}' not found`);
     }
 
-    const finalStructureType = dto.structureType ?? existing[0].structureType;
+    const _finalStructureType = dto.structureType ?? existing[0].structureType;
     const finalProductType = dto.productType ?? existing[0].productType;
     const finalBaseUom = dto.baseUom ?? existing[0].baseUom;
 
@@ -749,5 +750,123 @@ export class ProductsWriteService {
     tx?: DrizzleDB,
   ) {
     return this.productCopyService.copy(productId, dto, actor, tx);
+  }
+  /**
+   * Bulk update curated fields across multiple products.
+   * Runs in a single transaction with chunked execution and comprehensive audit events.
+   */
+  async bulkUpdate(
+    dto: BulkUpdateProductsDto,
+    actor: string,
+  ): Promise<{ updatedCount: number; skippedCount: number }> {
+    const uniqueIds = Array.from(new Set(dto.ids));
+    if (uniqueIds.length === 0) {
+      return { updatedCount: 0, skippedCount: 0 };
+    }
+
+    const targetChanges: Record<string, unknown> = {};
+    if (dto.productGroupId !== undefined)
+      targetChanges.productGroupId = dto.productGroupId;
+    if (dto.salesTaxCategoryId !== undefined)
+      targetChanges.salesTaxCategoryId = dto.salesTaxCategoryId;
+    if (dto.purchaseTaxCategoryId !== undefined)
+      targetChanges.purchaseTaxCategoryId = dto.purchaseTaxCategoryId;
+    if (dto.stateCode !== undefined) targetChanges.stateCode = dto.stateCode;
+
+    if (Object.keys(targetChanges).length === 0) {
+      return { updatedCount: 0, skippedCount: uniqueIds.length };
+    }
+
+    return await this.db.transaction(async (tx: DrizzleDB) => {
+      let updatedCount = 0;
+      let skippedCount = 0;
+      const CHUNK_SIZE = 500;
+
+      for (let i = 0; i < uniqueIds.length; i += CHUNK_SIZE) {
+        const chunk = uniqueIds.slice(i, i + CHUNK_SIZE);
+        // n-plus-one-ignore: Batch chunked by CHUNK_SIZE
+        const existingRows = await tx // n-plus-one-ignore
+          .select()
+          .from(coreProducts)
+          .where(inArray(coreProducts.productId, chunk));
+
+        const foundMap = new Map(existingRows.map((r) => [r.productId, r]));
+
+        for (const id of chunk) {
+          if (!foundMap.has(id)) {
+            throw new NotFoundException(`Product with id '${id}' not found`);
+          }
+        }
+
+        for (const product of existingRows) {
+          if (
+            dto.stateCode !== undefined &&
+            dto.stateCode !== product.stateCode
+          ) {
+            const allowed = PRODUCT_TRANSITIONS[product.stateCode] || [];
+            if (!allowed.includes(dto.stateCode)) {
+              throw new BadRequestException(
+                `Cannot transition product '${product.productNumber}' from '${product.stateCode}' to '${dto.stateCode}'. Allowed transitions: ${allowed.join(', ')}`,
+              );
+            }
+          }
+
+          const audit = calculateAuditTrail(
+            targetChanges,
+            product,
+            AuditMode.DIFF,
+          );
+
+          if (!audit.hasChanges) {
+            skippedCount++;
+            continue;
+          }
+
+          updatedCount++;
+          await tx
+            .update(coreProducts)
+            .set({
+              ...audit.changes,
+              modifiedOn: new Date(),
+            })
+            .where(eq(coreProducts.productId, product.productId));
+
+          const changedKeys = Object.keys(audit.changes);
+          const isStatusOnly =
+            changedKeys.length === 1 && changedKeys[0] === 'stateCode';
+
+          if (isStatusOnly) {
+            await emitEvent(tx, {
+              entityType: EntityType.PRODUCT,
+              entityId: product.productId,
+              eventType: EventType.STATUS_CHANGED,
+              entityDisplayName: product.name,
+              payload: {
+                from: audit.previousValues.stateCode,
+                to: audit.changes.stateCode,
+              },
+              actor,
+            });
+          } else {
+            await emitEvent(tx, {
+              entityType: EntityType.PRODUCT,
+              entityId: product.productId,
+              eventType: EventType.UPDATED,
+              entityDisplayName: product.name,
+              payload: {
+                changes: audit.changes,
+                previousValues: audit.previousValues,
+              },
+              actor,
+            });
+          }
+        }
+      }
+
+      this.logger.log(
+        `Bulk updated ${updatedCount} products (${skippedCount} skipped) by ${actor}`,
+      );
+      return { updatedCount, skippedCount };
+    });
   }
 }

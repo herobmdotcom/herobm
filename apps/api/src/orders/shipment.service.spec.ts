@@ -1,48 +1,46 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ShipmentsCoreService } from './shipments/shipments-core.service';
-import { ShipmentsWriteService } from './shipments/shipments-write.service';
-import { ShipmentsStateService } from './shipments/shipments-state.service';
-import { GlService } from '../gl/gl.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
-  salesOrders,
-  salesOrderLineItems,
-  salesOrderPicks,
-  salesOrderShipments,
-  salesOrderShipmentLines,
-  products,
-  zones,
-  bins,
-  locations,
-  uomDictionary,
+  appSettings,
   customers,
-  taxCategories,
+  emailOutbox,
   inventoryEntries,
   inventoryLedger,
+  locations,
   organizations,
-  emailOutbox,
-  appSettings,
+  products,
+  salesOrderLineItems,
+  salesOrderPicks,
+  salesOrders,
+  salesOrderShipmentLines,
+  salesOrderShipments,
+  taxCategories,
+  uomDictionary,
 } from '@herobm/db-schema';
-import { eq } from 'drizzle-orm';
 import {
+  CUSTOMER_STATE,
+  ORGANIZATION_STATE,
+  PRODUCT_STATE,
+  SALES_ORDER_PICK_STATE,
   SALES_ORDER_STATE,
   SHIPMENT_STATE,
-  SALES_ORDER_PICK_STATE,
-  CUSTOMER_STATE,
-  PRODUCT_STATE,
   ShipmentState,
-  ORGANIZATION_STATE,
 } from '@herobm/shared';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { TestingModule } from '@nestjs/testing';
+import { eq } from 'drizzle-orm';
 import { setupTestModule } from '../../test/utils/test-module';
+import { CustomersService } from '../customers/customers.service';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { EmailService } from '../email/email.service';
+import { GlService } from '../gl/gl.service';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
 import { InventoryQueryService } from '../inventory/inventory-query.service';
-import { CustomersService } from '../customers/customers.service';
 import { DocumentDispatchService } from '../notifications/document-dispatch.service';
-import { EmailService } from '../email/email.service';
 import { PdfTemplatesService } from '../pdf-templates/pdf-templates.service';
 import { AppConfigService } from '../settings/app-config.service';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { ShipmentsCoreService } from './shipments/shipments-core.service';
+import { ShipmentsStateService } from './shipments/shipments-state.service';
+import { ShipmentsWriteService } from './shipments/shipments-write.service';
 
 // Shared test data
 const PICKING_ORDER = {

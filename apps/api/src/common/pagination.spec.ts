@@ -1,4 +1,4 @@
-import { withCursorPagination, encodeCursor } from './pagination';
+import { encodeCursor, withCursorPagination } from './pagination';
 
 describe('withCursorPagination', () => {
   // Mock Drizzle QueryBuilder

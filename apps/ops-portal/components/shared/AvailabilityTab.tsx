@@ -202,7 +202,7 @@ export function AvailabilityTab<T extends AvailabilityLineItem = AvailabilityLin
               </span>
             )}
             {isComponent && (
-              <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-medium">
+              <span className="text-[10px] px-1.5 py-0.2 rounded bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-medium">
                 {t('availability.component')}
               </span>
             )}
@@ -558,43 +558,43 @@ export function AvailabilityTab<T extends AvailabilityLineItem = AvailabilityLin
                   </span>
                 )}
                 {isComponent && (
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-medium">
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-medium">
                     {t('availability.component')}
                   </span>
                 )}
               </div>
-              <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">
+              <div className="text-xs text-[var(--text-muted)] bg-[var(--bg-secondary)] px-2 py-0.5 rounded font-medium">
                 {line.lineNumber ?? idx + 1}
               </div>
             </div>
 
-            <div className="text-sm text-slate-600 font-medium mb-3">
+            <div className="text-sm text-[var(--text-secondary)] font-medium mb-3">
               {line.productDescription || '—'}
             </div>
 
-            <div className="flex justify-between items-center py-2 border-t border-slate-100">
-              <span className="text-xs font-medium text-slate-500">
+            <div className="flex justify-between items-center py-2 border-t border-[var(--border)]">
+              <span className="text-xs font-medium text-[var(--text-muted)]">
                 {context === 'purchase' ? t('availability.thisOrder') : t('availability.colQty')}
               </span>
               <span className="text-sm font-semibold">{orderedQty}</span>
             </div>
 
             {isKitParent ? (
-              <div className="text-xs text-slate-500 italic py-2 bg-slate-50 rounded text-center border border-slate-100">
+              <div className="text-xs text-[var(--text-muted)] italic py-2 bg-[var(--bg-secondary)] rounded text-center border border-[var(--border)]">
                 {t('availability.fulfilledByComponents')}
               </div>
             ) : isNonStock ? (
-              <div className="text-xs text-slate-500 italic py-2 bg-slate-50 rounded text-center border border-slate-100">
+              <div className="text-xs text-[var(--text-muted)] italic py-2 bg-[var(--bg-secondary)] rounded text-center border border-[var(--border)]">
                 {t('availability.nonStock')} — {t('availability.noStockTracking')}
               </div>
             ) : lineInventory.length === 0 ? (
-              <div className="text-sm text-rose-500 italic text-center py-2 bg-rose-50 rounded border border-rose-100">
+              <div className="text-sm text-rose-500 italic text-center py-2 bg-rose-500/10 rounded border border-rose-500/20">
                 {t('availability.noInventoryFound')}
               </div>
             ) : (
               <>
                 {context === 'sales' && (
-                  <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                  <div className="flex justify-between items-center py-2 border-b border-[var(--border)]">
                     <span className="text-xs font-medium text-slate-500">
                       {t('availability.colStatus')}
                     </span>
@@ -621,7 +621,7 @@ export function AvailabilityTab<T extends AvailabilityLineItem = AvailabilityLin
                     return (
                       <div
                         key={inv.inventoryLevelId || inv.locationId}
-                        className="bg-slate-50 rounded p-2 text-xs flex flex-col gap-1 border border-slate-100"
+                        className="bg-[var(--bg-secondary)] rounded p-2 text-xs flex flex-col gap-1 border border-[var(--border)]"
                       >
                         <div className="flex justify-between font-medium">
                           {line.productId && !isCustom ? (

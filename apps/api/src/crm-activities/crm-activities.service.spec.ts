@@ -1,24 +1,24 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { CrmActivitiesService } from './crm-activities.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
+  contacts,
   crmActivities,
   crmActivityContacts,
-  organizations,
-  contacts,
   opportunities,
   opportunityContacts,
+  organizations,
   users,
 } from '@herobm/db-schema';
-import { NotFoundException } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
-import { emitEvent } from '../common/emit-event';
 import {
-  ORGANIZATION_STATE,
   CONTACT_STATE,
   OPPORTUNITY_STATE,
+  ORGANIZATION_STATE,
 } from '@herobm/shared';
+import { NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { eq } from 'drizzle-orm';
+import { emitEvent } from '../common/emit-event';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { CrmActivitiesService } from './crm-activities.service';
 
 jest.mock('../common/emit-event', () => ({
   emitEvent: jest.fn().mockResolvedValue(undefined),

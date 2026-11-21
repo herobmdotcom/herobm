@@ -1,50 +1,57 @@
 import {
-  ApiTags,
-  ApiOperation,
-  ApiOkResponse,
-  ApiCreatedResponse,
-  ApiBody,
-} from '@nestjs/swagger';
-import { Controller, Post, Get, Param, Body, Query } from '@nestjs/common';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
-import { AuthUser } from '../auth/auth-user.decorator';
-import type { JwtUser } from '../auth/auth-user.decorator';
-import { BackordersService } from './backorders.service';
-import { Inject } from '@nestjs/common';
+  backorders,
+  inventoryLevels,
+  locations,
+  organizations,
+  products,
+  productSuppliers,
+  purchaseOrders,
+  salesOrderLineItems,
+  salesOrders,
+  suppliers,
+  transferOrders,
+  workOrders,
+} from '@herobm/db-schema';
 import {
   BACKORDER_STATE,
   calculateAvailableQuantity,
   SystemResource,
 } from '@herobm/shared';
 import {
-  AllocationSuccessResponseDto,
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
+import {
+  ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+import { aliasedTable, and, eq, inArray, sql } from 'drizzle-orm';
+import type { JwtUser } from '../auth/auth-user.decorator';
+import { AuthUser } from '../auth/auth-user.decorator';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { BackordersService } from './backorders.service';
+import {
   AllocationResolveResponseDto,
-  LinkDemandToPoDto,
-  ReallocateDemandDto,
+  AllocationSuccessResponseDto,
+  AvailablePoLineDto,
+  EmptyBodyDto,
   GeneratePOsDto,
   GenerateTransfersDto,
+  LinkDemandToPoDto,
   OpenDemandDto,
-  AvailablePoLineDto,
   PoAllocationDto,
-  EmptyBodyDto,
+  ReallocateDemandDto,
 } from './dto';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  backorders,
-  products,
-  salesOrders,
-  salesOrderLineItems,
-  productSuppliers,
-  suppliers,
-  organizations,
-  locations,
-  inventoryLevels,
-  purchaseOrders,
-  transferOrders,
-  workOrders,
-} from '@herobm/db-schema';
-import { sql, eq, and, inArray, aliasedTable } from 'drizzle-orm';
 
 const demandWorkOrders = aliasedTable(workOrders, 'demand_work_orders');
 

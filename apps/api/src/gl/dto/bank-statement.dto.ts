@@ -1,13 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  IsNumber,
   IsDateString,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
   IsUUID,
-  IsBoolean,
 } from 'class-validator';
 
 export class MatchedJournalLineDto {

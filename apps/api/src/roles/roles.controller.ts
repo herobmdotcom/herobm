@@ -1,18 +1,18 @@
 import { SystemResource } from '@herobm/shared';
-import { Controller, Get, Post, Delete, Body, Param } from '@nestjs/common';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
-import { RolesService } from './roles.service';
+import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import {
-  SetRolePermissionsDto,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
+import {
   RoleDetailsDto,
   RolesSuccessResponseDto,
+  SetRolePermissionsDto,
 } from './dto';
-import {
-  ApiOkResponse,
-  ApiCreatedResponse,
-  ApiTags,
-  ApiOperation,
-} from '@nestjs/swagger';
+import { RolesService } from './roles.service';
 
 @ApiTags('System')
 @CasbinResource(SystemResource.ROLES)

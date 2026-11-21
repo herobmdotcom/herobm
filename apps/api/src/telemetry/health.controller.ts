@@ -1,9 +1,9 @@
 import { Controller, Get, HttpCode, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
-import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
-import { RATE_LIMITS } from '../common/config/throttler.config';
-import { Public } from '../auth/public.decorator';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { SkipCasbin } from '../auth/casbin.guard';
+import { Public } from '../auth/public.decorator';
+import { RATE_LIMITS } from '../common/config/throttler.config';
 
 export class HealthResponseDto {
   status!: string;

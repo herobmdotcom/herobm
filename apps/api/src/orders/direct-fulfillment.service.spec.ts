@@ -1,48 +1,48 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { DirectFulfillmentService } from './direct-fulfillment.service';
-import { SalesInvoiceService } from '../invoices/sales-invoice.service';
-import { GlService } from '../gl/gl.service';
-import { TaxCategoriesService } from '../tax/tax-categories.service';
-import { AppConfigService } from '../settings/app-config.service';
-import { EnrichmentService } from '../enrichment/enrichment.service';
-import { OrganizationService } from '../settings/organization.service';
-import { InventoryMovementService } from '../inventory/inventory-movement.service';
-import { WorkOrdersWriteService } from '../manufacturing/work-orders-write.service';
-import { BackordersService } from './backorders.service';
-import { ReturnsWriteService } from './returns-write.service';
-import { ProjectsInventoryService } from '../projects/projects-inventory.service';
-import { UomService } from '../inventory/uom.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { BadRequestException } from '@nestjs/common';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { ShipmentsCoreService } from './shipments/shipments-core.service';
 import {
-  salesOrders,
-  salesOrderLineItems,
-  salesOrderPicks,
-  salesOrderShipments,
-  salesOrderShipmentLines,
-  products,
-  zones,
-  bins,
   binContents,
-  locations,
+  bins,
   customers,
-  taxCategories,
+  glAccounts,
   inventoryEntries,
   inventoryLedger,
+  locations,
   organizations,
+  products,
+  salesOrderLineItems,
+  salesOrderPicks,
+  salesOrders,
+  salesOrderShipmentLines,
+  salesOrderShipments,
+  taxCategories,
   uomDictionary,
-  glAccounts,
+  zones,
 } from '@herobm/db-schema';
-import { eq } from 'drizzle-orm';
 import {
-  SALES_ORDER_STATE,
-  SALES_ORDER_PICK_STATE,
-  PRODUCT_STATE,
   CUSTOMER_STATE,
   ORGANIZATION_STATE,
+  PRODUCT_STATE,
+  SALES_ORDER_PICK_STATE,
+  SALES_ORDER_STATE,
 } from '@herobm/shared';
+import { BadRequestException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { eq } from 'drizzle-orm';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { EnrichmentService } from '../enrichment/enrichment.service';
+import { GlService } from '../gl/gl.service';
+import { InventoryMovementService } from '../inventory/inventory-movement.service';
+import { UomService } from '../inventory/uom.service';
+import { SalesInvoiceService } from '../invoices/sales-invoice.service';
+import { WorkOrdersWriteService } from '../manufacturing/work-orders-write.service';
+import { ProjectsInventoryService } from '../projects/projects-inventory.service';
+import { AppConfigService } from '../settings/app-config.service';
+import { OrganizationService } from '../settings/organization.service';
+import { TaxCategoriesService } from '../tax/tax-categories.service';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { BackordersService } from './backorders.service';
+import { DirectFulfillmentService } from './direct-fulfillment.service';
+import { ReturnsWriteService } from './returns-write.service';
+import { ShipmentsCoreService } from './shipments/shipments-core.service';
 
 jest.mock('../orders/order-lifecycle-rules', () => ({
   evaluateLifecycleRules: jest.fn().mockResolvedValue([]),

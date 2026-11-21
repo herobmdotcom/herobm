@@ -1,30 +1,30 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { CustomersService } from './customers.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { NotFoundException } from '@nestjs/common';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
-  customers,
-  masterDataEvents,
   customerGroups,
-  taxPositions,
-  salesOrders,
-  salesInvoices,
+  customers,
+  glAccounts,
   glJournalEntries,
   glJournalLines,
-  glAccounts,
+  masterDataEvents,
   organizations,
+  salesInvoices,
+  salesOrders,
+  taxPositions,
 } from '@herobm/db-schema';
-import { sql } from 'drizzle-orm';
 import {
   CUSTOMER_STATE,
-  SALES_ORDER_STATE,
-  SALES_INVOICE_STATE,
   ORGANIZATION_STATE,
+  SALES_INVOICE_STATE,
+  SALES_ORDER_STATE,
 } from '@herobm/shared';
+import { NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { sql } from 'drizzle-orm';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { CustomersService } from './customers.service';
 
-import { CreditAssessmentService } from './credit-assessment.service';
 import { AppConfigService } from '../settings/app-config.service';
+import { CreditAssessmentService } from './credit-assessment.service';
 
 describe('CustomersService', () => {
   const pg = setupPgliteSuite();

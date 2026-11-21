@@ -1,12 +1,11 @@
-import { TestingModule } from '@nestjs/testing';
-import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
-import { DRIZZLE } from '../src/drizzle/drizzle.module';
-import type { DrizzleDB } from '../src/drizzle/drizzle.module';
-import { GlService } from '../src/gl/gl.service';
-import { GENESIS_HASH } from '@herobm/shared';
-import { sql } from 'drizzle-orm';
+import { TestingModule } from '@nestjs/testing';
 import { randomUUID } from 'crypto';
+import { sql } from 'drizzle-orm';
+import type { DrizzleDB } from '../src/drizzle/drizzle.module';
+import { DRIZZLE } from '../src/drizzle/drizzle.module';
+import { GlService } from '../src/gl/gl.service';
+import { createE2eModule } from './utils/e2e-module';
 
 describe('Financial Immutability Triggers (e2e)', () => {
   let app: INestApplication;

@@ -1,7 +1,7 @@
 import {
-  resolveDateRangeFilter,
   DateRangeConfig,
   getAggregationPeriod,
+  resolveDateRangeFilter,
 } from './date-range.util';
 
 describe('resolveDateRangeFilter', () => {

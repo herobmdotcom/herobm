@@ -1,28 +1,28 @@
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
-import { eq, and } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  projects,
-  projectTasks,
   projectBudgetLines,
   projectLedgerEntries,
+  projects,
+  projectTasks,
 } from '@herobm/db-schema';
-import { CreateProjectTaskDto, UpdateProjectTaskDto } from './dto';
-import { emitEvent } from '../common/emit-event';
-import { EntityType, EventType } from '../common/event-types';
 import {
+  getAllowedTransitions,
   PROJECT_STATE,
   PROJECT_TASK_STATE,
   PROJECT_TASK_TRANSITIONS,
-  getAllowedTransitions,
 } from '@herobm/shared';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { and, eq } from 'drizzle-orm';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { CreateProjectTaskDto, UpdateProjectTaskDto } from './dto';
 
 @Injectable()
 export class ProjectsTasksService {

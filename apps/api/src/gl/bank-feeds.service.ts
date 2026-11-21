@@ -1,34 +1,34 @@
-import { Decimal } from 'decimal.js';
-import { Injectable, Inject, NotFoundException, Logger } from '@nestjs/common';
-import { randomUUID } from 'crypto';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
-  csvMappingProfiles,
-  reconciliationRules,
   bankStatementLines,
+  csvMappingProfiles,
   glAccounts,
-  glJournalLines,
   glJournalEntries,
+  glJournalLines,
   glMatchGroups,
   glSettings,
+  reconciliationRules,
 } from '@herobm/db-schema';
-import { eq, asc, and, gte, lte, inArray } from 'drizzle-orm';
-import {
-  CreateMappingProfileDto,
-  UpdateMappingProfileDto,
-  CreateReconciliationRuleDto,
-  UpdateReconciliationRuleDto,
-} from './dto/bank-feeds.dto';
-import { parse } from 'csv-parse/sync';
-import { GlService } from './gl.service';
 import {
   JOURNAL_ENTRY_SOURCE_TYPE,
   parseLocalDate,
   toInputDateFormat,
 } from '@herobm/shared';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { parse } from 'csv-parse/sync';
+import { Decimal } from 'decimal.js';
+import { and, asc, eq, gte, inArray, lte } from 'drizzle-orm';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import {
+  CreateMappingProfileDto,
+  CreateReconciliationRuleDto,
+  UpdateMappingProfileDto,
+  UpdateReconciliationRuleDto,
+} from './dto/bank-feeds.dto';
+import { GlService } from './gl.service';
 
 @Injectable()
 export class BankFeedsService {
@@ -293,7 +293,7 @@ export class BankFeedsService {
     const profile = profiles[0];
 
     // 2. Get Rules
-    const rules = await this.getReconciliationRules();
+    const _rules = await this.getReconciliationRules();
 
     // 3. Get GL Account
     const accs = await this.db
@@ -301,7 +301,7 @@ export class BankFeedsService {
       .from(glAccounts)
       .where(eq(glAccounts.glAccountId, glAccountId));
     if (!accs.length) throw new NotFoundException('GL Account not found');
-    const bankAccountCode = accs[0].code;
+    const _bankAccountCode = accs[0].code;
 
     // 4. Parse CSV
     const records = parse(fileBuffer, {
@@ -415,7 +415,7 @@ export class BankFeedsService {
       .from(glAccounts)
       .where(eq(glAccounts.glAccountId, glAccountId));
     if (!accs.length) throw new NotFoundException('GL Account not found');
-    const bankAccountCode = accs[0].code;
+    const _bankAccountCode = accs[0].code;
 
     const smartMatches: {
       bankLineIds: string[];

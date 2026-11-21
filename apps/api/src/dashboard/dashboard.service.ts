@@ -1,30 +1,30 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { sql, ilike, or, eq } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
-  products as coreProducts,
   customers as coreAccounts,
-  salesOrders as coreSalesOrders,
-  suppliers as coreSuppliers,
-  purchaseOrders as corePurchaseOrders,
-  salesOrderShipments as coreShipments,
+  contacts as coreContacts,
   goodsReceived as coreGoodsReceived,
-  salesInvoices as coreSalesInvoices,
+  opportunities as coreOpportunities,
+  organizations as coreOrganizations,
+  paymentEntries as corePayments,
+  products as coreProducts,
+  projects as coreProjects,
+  purchaseDebitNotes as corePurchaseDebitNotes,
   purchaseInvoices as corePurchaseInvoices,
-  salesOrderReturns as coreSalesReturns,
+  purchaseOrders as corePurchaseOrders,
   purchaseOrderReturns as corePurchaseReturns,
   salesCreditNotes as coreSalesCreditNotes,
-  purchaseDebitNotes as corePurchaseDebitNotes,
+  salesInvoices as coreSalesInvoices,
+  salesOrderLineItems as coreSalesOrderLines,
+  salesOrders as coreSalesOrders,
+  salesOrderReturns as coreSalesReturns,
+  salesOrderShipments as coreShipments,
+  suppliers as coreSuppliers,
   transferOrders as coreTransferOrders,
   workOrders as coreWorkOrders,
-  contacts as coreContacts,
-  opportunities as coreOpportunities,
-  paymentEntries as corePayments,
-  salesOrderLineItems as coreSalesOrderLines,
-  organizations as coreOrganizations,
-  projects as coreProjects,
 } from '@herobm/db-schema';
+import { Inject, Injectable } from '@nestjs/common';
+import { eq, ilike, or, sql } from 'drizzle-orm';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 
 export type SearchEntityType =
   | 'product'

@@ -1,39 +1,40 @@
 import { SystemResource } from '@herobm/shared';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiCreatedResponse,
-  ApiOkResponse,
-  ApiBody,
-  ApiQuery,
-} from '@nestjs/swagger';
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Param,
   Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
   Query,
 } from '@nestjs/common';
-import { SuppliersService } from './suppliers.service';
-import { SuppliersWriteService } from './suppliers-write.service';
-import { PaginationQuery } from '../common/pagination';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
-import { AuthUser } from '../auth/auth-user.decorator';
-import type { JwtUser } from '../auth/auth-user.decorator';
 import {
+  ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
+import type { JwtUser } from '../auth/auth-user.decorator';
+import { AuthUser } from '../auth/auth-user.decorator';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
+import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
+import { ApiPaginatedResponse, PaginationQuery } from '../common/pagination';
+import {
+  BulkUpdateSuppliersDto,
   CreateSupplierDto,
-  UpdateSupplierDto,
   CreateSupplierExpiryDto,
-  UpdateSupplierExpiryDto,
-  SupplierResponseDto,
   EmptyBodyDto,
   SupplierAgedBalanceResponseDto,
+  SupplierResponseDto,
+  UpdateSupplierDto,
+  UpdateSupplierExpiryDto,
 } from './dto';
-import { ApiPaginatedResponse } from '../common/pagination';
-import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
+import { BulkUpdateResponseDto } from '../common/dto/bulk-update.dto';
+import { SuppliersWriteService } from './suppliers-write.service';
+import { SuppliersService } from './suppliers.service';
 
 @ApiTags('Suppliers')
 @Controller('suppliers')
@@ -118,6 +119,22 @@ export class SuppliersController {
   @ApiFieldMask()
   async findOne(@Param('id') id: string) {
     return this.suppliersService.findOne(id);
+  }
+
+  @Patch('bulk-update')
+  @CasbinResource(SystemResource.BULK_WRITE)
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Bulk Update Suppliers',
+    description:
+      'Bulk update curated fields across multiple selected suppliers.',
+  })
+  @ApiOkResponse({ type: BulkUpdateResponseDto })
+  async bulkUpdate(
+    @Body() dto: BulkUpdateSuppliersDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.suppliersWriteService.bulkUpdate(dto, user.username);
   }
 
   @Patch(':id')

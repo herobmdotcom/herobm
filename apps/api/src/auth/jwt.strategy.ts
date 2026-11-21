@@ -1,11 +1,11 @@
-import { Injectable, Inject, UnauthorizedException } from '@nestjs/common';
-import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
-import { eq } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { users } from '@herobm/db-schema';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { PassportStrategy } from '@nestjs/passport';
+import { eq } from 'drizzle-orm';
+import { ExtractJwt, Strategy } from 'passport-jwt';
 import { EnvService } from '../common/config/env.service';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 
 export interface JwtPayload {
   sub: string;

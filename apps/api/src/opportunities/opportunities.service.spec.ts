@@ -1,31 +1,31 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { OpportunitiesService } from './opportunities.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
-  opportunities,
-  opportunityNotes,
-  opportunityContacts,
-  opportunityOrganizations,
   contacts,
-  organizations,
-  users,
-  salesOrders,
-  salesOrderLineItems,
   customers,
   locations,
+  opportunities,
+  opportunityContacts,
+  opportunityNotes,
+  opportunityOrganizations,
+  organizations,
+  salesOrderLineItems,
+  salesOrders,
+  users,
 } from '@herobm/db-schema';
-import { NotFoundException } from '@nestjs/common';
-import { emitEvent } from '../common/emit-event';
-import { randomUUID } from 'crypto';
-import { eq } from 'drizzle-orm';
 import {
+  CONTACT_STATE,
+  CUSTOMER_STATE,
   OPPORTUNITY_STATE,
   ORGANIZATION_STATE,
-  CONTACT_STATE,
   SALES_ORDER_STATE,
-  CUSTOMER_STATE,
 } from '@herobm/shared';
+import { NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { randomUUID } from 'crypto';
+import { eq } from 'drizzle-orm';
+import { emitEvent } from '../common/emit-event';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { OpportunitiesService } from './opportunities.service';
 
 jest.mock('../common/emit-event', () => ({
   emitEvent: jest.fn().mockResolvedValue(undefined),

@@ -1,23 +1,11 @@
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-  ConflictException,
-  Logger,
-} from '@nestjs/common';
-import { eq, and, or, sql, inArray } from 'drizzle-orm';
-import { DRIZZLE } from '../../drizzle/drizzle.module';
-import type { DrizzleDB } from '../../drizzle/drizzle.module';
-import {
-  stocktakes,
-  stocktakeLines,
-  stocktakeCounts,
-  locations,
-  bins,
-  zones,
   binContents,
+  bins,
+  locations,
   products,
+  stocktakeLines,
+  stocktakes,
+  zones,
 } from '@herobm/db-schema';
 import {
   STOCKTAKE_STATE,
@@ -25,20 +13,31 @@ import {
   getAllowedTransitions,
   type StocktakeState,
 } from '@herobm/shared';
+import {
+  BadRequestException,
+  ConflictException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { and, eq, inArray, or, sql } from 'drizzle-orm';
 import { emitEvent } from '../../common/emit-event';
 import { EntityType, EventType } from '../../common/event-types';
+import type { DrizzleDB } from '../../drizzle/drizzle.module';
+import { DRIZZLE } from '../../drizzle/drizzle.module';
 import { InventoryMovementService } from '../inventory-movement.service';
-import { StocktakesCountsWriteService } from './stocktakes-counts-write.service';
 import type {
-  CreateStocktakeDto,
-  UpdateStocktakeDto,
-  RecordStocktakeCountDto,
-  BatchRecordStocktakeCountsDto,
   AddStocktakeUnlistedProductDto,
-  UpdateStocktakeLineDto,
+  BatchRecordStocktakeCountsDto,
+  CreateStocktakeDto,
+  RecordStocktakeCountDto,
   StocktakeStateTransitionDto,
   SubmitStocktakeDto,
+  UpdateStocktakeDto,
+  UpdateStocktakeLineDto,
 } from './dto';
+import { StocktakesCountsWriteService } from './stocktakes-counts-write.service';
 
 @Injectable()
 export class StocktakesWriteService {
@@ -613,7 +612,7 @@ export class StocktakesWriteService {
       }
 
       // 5. Update stocktake state to SUBMITTED
-      const submittedStocktake = await this.changeStocktakeState(
+      await this.changeStocktakeState(
         id,
         STOCKTAKE_STATE.SUBMITTED,
         {

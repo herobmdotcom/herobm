@@ -179,7 +179,7 @@ export default function CreateTransferSlideOver({
           />
         </div>
 
-        <div className="border-t border-gray-200 pt-6">
+        <div className="border-t border-[var(--border)] pt-6">
           <div className="flex items-center justify-between mb-4">
             <h4 className="font-medium text-lg">{t('lineItems')}</h4>
             <ProductSearchInput
@@ -194,7 +194,7 @@ export default function CreateTransferSlideOver({
             {lines.map((line, index) => (
               <div key={index} className="flex gap-3 items-center">
                 <div className="flex-1 text-sm">
-                  <span className="font-semibold text-gray-900">{line.productNumber}</span>
+                  <span className="font-semibold text-[var(--text-primary)]">{line.productNumber}</span>
                   <span className="text-gray-500 ml-2">{line.name}</span>
                 </div>
                 <div className="w-32">

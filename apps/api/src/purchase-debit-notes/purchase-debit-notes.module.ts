@@ -1,16 +1,16 @@
-import { Module, Inject, OnModuleInit } from '@nestjs/common';
-import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
-import { sql } from 'drizzle-orm';
 import { purchaseDebitNotes } from '@herobm/db-schema';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
+import { Inject, Module, OnModuleInit } from '@nestjs/common';
+import { sql } from 'drizzle-orm';
 import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
-import { PurchaseDebitNotesController } from './purchase-debit-notes.controller';
-import { PurchaseDebitNotesService } from './purchase-debit-notes.service';
-import { PurchaseDebitNoteService } from '../pdf-templates/purchase-debit-note.service';
-import { SettingsModule } from '../settings/settings.module';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { GlModule } from '../gl/gl.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { PurchaseDebitNoteService } from '../pdf-templates/purchase-debit-note.service';
+import { SettingsModule } from '../settings/settings.module';
+import { PurchaseDebitNotesController } from './purchase-debit-notes.controller';
+import { PurchaseDebitNotesService } from './purchase-debit-notes.service';
 
 @Module({
   imports: [SettingsModule, GlModule, NotificationsModule],

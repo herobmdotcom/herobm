@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { DiscountMatrixService } from './discount-matrix.service';
 import { DiscountMatrixController } from './discount-matrix.controller';
+import { DiscountMatrixService } from './discount-matrix.service';
 
 @Module({
   controllers: [DiscountMatrixController],

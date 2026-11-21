@@ -1,87 +1,56 @@
-import { Decimal } from 'decimal.js';
 import {
-  Injectable,
-  Inject,
-  BadRequestException,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
-import {
-  eq,
-  sql,
-  isNull,
-  isNotNull,
-  and,
-  or,
-  inArray,
-  asc,
-  desc,
-} from 'drizzle-orm';
-import { randomUUID } from 'crypto';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
+  activities,
+  bankStatementLines,
+  costCenters,
+  customers,
   glAccounts,
   glJournalEntries,
   glJournalLines,
+  glReconciliations,
   glSettings,
-  customers,
-  suppliers,
-  costCenters,
-  activities,
-  outbox,
   organizations,
-  financialEvents,
-  systemEvents,
-  salesInvoices,
   projectLedgerEntries,
   projects,
   projectTasks,
-  bankStatementLines,
-  glReconciliations,
+  suppliers,
 } from '@herobm/db-schema';
-import { emitEvent } from '../common/emit-event';
-import { EntityType, EventType } from '../common/event-types';
 import {
-  REVENUE_ROUTING_PRECEDENCE,
-  EXPENSE_ROUTING_PRECEDENCE,
-  GL_ACCOUNT_TYPE,
-  GLAccountType,
-  GL_REPORT_CATEGORY,
-  GLReportCategory,
-  DATA_SOURCE_CONTEXT,
-  type JournalEntrySourceType,
-  GENESIS_HASH,
   computeCanonicalPayloadHash,
   computeEntryHash,
-  verifyJournalChain,
-  SALES_INVOICE_STATE,
+  CURRENCIES,
+  DATA_SOURCE_CONTEXT,
+  EXPENSE_ROUTING_PRECEDENCE,
+  GENESIS_HASH,
+  GL_ACCOUNT_TYPE,
+  GLAccountType,
+  GLReportCategory,
   PROJECT_LEDGER_ENTRY_TYPE,
   PROJECT_LINE_TYPE,
   PROJECT_SOURCE_TYPE,
-  CURRENCIES,
+  REVENUE_ROUTING_PRECEDENCE,
+  verifyJournalChain,
+  type JournalEntrySourceType,
 } from '@herobm/shared';
 import {
-  JournalLineDto,
-  LedgerIntegrityAuditResponseDto,
-  AnomalyDetailDto,
-} from './dto';
-import { calculateSubledgerReconciliation } from './gl-reconciliation.utils';
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { Decimal } from 'decimal.js';
+import { and, asc, desc, eq, inArray, isNotNull, or, sql } from 'drizzle-orm';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { JournalLineDto, LedgerIntegrityAuditResponseDto } from './dto';
 import {
-  fetchTrialBalance,
-  fetchGeneralLedger,
-  fetchBusinessReportData,
-  GeneralLedgerFilters,
-} from './gl-ledger.utils';
-import {
-  executeLedgerIntegrityAudit,
-  fetchIntegrityAuditReport,
-} from './gl-integrity-audit.utils';
-import {
-  fetchProfitAndLoss,
   fetchBalanceSheet,
-  type ProfitAndLossParams,
+  fetchProfitAndLoss,
   type BalanceSheetParams,
+  type ProfitAndLossParams,
 } from './gl-financial-statements.utils';
 import {
   assertPeriodOpen,
@@ -89,6 +58,17 @@ import {
   getFiscalPeriods,
   updatePeriodStatus,
 } from './gl-fiscal-periods.utils';
+import {
+  executeLedgerIntegrityAudit,
+  fetchIntegrityAuditReport,
+} from './gl-integrity-audit.utils';
+import {
+  fetchBusinessReportData,
+  fetchGeneralLedger,
+  fetchTrialBalance,
+  GeneralLedgerFilters,
+} from './gl-ledger.utils';
+import { calculateSubledgerReconciliation } from './gl-reconciliation.utils';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -107,9 +87,9 @@ export class JournalMeta {
 // Service
 // ---------------------------------------------------------------------------
 
-import { AppConfigService } from '../settings/app-config.service';
-import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
 import type { OnModuleInit } from '@nestjs/common';
+import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
+import { AppConfigService } from '../settings/app-config.service';
 
 @Injectable()
 export class GlService implements OnModuleInit {

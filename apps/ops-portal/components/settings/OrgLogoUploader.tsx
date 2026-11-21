@@ -252,6 +252,7 @@ export default function OrgLogoUploader({
             <img
               src={imageUrl}
               alt={companyName || t('title')}
+              // dark-mode-ok: transparent logos previewed on white paper background
               className="max-w-full max-h-[70vh] object-contain rounded-lg p-2 bg-white"
             />
           </div>

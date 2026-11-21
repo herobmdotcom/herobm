@@ -1,10 +1,10 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { projectSettings } from '@herobm/db-schema';
+import { Inject, Injectable } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 
 @Injectable()
 export class ProjectsSettingsService {

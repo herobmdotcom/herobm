@@ -9,19 +9,15 @@
  * Run with: npm run test:e2e -- --testPathPatterns returns
  * Requires: Docker stack running with Postgres + populated marts.
  */
-import { TestingModule } from '@nestjs/testing';
-import { createE2eModule } from './utils/e2e-module';
-import { INestApplication } from '@nestjs/common';
-import { AppModule } from '../src/app.module';
-import { DRIZZLE } from '../src/drizzle/drizzle.module';
-import { sql } from 'drizzle-orm';
 import {
+  RETURN_RESOLUTION,
   RETURN_STATE,
   SALES_ORDER_STATE,
-  SALES_CREDIT_NOTE_STATE,
-  RETURN_RESOLUTION,
-  CUSTOMER_STATE,
 } from '@herobm/shared';
+import { INestApplication } from '@nestjs/common';
+import { TestingModule } from '@nestjs/testing';
+import { createE2eModule } from './utils/e2e-module';
+import { isPickableBin } from '../src/inventory/inventory-math.utils';
 
 import request from 'supertest';
 
@@ -155,9 +151,7 @@ describe('API E2E — Sales Order Returns', () => {
       .get('/api/inventory/bins')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    const validBin = binsRes.body.data.find(
-      (b: any) => b.binNumber !== 'SHIPPING' && b.binNumber !== 'RECEIVING',
-    );
+    const validBin = binsRes.body.data.find(isPickableBin);
     const binId = validBin?.binId || '00000000-0000-4000-8000-000000000003';
 
     const detail = await request(app.getHttpServer())
@@ -258,9 +252,7 @@ describe('API E2E — Sales Order Returns', () => {
       .get('/api/inventory/bins')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    const validBin = binsRes.body.data.find(
-      (b: any) => b.binNumber !== 'SHIPPING' && b.binNumber !== 'RECEIVING',
-    );
+    const validBin = binsRes.body.data.find(isPickableBin);
     const binId = validBin?.binId || '00000000-0000-4000-8000-000000000003';
 
     const detail = await request(app.getHttpServer())

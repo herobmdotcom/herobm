@@ -1,8 +1,8 @@
+import * as dotenv from 'dotenv';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
-import postgres from 'postgres';
-import * as dotenv from 'dotenv';
 import * as path from 'path';
+import postgres from 'postgres';
 
 dotenv.config({
   path: path.resolve(__dirname, '../../../' + (process.env.ENV_FILE || '.env')),

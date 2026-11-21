@@ -1,28 +1,28 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { DashboardService } from './dashboard.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import {
-  CUSTOMER_STATE,
-  PRODUCT_STATE,
-  SALES_ORDER_STATE,
-  ORGANIZATION_STATE,
-  SUPPLIER_STATE,
-} from '@herobm/shared';
 import {
   customers,
+  locations,
+  organizations,
   products,
+  purchaseOrders,
   salesOrderLineItems,
   salesOrders,
   suppliers,
-  purchaseOrders,
   systemEvents,
-  locations,
-  uomDictionary,
   taxCategories,
-  organizations,
+  uomDictionary,
 } from '@herobm/db-schema';
+import {
+  CUSTOMER_STATE,
+  ORGANIZATION_STATE,
+  PRODUCT_STATE,
+  SALES_ORDER_STATE,
+  SUPPLIER_STATE,
+} from '@herobm/shared';
+import { Test, TestingModule } from '@nestjs/testing';
 import { sql } from 'drizzle-orm';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { DashboardService } from './dashboard.service';
 
 describe('DashboardService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

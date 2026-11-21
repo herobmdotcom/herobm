@@ -5,8 +5,8 @@
  * remain synchronized across @herobm/shared, production seed scripts, and document dispatch workflows.
  */
 import {
-  ORGANIZATION_CONTACT_ROLE,
   DEFAULT_ORGANIZATION_CONTACT_ROLES,
+  ORGANIZATION_CONTACT_ROLE,
   OrganizationContactRole,
 } from '@herobm/shared';
 import * as fs from 'fs';

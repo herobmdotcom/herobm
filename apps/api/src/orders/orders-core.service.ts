@@ -1,80 +1,40 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
-import { BackordersService } from './backorders.service';
-import { TaxResolutionEngine } from '../tax/tax-resolution.engine';
 import {
-  InventoryGap,
-  SALES_ORDER_STATE,
-  CUSTOMER_STATE,
-  PRODUCT_STATE,
-  getErrorMessage,
-} from '@herobm/shared';
-import Decimal from 'decimal.js';
+  products as coreProducts,
+  productComponents,
+  salesOrders,
+} from '@herobm/db-schema';
+import { PRODUCT_STATE } from '@herobm/shared';
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
   BadRequestException,
+  Inject,
+  Injectable,
   Logger,
-  InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
-import { eq, sql, inArray, getTableColumns } from 'drizzle-orm';
-import { randomUUID } from 'crypto';
+import Decimal from 'decimal.js';
+import { eq, sql } from 'drizzle-orm';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { AppConfigService } from '../settings/app-config.service';
 import { OrganizationService } from '../settings/organization.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  salesOrders,
-  salesOrderLineItems,
-  salesEvents,
-  customers as coreAccounts,
-  customerGroups,
-  products as coreProducts,
-  backorders,
-  purchaseOrders,
-  transferOrders,
-  locations,
-  productUoms,
-  productComponents,
-  tradingTerms,
-  taxCategories,
-} from '@herobm/db-schema';
-import {
-  CreateOrderDto,
-  UpdateOrderDto,
-  CreateOrderLineDto as AddLineDto, // Renamed to match usage
-  UpdateOrderLineDto as UpdateLineDto,
-} from './dto';
-import { calculateAuditTrail, AuditMode } from '../common/audit';
-import { findOrderLine as sharedFindOrderLine } from './shipment-helpers';
-import { emitEvent } from '../common/emit-event';
-import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
-import { EntityType, EventType } from '../common/event-types';
-import { getExchangeRateForCurrency } from '../common/fx-helper';
+import { TaxResolutionEngine } from '../tax/tax-resolution.engine';
+import { BackordersService } from './backorders.service';
 
-import { TaxCategoriesService } from '../tax/tax-categories.service';
-import { EnrichmentService } from '../enrichment/enrichment.service';
-import { verifySystemHealth } from '../common/utils/security.util';
-import { PickingService } from './picking.service';
-import { CustomersService } from '../customers/customers.service';
-import { CreditAssessmentService } from '../customers/credit-assessment.service';
-import { ProductsService } from '../products/products.service';
 import {
   SALES_ORDER_TRANSITIONS as STATE_TRANSITIONS,
-  getValidStates,
   computeLinePriceForStorage,
+  getValidStates,
 } from '@herobm/shared';
-import {
-  resolveEffectiveCreditHold,
-  resolveEffectiveCreditLimit,
-  resolveEffectiveTradingTermsId,
-} from '../customers/credit-control.utils';
-import { PdfTemplatesService } from '../pdf-templates/pdf-templates.service';
+import { CreditAssessmentService } from '../customers/credit-assessment.service';
+import { CustomersService } from '../customers/customers.service';
 import { EmailService } from '../email/email.service';
-import { EmailDocumentDto } from './dto';
-import type { JwtUser } from '../auth/auth-user.decorator';
+import { EnrichmentService } from '../enrichment/enrichment.service';
+import { PdfTemplatesService } from '../pdf-templates/pdf-templates.service';
+import { ProductsService } from '../products/products.service';
+import { TaxCategoriesService } from '../tax/tax-categories.service';
+import { PickingService } from './picking.service';
 
-const VALID_STATES = getValidStates(STATE_TRANSITIONS);
+const _VALID_STATES = getValidStates(STATE_TRANSITIONS);
 
 // DTOs imported from ./dto
 
@@ -104,7 +64,7 @@ export class OrdersCoreService {
   async setTaxIsStale(orderId: string, isExternalTax: boolean, tx?: DrizzleDB) {
     if (!isExternalTax) return;
     const db = tx || this.db;
-    // @herobm-skip-audit
+    // @herobm-skip-audit -- internal flag, no emitEvent required
     await db
       .update(salesOrders)
       .set({

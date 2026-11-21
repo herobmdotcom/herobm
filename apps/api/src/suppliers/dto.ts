@@ -1,18 +1,21 @@
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  IsEmail,
-  IsUUID,
-  IsNumberString,
+  ArrayMinSize,
+  IsArray,
   IsBoolean,
   IsDateString,
+  IsEmail,
   IsIn,
+  IsNotEmpty,
   IsNumber,
+  IsNumberString,
   IsObject,
+  IsOptional,
+  IsString,
+  IsUUID,
 } from 'class-validator';
-import { ApiPropertyOptional, PartialType, ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { SUPPLIER_STATE, type SupplierState } from '@herobm/shared';
 
 export class BaseSupplierDto {
   @IsOptional()
@@ -381,4 +384,80 @@ export class SupplierAgedBalanceResponseDto {
 
   @ApiProperty()
   days90Plus: number;
+}
+
+export class BulkUpdateSuppliersDto {
+  @ApiProperty({
+    description: 'Array of supplier IDs to update',
+    type: [String],
+    example: ['a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'],
+  })
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsUUID('4', { each: true })
+  ids!: string[];
+
+  @ApiPropertyOptional({
+    description: 'New supplier group ID, or null to clear',
+    type: String,
+    nullable: true,
+  })
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
+  @IsUUID()
+  supplierGroupId?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Trading terms ID, or null to inherit from supplier group',
+    type: String,
+    nullable: true,
+  })
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
+  @IsUUID()
+  tradingTermsId?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Tax position ID, or null to clear',
+    type: String,
+    nullable: true,
+  })
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
+  @IsUUID()
+  taxPositionId?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Currency code',
+    type: String,
+  })
+  @IsOptional()
+  @IsString()
+  currencyCode?: string;
+
+  @ApiPropertyOptional({
+    description: 'Whether purchasing is blocked for this supplier',
+    type: Boolean,
+  })
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
+  @IsBoolean()
+  isPurchasingBlocked?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Whether payment is blocked for this supplier',
+    type: Boolean,
+  })
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
+  @IsBoolean()
+  isPaymentBlocked?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Target supplier lifecycle state',
+    enum: SUPPLIER_STATE,
+  })
+  @IsOptional()
+  @IsString()
+  stateCode?: SupplierState;
 }

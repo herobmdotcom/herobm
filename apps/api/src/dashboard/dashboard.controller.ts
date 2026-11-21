@@ -1,17 +1,17 @@
 import { SystemResource } from '@herobm/shared';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiOkResponse,
-  ApiQuery,
-} from '@nestjs/swagger';
 import { Controller, Get, Query } from '@nestjs/common';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
 import { DashboardService } from './dashboard.service';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import {
   DashboardSummaryDto,
-  UniversalSearchResponseDto,
   TimelineEventDto,
+  UniversalSearchResponseDto,
 } from './dto';
 
 @ApiTags('System')

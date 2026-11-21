@@ -1,86 +1,60 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
-import { BackordersService } from './backorders.service';
-import { TaxResolutionEngine } from '../tax/tax-resolution.engine';
 import {
-  InventoryGap,
-  SALES_ORDER_STATE,
-  CUSTOMER_STATE,
-  PRODUCT_STATE,
-  getErrorMessage,
-  normalizeUomCode,
-  LineType,
-} from '@herobm/shared';
-import Decimal from 'decimal.js';
-import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-  Logger,
-  InternalServerErrorException,
-} from '@nestjs/common';
-import { eq, sql, inArray, getTableColumns } from 'drizzle-orm';
-import { randomUUID } from 'crypto';
-import { AppConfigService } from '../settings/app-config.service';
-import { OrganizationService } from '../settings/organization.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  salesOrders,
-  salesOrderLineItems,
-  salesEvents,
   customers as coreAccounts,
   customerGroups,
-  products as coreProducts,
-  backorders,
-  purchaseOrders,
-  transferOrders,
   locations,
-  productUoms,
-  productComponents,
-  tradingTerms,
-  taxCategories,
   organizations,
+  salesEvents,
+  salesOrderLineItems,
+  salesOrders,
+  tradingTerms,
 } from '@herobm/db-schema';
 import {
-  CreateOrderDto,
-  UpdateOrderDto,
-  CreateOrderLineDto as AddLineDto, // Renamed to match usage
-  UpdateOrderLineDto as UpdateLineDto,
-} from './dto';
-import { calculateAuditTrail, AuditMode } from '../common/audit';
-import { findOrderLine as sharedFindOrderLine } from './shipment-helpers';
+  CUSTOMER_STATE,
+  LineType,
+  SALES_ORDER_STATE,
+  normalizeUomCode,
+} from '@herobm/shared';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import Decimal from 'decimal.js';
+import { eq, sql } from 'drizzle-orm';
+import { AuditMode, calculateAuditTrail } from '../common/audit';
 import { emitEvent } from '../common/emit-event';
-import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
 import { EntityType, EventType } from '../common/event-types';
 import { getExchangeRateForCurrency } from '../common/fx-helper';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { AppConfigService } from '../settings/app-config.service';
+import { OrganizationService } from '../settings/organization.service';
+import { TaxResolutionEngine } from '../tax/tax-resolution.engine';
+import { BackordersService } from './backorders.service';
+import { CreateOrderDto, UpdateOrderDto } from './dto';
 
-import { TaxCategoriesService } from '../tax/tax-categories.service';
-import { EnrichmentService } from '../enrichment/enrichment.service';
-import { verifySystemHealth } from '../common/utils/security.util';
-import { PickingService } from './picking.service';
-import { CustomersService } from '../customers/customers.service';
-import { CreditAssessmentService } from '../customers/credit-assessment.service';
-import { ProductsService } from '../products/products.service';
 import {
   SALES_ORDER_TRANSITIONS as STATE_TRANSITIONS,
   getValidStates,
-  computeLinePriceForStorage,
 } from '@herobm/shared';
-import {
-  resolveEffectiveCreditHold,
-  resolveEffectiveCreditLimit,
-  resolveEffectiveTradingTermsId,
-} from '../customers/credit-control.utils';
-import { PdfTemplatesService } from '../pdf-templates/pdf-templates.service';
+import { verifySystemHealth } from '../common/utils/security.util';
+import { CreditAssessmentService } from '../customers/credit-assessment.service';
+import { resolveEffectiveTradingTermsId } from '../customers/credit-control.utils';
+import { CustomersService } from '../customers/customers.service';
 import { EmailService } from '../email/email.service';
-import { EmailDocumentDto } from './dto';
-import type { JwtUser } from '../auth/auth-user.decorator';
+import { EnrichmentService } from '../enrichment/enrichment.service';
+import { PdfTemplatesService } from '../pdf-templates/pdf-templates.service';
+import { ProductsService } from '../products/products.service';
+import { TaxCategoriesService } from '../tax/tax-categories.service';
+import { OrderStateService } from './order-state.service';
 import { OrdersCoreService } from './orders-core.service';
 import { OrdersQueryService } from './orders-query.service';
-import { OrderStateService } from './order-state.service';
+import { PickingService } from './picking.service';
 
-const VALID_STATES = getValidStates(STATE_TRANSITIONS);
+const _VALID_STATES = getValidStates(STATE_TRANSITIONS);
 
 // DTOs imported from ./dto
 

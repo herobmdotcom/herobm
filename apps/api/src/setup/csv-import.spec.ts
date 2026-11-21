@@ -1,13 +1,13 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { SetupService } from './setup.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { AppConfigService } from '../settings/app-config.service';
 import { customers, pipelineJobs, systemEvents } from '@herobm/db-schema';
-import { BadRequestException } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
 import { CUSTOMER_STATE } from '@herobm/shared';
+import { BadRequestException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { eq } from 'drizzle-orm';
 import { Readable } from 'stream';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { AppConfigService } from '../settings/app-config.service';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { SetupService } from './setup.service';
 
 function createMockCsvFile(
   csvContent: string,

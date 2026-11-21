@@ -1,11 +1,11 @@
-import { Injectable, Logger, Optional } from '@nestjs/common';
-import {
-  IEnrichmentProvider,
-  EnrichmentResult,
-} from './enrichment-provider.interface';
 import { getErrorMessage } from '@herobm/shared';
+import { Injectable, Optional } from '@nestjs/common';
 import { EnvService } from '../../common/config/env.service';
 import { IntegrationLoggerService } from '../../common/integration-logger.service';
+import {
+  EnrichmentResult,
+  IEnrichmentProvider,
+} from './enrichment-provider.interface';
 
 @Injectable()
 export class TaxJarProvider implements IEnrichmentProvider {

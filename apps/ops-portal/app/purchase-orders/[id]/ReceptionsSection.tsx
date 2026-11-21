@@ -139,22 +139,22 @@ export default function ReceptionsSection({ orderId }: { orderId: string }) {
                   {rec.receiptNumber}
                 </Link>
               </div>
-              <div className="text-sm text-slate-600 font-medium mb-3">
-                <div className="font-semibold text-slate-800">{rec.productNumber || rec.productId.substring(0, 8)}</div>
+              <div className="text-sm text-[var(--text-secondary)] font-medium mb-3">
+                <div className="font-semibold text-[var(--text-primary)]">{rec.productNumber || rec.productId.substring(0, 8)}</div>
                 <div className="text-xs">{rec.productName || tCommon('unknownProduct')}</div>
               </div>
               
-              <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
+              <div className="flex flex-col gap-0 border-t border-[var(--border)] pt-1">
                 <div className="flex justify-between py-1">
-                  <span className="text-xs font-medium text-slate-500">{t('receivedQty')}</span>
+                  <span className="text-xs font-medium text-[var(--text-muted)]">{t('receivedQty')}</span>
                   <span className="font-bold tabular-nums text-sm">{rec.quantityReceived}</span>
                 </div>
                 <div className="flex justify-between py-1">
-                  <span className="text-xs font-medium text-slate-500">{t('dateReceived')}</span>
-                  <span className="text-sm text-slate-600">{formatLocalDate(rec.createdOn)}</span>
+                  <span className="text-xs font-medium text-[var(--text-muted)]">{t('dateReceived')}</span>
+                  <span className="text-sm text-[var(--text-secondary)]">{formatLocalDate(rec.createdOn)}</span>
                 </div>
               </div>
-              <div className="flex justify-end mt-2 pt-2 border-t border-slate-100">
+              <div className="flex justify-end mt-2 pt-2 border-t border-[var(--border)]">
                 <Button 
                   onClick={() => handleUnlink(rec.goodsReceivedLineId)}
                   variant="secondary" size="sm"

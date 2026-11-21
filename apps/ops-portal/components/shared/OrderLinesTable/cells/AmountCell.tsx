@@ -33,7 +33,7 @@ export function AmountCell({
 
   return (
     <span
-      className={`font-semibold tabular-nums text-xs ${
+      className={`font-semibold tabular-nums text-xs whitespace-nowrap ${
         isEditable ? 'text-[var(--text-primary)]' : ''
       }`}
     >

@@ -1,5 +1,5 @@
-import { Project, SyntaxKind } from 'ts-morph';
 import * as path from 'path';
+import { Project } from 'ts-morph';
 
 describe('Swagger DTO Conventions', () => {
   it('should enforce that all classes used in @Body or @Query reside in a .dto.ts file', () => {

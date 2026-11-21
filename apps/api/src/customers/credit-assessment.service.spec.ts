@@ -1,20 +1,19 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { CreditAssessmentService } from './credit-assessment.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   customers,
-  salesOrders,
-  salesInvoices,
-  salesCreditNotes,
-  paymentEntries,
-  glJournalLines,
-  glJournalEntries,
   glAccounts,
+  glJournalEntries,
+  glJournalLines,
   locations,
   organizations,
+  salesCreditNotes,
+  salesInvoices,
+  salesOrders,
 } from '@herobm/db-schema';
 import { CUSTOMER_STATE, ORGANIZATION_STATE } from '@herobm/shared';
+import { Test, TestingModule } from '@nestjs/testing';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { CreditAssessmentService } from './credit-assessment.service';
 
 describe('CreditAssessmentService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

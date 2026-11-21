@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsUUID, IsObject } from 'class-validator';
+import { IsObject, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class UpdateWorkOrderDto {
   @ApiPropertyOptional({ description: 'Target quantity to produce' })

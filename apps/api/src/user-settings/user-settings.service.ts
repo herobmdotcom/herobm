@@ -1,11 +1,11 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { userSettings } from '@herobm/db-schema';
+import { Inject, Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
-import { calculateAuditTrail, AuditMode } from '../common/audit';
+import { AuditMode, calculateAuditTrail } from '../common/audit';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 
 @Injectable()
 export class UserSettingsService {

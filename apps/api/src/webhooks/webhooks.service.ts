@@ -1,14 +1,17 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
 import { webhooks } from '@herobm/db-schema';
-import { eq } from 'drizzle-orm';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { randomBytes } from 'crypto';
-import { CreateWebhookDto, UpdateWebhookDto } from './dto';
-import { OUTBOX_EVENT_TYPES } from '../common/event-types';
+import { eq } from 'drizzle-orm';
+import { AuditMode, calculateAuditTrail } from '../common/audit';
 import { emitEvent } from '../common/emit-event';
-import { EntityType, EventType } from '../common/event-types';
-import { calculateAuditTrail, AuditMode } from '../common/audit';
 import { EncryptionService } from '../common/encryption.service';
+import {
+  EntityType,
+  EventType,
+  OUTBOX_EVENT_TYPES,
+} from '../common/event-types';
+import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
+import { CreateWebhookDto, UpdateWebhookDto } from './dto';
 
 @Injectable()
 export class WebhooksService {
@@ -75,8 +78,6 @@ export class WebhooksService {
   }
 
   async update(id: string, body: UpdateWebhookDto, actorUsername: string) {
-    const { targetUrl, eventTypes, isActive } = body;
-
     const [updated] = await this.db.transaction(async (tx) => {
       const existingRows = await tx
         .select()

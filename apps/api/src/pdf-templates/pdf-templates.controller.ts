@@ -1,39 +1,39 @@
 import { SystemResource } from '@herobm/shared';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiOkResponse,
-  ApiCreatedResponse,
-  ApiBody,
-} from '@nestjs/swagger';
-import {
+  Body,
   Controller,
+  Delete,
   Get,
-  Post,
-  Patch,
+  HttpCode,
   Param,
+  Patch,
+  Post,
   Query,
   Res,
-  Body,
-  Delete,
   UnauthorizedException,
-  HttpCode,
 } from '@nestjs/common';
+import {
+  ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { Response } from 'express';
-import { PdfTemplatesService } from './pdf-templates.service';
-import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
 import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
+import { PdfTemplatesService } from './pdf-templates.service';
 
 import {
   CreateReportDto,
-  UpdateReportDto,
-  PreviewReportDto,
-  UpdateHookAssignmentDto,
-  RunHookBodyDto,
-  HookDto,
   HookAssignmentDto,
-  ReportDto,
+  HookDto,
+  PreviewReportDto,
   RandomIdData,
+  ReportDto,
+  RunHookBodyDto,
+  UpdateHookAssignmentDto,
+  UpdateReportDto,
 } from './dto';
 
 @ApiTags('System')

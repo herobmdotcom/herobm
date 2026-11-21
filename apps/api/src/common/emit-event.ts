@@ -2,34 +2,25 @@
 // Shared Event Emitter — the ONLY code path that writes to audit + outbox
 // ---------------------------------------------------------------------------
 
-import type { EntityTypeValue } from './event-types';
-import { OUTBOX_EVENT_TYPES, EntityType, EventType } from './event-types';
 import {
-  salesEvents,
-  procurementEvents,
-  warehouseEvents,
-  masterDataEvents,
+  businessReportEvents,
+  emailEvents,
   financialEvents,
+  groupEvents,
+  integrationEvents,
   inventoryEvents,
+  masterDataEvents,
+  outbox,
+  procurementEvents,
+  reconciliationEvents,
+  salesEvents,
   systemEvents,
   userEvents,
-  reconciliationEvents,
-  groupEvents,
-  outbox,
-  salesOrders,
-  purchaseOrders,
-  customers,
-  suppliers,
-  products,
-  goodsReceived,
-  transferOrders,
-  paymentEntries,
-  inventoryEntries,
-  emailEvents,
-  businessReportEvents,
-  integrationEvents,
+  warehouseEvents,
 } from '@herobm/db-schema';
-import { eq, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
+import type { EntityTypeValue } from './event-types';
+import { EntityType, EventType, OUTBOX_EVENT_TYPES } from './event-types';
 
 // ---------------------------------------------------------------------------
 // Routing table: entityType → table

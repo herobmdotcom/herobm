@@ -1,19 +1,19 @@
-import { Decimal } from 'decimal.js';
+import { projectBudgetLines, projects, projectTasks } from '@herobm/db-schema';
+import { computeLinePrice, PROJECT_TASK_STATE } from '@herobm/shared';
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
   BadRequestException,
+  Inject,
+  Injectable,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
-import { eq, and } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { projects, projectTasks, projectBudgetLines } from '@herobm/db-schema';
-import { CreateProjectBudgetLineDto, UpdateProjectBudgetLineDto } from './dto';
+import { Decimal } from 'decimal.js';
+import { and, eq } from 'drizzle-orm';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
-import { PROJECT_TASK_STATE, computeLinePrice } from '@herobm/shared';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { CreateProjectBudgetLineDto, UpdateProjectBudgetLineDto } from './dto';
 
 @Injectable()
 export class ProjectsBudgetService {
@@ -69,7 +69,7 @@ export class ProjectsBudgetService {
       discountPercentage: lineDiscount,
       taxRate: 0,
     });
-    const totalPrice = computedPrice.amount;
+    const _totalPrice = computedPrice.amount;
 
     const [budgetLine] = await db
       .insert(projectBudgetLines)

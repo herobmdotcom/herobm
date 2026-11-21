@@ -1,35 +1,33 @@
-import Decimal from 'decimal.js';
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-  forwardRef,
-} from '@nestjs/common';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  purchaseOrders,
-  backorders,
-  purchaseInvoices,
-  purchaseInvoiceLines,
   procurementEvents,
+  purchaseInvoiceLines,
+  purchaseInvoices,
+  purchaseOrders,
 } from '@herobm/db-schema';
-import { eq, sql, and, inArray } from 'drizzle-orm';
-import { emitEvent } from '../common/emit-event';
-import { EntityType, EventType } from '../common/event-types';
+import type { PurchaseOrderState } from '@herobm/shared';
 import {
+  getAllowedTransitions,
+  getValidStates,
+  PURCHASE_INVOICE_STATE,
   PURCHASE_ORDER_STATE,
   PURCHASE_ORDER_TRANSITIONS,
-  getValidStates,
-  getAllowedTransitions,
-  PURCHASE_INVOICE_STATE,
-  BACKORDER_STATE,
 } from '@herobm/shared';
-import type { PurchaseOrderState } from '@herobm/shared';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import Decimal from 'decimal.js';
+import { and, eq, inArray, sql } from 'drizzle-orm';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 
-import { SuppliersService } from '../suppliers/suppliers.service';
 import { BackordersService } from '../orders/backorders.service';
+import { SuppliersService } from '../suppliers/suppliers.service';
 import { PurchaseOrdersQueryService } from './purchase-orders-query.service';
 
 @Injectable()

@@ -1,63 +1,62 @@
-import { IsOptional, IsString } from 'class-validator';
 import {
-  SystemResource,
-  PurchaseReturnState,
-  PURCHASE_RETURN_STATE,
-  DATA_SOURCE_CONTEXT,
-} from '@herobm/shared';
-import {
-  ApiTags,
-  ApiProperty,
-  ApiOperation,
-  ApiOkResponse,
-  ApiCreatedResponse,
-  ApiQuery,
-  ApiBody,
-} from '@nestjs/swagger';
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Body,
-  Query,
-  NotFoundException,
-  HttpCode,
-  HttpStatus,
-} from '@nestjs/common';
-import { Inject } from '@nestjs/common';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
-import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
-import { DocumentDispatchService } from '../notifications/document-dispatch.service';
-import { EntityType } from '../common/event-types';
-import {
-  purchaseOrderReturns,
-  purchaseOrders,
-  purchaseOrderLineItems,
-  products,
-  purchaseOrderReturnLines,
-  purchaseOrderReturnShipments,
-  purchaseOrderReturnShipmentLines,
-  purchaseDebitNotes,
-  procurementEvents,
-  suppliers,
-  organizations,
   bins,
+  organizations,
+  procurementEvents,
+  products,
+  purchaseDebitNotes,
+  purchaseOrderLineItems,
+  purchaseOrderReturnLines,
+  purchaseOrderReturns,
+  purchaseOrderReturnShipmentLines,
+  purchaseOrderReturnShipments,
+  purchaseOrders,
+  suppliers,
 } from '@herobm/db-schema';
 import {
-  eq,
+  DATA_SOURCE_CONTEXT,
+  PurchaseReturnState,
+  SystemResource,
+} from '@herobm/shared';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Inject,
+  NotFoundException,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
+import {
+  ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiProperty,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
+import { IsOptional, IsString } from 'class-validator';
+import {
+  and,
   desc,
+  eq,
+  ilike,
   inArray,
+  isNull,
+  ne,
   or,
   sql,
-  isNull,
-  and,
-  ne,
-  ilike,
 } from 'drizzle-orm';
-import { PurchaseReturnResponseDto, EmailDocumentDto } from './dto';
+import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
+import { EntityType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { DocumentDispatchService } from '../notifications/document-dispatch.service';
+import { EmailDocumentDto, PurchaseReturnResponseDto } from './dto';
 import { PurchaseReturnsService } from './purchase-returns.service';
 
 export class GlobalPurchaseReturnDto extends PurchaseReturnResponseDto {

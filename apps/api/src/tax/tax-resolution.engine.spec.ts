@@ -1,5 +1,5 @@
-import { TaxResolutionEngine } from './tax-resolution.engine';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { TaxResolutionEngine } from './tax-resolution.engine';
 
 describe('TaxResolutionEngine', () => {
   let engine: TaxResolutionEngine;

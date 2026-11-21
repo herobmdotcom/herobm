@@ -347,13 +347,13 @@ export default function ReturnsSection({
                                                 <option value="replace">Replace</option>
                                             </select>
                                         </div>
-                                        <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">{line.lineNumber}</div>
+                                        <div className="text-xs text-[var(--text-muted)] bg-[var(--bg-secondary)] px-2 py-0.5 rounded font-medium">{line.lineNumber}</div>
                                     </div>
-                                    <div className="text-sm text-slate-600 font-medium mb-3">
+                                    <div className="text-sm text-[var(--text-secondary)] font-medium mb-3">
                                         {line.productDescription || '—'}
                                     </div>
                                     
-                                    <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
+                                    <div className="flex flex-col gap-0 border-t border-[var(--border)] pt-1">
                                         <MobileCardField label={tSales('columns.shipped')} value={
                                             <span>{shippedQty}</span>
                                         } />
@@ -391,7 +391,7 @@ export default function ReturnsSection({
                                             />
                                         </div>
                                         
-                                        <div className="flex justify-between items-center py-2 border-t border-slate-100 mt-1">
+                                        <div className="flex justify-between items-center py-2 border-t border-[var(--border)] mt-1">
                                             <span className="text-xs font-medium text-slate-500">{tSales('columns.fee')}</span>
                                             <div className="flex items-center gap-1 justify-end">
                                                 <select

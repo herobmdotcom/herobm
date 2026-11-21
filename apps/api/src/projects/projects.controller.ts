@@ -1,72 +1,72 @@
+import { SystemResource } from '@herobm/shared';
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Param,
   Body,
-  Query,
+  Controller,
+  Delete,
+  Get,
   HttpCode,
   HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
 } from '@nestjs/common';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiOkResponse,
-  ApiCreatedResponse,
   ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
 } from '@nestjs/swagger';
-import { ProjectsService } from './projects.service';
+import type { JwtUser } from '../auth/auth-user.decorator';
+import { AuthUser } from '../auth/auth-user.decorator';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
+import { ApiPaginatedResponse } from '../common/pagination';
+import { SalesInvoiceResponseDto } from '../invoices/dto';
+import {
+  AssignProjectResourceDto,
+  BillProjectDto,
+  ConsumeExpenseDto,
+  ConsumeResourceDto,
+  CreateProjectBudgetLineDto,
+  CreateProjectDto,
+  CreateProjectNoteDto,
+  CreateProjectResourceDto,
+  CreateProjectTaskDto,
+  EmptyBodyDto,
+  IssueInventoryDto,
+  ProjectBillingResponseDto,
+  ProjectBudgetLineResponseDto,
+  ProjectLedgerEntryResponseDto,
+  ProjectLedgerQueryDto,
+  ProjectNoteResponseDto,
+  ProjectProfitabilityResponseDto,
+  ProjectQueryDto,
+  ProjectResourceAssignmentResponseDto,
+  ProjectResourceQueryDto,
+  ProjectResourceResponseDto,
+  ProjectResponseDto,
+  ProjectSettingsResponseDto,
+  ProjectStateTransitionDto,
+  ProjectTaskResponseDto,
+  ReturnInventoryDto,
+  SetLedgerEntryBillableDto,
+  UpdateProjectBudgetLineDto,
+  UpdateProjectDto,
+  UpdateProjectLedgerEntryDto,
+  UpdateProjectResourceDto,
+  UpdateProjectSettingsDto,
+  UpdateProjectTaskDto,
+} from './dto';
 import { ProjectsBillingService } from './projects-billing.service';
-import { ProjectsTasksService } from './projects-tasks.service';
-import { ProjectsResourcesService } from './projects-resources.service';
 import { ProjectsBudgetService } from './projects-budget.service';
 import { ProjectsInventoryService } from './projects-inventory.service';
 import { ProjectsLedgerService } from './projects-ledger.service';
 import { ProjectsNotesService } from './projects-notes.service';
+import { ProjectsResourcesService } from './projects-resources.service';
 import { ProjectsSettingsService } from './projects-settings.service';
-import {
-  CreateProjectDto,
-  UpdateProjectDto,
-  ProjectResponseDto,
-  ProjectQueryDto,
-  ProjectStateTransitionDto,
-  CreateProjectTaskDto,
-  UpdateProjectTaskDto,
-  CreateProjectResourceDto,
-  UpdateProjectResourceDto,
-  ProjectResourceQueryDto,
-  AssignProjectResourceDto,
-  ProjectResourceAssignmentResponseDto,
-  CreateProjectBudgetLineDto,
-  UpdateProjectBudgetLineDto,
-  IssueInventoryDto,
-  ReturnInventoryDto,
-  ConsumeResourceDto,
-  ConsumeExpenseDto,
-  UpdateProjectLedgerEntryDto,
-  SetLedgerEntryBillableDto,
-  ProjectLedgerQueryDto,
-  ProjectProfitabilityResponseDto,
-  ProjectResourceResponseDto,
-  ProjectTaskResponseDto,
-  ProjectBudgetLineResponseDto,
-  ProjectLedgerEntryResponseDto,
-  CreateProjectNoteDto,
-  ProjectNoteResponseDto,
-  EmptyBodyDto,
-  ProjectSettingsResponseDto,
-  UpdateProjectSettingsDto,
-  BillProjectDto,
-  ProjectBillingResponseDto,
-} from './dto';
-import { SalesInvoiceResponseDto } from '../invoices/dto';
-import { ApiPaginatedResponse } from '../common/pagination';
-import { SystemResource } from '@herobm/shared';
-import { AuthUser } from '../auth/auth-user.decorator';
-import type { JwtUser } from '../auth/auth-user.decorator';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
+import { ProjectsTasksService } from './projects-tasks.service';
+import { ProjectsService } from './projects.service';
 
 @ApiTags('Projects')
 @Controller('projects')

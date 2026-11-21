@@ -1,19 +1,19 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
-import { OrdersService } from '../orders/orders.service';
-import { OrdersQueryService } from '../orders/orders-query.service';
-import { resolveOrderDetail, assembleOrderData } from './report-data.helper';
-import { emitEvent } from '../common/emit-event';
-import { EntityType, EventType } from '../common/event-types';
-import { DRIZZLE } from '../drizzle/drizzle.module';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { OrdersQueryService } from '../orders/orders-query.service';
+import { OrdersService } from '../orders/orders.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { RunHookOptionsDto } from './dto';
+import { assembleOrderData, resolveOrderDetail } from './report-data.helper';
 
 export interface SalesQuoteData {
   header: {
     orderNumber?: string;
     projectNumber?: string;
     customerName: string;
+    customerAddress?: string;
+    billingAddress?: string;
     customerOrderNumber: string;
     orderDate: string;
     currencyCode: string;

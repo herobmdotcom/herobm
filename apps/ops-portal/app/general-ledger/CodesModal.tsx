@@ -189,7 +189,7 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
           </td>
           {/* inline-style-allowed: Dynamic tree depth indentation for Chart of Accounts picker */}
           <td className={`px-3 py-1.5 text-xs ${selectedAccount === node.accountCode ? 'font-bold text-[var(--text-primary)]' : 'font-medium text-[var(--text-secondary)]'}`} style={{ paddingLeft: `${depth * 1.25 + 0.75}rem` }}>
-             {node.isGroup ? <span className="uppercase text-[9px] font-bold opacity-40 bg-gray-100 px-1 rounded mr-2 border border-gray-200">{t('group')}</span> : null}
+             {node.isGroup ? <span className="uppercase text-[9px] font-bold opacity-60 bg-[var(--bg-secondary)] px-1 rounded mr-2 border border-[var(--border)]">{t('group')}</span> : null}
              {node.name}
           </td>
         </tr>

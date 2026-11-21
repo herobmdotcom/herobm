@@ -1,44 +1,42 @@
+import {
+  glAccounts,
+  goodsReceived,
+  goodsReceivedLines,
+  locations,
+  organizations,
+  products,
+  purchaseInvoiceLines,
+  purchaseInvoiceReceipts,
+  purchaseInvoices,
+  purchaseOrderLineItems,
+  purchaseOrders,
+  suppliers,
+  taxCategories,
+  uomDictionary,
+} from '@herobm/db-schema';
+import {
+  GOODS_RECEIVED_STATE,
+  MATCH_STATUS,
+  ORGANIZATION_STATE,
+  PRODUCT_STATE,
+  PURCHASE_INVOICE_STATE,
+  PURCHASE_ORDER_STATE,
+  PUTAWAY_STATUS,
+  SUPPLIER_STATE,
+} from '@herobm/shared';
+import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { randomUUID } from 'crypto';
+import { Decimal } from 'decimal.js';
+import { eq } from 'drizzle-orm';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { GlService } from '../gl/gl.service';
+import { AppConfigService } from '../settings/app-config.service';
+import { TaxCategoriesService } from '../tax/tax-categories.service';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { PurchaseInvoiceCoreService } from './purchase-invoice-core.service';
 import { PurchaseInvoiceDraftService } from './purchase-invoice-draft.service';
 import { PurchaseInvoicePostingService } from './purchase-invoice-posting.service';
-import { GlService } from '../gl/gl.service';
-import { TaxCategoriesService } from '../tax/tax-categories.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { Decimal } from 'decimal.js';
-import { AppConfigService } from '../settings/app-config.service';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import {
-  purchaseOrders,
-  purchaseOrderLineItems,
-  suppliers,
-  taxCategories,
-  products,
-  locations,
-  uomDictionary,
-  purchaseInvoices,
-  purchaseInvoiceLines,
-  goodsReceived,
-  goodsReceivedLines,
-  purchaseInvoiceReceipts,
-  glAccounts,
-  organizations,
-} from '@herobm/db-schema';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
-import { eq } from 'drizzle-orm';
-import { randomUUID } from 'crypto';
-import {
-  PURCHASE_ORDER_STATE,
-  PURCHASE_INVOICE_STATE,
-  MATCH_STATUS,
-  PUTAWAY_STATUS,
-  CUSTOMER_STATE,
-  SUPPLIER_STATE,
-  GOODS_RECEIVED_STATE,
-  PRODUCT_STATE,
-  ORGANIZATION_STATE,
-} from '@herobm/shared';
 
 /**
  * Local wrapper that proxies to the 3 sub-services so existing tests

@@ -1,93 +1,59 @@
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-  Logger,
-  forwardRef,
-} from '@nestjs/common';
-import {
-  ilike,
-  or,
-  eq,
-  inArray,
-  sql,
-  and,
-  isNull,
-  desc,
-  asc,
-  lte,
-} from 'drizzle-orm';
-import { AppConfigService } from '../settings/app-config.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import Decimal from 'decimal.js';
-import {
-  inventoryLevels,
-  products,
-  bins,
   binContents,
-  inventoryEntries,
-  inventoryLedger,
-  outbox,
-  zones,
-  locations,
-  salesOrders,
-  salesOrderShipments,
-  salesOrderReturns,
-  salesOrderReturnLines,
-  salesOrderLineItems,
-  customers,
-  purchaseOrders,
-  suppliers,
-  productUoms,
-  productDefaultBins,
+  bins,
   goodsReceived,
   goodsReceivedLines,
-  purchaseOrderLineItems,
-  transferOrders,
-  transferOrderReceipts,
-  transferOrderReceiptLines,
-  workOrders,
-  backorders,
+  inventoryEntries,
+  inventoryLedger,
+  products,
   projects,
+  purchaseOrderLineItems,
+  salesOrderLineItems,
+  salesOrderReturnLines,
+  salesOrderReturns,
+  salesOrders,
+  transferOrderReceiptLines,
+  transferOrderReceipts,
+  transferOrders,
+  workOrders,
+  zones,
 } from '@herobm/db-schema';
-import { randomUUID } from 'crypto';
-import { emitEvent } from '../common/emit-event';
-import { EntityType, EventType } from '../common/event-types';
 import {
-  PaginationQuery,
-  parsePagination,
-  withCursorPagination,
-} from '../common/pagination';
-import {
-  calculateAvailableQuantity,
+  BIN_TYPE,
   MATCH_STATUS,
   PUTAWAY_STATUS,
   RETURN_STATE,
-  BACKORDER_STATE,
   toDecimal,
 } from '@herobm/shared';
 import {
-  isPickableBinSqlCondition,
-  filterPickableBins,
-  calculatePickableOnHand,
-  isQuarantineBinCondition,
-} from './inventory-math.utils';
-import { BIN_TYPE } from '@herobm/shared';
-import { UomService } from './uom.service';
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import Decimal from 'decimal.js';
+import { and, eq, inArray, sql } from 'drizzle-orm';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { GlService } from '../gl/gl.service';
-import {
-  prepareMovementLines,
-  resolveBinsContext,
-  validateNegativeInventory,
-  handleAdjustmentFinancials,
-  MovementLineInput,
-} from './inventory-movement-helpers';
 import { WorkOrdersWriteService } from '../manufacturing/work-orders-write.service';
 import { BackordersService } from '../orders/backorders.service';
 import { ReturnsWriteService } from '../orders/returns-write.service';
 import { ProjectsInventoryService } from '../projects/projects-inventory.service';
+import { AppConfigService } from '../settings/app-config.service';
+import { isQuarantineBinCondition } from './inventory-math.utils';
+import {
+  handleAdjustmentFinancials,
+  prepareMovementLines,
+  resolveBinsContext,
+  validateNegativeInventory,
+} from './inventory-movement-helpers';
+import { UomService } from './uom.service';
 
 @Injectable()
 export class InventoryMovementService {

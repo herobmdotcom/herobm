@@ -1,10 +1,10 @@
+import { appSettings, taxCategories } from '@herobm/db-schema';
 import Decimal from 'decimal.js';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { taxCategories, appSettings } from '@herobm/db-schema';
 import { eq, inArray } from 'drizzle-orm';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { AppConfigService } from '../settings/app-config.service';
 import { SuppliersService } from '../suppliers/suppliers.service';
 import { TaxResolutionEngine } from '../tax/tax-resolution.engine';
-import { AppConfigService } from '../settings/app-config.service';
 
 export async function resolvePurchaseTaxForLine(
   tx: DrizzleDB,

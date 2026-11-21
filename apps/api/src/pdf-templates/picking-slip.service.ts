@@ -1,24 +1,19 @@
-import { isPickableBinCondition } from '../inventory/inventory-math.utils';
-import { Injectable, Inject, NotFoundException, Logger } from '@nestjs/common';
-import { eq, and, inArray, sql } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
-  salesOrders,
-  salesOrderLineItems,
-  products as coreProducts,
-  inventoryLevels,
-  customers as coreAccounts,
-  salesOrderPicks,
   binContents,
   bins,
-  zones,
+  customers as coreAccounts,
+  products as coreProducts,
+  inventoryLevels,
   locations,
-  transferOrders,
-  transferOrderLines,
-  transferOrderPicks,
   organizations,
   projects,
+  salesOrderLineItems,
+  salesOrderPicks,
+  salesOrders,
+  transferOrderLines,
+  transferOrderPicks,
+  transferOrders,
+  zones,
 } from '@herobm/db-schema';
 import {
   SALES_ORDER_PICK_STATE,
@@ -28,6 +23,11 @@ import {
   formatReportDateTime,
   toDecimal,
 } from '@herobm/shared';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { and, eq, inArray, sql } from 'drizzle-orm';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { isPickableBinCondition } from '../inventory/inventory-math.utils';
 
 // ─── Data shapes ────────────────────────────────────────────────────────────
 
@@ -319,8 +319,6 @@ export class PickingSlipService {
     const productIds = lines
       .map((l) => l.productId)
       .filter((id): id is string => id !== null && id !== undefined);
-
-    const lineIds = lines.map((l) => l.lineId);
 
     // 1. Resolve Bins
     const binMap = new Map<string, { binId: string; binNumber: string }>(

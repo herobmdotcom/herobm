@@ -1,12 +1,12 @@
-import { readFileSync } from 'fs';
-import { join, resolve } from 'path';
-import { v4 as uuidv4 } from 'uuid';
-import { eq, inArray } from 'drizzle-orm';
 import {
-  pdfTemplates,
-  pdfTemplateHooks,
   pdfTemplateContexts,
+  pdfTemplateHooks,
+  pdfTemplates,
 } from '@herobm/db-schema';
+import { eq, inArray } from 'drizzle-orm';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+import { v4 as uuidv4 } from 'uuid';
 import type { SeedDB } from '../run';
 
 interface SeedData {

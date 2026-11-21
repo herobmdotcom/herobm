@@ -1,13 +1,13 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { customers, pipelineJobs, users } from '@herobm/db-schema';
+import { CUSTOMER_STATE } from '@herobm/shared';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { Test, TestingModule } from '@nestjs/testing';
+import { parse } from 'csv-parse/sync';
+import { eq } from 'drizzle-orm';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
-import { JwtService } from '@nestjs/jwt';
 import { DRIZZLE, type DrizzleDB } from '../src/drizzle/drizzle.module';
-import { users, customers, pipelineJobs } from '@herobm/db-schema';
-import { eq } from 'drizzle-orm';
-import { CUSTOMER_STATE } from '@herobm/shared';
-import { parse } from 'csv-parse/sync';
 
 describe('CSV Export & Import Round-Trip (e2e)', () => {
   let app: INestApplication;

@@ -1,22 +1,22 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { eq, and, or, ilike, desc, asc, sql, inArray } from 'drizzle-orm';
-import { DRIZZLE } from '../../drizzle/drizzle.module';
-import type { DrizzleDB } from '../../drizzle/drizzle.module';
 import {
-  stocktakes,
-  stocktakeLines,
-  stocktakeCounts,
-  locations,
   bins,
-  zones,
+  locations,
   products,
+  stocktakeCounts,
+  stocktakeLines,
+  stocktakes,
+  zones,
 } from '@herobm/db-schema';
+import { STOCKTAKE_STATE, type StocktakeState } from '@herobm/shared';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { and, asc, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import {
   PaginationQuery,
   parsePagination,
   withCursorPagination,
 } from '../../common/pagination';
-import { STOCKTAKE_STATE, type StocktakeState } from '@herobm/shared';
+import type { DrizzleDB } from '../../drizzle/drizzle.module';
+import { DRIZZLE } from '../../drizzle/drizzle.module';
 
 @Injectable()
 export class StocktakesQueryService {

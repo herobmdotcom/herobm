@@ -1,14 +1,10 @@
-import { TestingModule } from '@nestjs/testing';
-import { createE2eModule } from './utils/e2e-module';
+import { glAccounts } from '@herobm/db-schema';
 import { INestApplication } from '@nestjs/common';
-import './suite-setup';
+import { TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
-import {
-  glAccounts,
-  reconciliationRules,
-  csvMappingProfiles,
-} from '@herobm/db-schema';
+import './suite-setup';
+import { createE2eModule } from './utils/e2e-module';
 
 describe('BankFeedsController (e2e)', () => {
   let app: INestApplication;

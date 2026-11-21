@@ -1,6 +1,5 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { InternalServerErrorException } from '@nestjs/common';
-import * as fs from 'fs';
+import { Test, TestingModule } from '@nestjs/testing';
 import { StorageService } from './storage.service';
 
 describe('StorageService', () => {

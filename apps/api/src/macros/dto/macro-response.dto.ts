@@ -1,4 +1,4 @@
-import { IsString, IsDate } from 'class-validator';
+import { IsDate, IsString } from 'class-validator';
 
 export class MacroResponseDto {
   @IsString()

@@ -16,6 +16,9 @@ interface OrderLinesTableProps {
   updateLine: (lineId: string, field: string, value: string | boolean | null | undefined | number) => Promise<void> | void;
   updateLineFields: (lineId: string, fields: Partial<OrderLine>) => Promise<void> | void;
   removeLine: (lineId: string) => void;
+  reorderLines?: (lineIds: string[]) => Promise<void> | void;
+  insertAtLineNumber?: number | null;
+  onInsertAbove?: (lineNumber: number) => void;
   calculateTaxes: () => void;
   taxCategories: TaxCategory[];
   subtotal: number;
@@ -34,6 +37,9 @@ export function OrderLinesTable({
   updateLine,
   updateLineFields,
   removeLine,
+  reorderLines,
+  insertAtLineNumber,
+  onInsertAbove,
   calculateTaxes,
   taxCategories,
   subtotal,
@@ -66,6 +72,9 @@ export function OrderLinesTable({
         updateLineFields(String(lineId), fields as Partial<OrderLine>)
       }
       onRemoveLine={(lineId: string | number) => removeLine(String(lineId))}
+      onReorderLines={reorderLines}
+      insertAtLineNumber={insertAtLineNumber}
+      onInsertAbove={onInsertAbove}
       onCalculateTaxes={calculateTaxes}
     />
   );

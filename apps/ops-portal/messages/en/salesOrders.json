@@ -35,6 +35,7 @@
     "createQuote": "Create Quote",
     "createReturn": "Create Return",
     "customLine": "Add Custom Line",
+    "discardDraft": "Discard Draft",
     "emailConfirmation": "Email Confirmation",
     "emailInvoice": "Email Invoice",
     "emailProForma": "Email Pro-Forma",
@@ -193,6 +194,23 @@
   },
   "postConfirmationLineWarningBody": "Are you sure you want to add a new line after this order has already been confirmed? This should only be used for additional freight or post-confirmation charges. This will affect un-invoiced balances.",
   "postConfirmationLineWarningTitle": "Add Post-Confirmation Line",
+  "pricing": {
+    "currentPrice": "Current Price",
+    "noHistory": "No prior sales history found",
+    "nonProductLine": "Custom line without product",
+    "recentOrders": "Recent Pricing History",
+    "thisCustomer": "This Customer",
+    "viewAll": "View All",
+    "viewAllWithCount": "View All ({count})"
+  },
+  "pricingSlideOver": {
+    "customerOnlyToggle": "This customer only",
+    "emptyMessage": "No past sales order history found for this product.",
+    "pageOf": "Page {page} of {totalPages}",
+    "subtitle": "Prior sales orders ranking {customer} first",
+    "title": "Pricing History: {product}"
+  },
+  "pricingTab": "Pricing",
   "returns": {
     "creditNote": "Credit Note",
     "customer": "Customer",

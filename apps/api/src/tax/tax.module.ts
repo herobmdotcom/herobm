@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
-import { TaxCategoriesService } from './tax-categories.service';
-import { TaxCategoriesController } from './tax-categories.controller';
-import { TaxPositionsService } from './tax-positions.service';
-import { TaxPositionsController } from './tax-positions.controller';
-import { TaxPositionMappingsController } from './tax-position-mappings.controller';
-import { TaxResolutionEngine } from './tax-resolution.engine';
-import { TaxReportsService } from './tax-reports.service';
-import { TaxReportsController } from './tax-reports.controller';
 import { DrizzleModule } from '../drizzle/drizzle.module';
+import { TaxCategoriesController } from './tax-categories.controller';
+import { TaxCategoriesService } from './tax-categories.service';
+import { TaxPositionMappingsController } from './tax-position-mappings.controller';
+import { TaxPositionsController } from './tax-positions.controller';
+import { TaxPositionsService } from './tax-positions.service';
+import { TaxReportsController } from './tax-reports.controller';
+import { TaxReportsService } from './tax-reports.service';
+import { TaxResolutionEngine } from './tax-resolution.engine';
 
 @Module({
   imports: [DrizzleModule],

@@ -1,11 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
   IsEnum,
+  IsNotEmpty,
   IsNumberString,
-  IsBoolean,
+  IsOptional,
+  IsString,
 } from 'class-validator';
 
 export class CreateTaxCategoryDto {

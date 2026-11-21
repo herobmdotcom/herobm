@@ -137,6 +137,7 @@ function GeneralInfoTab({
                   className={`w-10 h-[22px] rounded-[11px] relative transition-colors duration-200 ${loading ? 'opacity-50' : ''} ${dto.isTaxRegistered ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'}`}
                 >
                   <div
+                    // dark-mode-ok: white toggle switch thumb
                     className={`w-4 h-4 rounded-full bg-white absolute top-[3px] transition-[left] duration-200 ${dto.isTaxRegistered ? 'left-[21px]' : 'left-[3px]'}`}
                   />
                 </div>

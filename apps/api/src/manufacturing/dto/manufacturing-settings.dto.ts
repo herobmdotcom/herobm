@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsObject } from 'class-validator';
+import { IsObject, IsOptional } from 'class-validator';
 
 export class UpdateManufacturingSettingsDto {
   @ApiPropertyOptional({

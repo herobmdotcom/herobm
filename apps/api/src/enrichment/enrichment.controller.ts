@@ -1,24 +1,24 @@
 import { SystemResource } from '@herobm/shared';
 import {
+  Body,
   Controller,
   Get,
+  Post,
+  Put,
   Query,
   UseGuards,
-  Put,
-  Post,
-  Body,
 } from '@nestjs/common';
-import { EnrichmentService } from './enrichment.service';
-import {
-  EnrichmentPayloadDto,
-  EnrichmentResultDto,
-  EnrichmentProviderDto,
-  UpdateEnrichmentConfigDto,
-  EnrichmentConfigResponseDto,
-} from './enrichment.dto';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
-import { ApiOkResponse, ApiTags, ApiBody, ApiOperation } from '@nestjs/swagger';
+import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
+import {
+  EnrichmentConfigResponseDto,
+  EnrichmentPayloadDto,
+  EnrichmentProviderDto,
+  EnrichmentResultDto,
+  UpdateEnrichmentConfigDto,
+} from './enrichment.dto';
+import { EnrichmentService } from './enrichment.service';
 
 @ApiTags('System')
 @Controller('enrichment')

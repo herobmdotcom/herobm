@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { BankFeedsService } from './bank-feeds.service';
 import { GlService } from './gl.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
 
 describe('BankFeedsService', () => {
   let service: BankFeedsService;

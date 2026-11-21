@@ -1,35 +1,35 @@
-import { isPickableBinCondition } from '../../inventory/inventory-math.utils';
 import {
-  Injectable,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
-import { Inject } from '@nestjs/common';
-import { DRIZZLE } from '../../drizzle/drizzle.module';
-import type { DrizzleDB } from '../../drizzle/drizzle.module';
-import {
-  transferOrders,
+  binContents,
+  bins,
+  products as coreProducts,
+  locations,
+  products,
+  projects,
   transferOrderLines,
   transferOrderPicks,
-  locations,
-  bins,
+  transferOrders,
   zones,
-  binContents,
-  products,
-  products as coreProducts,
-  projects,
 } from '@herobm/db-schema';
-import { eq, and, inArray } from 'drizzle-orm';
-import { emitEvent } from '../../common/emit-event';
-import { EntityType, EventType } from '../../common/event-types';
+import type { TransferOrderPickState } from '@herobm/shared';
 import {
-  TRANSFER_ORDER_STATE,
   TRANSFER_ORDER_PICK_STATE,
   TRANSFER_ORDER_PICK_TRANSITIONS,
+  TRANSFER_ORDER_STATE,
   toDecimal,
 } from '@herobm/shared';
-import type { TransferOrderPickState } from '@herobm/shared';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { and, eq, inArray } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
+import { emitEvent } from '../../common/emit-event';
+import { EntityType, EventType } from '../../common/event-types';
+import type { DrizzleDB } from '../../drizzle/drizzle.module';
+import { DRIZZLE } from '../../drizzle/drizzle.module';
+import { isPickableBinCondition } from '../../inventory/inventory-math.utils';
 import { InventoryMovementService } from '../../inventory/inventory-movement.service';
 import { changeTransferOrderState } from './transfer-state.helper';
 

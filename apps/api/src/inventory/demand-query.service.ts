@@ -1,26 +1,26 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { DRIZZLE } from '../drizzle/drizzle.module';
 import {
-  products,
-  locations,
   bins,
-  inventoryLedger,
   inventoryEntries,
+  inventoryLedger,
   inventoryLevels,
+  locations,
+  organizations,
   productDefaultBins,
   productGroups,
+  products,
   productSuppliers,
   productUoms,
   suppliers,
-  organizations,
   zones,
 } from '@herobm/db-schema';
-import { eq, and, sql, desc, isNotNull, inArray, or, ilike } from 'drizzle-orm';
 import { calculateAvailableQuantity } from '@herobm/shared';
-import { calculateSuggestedRestockQuantity } from './inventory-math.utils';
-import { AppConfigService } from '../settings/app-config.service';
+import { Inject, Injectable } from '@nestjs/common';
 import Decimal from 'decimal.js';
+import { and, desc, eq, ilike, inArray, isNotNull, or, sql } from 'drizzle-orm';
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { AppConfigService } from '../settings/app-config.service';
+import { calculateSuggestedRestockQuantity } from './inventory-math.utils';
 
 @Injectable()
 export class DemandQueryService {

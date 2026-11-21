@@ -1,8 +1,8 @@
 import {
   CanActivate,
   ExecutionContext,
-  Injectable,
   ForbiddenException,
+  Injectable,
   Logger,
 } from '@nestjs/common';
 import { LicenseService } from '../../settings/license.service';

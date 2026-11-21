@@ -1,32 +1,32 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
-import { ShippingDocketService } from './shipping-docket.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
-  salesOrders,
-  salesOrderLineItems,
-  salesOrderShipments,
-  salesOrderShipmentLines,
   customers as coreAccounts,
   products as coreProducts,
-  uomDictionary,
   locations,
-  taxCategories,
   organizations,
-  transferOrders,
+  salesOrderLineItems,
+  salesOrders,
+  salesOrderShipmentLines,
+  salesOrderShipments,
+  taxCategories,
   transferOrderLines,
-  transferOrderShipments,
+  transferOrders,
   transferOrderShipmentLines,
+  transferOrderShipments,
+  uomDictionary,
 } from '@herobm/db-schema';
 import {
+  CUSTOMER_STATE,
+  ORGANIZATION_STATE,
+  PRODUCT_STATE,
   SALES_ORDER_STATE,
   SHIPMENT_STATE,
-  CUSTOMER_STATE,
-  PRODUCT_STATE,
-  ORGANIZATION_STATE,
   TRANSFER_ORDER_STATE,
 } from '@herobm/shared';
+import { NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { ShippingDocketService } from './shipping-docket.service';
 
 describe('ShippingDocketService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

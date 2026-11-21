@@ -1227,6 +1227,27 @@
       "thisOrder": "This Order",
       "title": "Availability"
     },
+    "bulkEdit": {
+      "backToEdit": "Back to Edit",
+      "changesSummary": "Changes to be applied ({count})",
+      "clearInherit": "Clear / Inherit",
+      "clearNotice": "This field will be cleared on all selected records to inherit settings from the parent group or system default.",
+      "confirmApply": "Confirm & Apply to {count} {entity}",
+      "confirmTitle": "Confirm Bulk Update",
+      "editSelected": "Edit Selected ({count})",
+      "exit": "Exit Bulk Edit",
+      "noChange": "No Change",
+      "noDisabled": "No (Disabled)",
+      "reviewChanges": "Review Changes ({count})",
+      "selectedCount": "{count} selected",
+      "setValue": "Set Value",
+      "success": "Successfully updated {updated} {entity}",
+      "title": "Bulk Edit {count} {entity}",
+      "toggle": "Bulk Edit",
+      "warningBanner": "You are about to modify {count} {entity}. Please verify the changes below before applying.",
+      "warningNotice": "This bulk operation will directly mutate all {count} selected records. Records whose values already match these targets will be automatically skipped without modification.",
+      "yesEnabled": "Yes (Enabled)"
+    },
     "buttons": {
       "add": "Add",
       "addContact": "Add Contact",
@@ -1556,10 +1577,18 @@
       "username": "Username"
     },
     "productSearch": {
+      "add": "Add",
       "availableShort": "Avail",
+      "cancelInsert": "Cancel insert position",
+      "cancelSelection": "Cancel selection",
+      "dragToReorder": "Drag to reorder",
+      "insertLineAbove": "Insert line above #{lineNumber}",
+      "insertingAt": "Insert at #{lineNumber}",
       "noMatchingProducts": "No matching products",
       "onHandShort": "OH",
       "placeholder": "Search product...",
+      "qtyLabel": "Quantity",
+      "qtyPlaceholder": "Qty",
       "typeMinChars": "Type at least 2 characters..."
     },
     "products": {
@@ -1709,6 +1738,7 @@
   "confirm": {
     "archiveOrder": "Are you sure you want to archive this order?",
     "completeTask": "Mark task as completed? This will set the completion date and finalize task delivery.",
+    "discardDraft": "Are you sure you want to discard this draft order? This will cancel the order.",
     "enterSupplierBill": "Enter invoice? This will publish AP ledger entries.",
     "generateInvoice": "Generate financial invoice for selected quantities? This will publish AR ledger entries.",
     "processReturn": "Process this return? This will generate a Credit Note and publish AR ledger entries.",
@@ -3509,7 +3539,8 @@
     "baseUomLabel": "(Base: {uom})",
     "buttons": {
       "addProduct": "Add Product",
-      "copyProduct": "Copy Product"
+      "copyProduct": "Copy Product",
+      "viewHistory": "History"
     },
     "cards": {
       "classification": "Classification",
@@ -3531,6 +3562,7 @@
       "parentQuantity": "Parent Quantity",
       "priceLevel3": "Level 3",
       "priceLevel4": "Level 4",
+      "pricingHistory": "Pricing History",
       "productId": "Product ID",
       "productNumber": "Product # (SKU)",
       "purchaseTaxCategory": "Purchase Tax Category",
@@ -3575,6 +3607,15 @@
       "weightedAverageCostDesc": "Valuation basis"
     },
     "costs": "Costs",
+    "createSlideOver": {
+      "listPrice": "List Price",
+      "standardCost": "Standard Cost",
+      "submit": "New Product",
+      "subtitle": "Create a new product in the catalogue",
+      "success": "Product created successfully",
+      "supplierLinkNote": "Will automatically link to supplier: {vendorName}",
+      "title": "Add Product to Catalogue"
+    },
     "defaultPurchaseUom": "Default Purchase UoM",
     "defaultSalesUom": "Default Sales UoM",
     "editComponent": "Edit Component",
@@ -3633,7 +3674,49 @@
       "searchProduct": "Search for a product...",
       "searchProducts": "Search by name, product number, or barcode..."
     },
+    "priceAdjustment": {
+      "applyCostIncrease": "Apply {delta}%",
+      "baseUnitCost": "Invoice Base Cost (per {uom})",
+      "belowCostWarning": "Below new cost",
+      "billedUom": "Invoice Billed UOM",
+      "costComparison": "Cost Comparison",
+      "current": "Current: {price}",
+      "invoiceUnitCost": "Invoice Unit Cost",
+      "listPrice": "Retail / List Price",
+      "loadError": "Failed to load product pricing",
+      "maintainMargin": "Maintain Margin %",
+      "marginChange": "Margin: {old}% → {new}%",
+      "marginOnly": "Margin: {margin}%",
+      "noChanges": "No price changes to save",
+      "previousCost": "Previous Standard Cost",
+      "priceLevel3": "Price Level 3",
+      "priceLevel4": "Price Level 4",
+      "rounding": {
+        "end95": "End in .95",
+        "end99": "End in .99",
+        "label": "Rounding",
+        "nearest005": "Nearest .05",
+        "nearest1": "Nearest $1"
+      },
+      "saveButton": "Save Prices",
+      "saveError": "Failed to update product prices",
+      "saveSuccess": "Product prices updated",
+      "sellPrices": "Sell Prices",
+      "standardCost": "Standard Cost",
+      "subtitle": "Update product cost and sell prices immediately",
+      "title": "Adjust Product Prices",
+      "tradePrice": "Trade Price",
+      "uomConversionHint": "{invoicePrice} ÷ {ratio} = {basePrice} per {uom}",
+      "useInvoiceCost": "Use Invoice Cost",
+      "weightedAvgCost": "Weighted Avg Cost: {cost}"
+    },
     "pricing": "Pricing",
+    "pricingSummary": {
+      "noHistory": "No prior sales history found",
+      "title": "Recent Pricing History",
+      "viewAll": "View All",
+      "viewAllWithCount": "View All ({count})"
+    },
     "productGroup": "Product Group",
     "productName": "Product Name",
     "storage": {
@@ -4186,6 +4269,7 @@
     "backToOrders": "← Back to Orders",
     "billSummary": "Bill Summary",
     "buttons": {
+      "addProduct": "New Product",
       "approveInvoice": "Approve Invoice",
       "change": "Change",
       "commentLine": "Add Comment",
@@ -4474,6 +4558,9 @@
     "subtitle": "Manage purchase orders",
     "supplierInvoice": {
       "addLine": "Add Line",
+      "addProduct": "New Product",
+      "adjustPrices": "Adjust Retail Prices",
+      "costIncreasedHint": "Unit cost is higher than standard cost — click to adjust retail prices",
       "fromPo": "From PO",
       "invoiceNumberLabel": "Supplier Invoice Number *",
       "noItems": "No items",
@@ -4585,6 +4672,7 @@
       "createQuote": "Create Quote",
       "createReturn": "Create Return",
       "customLine": "Add Custom Line",
+      "discardDraft": "Discard Draft",
       "emailConfirmation": "Email Confirmation",
       "emailInvoice": "Email Invoice",
       "emailProForma": "Email Pro-Forma",
@@ -4743,6 +4831,23 @@
     },
     "postConfirmationLineWarningBody": "Are you sure you want to add a new line after this order has already been confirmed? This should only be used for additional freight or post-confirmation charges. This will affect un-invoiced balances.",
     "postConfirmationLineWarningTitle": "Add Post-Confirmation Line",
+    "pricing": {
+      "currentPrice": "Current Price",
+      "noHistory": "No prior sales history found",
+      "nonProductLine": "Custom line without product",
+      "recentOrders": "Recent Pricing History",
+      "thisCustomer": "This Customer",
+      "viewAll": "View All",
+      "viewAllWithCount": "View All ({count})"
+    },
+    "pricingSlideOver": {
+      "customerOnlyToggle": "This customer only",
+      "emptyMessage": "No past sales order history found for this product.",
+      "pageOf": "Page {page} of {totalPages}",
+      "subtitle": "Prior sales orders ranking {customer} first",
+      "title": "Pricing History: {product}"
+    },
+    "pricingTab": "Pricing",
     "returns": {
       "creditNote": "Credit Note",
       "customer": "Customer",

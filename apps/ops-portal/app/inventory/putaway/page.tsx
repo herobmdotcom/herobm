@@ -350,7 +350,7 @@ export default function PutawayPage() {
                                                         setBinSearch('');
                                                         setSelectedBinId('');
                                                     }}
-                                                    className="h-14 px-1 border border-gray-300 rounded-lg flex items-center justify-center text-sm font-bold transition-all bg-white text-black hover:bg-gray-100"
+                                                    className="h-14 px-1 border border-[var(--border)] rounded-lg flex items-center justify-center text-sm font-bold transition-all bg-[var(--bg-card)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]"
                                                     title="Clear filter"
                                                 >
 

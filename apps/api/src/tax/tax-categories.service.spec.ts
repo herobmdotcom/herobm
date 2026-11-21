@@ -1,10 +1,9 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { TaxCategoriesService } from './tax-categories.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
+import { appSettings, taxCategories } from '@herobm/db-schema';
 import { NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { taxCategories, appSettings } from '@herobm/db-schema';
-import { eq } from 'drizzle-orm';
+import { TaxCategoriesService } from './tax-categories.service';
 
 describe('TaxCategoriesService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

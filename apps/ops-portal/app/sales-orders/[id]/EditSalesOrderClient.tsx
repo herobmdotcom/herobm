@@ -15,21 +15,11 @@ import { useTranslations } from 'next-intl';
 import EntityHeader from '@/components/shared/EntityHeader';
 import EntityBanner from '@/components/shared/EntityBanner';
 import { useAuth } from '@/components/shared/AuthGate';
-import { SystemResource, isPhysicalProductLine, hasPermission } from '@herobm/shared';
+import { SystemResource, isPhysicalProductLine, hasPermission, getErrorMessage } from '@herobm/shared';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
 import OrderLinesTab from './OrderLinesTab';
 import DeliveryAddressSlideOver from '@/components/shared/DeliveryAddressSlideOver';
-import PhoneInput from 'react-phone-number-input';
-import 'react-phone-number-input/style.css';
-
-const parseInitialPhone = (val: string) => {
-  if (!val) return '';
-  if (val.startsWith('+')) return val;
-  const digits = val.replace(/\D/g, '');
-  if (digits.length > 0) return '+' + digits;
-  return '';
-};
 
 import { DataTable, MobileCardField } from '@/components/shared/DataTable';
 
@@ -259,7 +249,7 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
         isOrderDetailsEditable, isOrderLinesEditable,
         allowedTransitions, subtotal, totalTax,
         saveHeader, changeState, calculateTaxes, archiveOrder, unarchiveOrder,
-        updateLine, updateLineFields, removeLine, addLineFromProduct, addBlankLine, addPostConfirmationBlankLine, addCommentLine,
+        updateLine, updateLineFields, removeLine, reorderLines, addLineFromProduct, addBlankLine, addPostConfirmationBlankLine, addCommentLine,
         loadOrder, loadReturns, loadInvoices,
         discrepanciesAcknowledged, setDiscrepanciesAcknowledged,
         customerDeliveryAddresses,
@@ -314,6 +304,16 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
     const gapMap = Object.fromEntries(gaps.map(g => [g.salesOrderLineId, g]));
 
     const isDraft = order.stateCode === SALES_ORDER_STATE.DRAFT;
+
+    const handleDiscardDraft = async () => {
+        if (!confirm(tConfirm('discardDraft'))) return;
+        try {
+            await changeState(SALES_ORDER_STATE.CANCELLED);
+            router.push('/sales-orders');
+        } catch (err: unknown) {
+            toast.error(getErrorMessage(err));
+        }
+    };
     const isPreConfirmation = order.stateCode === SALES_ORDER_STATE.DRAFT || order.stateCode === SALES_ORDER_STATE.QUOTED;
     const isShipped = ([SALES_ORDER_STATE.SHIPPED, SALES_ORDER_STATE.INVOICED, SALES_ORDER_STATE.ARCHIVED, SALES_ORDER_STATE.CANCELLED] as string[]).includes(order.stateCode as string);
     const activeBackorders = new Set<string>((order.backorders || [])
@@ -333,11 +333,18 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                         nav={<PageNav sections={navSections} />}
                         actions={
                             <>
-
-
-
+                                {isDraft && (
+                                    <Button
+                                        variant="danger"
+                                        size="sm"
+                                        onClick={handleDiscardDraft}
+                                        disabled={saving}
+                                    >
+                                        {tSales('buttons.discardDraft')}
+                                    </Button>
+                                )}
                                 {[...allowedTransitions]
-                                    .filter(state => state !== SALES_ORDER_STATE.PICKING && state !== SALES_ORDER_STATE.SHIPPED && state !== SALES_ORDER_STATE.INVOICED && state !== SALES_ORDER_STATE.ARCHIVED)
+                                    .filter(state => state !== SALES_ORDER_STATE.PICKING && state !== SALES_ORDER_STATE.SHIPPED && state !== SALES_ORDER_STATE.INVOICED && state !== SALES_ORDER_STATE.ARCHIVED && (!isDraft || state !== SALES_ORDER_STATE.CANCELLED))
                                     .sort((a, b) => {
                                         const aBack = isBackTransition(order.stateCode, a);
                                         const bBack = isBackTransition(order.stateCode, b);
@@ -412,9 +419,8 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                     action={
                         canManageCredit ? (
                             <Button
-                                variant="secondary"
+                                variant="danger"
                                 size="sm"
-                                className="bg-white text-red-700 hover:bg-red-50 border-red-200"
                                 onClick={() => setShowCreditOverrideModal(true)}
                             >
                                 {tSales('creditHold.overrideBtn')}
@@ -471,6 +477,7 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                     updateLine={updateLine}
                     updateLineFields={updateLineFields}
                     removeLine={removeLine}
+                    reorderLines={reorderLines}
                     calculateTaxes={calculateTaxes}
                     taxCategories={taxCategories}
                     subtotal={subtotal}
@@ -674,42 +681,41 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
             )}
 
             {showDiscrepancyModal && (
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl w-full max-w-2xl flex flex-col overflow-hidden">
-                        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-                            <h2 className="text-xl font-bold text-gray-900">{tSales('discrepancies.title')}</h2>
-                            <Button variant="ghost" onClick={() => setShowDiscrepancyModal(false)} className="!text-gray-400 hover:!text-gray-600 !p-2 h-auto !min-h-0 !min-w-0">
-
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border)] shadow-2xl rounded-xl w-full max-w-2xl flex flex-col overflow-hidden">
+                        <div className="px-6 py-4 border-b border-[var(--border)] flex justify-between items-center bg-[var(--bg-secondary)]">
+                            <h2 className="text-xl font-bold text-[var(--text-primary)]">{tSales('discrepancies.title')}</h2>
+                            <Button variant="ghost" size="icon" onClick={() => setShowDiscrepancyModal(false)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
                                 <span className="material-symbols-outlined">close</span>
                             </Button>
                         </div>
                         
                         <div className="p-6 flex flex-col gap-4">
-                            <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
+                            <div className="max-h-96 overflow-y-auto border border-[var(--border)] rounded-lg">
                                 <table className="w-full text-left border-collapse">
-                                    <thead className="bg-gray-50 sticky top-0">
+                                    <thead className="bg-[var(--bg-secondary)] sticky top-0">
                                         <tr>
-                                            <th className="px-4 py-2 text-[10px] font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">{tSales('columns.lineNumber')}</th>
-                                            <th className="px-4 py-2 text-[10px] font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">{tSales('columns.product')}</th>
-                                            <th className="px-4 py-2 text-[10px] font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">{tSales('columns.description')}</th>
-                                            <th className="px-4 py-2 text-[10px] font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200 text-right">{tSales('columns.ordered')}</th>
-                                            <th className="px-4 py-2 text-[10px] font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200 text-right">{tSales('columns.available')}</th>
-                                            <th className="px-4 py-2 text-[10px] font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200 text-right text-red-600">{tSales('columns.gap')}</th>
+                                            <th className="px-4 py-2 text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border)]">{tSales('columns.lineNumber')}</th>
+                                            <th className="px-4 py-2 text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border)]">{tSales('columns.product')}</th>
+                                            <th className="px-4 py-2 text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border)]">{tSales('columns.description')}</th>
+                                            <th className="px-4 py-2 text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border)] text-right">{tSales('columns.ordered')}</th>
+                                            <th className="px-4 py-2 text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border)] text-right">{tSales('columns.available')}</th>
+                                            <th className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider border-b border-[var(--border)] text-right text-red-600 dark:text-red-400">{tSales('columns.gap')}</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-gray-200 bg-white">
+                                    <tbody className="divide-y divide-[var(--border)] bg-[var(--bg-card)]">
                                         {order.lines
                                             .filter(l => !!gapMap[l.salesOrderLineId])
                                             .map((line) => {
                                                 const gap = gapMap[line.salesOrderLineId];
                                                 return (
-                                                    <tr key={line.salesOrderLineId} className="hover:bg-gray-50 transition-colors">
-                                                        <td className="px-4 py-3 text-xs text-gray-500 font-medium">{line.lineNumber}</td>
-                                                        <td className="px-4 py-3 text-xs text-gray-900 font-medium">{line.productNumber}</td>
-                                                        <td className="px-4 py-3 text-xs text-gray-600 truncate max-w-[150px]" title={line.productDescription}>{line.productDescription}</td>
-                                                        <td className="px-4 py-3 text-xs text-gray-900 text-right font-medium">{gap?.orderedQuantity}</td>
-                                                        <td className="px-4 py-3 text-xs text-gray-600 text-right">{gap?.availableQuantity}</td>
-                                                        <td className="px-4 py-3 text-xs text-red-600 text-right font-semibold">{gap?.shortage}</td>
+                                                    <tr key={line.salesOrderLineId} className="hover:bg-[var(--bg-card-hover)] transition-colors">
+                                                        <td className="px-4 py-3 text-xs text-[var(--text-muted)] font-medium tabular-nums">{line.lineNumber}</td>
+                                                        <td className="px-4 py-3 text-xs text-[var(--text-primary)] font-medium">{line.productNumber}</td>
+                                                        <td className="px-4 py-3 text-xs text-[var(--text-secondary)] truncate max-w-[150px]" title={line.productDescription}>{line.productDescription}</td>
+                                                        <td className="px-4 py-3 text-xs text-[var(--text-primary)] text-right font-medium tabular-nums">{gap?.orderedQuantity}</td>
+                                                        <td className="px-4 py-3 text-xs text-[var(--text-secondary)] text-right tabular-nums">{gap?.availableQuantity}</td>
+                                                        <td className="px-4 py-3 text-xs text-red-600 dark:text-red-400 text-right font-semibold tabular-nums">{gap?.shortage}</td>
                                                     </tr>
                                                 );
                                             })
@@ -718,7 +724,7 @@ export default function EditSalesOrderClient({ id }: { id: string }) {
                                 </table>
                             </div>
 
-                            <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
+                            <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-[var(--border)]">
                                 <Button
                                     variant="secondary"
                                     onClick={() => setShowDiscrepancyModal(false)}

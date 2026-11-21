@@ -1,36 +1,36 @@
 // security-ignore: sql-raw
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
+  contacts,
   suppliers as coreSuppliers,
   masterDataEvents,
-  supplierGroups,
-  supplierExpiries,
-  organizations,
-  contacts,
   organizationContactLinks,
+  organizations,
+  supplierExpiries,
+  supplierGroups,
 } from '@herobm/db-schema';
-import { EntityType } from '../common/event-types';
+import { PURCHASE_INVOICE_STATE, SUPPLIER_STATE } from '@herobm/shared';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
-  eq,
-  ilike,
-  or,
-  sql,
   and,
   asc,
   desc,
+  eq,
   getTableColumns,
+  ilike,
+  or,
+  sql,
 } from 'drizzle-orm';
+import { EntityType } from '../common/event-types';
 import {
   PaginationQuery,
   parsePagination,
   withCursorPagination,
 } from '../common/pagination';
-import { SUPPLIER_STATE, PURCHASE_INVOICE_STATE } from '@herobm/shared';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import {
-  resolveSupplierRiskProfile,
   ResolvedRiskProfile,
+  resolveSupplierRiskProfile,
 } from './supplier-risk.domain';
 
 @Injectable()
@@ -242,7 +242,7 @@ export class SuppliersService {
         )
         .orderBy(sql`${masterDataEvents.createdOn} DESC`);
 
-      const expiredDocs = await db
+      const _expiredDocs = await db
         .select({ id: supplierExpiries.expiryId })
         .from(supplierExpiries)
         .where(

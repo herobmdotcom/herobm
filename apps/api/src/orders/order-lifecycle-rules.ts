@@ -1,21 +1,21 @@
-import { eq, sql, and } from 'drizzle-orm';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
-  salesOrders,
-  salesOrderLineItems,
-  salesInvoices,
   salesInvoiceLines,
+  salesInvoices,
+  salesOrderLineItems,
+  salesOrders,
 } from '@herobm/db-schema';
-import { findOrder, getCommittedPerLine } from './shipment-helpers';
-import { emitEvent } from '../common/emit-event';
-import { EntityType, EventType } from '../common/event-types';
 import {
+  SALES_INVOICE_STATE,
   SALES_ORDER_STATE,
   SHIPMENT_STATE,
-  SALES_INVOICE_STATE,
   toDecimal,
 } from '@herobm/shared';
 import Decimal from 'decimal.js';
+import { and, eq, sql } from 'drizzle-orm';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { findOrder, getCommittedPerLine } from './shipment-helpers';
 
 export interface LifecycleTrigger {
   entity: 'shipment' | 'sales_invoice' | 'picking';

@@ -1,6 +1,6 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AbaGeneratorService, AbaFileContext } from './aba-generator.service';
 import { BadRequestException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { AbaFileContext, AbaGeneratorService } from './aba-generator.service';
 
 describe('AbaGeneratorService', () => {
   let service: AbaGeneratorService;

@@ -1,41 +1,35 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import {
-  ORGANIZATION_STATE,
+  activities,
+  bankStatementLines,
+  costCenters,
+  customers,
+  glAccounts,
+  glJournalEntries,
+  glJournalLines,
+  glReconciliations,
+  glSettings,
+  organizations,
+  projectLedgerEntries,
+  projects,
+  projectTasks,
+  salesCreditNotes,
+} from '@herobm/db-schema';
+import {
   CUSTOMER_STATE,
+  ORGANIZATION_STATE,
   PROJECT_STATE,
   PROJECT_TASK_STATE,
   RECONCILIATION_STATE,
 } from '@herobm/shared';
-import { GlService } from './gl.service';
+import { BadRequestException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { randomUUID } from 'crypto';
+import { eq, sql } from 'drizzle-orm';
+import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
 import { DRIZZLE } from '../drizzle/drizzle.module';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { AppConfigService } from '../settings/app-config.service';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
-import {
-  glAccounts,
-  glJournalEntries,
-  glJournalLines,
-  costCenters,
-  activities,
-  glSettings,
-  salesInvoices,
-  salesCreditNotes,
-  purchaseInvoices,
-  purchaseDebitNotes,
-  salesOrderShipments,
-  customers,
-  suppliers,
-  organizations,
-  projects,
-  projectTasks,
-  projectLedgerEntries,
-  bankStatementLines,
-  glReconciliations,
-} from '@herobm/db-schema';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
-import { eq, sql } from 'drizzle-orm';
-import { randomUUID } from 'crypto';
+import { GlService } from './gl.service';
 
 describe('GlService', () => {
   const pg = setupPgliteSuite();

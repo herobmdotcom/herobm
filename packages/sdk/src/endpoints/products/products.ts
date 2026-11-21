@@ -10,6 +10,8 @@ import type {
   AddProductUomDto,
   AddServiceMemberDto,
   AddSupplierDto,
+  BulkUpdateProductsDto,
+  BulkUpdateResponseDto,
   CopyProductDto,
   CreateProductDto,
   CreateProductGroupDto,
@@ -351,6 +353,43 @@ export const productsControllerGetCostSummary = async (id: string,
     method: 'GET'
     
     
+  }
+);}
+
+
+/**
+ * Bulk update curated fields across multiple selected products.
+ * @summary Bulk Update Products
+ */
+export type productsControllerBulkUpdateResponse200 = {
+  data: BulkUpdateResponseDto
+  status: 200
+}
+    
+export type productsControllerBulkUpdateResponseSuccess = (productsControllerBulkUpdateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type productsControllerBulkUpdateResponse = (productsControllerBulkUpdateResponseSuccess)
+
+export const getProductsControllerBulkUpdateUrl = () => {
+
+
+  
+
+  return `/products/bulk-update`
+}
+
+export const productsControllerBulkUpdate = async (bulkUpdateProductsDto: BulkUpdateProductsDto, options?: RequestInit): Promise<productsControllerBulkUpdateResponse> => {
+  
+  return customFetch<productsControllerBulkUpdateResponse>(getProductsControllerBulkUpdateUrl(),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      bulkUpdateProductsDto,)
   }
 );}
 

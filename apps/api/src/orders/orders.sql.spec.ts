@@ -1,18 +1,18 @@
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { getCreditBlockedSql } from './orders.sql';
 import {
-  salesOrders,
-  customers,
   customerGroups,
+  customers,
   organizations,
+  salesOrders,
 } from '@herobm/db-schema';
-import { sql, eq } from 'drizzle-orm';
-import { randomUUID } from 'crypto';
 import {
   CUSTOMER_STATE,
-  SALES_ORDER_STATE,
   ORGANIZATION_STATE,
+  SALES_ORDER_STATE,
 } from '@herobm/shared';
+import { randomUUID } from 'crypto';
+import { eq } from 'drizzle-orm';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { getCreditBlockedSql } from './orders.sql';
 
 describe('orders.sql - getCreditBlockedSql', () => {
   const pg = setupPgliteSuite();

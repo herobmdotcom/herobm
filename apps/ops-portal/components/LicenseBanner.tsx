@@ -15,6 +15,7 @@ export default function LicenseBanner() {
   const isReadOnly = status.state === 'read_only';
 
   return (
+    // dark-mode-ok: high-contrast black text on bright yellow warning banner
     <div className={`w-full text-center py-2 px-4 text-sm font-semibold flex items-center justify-center gap-4 ${isReadOnly ? 'bg-red-600 text-white' : 'bg-yellow-500 text-black'}`}>
       <span className="material-symbols-outlined text-[20px]">
         {isReadOnly ? 'error' : 'warning'}

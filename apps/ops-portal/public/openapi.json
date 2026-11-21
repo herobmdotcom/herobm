@@ -758,24 +758,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/PaginatedResponse"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "type": "array",
-                          "items": {
-                            "$ref": "#/components/schemas/AgedBalanceResponseDto"
-                          }
-                        }
-                      },
-                      "required": [
-                        "data"
-                      ]
-                    }
-                  ]
+                  "$ref": "#/components/schemas/AgedBalancesPaginatedResponseDto"
                 }
               }
             }
@@ -895,6 +878,39 @@
           }
         },
         "summary": "Get Credit Assessment",
+        "tags": [
+          "Customers"
+        ]
+      }
+    },
+    "/customers/bulk-update": {
+      "patch": {
+        "description": "Bulk update curated fields across multiple selected customers.",
+        "operationId": "CustomersController_bulkUpdate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkUpdateCustomersDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkUpdateResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Bulk Update Customers",
         "tags": [
           "Customers"
         ]
@@ -3288,6 +3304,39 @@
           }
         },
         "summary": "Get Product Cost Summary",
+        "tags": [
+          "Products"
+        ]
+      }
+    },
+    "/products/bulk-update": {
+      "patch": {
+        "description": "Bulk update curated fields across multiple selected products.",
+        "operationId": "ProductsController_bulkUpdate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkUpdateProductsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkUpdateResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Bulk Update Products",
         "tags": [
           "Products"
         ]
@@ -9385,6 +9434,92 @@
         ]
       }
     },
+    "/sales-orders/pricing-history": {
+      "get": {
+        "description": "Retrieve paginated historical sales orders for a specific product, ranking customer orders first.",
+        "operationId": "OrdersController_getProductPricingHistory",
+        "parameters": [
+          {
+            "name": "productId",
+            "required": true,
+            "in": "query",
+            "description": "Product UUID to fetch order pricing history for",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "description": "Optional customer ID to prioritize and rank first",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "excludeOrderId",
+            "required": false,
+            "in": "query",
+            "description": "Optional sales order ID to exclude from history",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based page number (default: 1)",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size limit (default: 20)",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "customerOnly",
+            "required": false,
+            "in": "query",
+            "description": "Filter only to orders for customerId",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedPricingHistoryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Product Pricing History",
+        "tags": [
+          "Sales Orders"
+        ]
+      }
+    },
     "/sales-orders/{id}/tax": {
       "post": {
         "description": "Manually trigger an external tax calculation for the order.",
@@ -9731,6 +9866,48 @@
           }
         },
         "summary": "Add Order Line",
+        "tags": [
+          "Sales Orders"
+        ]
+      }
+    },
+    "/sales-orders/{id}/lines/reorder": {
+      "patch": {
+        "description": "Reorder line items on a draft sales order.",
+        "operationId": "OrdersController_reorderLines",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderOrderLinesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Reorder Order Lines",
         "tags": [
           "Sales Orders"
         ]
@@ -17988,6 +18165,48 @@
         ]
       }
     },
+    "/purchase-orders/{id}/lines/reorder": {
+      "patch": {
+        "description": "Reorder line items on a draft purchase order.",
+        "operationId": "PurchaseOrdersController_reorderLines",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderPurchaseOrderLinesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Reorder Order Lines",
+        "tags": [
+          "Purchase Orders"
+        ]
+      }
+    },
     "/purchase-orders/{id}/lines/{lineId}": {
       "patch": {
         "description": "Modify a specific line item on a purchase order.",
@@ -19407,6 +19626,39 @@
           }
         },
         "summary": "Update Supplier",
+        "tags": [
+          "Suppliers"
+        ]
+      }
+    },
+    "/suppliers/bulk-update": {
+      "patch": {
+        "description": "Bulk update curated fields across multiple selected suppliers.",
+        "operationId": "SuppliersController_bulkUpdate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkUpdateSuppliersDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkUpdateResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Bulk Update Suppliers",
         "tags": [
           "Suppliers"
         ]
@@ -27236,6 +27488,29 @@
           "effectiveCreditLimit": {
             "type": "string"
           },
+          "effectiveTradingTermsId": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerGroupTradingTermsId": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerGroupCreditLimit": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerGroupIsOnCreditHold": {
+            "type": "boolean"
+          },
+          "effectiveEarlyPaymentDiscount": {
+            "type": "string",
+            "nullable": true
+          },
+          "effectiveEarlyPaymentDiscountDays": {
+            "type": "number",
+            "nullable": true
+          },
           "totalOutstanding": {
             "type": "number"
           },
@@ -27327,6 +27602,70 @@
           "isOnCreditHold",
           "creditLimit",
           "stateCode"
+        ]
+      },
+      "AgedBalancesTotalsDto": {
+        "type": "object",
+        "properties": {
+          "current": {
+            "type": "number"
+          },
+          "days1To30": {
+            "type": "number"
+          },
+          "days31To60": {
+            "type": "number"
+          },
+          "days61To90": {
+            "type": "number"
+          },
+          "days90Plus": {
+            "type": "number"
+          },
+          "totalOutstanding": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "current",
+          "days1To30",
+          "days31To60",
+          "days61To90",
+          "days90Plus",
+          "totalOutstanding"
+        ]
+      },
+      "AgedBalancesPaginatedResponseDto": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "nextCursor": {
+            "type": "string"
+          },
+          "prevCursor": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgedBalanceResponseDto"
+            }
+          },
+          "totals": {
+            "$ref": "#/components/schemas/AgedBalancesTotalsDto"
+          }
+        },
+        "required": [
+          "limit",
+          "data"
         ]
       },
       "CreditAssessmentResponseDto": {
@@ -27474,6 +27813,91 @@
           "customerNumber",
           "name",
           "billingAddressCountry"
+        ]
+      },
+      "BulkUpdateCustomersDto": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "minItems": 1,
+            "description": "Array of customer IDs to update",
+            "example": [
+              "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "customerGroupId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "New customer group ID, or null to clear"
+          },
+          "taxPositionId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "New tax position ID, or null to clear"
+          },
+          "currencyCode": {
+            "type": "string",
+            "description": "Currency code"
+          },
+          "tradingTermsId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "New trading terms ID, or null to inherit from customer group"
+          },
+          "priceTier": {
+            "type": "string",
+            "nullable": true,
+            "description": "Price tier level (e.g. \"tier_1\", \"tier_2\", or \"1\", \"2\")"
+          },
+          "isOnCreditHold": {
+            "type": "boolean",
+            "description": "Credit hold status override"
+          },
+          "creditLimit": {
+            "type": "string",
+            "nullable": true,
+            "description": "Credit limit string, or null to inherit from customer group"
+          },
+          "stateCode": {
+            "type": "string",
+            "description": "Target customer lifecycle state",
+            "enum": [
+              "draft",
+              "active",
+              "inactive",
+              "archived"
+            ]
+          }
+        },
+        "required": [
+          "ids"
+        ]
+      },
+      "BulkUpdateResponseDto": {
+        "type": "object",
+        "properties": {
+          "updatedCount": {
+            "type": "number",
+            "description": "Number of records successfully updated",
+            "example": 42
+          },
+          "skippedCount": {
+            "type": "number",
+            "description": "Number of records skipped because no fields were changed",
+            "example": 3
+          }
+        },
+        "required": [
+          "updatedCount",
+          "skippedCount"
         ]
       },
       "UpdateCustomerDto": {
@@ -29114,6 +29538,55 @@
           "productNumber",
           "name",
           "baseUom"
+        ]
+      },
+      "BulkUpdateProductsDto": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "minItems": 1,
+            "description": "Array of product IDs to update",
+            "example": [
+              "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "productGroupId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "New product group ID, or null to clear"
+          },
+          "salesTaxCategoryId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "Sales tax category ID, or null to clear"
+          },
+          "purchaseTaxCategoryId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "Purchase tax category ID, or null to clear"
+          },
+          "stateCode": {
+            "type": "string",
+            "description": "Target product lifecycle state",
+            "enum": [
+              "active",
+              "inactive",
+              "discontinued",
+              "archived",
+              "draft"
+            ]
+          }
+        },
+        "required": [
+          "ids"
         ]
       },
       "UpdateProductDto": {
@@ -34367,6 +34840,99 @@
           "source"
         ]
       },
+      "PricingHistoryEntryDto": {
+        "type": "object",
+        "properties": {
+          "salesOrderId": {
+            "type": "string"
+          },
+          "orderNumber": {
+            "type": "string"
+          },
+          "orderName": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerId": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerName": {
+            "type": "string"
+          },
+          "isCurrentCustomer": {
+            "type": "boolean"
+          },
+          "stateCode": {
+            "type": "string"
+          },
+          "orderDate": {
+            "type": "string"
+          },
+          "lineNumber": {
+            "type": "number"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "unitOfMeasure": {
+            "type": "string",
+            "nullable": true
+          },
+          "pricePerUnit": {
+            "type": "string"
+          },
+          "discountPercentage": {
+            "type": "string",
+            "nullable": true
+          },
+          "lineTotal": {
+            "type": "string",
+            "nullable": true
+          },
+          "currencyCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "salesOrderId",
+          "orderNumber",
+          "customerName",
+          "isCurrentCustomer",
+          "stateCode",
+          "orderDate",
+          "lineNumber",
+          "quantity",
+          "pricePerUnit",
+          "currencyCode"
+        ]
+      },
+      "PaginatedPricingHistoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PricingHistoryEntryDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "page",
+          "limit"
+        ]
+      },
       "CreateOrderLineDtoLineType": {
         "type": "string",
         "enum": [
@@ -34383,6 +34949,11 @@
                 "$ref": "#/components/schemas/CreateOrderLineDtoLineType"
               }
             ]
+          },
+          "insertAtLineNumber": {
+            "type": "number",
+            "minimum": 1,
+            "description": "Optional 1-based line number at which to insert the new line. Existing lines at or after this position will shift down."
           },
           "productId": {
             "type": "string"
@@ -34652,6 +35223,20 @@
         },
         "required": [
           "reason"
+        ]
+      },
+      "ReorderOrderLinesDto": {
+        "type": "object",
+        "properties": {
+          "lineIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "lineIds"
         ]
       },
       "UpdateOrderLineDtoLineType": {
@@ -39342,6 +39927,11 @@
       "CreatePurchaseOrderLineDto": {
         "type": "object",
         "properties": {
+          "insertAtLineNumber": {
+            "type": "number",
+            "minimum": 1,
+            "description": "Optional 1-based line number at which to insert the new line. Existing lines at or after this position will shift down."
+          },
           "productId": {
             "type": "string"
           },
@@ -39588,6 +40178,20 @@
         },
         "required": [
           "stateCode"
+        ]
+      },
+      "ReorderPurchaseOrderLinesDto": {
+        "type": "object",
+        "properties": {
+          "lineIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "lineIds"
         ]
       },
       "UpdatePurchaseOrderLineDto": {
@@ -40245,6 +40849,65 @@
           "vendorNumber",
           "name",
           "address1Country"
+        ]
+      },
+      "BulkUpdateSuppliersDto": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "minItems": 1,
+            "description": "Array of supplier IDs to update",
+            "example": [
+              "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "supplierGroupId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "New supplier group ID, or null to clear"
+          },
+          "tradingTermsId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "Trading terms ID, or null to inherit from supplier group"
+          },
+          "taxPositionId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "Tax position ID, or null to clear"
+          },
+          "currencyCode": {
+            "type": "string",
+            "description": "Currency code"
+          },
+          "isPurchasingBlocked": {
+            "type": "boolean",
+            "description": "Whether purchasing is blocked for this supplier"
+          },
+          "isPaymentBlocked": {
+            "type": "boolean",
+            "description": "Whether payment is blocked for this supplier"
+          },
+          "stateCode": {
+            "type": "string",
+            "description": "Target supplier lifecycle state",
+            "enum": [
+              "active",
+              "inactive",
+              "archived"
+            ]
+          }
+        },
+        "required": [
+          "ids"
         ]
       },
       "UpdateSupplierDto": {

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsOptional, IsEnum } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateMacroDto {
   @IsNotEmpty()

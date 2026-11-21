@@ -1,11 +1,11 @@
-import { Injectable, Inject, NotFoundException, Logger } from '@nestjs/common';
-import { eq, and, desc } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { projects, projectNotes } from '@herobm/db-schema';
-import { CreateProjectNoteDto, ProjectNoteResponseDto } from './dto';
+import { projectNotes, projects } from '@herobm/db-schema';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { and, desc, eq } from 'drizzle-orm';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { CreateProjectNoteDto, ProjectNoteResponseDto } from './dto';
 
 @Injectable()
 export class ProjectsNotesService {

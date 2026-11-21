@@ -51,6 +51,7 @@ function LayerToggle({ label, icon, checked, onChange, activeColorClass = 'bg-[v
         }`}
       >
         <span
+          // dark-mode-ok: white toggle switch thumb
           className={`inline-block h-3 w-3 transform rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out ${
             checked ? 'translate-x-3.5' : 'translate-x-0.5'
           }`}

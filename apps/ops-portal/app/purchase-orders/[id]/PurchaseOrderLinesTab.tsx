@@ -1,10 +1,10 @@
 'use client';
 
-import { use, useMemo, useRef, useEffect } from 'react';
+import { use, useMemo, useRef, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { calculateAvailableQuantity, isStockedProductLine, PURCHASE_ORDER_STATE, calculateUomPriceAdjustment, CUSTOM_LINE_ID, LineType } from '@herobm/shared';
-import ProductSearchInput from '@/components/shared/ProductSearchInput';
+import ProductQuickAddBar from '@/components/shared/ProductQuickAddBar';
 import { Button } from '@/components/shared/Button';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import { formatAmount } from '@/lib/currency';
@@ -19,6 +19,7 @@ import Tabs from '@/components/shared/Tabs';
 import { DataTable, MobileCardField, DataTableColumn } from '@/components/shared/DataTable';
 import { AvailabilityTab } from '@/components/shared/AvailabilityTab';
 import { OrderLinesTable } from '@/components/shared/OrderLinesTable';
+import CreateProductSlideOver from '@/components/products/CreateProductSlideOver';
 
 import type { OrderLine, TaxCategory, OrderDetail, InventoryLevel, Allocation } from './types';
 import type { PurchaseInvoice, PurchaseInvoiceLine } from '@/lib/purchase-order-utils';
@@ -53,9 +54,10 @@ interface PurchaseOrderLinesTabProps {
   updateLine: (lineId: string, field: string, value: unknown) => Promise<void>;
   updateLineFields: (lineId: string, payload: Record<string, unknown>) => Promise<void>;
   removeLine: (lineId: string) => void;
-  addLineFromProduct: (product: import('@/components/shared/ProductSearchInput').Product) => void;
-  addBlankLine: () => void;
-  addCommentLine?: () => void;
+  reorderLines?: (lineIds: string[]) => Promise<void> | void;
+  addLineFromProduct: (product: import('@/components/shared/ProductSearchInput').Product, quantity?: string, insertAtLineNumber?: number) => void | Promise<void>;
+  addBlankLine: (insertAtLineNumber?: number) => void | Promise<void>;
+  addCommentLine?: (insertAtLineNumber?: number) => void | Promise<void>;
   subtotal: number;
   totalTax: number;
   taxCategories: TaxCategory[];
@@ -76,6 +78,7 @@ export default function PurchaseOrderLinesTab({
   updateLine,
   updateLineFields,
   removeLine,
+  reorderLines,
   addLineFromProduct,
   addBlankLine,
   addCommentLine,
@@ -90,17 +93,45 @@ export default function PurchaseOrderLinesTab({
   const tPurchase = (key: string, args?: Record<string, string | number>) => propTPurchase ? propTPurchase(key, args) : tLocalPurchase(key as never, args as never);
   const tCommon = (key: string, args?: Record<string, string | number>) => propTCommon ? propTCommon(key, args) : tLocalCommon(key as never, args as never);
 
+  const [isCreateProductOpen, setIsCreateProductOpen] = useState(false);
+  const [insertAtLineNumber, setInsertAtLineNumber] = useState<number | null>(null);
+  const [focusTrigger, setFocusTrigger] = useState(0);
+
   const prevLineCountRef = useRef<number | null>(null);
   useEffect(() => {
     const lineCount = (order?.lines || []).length;
-    if (prevLineCountRef.current !== null && lineCount > prevLineCountRef.current) {
+    if (prevLineCountRef.current !== null && lineCount > prevLineCountRef.current && insertAtLineNumber === null) {
       const el = document.getElementById('po-lines-section-bottom') || document.getElementById('lines-section');
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
     }
     prevLineCountRef.current = lineCount;
-  }, [order?.lines?.length]);
+  }, [order?.lines?.length, insertAtLineNumber]);
+
+  const handleInsertAbove = (lineNum: number) => {
+    setInsertAtLineNumber(lineNum);
+    setFocusTrigger((prev) => prev + 1);
+  };
+
+  const handleAddProduct = async (product: import('@/components/shared/ProductSearchInput').Product, quantity?: string) => {
+    const target = insertAtLineNumber ?? undefined;
+    await addLineFromProduct(product, quantity, target);
+    if (target !== undefined) setInsertAtLineNumber(null);
+  };
+
+  const handleAddBlank = async () => {
+    const target = insertAtLineNumber ?? undefined;
+    await addBlankLine(target);
+    if (target !== undefined) setInsertAtLineNumber(null);
+  };
+
+  const handleAddComment = async () => {
+    if (!addCommentLine) return;
+    const target = insertAtLineNumber ?? undefined;
+    await addCommentLine(target);
+    if (target !== undefined) setInsertAtLineNumber(null);
+  };
 
   return (
     <>
@@ -120,31 +151,48 @@ export default function PurchaseOrderLinesTab({
               actions={
                 isLinesEditable && activeTab === 'lines' ? (
                   <>
-                    <div className="flex-1 min-w-[200px] max-w-sm">
-                      <ProductSearchInput
-                        onSelect={addLineFromProduct}
-                        placeholder="Add product… (search)"
+                    <div className="flex-1 min-w-[260px] max-w-md">
+                      <ProductQuickAddBar
+                        onAdd={handleAddProduct}
+                        placeholder={tPurchase('placeholders.searchProduct')}
+                        disabled={saving}
+                        enableShortcut={activeTab === 'lines'}
+                        insertAtLineNumber={isLinesEditable ? insertAtLineNumber : null}
+                        onCancelInsert={() => setInsertAtLineNumber(null)}
+                        focusTrigger={focusTrigger}
                       />
                     </div>
                     <Button
                       variant="secondary"
-                      size="sm"
-                      className="whitespace-nowrap"
-                      onClick={addBlankLine}
+                      size="icon"
+                      icon="add_box"
+                      iconClassName="text-[18px]"
+                      onClick={() => setIsCreateProductOpen(true)}
                       disabled={saving}
-                    >
-                      {tPurchase('buttons.customLine')}
-                    </Button>
+                      title={tPurchase('buttons.addProduct')}
+                      aria-label={tPurchase('buttons.addProduct')}
+                    />
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      icon="playlist_add"
+                      iconClassName="text-[18px]"
+                      onClick={() => void handleAddBlank()}
+                      disabled={saving}
+                      title={tPurchase('buttons.customLine')}
+                      aria-label={tPurchase('buttons.customLine')}
+                    />
                     {addCommentLine && (
                       <Button
                         variant="secondary"
-                        size="sm"
-                        className="whitespace-nowrap"
-                        onClick={addCommentLine}
+                        size="icon"
+                        icon="add_comment"
+                        iconClassName="text-[18px]"
+                        onClick={() => void handleAddComment()}
                         disabled={saving}
-                      >
-                        {tPurchase('buttons.commentLine')}
-                      </Button>
+                        title={tPurchase('buttons.commentLine')}
+                        aria-label={tPurchase('buttons.commentLine')}
+                      />
                     )}
                   </>
                 ) : undefined
@@ -172,6 +220,9 @@ export default function PurchaseOrderLinesTab({
               }
               onUpdateLineFields={(lineId: string | number, fields: Record<string, unknown>) => updateLineFields(String(lineId), fields)}
               onRemoveLine={(lineId: string | number) => removeLine(String(lineId))}
+              onReorderLines={isLinesEditable ? reorderLines : undefined}
+              insertAtLineNumber={isLinesEditable ? insertAtLineNumber : null}
+              onInsertAbove={isLinesEditable ? handleInsertAbove : undefined}
             />
           ) : activeTab === 'availability' ? (
             <AvailabilityTab
@@ -246,13 +297,13 @@ export default function PurchaseOrderLinesTab({
                                   <div className="font-semibold text-sm text-[var(--accent)]">
                                       {line.productNumber || line.productId?.substring(0, 8) || '—'}
                                   </div>
-                                  <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">{line.lineNumber}</div>
+                                  <div className="text-xs text-[var(--text-muted)] bg-[var(--bg-secondary)] px-2 py-0.5 rounded font-medium">{line.lineNumber}</div>
                               </div>
-                              <div className="text-sm text-slate-600 font-medium mb-3">
+                              <div className="text-sm text-[var(--text-secondary)] font-medium mb-3">
                                   {line.productDescription || '—'}
                               </div>
                               
-                              <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
+                              <div className="flex flex-col gap-0 border-t border-[var(--border)] pt-1">
                                   <MobileCardField label={tPurchase('columns.ordered')} value={
                                       <span className="font-semibold">{ordered}</span>
                                   } />
@@ -280,6 +331,16 @@ export default function PurchaseOrderLinesTab({
           <div id="po-lines-section-bottom" className="h-px w-full" />
         </div>
 
+        <CreateProductSlideOver
+          isOpen={isCreateProductOpen}
+          onClose={() => setIsCreateProductOpen(false)}
+          onSuccess={(prod) => {
+            addLineFromProduct(prod as unknown as import('@/components/shared/ProductSearchInput').Product);
+            setIsCreateProductOpen(false);
+          }}
+          vendorId={order.vendorId ?? undefined}
+          vendorName={order.vendorName ?? undefined}
+        />
     </>
   );
 }

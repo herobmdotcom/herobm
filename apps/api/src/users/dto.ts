@@ -1,12 +1,12 @@
 import {
-  IsString,
+  IsEmail,
+  IsIn,
   IsNotEmpty,
   IsOptional,
-  IsIn,
-  MinLength,
-  MaxLength,
+  IsString,
   Matches,
-  IsEmail,
+  MaxLength,
+  MinLength,
 } from 'class-validator';
 
 /** Valid portal roles — must match policy.csv exactly. */

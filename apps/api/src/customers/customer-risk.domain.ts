@@ -47,20 +47,42 @@ export function resolveCustomerRiskProfile(
   };
 
   resolved.effectiveTradingTermsId =
-    customer.tradingTermsId || (group ? group.tradingTermsId : null) || null;
+    (customer.tradingTermsId && customer.tradingTermsId !== ''
+      ? customer.tradingTermsId
+      : group?.tradingTermsId && group.tradingTermsId !== ''
+        ? group.tradingTermsId
+        : null) || null;
 
   resolved.effectiveCreditLimit =
-    customer.creditLimit ?? (group ? group.creditLimit : '0') ?? '0';
+    customer.creditLimit !== null &&
+    customer.creditLimit !== undefined &&
+    customer.creditLimit !== ''
+      ? customer.creditLimit
+      : group?.creditLimit !== null &&
+          group?.creditLimit !== undefined &&
+          group?.creditLimit !== ''
+        ? group.creditLimit
+        : '0';
 
   resolved.earlyPaymentDiscount =
-    customer.earlyPaymentDiscount ??
-    (group ? group.earlyPaymentDiscount : '0') ??
-    '0';
+    customer.earlyPaymentDiscount !== null &&
+    customer.earlyPaymentDiscount !== undefined &&
+    customer.earlyPaymentDiscount !== ''
+      ? customer.earlyPaymentDiscount
+      : group?.earlyPaymentDiscount !== null &&
+          group?.earlyPaymentDiscount !== undefined &&
+          group?.earlyPaymentDiscount !== ''
+        ? group.earlyPaymentDiscount
+        : '0';
 
   resolved.earlyPaymentDiscountDays =
-    customer.earlyPaymentDiscountDays ??
-    (group ? group.earlyPaymentDiscountDays : null) ??
-    null;
+    customer.earlyPaymentDiscountDays !== null &&
+    customer.earlyPaymentDiscountDays !== undefined
+      ? customer.earlyPaymentDiscountDays
+      : group?.earlyPaymentDiscountDays !== null &&
+          group?.earlyPaymentDiscountDays !== undefined
+        ? group.earlyPaymentDiscountDays
+        : null;
 
   if (customer.stateCode !== CUSTOMER_STATE.ACTIVE) {
     resolved.isSalesBlocked = true;

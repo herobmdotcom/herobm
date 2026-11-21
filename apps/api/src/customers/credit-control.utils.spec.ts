@@ -1,9 +1,9 @@
 import {
+  CustomerCreditProfile,
   resolveEffectiveCreditHold,
   resolveEffectiveCreditLimit,
-  resolveEffectiveTradingTermsId,
   resolveEffectiveEarlyPaymentDiscount,
-  CustomerCreditProfile,
+  resolveEffectiveTradingTermsId,
 } from './credit-control.utils';
 
 describe('credit-control.utils', () => {
@@ -75,6 +75,20 @@ describe('credit-control.utils', () => {
       expect(resolveEffectiveCreditLimit(p)).toBe('500');
     });
 
+    it('cascades to group limit when customer limit is empty string', () => {
+      const p: CustomerCreditProfile = {
+        creditLimit: '',
+        isOnCreditHold: false,
+        tradingTermsId: null,
+        customerGroup: {
+          creditLimit: '500',
+          isOnCreditHold: false,
+          tradingTermsId: null,
+        },
+      };
+      expect(resolveEffectiveCreditLimit(p)).toBe('500');
+    });
+
     it('falls back to 0 if both are null', () => {
       const p: CustomerCreditProfile = {
         creditLimit: null,
@@ -126,6 +140,35 @@ describe('credit-control.utils', () => {
         },
       };
       expect(resolveEffectiveTradingTermsId(p)).toBe('term_2');
+    });
+
+    it('cascades to group term when customer term is empty string', () => {
+      const p: CustomerCreditProfile = {
+        creditLimit: null,
+        isOnCreditHold: false,
+        tradingTermsId: '',
+        customerGroup: {
+          creditLimit: null,
+          isOnCreditHold: false,
+          tradingTermsId: 'term_2',
+        },
+      };
+      expect(resolveEffectiveTradingTermsId(p)).toBe('term_2');
+    });
+
+    it('cascades to system default when customer and group terms are empty strings', () => {
+      const p: CustomerCreditProfile = {
+        creditLimit: null,
+        isOnCreditHold: false,
+        tradingTermsId: '',
+        customerGroup: {
+          creditLimit: null,
+          isOnCreditHold: false,
+          tradingTermsId: '',
+        },
+        systemDefaultCustomerTermsId: 'term_system',
+      };
+      expect(resolveEffectiveTradingTermsId(p)).toBe('term_system');
     });
 
     it('falls back to system default if customer and group terms are missing', () => {
@@ -198,6 +241,20 @@ describe('credit-control.utils', () => {
     it('cascades to group early payment discount when customer discount is null', () => {
       const p = {
         earlyPaymentDiscount: null,
+        earlyPaymentDiscountDays: null,
+        customerGroup: {
+          earlyPaymentDiscount: '1.00',
+          earlyPaymentDiscountDays: 5,
+        },
+      };
+      const result = resolveEffectiveEarlyPaymentDiscount(p);
+      expect(result.earlyPaymentDiscount).toBe('1.00');
+      expect(result.earlyPaymentDiscountDays).toBe(5);
+    });
+
+    it('cascades to group early payment discount when customer discount is empty string', () => {
+      const p = {
+        earlyPaymentDiscount: '',
         earlyPaymentDiscountDays: null,
         customerGroup: {
           earlyPaymentDiscount: '1.00',

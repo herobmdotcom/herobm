@@ -1,9 +1,9 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { MacrosService } from './macros.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { NotFoundException } from '@nestjs/common';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { macros } from '@herobm/db-schema';
+import { NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { MacrosService } from './macros.service';
 
 describe('MacrosService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

@@ -1,63 +1,62 @@
-import Decimal from 'decimal.js';
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-  Logger,
-  forwardRef,
-} from '@nestjs/common';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  purchaseOrders,
-  purchaseOrderLineItems,
   suppliers as coreSuppliers,
-  products,
+  organizations,
   productSuppliers,
   productUoms,
-  locations,
-  taxCategories,
-  organizations,
-  supplierExpiries,
+  products,
+  purchaseOrderLineItems,
+  purchaseOrders,
 } from '@herobm/db-schema';
-import { eq, sql, and, inArray } from 'drizzle-orm';
 import {
+  LineType,
+  PRODUCT_STATE,
   PURCHASE_ORDER_STATE,
   type PurchaseOrderState,
   computeLinePriceForStorage,
-  ORGANIZATION_STATE,
-  PRODUCT_STATE,
-  BACKORDER_STATE,
-  normalizeUomCode,
-  LineType,
   getErrorMessage,
+  normalizeUomCode,
 } from '@herobm/shared';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  forwardRef,
+} from '@nestjs/common';
+import { and, asc, eq, gte, inArray, lt, sql } from 'drizzle-orm';
+import { AuditMode, calculateAuditTrail } from '../common/audit';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { getExchangeRateForCurrency } from '../common/fx-helper';
-import { calculateAuditTrail, AuditMode } from '../common/audit';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 
+import { BackordersService } from '../orders/backorders.service';
+import { AppConfigService } from '../settings/app-config.service';
 import { SuppliersService } from '../suppliers/suppliers.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
-import { AppConfigService } from '../settings/app-config.service';
 import { TaxResolutionEngine } from '../tax/tax-resolution.engine';
-import { PurchaseOrdersQueryService } from './purchase-orders-query.service';
-import { BackordersService } from '../orders/backorders.service';
-import { resolvePurchaseTaxForLine } from './purchase-orders-tax.utils';
 import {
   CreatePurchaseOrderDto,
-  UpdatePurchaseOrderDto,
   CreatePurchaseOrderLineDto,
+  UpdatePurchaseOrderDto,
   UpdatePurchaseOrderLineDto,
 } from './dto';
 import {
-  resolveSupplierLinePricingAndMoq,
-  calculateUpdatedLinePricing,
-  calculateNextPoReceiptState,
   buildRequisitionLineRecords,
-  buildCreatePoLineRecord,
+  calculateNextPoReceiptState,
+  calculateUpdatedLinePricing,
+  resolveSupplierLinePricingAndMoq,
 } from './purchase-orders-helpers.utils';
+import { PurchaseOrdersQueryService } from './purchase-orders-query.service';
+import { resolvePurchaseTaxForLine } from './purchase-orders-tax.utils';
+import {
+  buildUpdatePoLineRecords,
+  buildValidatedCreatePoLineRecords,
+  computeReorderedPoLineIds,
+  validatePoCreatePreconditions,
+} from './purchase-orders-validation.utils';
 
 @Injectable()
 export class PurchaseOrdersWriteService {
@@ -98,57 +97,11 @@ export class PurchaseOrdersWriteService {
     userId: string,
   ) {
     return await this.db.transaction(async (tx) => {
-      if (!createDto.deliveryLocationId) {
-        throw new BadRequestException(
-          'Delivery location is mandatory for all purchase orders.',
-        );
-      }
-
-      const [loc] = await tx
-        .select()
-        .from(locations)
-        .where(eq(locations.locationId, createDto.deliveryLocationId))
-        .limit(1);
-
-      if (!loc) {
-        throw new BadRequestException('Invalid delivery location ID.');
-      }
-
-      const [supplier] = await tx
-        .select({ stateCode: organizations.stateCode })
-        .from(coreSuppliers)
-        .leftJoin(
-          organizations,
-          eq(coreSuppliers.organizationId, organizations.organizationId),
-        )
-        .where(eq(coreSuppliers.vendorId, createDto.vendorId))
-        .limit(1);
-
-      if (!supplier) {
-        throw new BadRequestException('Supplier not found.');
-      }
-      if (supplier.stateCode !== ORGANIZATION_STATE.ACTIVE) {
-        throw new BadRequestException(
-          'Cannot create purchase order for an inactive supplier.',
-        );
-      }
-
-      const expiredDocs = await tx
-        .select({ id: supplierExpiries.expiryId })
-        .from(supplierExpiries)
-        .where(
-          and(
-            eq(supplierExpiries.vendorId, createDto.vendorId),
-            sql`${supplierExpiries.expiryDate} < CURRENT_DATE`,
-          ),
-        )
-        .limit(1);
-
-      if (expiredDocs.length > 0) {
-        throw new BadRequestException(
-          'Supplier has expired compliance documentation. Cannot create purchase order.',
-        );
-      }
+      await validatePoCreatePreconditions(
+        tx,
+        createDto.deliveryLocationId,
+        createDto.vendorId,
+      );
 
       const poCurrencyCode =
         createDto.currencyCode || this.appConfig.homeCurrency();
@@ -188,81 +141,13 @@ export class PurchaseOrdersWriteService {
       }
 
       if (createDto.lines && createDto.lines.length > 0) {
-        const productIdsToValidate: string[] = [];
-        for (const l of createDto.lines) {
-          if (
-            l.lineType !== LineType.COMMENT &&
-            l.productId &&
-            l.productId !== '00000000-0000-4000-8000-000000000000' &&
-            !productIdsToValidate.includes(l.productId)
-          ) {
-            productIdsToValidate.push(l.productId);
-          }
-        }
-
-        const productRows =
-          productIdsToValidate.length > 0
-            ? await tx
-                .select({
-                  productId: products.productId,
-                  stateCode: products.stateCode,
-                })
-                .from(products)
-                .where(inArray(products.productId, productIdsToValidate))
-            : [];
-
-        const productMap = new Map(productRows.map((p) => [p.productId, p]));
-
-        const lineValues: (typeof purchaseOrderLineItems.$inferInsert)[] = [];
-        let index = 0;
-        for (const line of createDto.lines) {
-          const isComment = line.lineType === LineType.COMMENT;
-          const isCustom =
-            line.productId === '00000000-0000-4000-8000-000000000000';
-          if (!isComment && !isCustom && line.productId) {
-            const product = productMap.get(line.productId);
-            if (!product) {
-              throw new BadRequestException(
-                `Product '${line.productId}' not found.`,
-              );
-            }
-            if (product.stateCode !== PRODUCT_STATE.ACTIVE) {
-              throw new BadRequestException(
-                `Cannot use product '${line.productId}' as it is not active.`,
-              );
-            }
-          }
-
-          let taxCategoryId: string | null = null;
-          let rate = 0;
-          if (!isComment) {
-            const resolved = await this.resolveTaxForLine(
-              tx,
-              createDto.vendorId,
-              line.productId,
-              line.taxCategoryId,
-            );
-            taxCategoryId = resolved.taxCategoryId;
-            rate = resolved.rate;
-            const disc = parseFloat(line.discountPercentage || '0');
-            if (isNaN(disc) || disc < 0 || disc > 100) {
-              throw new BadRequestException(
-                `Line ${index + 1}: Discount percentage must be between 0 and 100`,
-              );
-            }
-          }
-
-          lineValues.push(
-            buildCreatePoLineRecord(
-              order.purchaseOrderId,
-              index,
-              line,
-              rate,
-              taxCategoryId,
-            ),
-          );
-          index++;
-        }
+        const lineValues = await buildValidatedCreatePoLineRecords(
+          tx,
+          order.purchaseOrderId,
+          createDto.vendorId,
+          createDto.lines,
+          this.resolveTaxForLine.bind(this),
+        );
 
         await tx.insert(purchaseOrderLineItems).values(lineValues);
       }
@@ -426,9 +311,42 @@ export class PurchaseOrdersWriteService {
               'EA',
           );
 
+      let targetLineNumber = maxLine + 1;
+      const requestedLine = lineDto.insertAtLineNumber;
+      if (
+        requestedLine !== undefined &&
+        requestedLine >= 1 &&
+        requestedLine <= maxLine
+      ) {
+        // Two-step negative shift to avoid unique_po_line_number collisions during UPDATE
+        await tx
+          .update(purchaseOrderLineItems)
+          .set({
+            lineNumber: sql`-(${purchaseOrderLineItems.lineNumber} + 1)`,
+          })
+          .where(
+            and(
+              eq(purchaseOrderLineItems.purchaseOrderId, orderId),
+              gte(purchaseOrderLineItems.lineNumber, requestedLine),
+            ),
+          );
+        await tx
+          .update(purchaseOrderLineItems)
+          .set({
+            lineNumber: sql`-${purchaseOrderLineItems.lineNumber}`,
+          })
+          .where(
+            and(
+              eq(purchaseOrderLineItems.purchaseOrderId, orderId),
+              lt(purchaseOrderLineItems.lineNumber, 0),
+            ),
+          );
+        targetLineNumber = requestedLine;
+      }
+
       await tx.insert(purchaseOrderLineItems).values({
         purchaseOrderId: orderId,
-        lineNumber: maxLine + 1,
+        lineNumber: targetLineNumber,
         lineType: isComment ? LineType.COMMENT : LineType.PRODUCT,
         productId: isComment ? null : lineDto.productId,
         productDescription: lineDto.productDescription,
@@ -586,6 +504,70 @@ export class PurchaseOrdersWriteService {
     });
   }
 
+  async reorderLines(
+    orderId: string,
+    lineIds: string[],
+    actor: string = 'system',
+  ) {
+    return await this.db.transaction(async (tx) => {
+      const existing = await this.queryService.findOne(orderId, tx);
+      if (existing.stateCode !== PURCHASE_ORDER_STATE.DRAFT) {
+        throw new BadRequestException(
+          'Can only reorder lines on draft purchase orders',
+        );
+      }
+
+      const existingLines = await tx
+        .select({
+          purchaseOrderLineId: purchaseOrderLineItems.purchaseOrderLineId,
+          lineNumber: purchaseOrderLineItems.lineNumber,
+        })
+        .from(purchaseOrderLineItems)
+        .where(eq(purchaseOrderLineItems.purchaseOrderId, orderId))
+        .orderBy(asc(purchaseOrderLineItems.lineNumber));
+
+      if (existingLines.length <= 1) {
+        return existing;
+      }
+
+      const orderedIds = computeReorderedPoLineIds(existingLines, lineIds);
+
+      // Two-step negative shift to avoid unique_po_line_number collisions
+      await tx
+        .update(purchaseOrderLineItems)
+        .set({ lineNumber: sql`-${purchaseOrderLineItems.lineNumber}` })
+        .where(eq(purchaseOrderLineItems.purchaseOrderId, orderId));
+
+      for (let i = 0; i < orderedIds.length; i++) {
+        await tx
+          .update(purchaseOrderLineItems)
+          .set({ lineNumber: i + 1 })
+          .where(
+            and(
+              eq(purchaseOrderLineItems.purchaseOrderId, orderId),
+              eq(purchaseOrderLineItems.purchaseOrderLineId, orderedIds[i]),
+            ),
+          );
+      }
+
+      await tx
+        .update(purchaseOrders)
+        .set({ modifiedOn: new Date() })
+        .where(eq(purchaseOrders.purchaseOrderId, orderId));
+
+      await emitEvent(tx, {
+        entityType: EntityType.PURCHASE_ORDER,
+        entityId: orderId,
+        eventType: EventType.UPDATED,
+        entityDisplayName: existing.orderNumber,
+        payload: { reorderedLineIds: orderedIds },
+        actor,
+      });
+
+      return this.queryService.findOne(orderId, tx);
+    });
+  }
+
   async update(
     id: string,
     updateDto: UpdatePurchaseOrderDto & {
@@ -650,39 +632,13 @@ export class PurchaseOrdersWriteService {
           .where(eq(purchaseOrderLineItems.purchaseOrderId, id));
 
         if (updateDto.lines.length > 0) {
-          const lineValues: (typeof purchaseOrderLineItems.$inferInsert)[] = [];
-          let index = 0;
-          for (const line of updateDto.lines) {
-            const qty = new Decimal(line.quantity || '0').toNumber();
-            const price = new Decimal(line.pricePerUnit || '0').toNumber();
-            const disc = new Decimal(line.discountPercentage || '0').toNumber();
-            const { taxCategoryId, rate } = await this.resolveTaxForLine(
-              tx,
-              existing.vendorId || '',
-              line.productId,
-              line.taxCategoryId,
-            );
-            const pricing = computeLinePriceForStorage({
-              quantity: qty,
-              pricePerUnit: price,
-              discountPercentage: disc,
-              taxRate: rate,
-            });
-            lineValues.push({
-              purchaseOrderId: id,
-              lineNumber: index + 1,
-              productId: line.productId,
-              productDescription: line.productDescription,
-              quantity: String(line.quantity || '0'),
-              pricePerUnit: String(line.pricePerUnit || '0'),
-              unitOfMeasure: line.unitOfMeasure || 'EA',
-              amount: pricing.amount,
-              tax: pricing.tax,
-              totalAmount: pricing.totalAmount,
-              taxCategoryId,
-            });
-            index++;
-          }
+          const lineValues = await buildUpdatePoLineRecords(
+            tx,
+            id,
+            existing.vendorId || '',
+            updateDto.lines,
+            this.resolveTaxForLine.bind(this),
+          );
           await tx.insert(purchaseOrderLineItems).values(lineValues);
         }
 
@@ -708,6 +664,62 @@ export class PurchaseOrdersWriteService {
   }
 
   /**
+   * Apply increment/decrement receipt quantity deltas to purchase order lines.
+   * @herobm-skip-audit - Internal helper called by recordReceiptQuantities / revertReceiptQuantities within goods receipt/return transactions; state changes emit EventType.STATUS_CHANGED via syncReceiptState
+   */
+  private async applyReceiptQuantityDeltas(
+    tx: DrizzleDB,
+    entries: { purchaseOrderLineId: string; quantity: number }[],
+    mode: 'increment' | 'decrement',
+  ): Promise<Set<string>> {
+    const validEntries = entries?.filter((r) => r && r.quantity > 0) || [];
+    if (validEntries.length === 0) return new Set();
+
+    const lineIds = validEntries.map((r) => r.purchaseOrderLineId);
+    const poLines = await tx
+      .select({
+        purchaseOrderLineId: purchaseOrderLineItems.purchaseOrderLineId,
+        purchaseOrderId: purchaseOrderLineItems.purchaseOrderId,
+      })
+      .from(purchaseOrderLineItems)
+      .where(inArray(purchaseOrderLineItems.purchaseOrderLineId, lineIds));
+
+    const lineMap = new Map(poLines.map((l) => [l.purchaseOrderLineId, l]));
+    const touchedPoIds = new Set<string>();
+
+    for (const entry of validEntries) {
+      const poLine = lineMap.get(entry.purchaseOrderLineId);
+      if (!poLine) {
+        if (mode === 'increment') {
+          throw new NotFoundException(
+            `Purchase Order Line ${entry.purchaseOrderLineId} not found`,
+          );
+        }
+        continue;
+      }
+
+      await tx
+        .update(purchaseOrderLineItems)
+        .set({
+          quantityReceived:
+            mode === 'increment'
+              ? sql`CAST(COALESCE(quantity_received, '0') AS NUMERIC) + CAST(${entry.quantity} AS NUMERIC)`
+              : sql`GREATEST(0, CAST(COALESCE(quantity_received, '0') AS NUMERIC) - CAST(${entry.quantity} AS NUMERIC))`,
+        })
+        .where(
+          eq(
+            purchaseOrderLineItems.purchaseOrderLineId,
+            entry.purchaseOrderLineId,
+          ),
+        );
+
+      touchedPoIds.add(poLine.purchaseOrderId);
+    }
+
+    return touchedPoIds;
+  }
+
+  /**
    * Record received quantities on purchase order lines and synchronize PO lifecycle state.
    * @herobm-skip-audit - Line receipt updates delegated within goods received transaction; state change emits EventType.STATUS_CHANGED
    */
@@ -716,46 +728,11 @@ export class PurchaseOrdersWriteService {
     receipts: { purchaseOrderLineId: string; quantity: number }[],
     actor: string = 'system',
   ) {
-    const validReceipts = receipts?.filter((r) => r && r.quantity > 0) || [];
-    if (validReceipts.length === 0) return;
-
-    const lineIds = validReceipts.map((r) => r.purchaseOrderLineId);
-    const poLines = await tx
-      .select({
-        purchaseOrderLineId: purchaseOrderLineItems.purchaseOrderLineId,
-        purchaseOrderId: purchaseOrderLineItems.purchaseOrderId,
-        quantity: purchaseOrderLineItems.quantity,
-        quantityReceived: purchaseOrderLineItems.quantityReceived,
-      })
-      .from(purchaseOrderLineItems)
-      .where(inArray(purchaseOrderLineItems.purchaseOrderLineId, lineIds));
-
-    const lineMap = new Map(poLines.map((l) => [l.purchaseOrderLineId, l]));
-
-    const touchedPoIds = new Set<string>();
-
-    for (const receipt of validReceipts) {
-      const poLine = lineMap.get(receipt.purchaseOrderLineId);
-      if (!poLine) {
-        throw new NotFoundException(
-          `Purchase Order Line ${receipt.purchaseOrderLineId} not found`,
-        );
-      }
-
-      await tx
-        .update(purchaseOrderLineItems)
-        .set({
-          quantityReceived: sql`CAST(COALESCE(quantity_received, '0') AS NUMERIC) + CAST(${receipt.quantity} AS NUMERIC)`,
-        })
-        .where(
-          eq(
-            purchaseOrderLineItems.purchaseOrderLineId,
-            receipt.purchaseOrderLineId,
-          ),
-        );
-
-      touchedPoIds.add(poLine.purchaseOrderId);
-    }
+    const touchedPoIds = await this.applyReceiptQuantityDeltas(
+      tx,
+      receipts,
+      'increment',
+    );
 
     for (const poId of touchedPoIds) {
       await this.syncReceiptState(tx, poId, actor, 'goods_receipt', false);
@@ -856,40 +833,11 @@ export class PurchaseOrdersWriteService {
     reversals: { purchaseOrderLineId: string; quantity: number }[],
     actor: string = 'system',
   ) {
-    const validReversals = reversals?.filter((r) => r && r.quantity > 0) || [];
-    if (validReversals.length === 0) return;
-
-    const lineIds = validReversals.map((r) => r.purchaseOrderLineId);
-    const poLines = await tx
-      .select({
-        purchaseOrderLineId: purchaseOrderLineItems.purchaseOrderLineId,
-        purchaseOrderId: purchaseOrderLineItems.purchaseOrderId,
-      })
-      .from(purchaseOrderLineItems)
-      .where(inArray(purchaseOrderLineItems.purchaseOrderLineId, lineIds));
-
-    const lineMap = new Map(poLines.map((l) => [l.purchaseOrderLineId, l]));
-
-    const touchedPoIds = new Set<string>();
-
-    for (const reversal of validReversals) {
-      const poLine = lineMap.get(reversal.purchaseOrderLineId);
-      if (!poLine) continue;
-
-      await tx
-        .update(purchaseOrderLineItems)
-        .set({
-          quantityReceived: sql`GREATEST(0, CAST(COALESCE(quantity_received, '0') AS NUMERIC) - CAST(${reversal.quantity} AS NUMERIC))`,
-        })
-        .where(
-          eq(
-            purchaseOrderLineItems.purchaseOrderLineId,
-            reversal.purchaseOrderLineId,
-          ),
-        );
-
-      touchedPoIds.add(poLine.purchaseOrderId);
-    }
+    const touchedPoIds = await this.applyReceiptQuantityDeltas(
+      tx,
+      reversals,
+      'decrement',
+    );
 
     for (const poId of touchedPoIds) {
       await this.syncReceiptState(tx, poId, actor, 'receipt_reversal', true);

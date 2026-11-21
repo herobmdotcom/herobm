@@ -1,14 +1,14 @@
-import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  IsArray,
-  ValidateNested,
-  IsNumberString,
-  IsBoolean,
-} from 'class-validator';
-import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform, Type } from 'class-transformer';
+import {
+  IsArray,
+  IsBoolean,
+  IsNotEmpty,
+  IsNumberString,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 import { PaginationQuery } from '../../common/pagination';
 
 export class TransferPaginationQuery extends PaginationQuery {

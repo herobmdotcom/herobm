@@ -1,35 +1,36 @@
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
-import { eq, sql } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
   suppliers as coreSuppliers,
   masterDataEvents,
-  supplierExpiries,
   organizations,
+  supplierExpiries,
 } from '@herobm/db-schema';
+import {
+  ORGANIZATION_STATE,
+  SUPPLIER_STATE,
+  SUPPLIER_TRANSITIONS,
+  SupplierState,
+} from '@herobm/shared';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { eq, inArray, sql } from 'drizzle-orm';
+import { AuditMode, calculateAuditTrail } from '../common/audit';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { AppConfigService } from '../settings/app-config.service';
 import {
-  SUPPLIER_TRANSITIONS,
-  SUPPLIER_STATE,
-  SupplierState,
-  ORGANIZATION_STATE,
-} from '@herobm/shared';
-import { calculateAuditTrail, AuditMode } from '../common/audit';
-import {
+  BulkUpdateSuppliersDto,
   CreateSupplierDto,
-  UpdateSupplierDto,
   CreateSupplierExpiryDto,
+  UpdateSupplierDto,
   UpdateSupplierExpiryDto,
 } from './dto';
-import { AppConfigService } from '../settings/app-config.service';
 
 @Injectable()
 export class SuppliersWriteService {
@@ -574,5 +575,142 @@ export class SuppliersWriteService {
       actor,
     });
     return { status: 'deleted' };
+  }
+
+  /**
+   * Bulk update curated fields across multiple suppliers.
+   * Runs in a single transaction with chunked execution and comprehensive audit events.
+   */
+  async bulkUpdate(
+    dto: BulkUpdateSuppliersDto,
+    actor: string,
+  ): Promise<{ updatedCount: number; skippedCount: number }> {
+    const uniqueIds = Array.from(new Set(dto.ids));
+    if (uniqueIds.length === 0) {
+      return { updatedCount: 0, skippedCount: 0 };
+    }
+
+    const targetChanges: Record<string, unknown> = {};
+    if (dto.supplierGroupId !== undefined)
+      targetChanges.supplierGroupId = dto.supplierGroupId;
+    if (dto.tradingTermsId !== undefined)
+      targetChanges.tradingTermsId = dto.tradingTermsId;
+    if (dto.taxPositionId !== undefined)
+      targetChanges.taxPositionId = dto.taxPositionId;
+    if (dto.currencyCode !== undefined)
+      targetChanges.currencyCode = dto.currencyCode;
+    if (dto.isPurchasingBlocked !== undefined)
+      targetChanges.isPurchasingBlocked = dto.isPurchasingBlocked;
+    if (dto.isPaymentBlocked !== undefined)
+      targetChanges.isPaymentBlocked = dto.isPaymentBlocked;
+    if (dto.stateCode !== undefined) targetChanges.stateCode = dto.stateCode;
+
+    if (Object.keys(targetChanges).length === 0) {
+      return { updatedCount: 0, skippedCount: uniqueIds.length };
+    }
+
+    return await this.db.transaction(async (tx: DrizzleDB) => {
+      let updatedCount = 0;
+      let skippedCount = 0;
+      const CHUNK_SIZE = 500;
+
+      for (let i = 0; i < uniqueIds.length; i += CHUNK_SIZE) {
+        const chunk = uniqueIds.slice(i, i + CHUNK_SIZE);
+        // n-plus-one-ignore: Batch chunked by CHUNK_SIZE
+        const existingRows = await tx // n-plus-one-ignore
+          .select({
+            supplier: coreSuppliers,
+            organizationName: organizations.name,
+          })
+          .from(coreSuppliers)
+          .leftJoin(
+            organizations,
+            eq(coreSuppliers.organizationId, organizations.organizationId),
+          )
+          .where(inArray(coreSuppliers.vendorId, chunk));
+
+        const foundMap = new Map(
+          existingRows.map((r) => [r.supplier.vendorId, r]),
+        );
+
+        for (const id of chunk) {
+          if (!foundMap.has(id)) {
+            throw new NotFoundException(`Supplier with id '${id}' not found`);
+          }
+        }
+
+        for (const item of existingRows) {
+          const supplier = item.supplier;
+          const orgName = item.organizationName;
+
+          if (
+            dto.stateCode !== undefined &&
+            dto.stateCode !== supplier.stateCode
+          ) {
+            const allowed = SUPPLIER_TRANSITIONS[supplier.stateCode] || [];
+            if (!allowed.includes(dto.stateCode)) {
+              throw new BadRequestException(
+                `Cannot transition supplier '${supplier.vendorNumber}' from '${supplier.stateCode}' to '${dto.stateCode}'. Allowed transitions: ${allowed.join(', ')}`,
+              );
+            }
+          }
+
+          const audit = calculateAuditTrail(
+            targetChanges,
+            supplier,
+            AuditMode.DIFF,
+          );
+
+          if (!audit.hasChanges) {
+            skippedCount++;
+            continue;
+          }
+
+          updatedCount++;
+          await tx
+            .update(coreSuppliers)
+            .set({
+              ...audit.changes,
+              modifiedOn: new Date(),
+            })
+            .where(eq(coreSuppliers.vendorId, supplier.vendorId));
+
+          const changedKeys = Object.keys(audit.changes);
+          const isStatusOnly =
+            changedKeys.length === 1 && changedKeys[0] === 'stateCode';
+
+          if (isStatusOnly) {
+            await emitEvent(tx, {
+              entityType: EntityType.SUPPLIER,
+              entityId: supplier.vendorId,
+              eventType: EventType.STATUS_CHANGED,
+              entityDisplayName: orgName || supplier.vendorNumber,
+              payload: {
+                from: audit.previousValues.stateCode,
+                to: audit.changes.stateCode,
+              },
+              actor,
+            });
+          } else {
+            await emitEvent(tx, {
+              entityType: EntityType.SUPPLIER,
+              entityId: supplier.vendorId,
+              eventType: EventType.UPDATED,
+              entityDisplayName: orgName || supplier.vendorNumber,
+              payload: {
+                changes: audit.changes,
+                previousValues: audit.previousValues,
+              },
+              actor,
+            });
+          }
+        }
+      }
+
+      this.logger.log(
+        `Bulk updated ${updatedCount} suppliers (${skippedCount} skipped) by ${actor}`,
+      );
+      return { updatedCount, skippedCount };
+    });
   }
 }

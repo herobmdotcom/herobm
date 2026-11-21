@@ -1,42 +1,42 @@
 import { SystemResource } from '@herobm/shared';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiOkResponse,
-  ApiCreatedResponse,
-  ApiBody,
-} from '@nestjs/swagger';
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Param,
   Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
 } from '@nestjs/common';
-import { ShipmentsCoreService } from './shipments/shipments-core.service';
-import { ShipmentsWriteService } from './shipments/shipments-write.service';
-import { ShipmentsStateService } from './shipments/shipments-state.service';
-import { TransfersStateService } from './transfers/transfers-state.service';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import {
-  CreateShipmentDto,
-  UpdateShipmentDto,
-  AddShipmentLineDto,
-  UpdateShipmentLineDto,
-  ShipmentResponseDto,
-  ChangeShipmentStateDto,
-  EmptyBodyDto,
-} from './dto';
-import { AuthUser } from '../auth/auth-user.decorator';
+  ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { JwtUser } from '../auth/auth-user.decorator';
+import { AuthUser } from '../auth/auth-user.decorator';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
+import {
+  AddShipmentLineDto,
+  ChangeShipmentStateDto,
+  CreateShipmentDto,
+  EmptyBodyDto,
+  ShipmentResponseDto,
+  UpdateShipmentDto,
+  UpdateShipmentLineDto,
+} from './dto';
+import { ShipmentsCoreService } from './shipments/shipments-core.service';
+import { ShipmentsStateService } from './shipments/shipments-state.service';
+import { ShipmentsWriteService } from './shipments/shipments-write.service';
+import { TransfersStateService } from './transfers/transfers-state.service';
 
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { transferOrders } from '@herobm/db-schema';
-import { eq } from 'drizzle-orm';
 import { Inject } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 
 @ApiTags('Warehouse')
 @Controller('sales-orders')

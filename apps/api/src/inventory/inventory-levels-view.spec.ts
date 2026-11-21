@@ -1,4 +1,4 @@
-import { calculateAvailableQuantity, BIN_TYPE } from '@herobm/shared';
+import { BIN_TYPE, calculateAvailableQuantity } from '@herobm/shared';
 import { isPickableBin } from './inventory-math.utils';
 
 describe('Inventory Levels & Allocation Integrity (ADV-INV-001 Immunization)', () => {

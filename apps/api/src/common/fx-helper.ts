@@ -1,6 +1,6 @@
-import { eq, and, lte, desc } from 'drizzle-orm';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { exchangeRates, glSettings } from '@herobm/db-schema';
+import { and, desc, eq, lte } from 'drizzle-orm';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
 
 export async function getExchangeRateForCurrency(
   db: DrizzleDB,

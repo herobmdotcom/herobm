@@ -1,44 +1,43 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { SalesInvoiceService } from './sales-invoice.service';
-import { GlService } from '../gl/gl.service';
-import { TaxCategoriesService } from '../tax/tax-categories.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { AppConfigService } from '../settings/app-config.service';
-import { EnrichmentService } from '../enrichment/enrichment.service';
-import { OrganizationService } from '../settings/organization.service';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
-  salesOrders,
-  salesOrderLineItems,
   customers,
-  taxCategories,
-  products,
+  glAccounts,
   locations,
   organizations,
-  glAccounts,
-  uomDictionary,
-  salesInvoices,
-  salesInvoiceLines,
+  products,
+  projectLedgerEntries,
   projects,
   projectTasks,
-  projectLedgerEntries,
+  salesInvoiceLines,
+  salesInvoices,
+  salesOrderLineItems,
+  salesOrders,
+  taxCategories,
+  uomDictionary,
 } from '@herobm/db-schema';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import { eq } from 'drizzle-orm';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { EnrichmentService } from '../enrichment/enrichment.service';
+import { GlService } from '../gl/gl.service';
+import { AppConfigService } from '../settings/app-config.service';
+import { OrganizationService } from '../settings/organization.service';
+import { TaxCategoriesService } from '../tax/tax-categories.service';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { SalesInvoiceService } from './sales-invoice.service';
 
 import {
-  SALES_ORDER_STATE,
-  SALES_INVOICE_STATE,
   CUSTOMER_STATE,
-  PRODUCT_STATE,
   ORGANIZATION_STATE,
-  PROJECT_STATE,
+  PRODUCT_STATE,
   PROJECT_BILLING_TYPE,
-  PROJECT_TASK_STATE,
   PROJECT_LEDGER_ENTRY_TYPE,
   PROJECT_LINE_TYPE,
   PROJECT_SOURCE_TYPE,
+  PROJECT_STATE,
+  PROJECT_TASK_STATE,
+  SALES_INVOICE_STATE,
+  SALES_ORDER_STATE,
 } from '@herobm/shared';
 
 jest.mock('../orders/order-lifecycle-rules', () => ({

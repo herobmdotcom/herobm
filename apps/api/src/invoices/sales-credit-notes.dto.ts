@@ -1,13 +1,13 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
-  IsUUID,
+  IsArray,
+  IsNumber,
   IsOptional,
   IsString,
-  IsArray,
+  IsUUID,
   ValidateNested,
-  IsNumber,
 } from 'class-validator';
-import { Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateSalesCreditNoteLineDto {
   @IsString()

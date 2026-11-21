@@ -579,12 +579,13 @@ export default function NewWorkOrderPage() {
                     </div>
                     <Button
                       variant="secondary"
-                      size="sm"
-                      className="whitespace-nowrap"
+                      size="icon"
+                      icon="playlist_add"
+                      iconClassName="text-[18px]"
                       onClick={addCustomLine}
-                    >
-                      {t('buttons.customLine')}
-                    </Button>
+                      title={t('buttons.customLine')}
+                      aria-label={t('buttons.customLine')}
+                    />
                   </>
                 ) : undefined
               }
@@ -596,7 +597,7 @@ export default function NewWorkOrderPage() {
               {/* Mobile view */}
               <div className="lg:hidden flex flex-col gap-3 w-full mt-4">
                 {lines.length === 0 ? (
-                  <div className="text-center text-slate-500 py-4 px-3 bg-slate-50 rounded-lg border border-slate-100 text-sm">
+                  <div className="text-center text-[var(--text-muted)] py-4 px-3 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)] text-sm">
                     {t('noLineItems')}
                   </div>
                 ) : (
@@ -611,7 +612,7 @@ export default function NewWorkOrderPage() {
                           <div className="font-semibold text-sm text-[var(--accent)]">
                             {line.productNumber}
                           </div>
-                          <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">
+                          <div className="text-xs text-[var(--text-muted)] bg-[var(--bg-secondary)] px-2 py-0.5 rounded font-medium">
                             #{idx + 1}
                           </div>
                         </div>
@@ -629,7 +630,7 @@ export default function NewWorkOrderPage() {
                             />
                           )}
                         </div>
-                        <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
+                        <div className="flex flex-col gap-0 border-t border-[var(--border)] pt-1">
                           <MobileCardField
                             label={t('columns.expectedQty')}
                             value={

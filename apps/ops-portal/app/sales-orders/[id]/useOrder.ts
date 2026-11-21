@@ -10,12 +10,15 @@ import {
     SALES_ORDER_TRANSITIONS as STATE_TRANSITIONS,
     SALES_ORDER_STATE,
     CUSTOM_LINE_ID,
-    LineType
+    LineType,
+    resolveProductUnitPrice,
+    resolveEffectiveDiscount,
+    type DiscountRule,
 } from '@herobm/shared';
 
 import type {
     OrderDetail, TaxCategory, InventoryLevel,
-    OrderReturn, SalesInvoice,
+    OrderReturn, SalesInvoice, OrderLinesActiveTab,
 } from './types';
 import type { Product } from '@/components/shared/ProductSearchInput';
 
@@ -82,6 +85,8 @@ export function useOrder(id: string) {
     const [editDispatchContactId, setEditDispatchContactId] = useState<string>('');
     const [customerCountry, setCustomerCountry] = useState<string | undefined>(undefined);
     const [customerName, setCustomerName] = useState<string>('');
+    const [customerPriceScale, setCustomerPriceScale] = useState<number | null>(null);
+    const [customerDiscountRules, setCustomerDiscountRules] = useState<DiscountRule[]>([]);
     const [editShippingNotes, setEditShippingNotes] = useState('');
     const [editDeliveryCompanyName, setEditDeliveryCompanyName] = useState('');
     const [editDeliveryName, setEditDeliveryName] = useState('');
@@ -97,7 +102,7 @@ export function useOrder(id: string) {
     const [taxCategories, setTaxCategories] = useState<TaxCategory[]>([]);
 
     /* ── Tab state for line items / availability / backorders ────── */
-    const [activeTab, setActiveTab] = useState<'lines' | 'availability' | 'backorders'>('lines');
+    const [activeTab, setActiveTab] = useState<OrderLinesActiveTab>('lines');
     const [inventoryData, setInventoryData] = useState<InventoryLevel[]>([]);
     const [inventoryLoading, setInventoryLoading] = useState(false);
 
@@ -161,12 +166,27 @@ export function useOrder(id: string) {
                         setCustomerContacts((customer.contacts as unknown as api.ContactResponseDto[]) || []);
                         setCustomerCountry(customer.billingAddressCountry || undefined);
                         setCustomerName(customer.name || '');
+                        const scale = (customer as unknown as { priceScale?: number | null }).priceScale ?? null;
+                        setCustomerPriceScale(scale);
+                        if (typeof api.discountMatrixControllerResolve === 'function') {
+                            api.discountMatrixControllerResolve({
+                                customerId: customer.customerId,
+                                customerGroupId: customer.customerGroupId || undefined,
+                            })
+                                .then((dmRes) => {
+                                    const rules = Array.isArray(dmRes.data) ? (dmRes.data as unknown as DiscountRule[]) : [];
+                                    setCustomerDiscountRules(rules);
+                                })
+                                .catch(() => setCustomerDiscountRules([]));
+                        }
                     })
                     .catch(() => {
                         setCustomerDeliveryAddresses([]);
                         setCustomerContacts([]);
                         setCustomerCountry(undefined);
                         setCustomerName('');
+                        setCustomerPriceScale(null);
+                        setCustomerDiscountRules([]);
                     });
             }
 
@@ -414,8 +434,11 @@ export function useOrder(id: string) {
         }
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    const addLineFromProduct = async (p: Record<string, any>) => {
+    const addLineFromProduct = async (
+        p: Pick<Product, 'productId' | 'productNumber' | 'name' | 'listPrice' | 'tradePrice' | 'priceLevel3' | 'priceLevel4' | 'productGroupId'>,
+        quantity: string = '1',
+        insertAtLineNumber?: number,
+    ) => {
         if (!order) return;
         const exists = order.lines.some((l) => l.productId === p.productId);
         if (exists) {
@@ -426,12 +449,22 @@ export function useOrder(id: string) {
         setSaving(true);
         try {
             const isPostConf = isOrderDetailsEditable && !isOrderLinesEditable;
+            const resolvedPrice = resolveProductUnitPrice(p, {
+                mode: 'sales',
+                priceScale: customerPriceScale,
+            });
+            const resolvedDiscount =
+                customerDiscountRules.length > 0
+                    ? resolveEffectiveDiscount(customerDiscountRules, p.productGroupId ?? null)
+                    : '0';
             const payload = {
                 productId: p.productId,
                 productDescription: p.name,
-                quantity: '1',
-                pricePerUnit: parseFloat(p.listPrice || p.tradePrice || '0').toFixed(2),
+                quantity: quantity || '1',
+                pricePerUnit: resolvedPrice.toFixed(2),
+                ...(parseFloat(resolvedDiscount) > 0 ? { discountPercentage: resolvedDiscount } : {}),
                 unitOfMeasure: 'EA',
+                ...(insertAtLineNumber ? { insertAtLineNumber } : {}),
             };
             if (isPostConf) {
                 await api.ordersControllerAddPostConfirmationLine(id, payload);
@@ -446,7 +479,7 @@ export function useOrder(id: string) {
         }
     };
 
-    const addBlankLine = async () => {
+    const addBlankLine = async (insertAtLineNumber?: number) => {
         setSaving(true);
         try {
             const isPostConf = isOrderDetailsEditable && !isOrderLinesEditable;
@@ -456,6 +489,7 @@ export function useOrder(id: string) {
                 quantity: '1',
                 pricePerUnit: '0.00',
                 unitOfMeasure: 'EA',
+                ...(insertAtLineNumber ? { insertAtLineNumber } : {}),
             };
             if (isPostConf) {
                 await api.ordersControllerAddPostConfirmationLine(id, payload);
@@ -489,7 +523,7 @@ export function useOrder(id: string) {
         }
     };
 
-    const addCommentLine = async () => {
+    const addCommentLine = async (insertAtLineNumber?: number) => {
         setSaving(true);
         try {
             const isPostConf = isOrderDetailsEditable && !isOrderLinesEditable;
@@ -499,6 +533,7 @@ export function useOrder(id: string) {
                 productDescription: '',
                 quantity: '0',
                 pricePerUnit: '0',
+                ...(insertAtLineNumber ? { insertAtLineNumber } : {}),
             };
             if (isPostConf) {
                 await api.ordersControllerAddPostConfirmationLine(id, payload);
@@ -508,6 +543,18 @@ export function useOrder(id: string) {
             await loadOrder(undefined, false);
         } catch (err) {
             setError(err instanceof Error ? err.message : tCommon('errors.failedToAddLine'));
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const reorderLines = async (lineIds: string[]) => {
+        setSaving(true);
+        try {
+            await api.ordersControllerReorderLines(id, { lineIds });
+            await loadOrder(undefined, false);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateLine'));
         } finally {
             setSaving(false);
         }
@@ -562,7 +609,7 @@ export function useOrder(id: string) {
 
         // Mutations
         saveHeader, changeState, calculateTaxes, archiveOrder, unarchiveOrder,
-        updateLine, updateLineFields, removeLine, addLineFromProduct, addBlankLine, addPostConfirmationBlankLine, addCommentLine,
+        updateLine, updateLineFields, removeLine, reorderLines, addLineFromProduct, addBlankLine, addPostConfirmationBlankLine, addCommentLine,
         loadOrder, loadReturns, loadInvoices,
         editFulfillmentLocationId, setEditFulfillmentLocationId,
         customerDeliveryAddresses,

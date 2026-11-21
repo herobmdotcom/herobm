@@ -1,41 +1,44 @@
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-  ForbiddenException,
-  Logger,
-} from '@nestjs/common';
-import { eq, sql, and } from 'drizzle-orm';
-import { CASBIN_ENFORCER } from '../auth/casbin.provider';
-import { Enforcer } from 'casbin';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  masterDataEvents,
   customers,
-  organizations,
+  masterDataEvents,
   organizationOrganizationLinks,
+  organizations,
 } from '@herobm/db-schema';
-import { emitEvent } from '../common/emit-event';
-import { EntityType, EventType } from '../common/event-types';
 import {
-  CUSTOMER_TRANSITIONS,
   CUSTOMER_STATE,
+  CUSTOMER_TRANSITIONS,
   CustomerState,
   ORGANIZATION_STATE,
-  getValidStates,
   SystemResource,
 } from '@herobm/shared';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { Enforcer } from 'casbin';
+import { and, eq, inArray, sql } from 'drizzle-orm';
+import { CASBIN_ENFORCER } from '../auth/casbin.provider';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 
-import { calculateAuditTrail, AuditMode } from '../common/audit';
-import { CreateCustomerDto, UpdateCustomerDto } from './dto';
+import { AuditMode, calculateAuditTrail } from '../common/audit';
+import {
+  BulkUpdateCustomersDto,
+  CreateCustomerDto,
+  UpdateCustomerDto,
+} from './dto';
 
 const isUuid = (id: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
-import { AppConfigService } from '../settings/app-config.service';
 import { buildUpdatePayload } from '../common/utils/drizzle-utils';
+import { AppConfigService } from '../settings/app-config.service';
 
 @Injectable()
 export class CustomersWriteService {
@@ -262,6 +265,20 @@ export class CustomersWriteService {
       if ('parentCustomerId' in coreChanges) {
         newParentCustomerId = coreChanges.parentCustomerId as string | null;
         delete coreChanges.parentCustomerId;
+      }
+
+      const nullableFields = [
+        'customerGroupId',
+        'taxPositionId',
+        'tradingTermsId',
+        'creditLimit',
+        'earlyPaymentDiscount',
+        'earlyPaymentDiscountDays',
+      ];
+      for (const field of nullableFields) {
+        if (field in coreChanges && coreChanges[field] === '') {
+          coreChanges[field] = null;
+        }
       }
 
       const orgKeys = [
@@ -572,5 +589,162 @@ export class CustomersWriteService {
     }
 
     return updated;
+  }
+
+  /**
+   * Bulk update curated fields across multiple customers.
+   * Runs in a single transaction with chunked execution and comprehensive audit events.
+   */
+  async bulkUpdate(
+    dto: BulkUpdateCustomersDto,
+    actor: string,
+    actorRole: string,
+  ): Promise<{ updatedCount: number; skippedCount: number }> {
+    const uniqueIds = Array.from(new Set(dto.ids));
+    if (uniqueIds.length === 0) {
+      return { updatedCount: 0, skippedCount: 0 };
+    }
+
+    const hasCreditFields =
+      dto.isOnCreditHold !== undefined ||
+      dto.tradingTermsId !== undefined ||
+      dto.creditLimit !== undefined;
+
+    if (hasCreditFields) {
+      const canManageCredit = await this.enforcer.enforce(
+        actorRole,
+        SystemResource.CREDIT_CONTROL,
+        'write',
+      );
+      if (!canManageCredit) {
+        throw new ForbiddenException(
+          'You do not have permission to modify credit control settings (credit limit, trading terms, or credit holds).',
+        );
+      }
+    }
+
+    const targetChanges: Record<string, unknown> = {};
+    if (dto.customerGroupId !== undefined)
+      targetChanges.customerGroupId = dto.customerGroupId;
+    if (dto.taxPositionId !== undefined)
+      targetChanges.taxPositionId = dto.taxPositionId;
+    if (dto.tradingTermsId !== undefined)
+      targetChanges.tradingTermsId = dto.tradingTermsId;
+    if (dto.priceTier !== undefined) targetChanges.priceTier = dto.priceTier;
+    if (dto.currencyCode !== undefined)
+      targetChanges.currencyCode = dto.currencyCode;
+    if (dto.isOnCreditHold !== undefined)
+      targetChanges.isOnCreditHold = dto.isOnCreditHold;
+    if (dto.creditLimit !== undefined)
+      targetChanges.creditLimit = dto.creditLimit;
+    if (dto.stateCode !== undefined) targetChanges.stateCode = dto.stateCode;
+
+    if (Object.keys(targetChanges).length === 0) {
+      return { updatedCount: 0, skippedCount: uniqueIds.length };
+    }
+
+    return await this.db.transaction(async (tx: DrizzleDB) => {
+      let updatedCount = 0;
+      let skippedCount = 0;
+      const CHUNK_SIZE = 500;
+
+      for (let i = 0; i < uniqueIds.length; i += CHUNK_SIZE) {
+        const chunk = uniqueIds.slice(i, i + CHUNK_SIZE);
+        // n-plus-one-ignore: Batch chunked by CHUNK_SIZE
+        const existingRows = await tx // n-plus-one-ignore
+          .select({
+            customer: customers,
+            organizationName: organizations.name,
+          })
+          .from(customers)
+          .leftJoin(
+            organizations,
+            eq(customers.organizationId, organizations.organizationId),
+          )
+          .where(inArray(customers.customerId, chunk));
+
+        const foundMap = new Map(
+          existingRows.map((r) => [r.customer.customerId, r]),
+        );
+
+        for (const id of chunk) {
+          if (!foundMap.has(id)) {
+            throw new NotFoundException(`Customer with id '${id}' not found`);
+          }
+        }
+
+        for (const item of existingRows) {
+          const customer = item.customer;
+          const orgName = item.organizationName;
+
+          if (
+            dto.stateCode !== undefined &&
+            dto.stateCode !== customer.stateCode
+          ) {
+            const allowed = CUSTOMER_TRANSITIONS[customer.stateCode] || [];
+            if (!allowed.includes(dto.stateCode)) {
+              throw new BadRequestException(
+                `Cannot transition customer '${customer.customerNumber}' from '${customer.stateCode}' to '${dto.stateCode}'. Allowed transitions: ${allowed.join(', ')}`,
+              );
+            }
+          }
+
+          const audit = calculateAuditTrail(
+            targetChanges,
+            customer,
+            AuditMode.DIFF,
+          );
+
+          if (!audit.hasChanges) {
+            skippedCount++;
+            continue;
+          }
+
+          updatedCount++;
+          await tx
+            .update(customers)
+            .set({
+              ...audit.changes,
+              modifiedOn: new Date(),
+            } as typeof customers.$inferInsert)
+            .where(eq(customers.customerId, customer.customerId));
+
+          const changedKeys = Object.keys(audit.changes);
+          const isStatusOnly =
+            changedKeys.length === 1 && changedKeys[0] === 'stateCode';
+
+          if (isStatusOnly) {
+            await emitEvent(tx, {
+              entityType: EntityType.CUSTOMER,
+              entityId: customer.customerId,
+              eventType: EventType.STATUS_CHANGED,
+              entityDisplayName: orgName || customer.customerNumber,
+              payload: {
+                from: audit.previousValues.stateCode,
+                to: audit.changes.stateCode,
+              },
+              actor,
+            });
+          } else {
+            await emitEvent(tx, {
+              entityType: EntityType.CUSTOMER,
+              entityId: customer.customerId,
+              eventType: EventType.UPDATED,
+              entityDisplayName: orgName || customer.customerNumber,
+              payload: {
+                changes: audit.changes,
+                previousValues: audit.previousValues,
+              },
+              actor,
+            });
+          }
+        }
+      }
+
+      this.logger.log(
+        `Bulk updated ${updatedCount} customers (${skippedCount} skipped) by ${actor}`,
+      );
+      return { updatedCount, skippedCount };
+    });
   }
 }

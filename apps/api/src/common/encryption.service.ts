@@ -1,6 +1,6 @@
+import { decrypt, deriveEncryptionKey, encrypt } from '@herobm/shared/node';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { encrypt, decrypt, deriveEncryptionKey } from '@herobm/shared/node';
 
 @Injectable()
 export class EncryptionService {

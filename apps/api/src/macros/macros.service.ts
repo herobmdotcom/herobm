@@ -1,12 +1,12 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import { eq } from 'drizzle-orm';
-import { DRIZZLE, DrizzleDB } from '../drizzle/drizzle.module';
 import * as schema from '@herobm/db-schema';
-import { CreateMacroDto } from './dto/create-macro.dto';
-import { UpdateMacroDto } from './dto/update-macro.dto';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
+import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { CreateMacroDto } from './dto/create-macro.dto';
+import { UpdateMacroDto } from './dto/update-macro.dto';
 
 @Injectable()
 export class MacrosService {

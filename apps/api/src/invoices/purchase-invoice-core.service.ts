@@ -1,51 +1,39 @@
-import { Decimal } from 'decimal.js';
 import {
-  Injectable,
-  Inject,
-  BadRequestException,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
-import {
-  eq,
-  sql,
-  desc,
-  and,
-  inArray,
-  gte,
-  or,
-  asc,
-  lt,
-  gt,
-  ilike,
-} from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  purchaseOrders,
-  purchaseInvoices,
-  purchaseInvoiceLines,
-  purchaseOrderLineItems,
-  suppliers,
   products as coreProducts,
   glJournalEntries,
   glJournalLines,
-  purchaseInvoiceReceipts,
+  organizations,
   paymentAllocations,
   paymentEntries,
-  organizations,
+  purchaseInvoiceLines,
+  purchaseInvoiceReceipts,
+  purchaseInvoices,
+  purchaseOrderLineItems,
+  purchaseOrders,
+  suppliers,
 } from '@herobm/db-schema';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { Decimal } from 'decimal.js';
+import { and, asc, desc, eq, gt, gte, ilike, lt, or, sql } from 'drizzle-orm';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { GlService } from '../gl/gl.service';
-import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { AppConfigService } from '../settings/app-config.service';
+import { TaxCategoriesService } from '../tax/tax-categories.service';
 
 import {
-  PURCHASE_INVOICE_STATE,
-  PURCHASE_INVOICE_TRANSITIONS,
   getValidStates,
   JOURNAL_ENTRY_SOURCE_TYPE,
+  PURCHASE_INVOICE_STATE,
+  PURCHASE_INVOICE_TRANSITIONS,
 } from '@herobm/shared';
 import { withCursorPagination } from '../common/pagination';
 

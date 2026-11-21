@@ -1,22 +1,22 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { LocationsService } from './locations.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
-  locations,
-  zones,
-  bins,
+  appSettings,
   binContents,
-  inventoryLedger,
+  bins,
   inventoryEntries,
+  inventoryLedger,
+  locations,
   productDefaultBins,
   products,
   uomDictionary,
-  appSettings,
+  zones,
 } from '@herobm/db-schema';
-import { eq } from 'drizzle-orm';
 import { PRODUCT_STATE } from '@herobm/shared';
+import { BadRequestException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { eq } from 'drizzle-orm';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { LocationsService } from './locations.service';
 
 describe('LocationsService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

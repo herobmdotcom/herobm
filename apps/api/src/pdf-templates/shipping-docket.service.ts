@@ -1,22 +1,22 @@
-import { Injectable, Inject, NotFoundException, Logger } from '@nestjs/common';
-import { eq, sql } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
-  salesOrders,
-  salesOrderShipments,
-  salesOrderShipmentLines,
-  salesOrderLineItems,
-  products as coreProducts,
   customers as coreAccounts,
-  organizations,
-  transferOrders,
-  transferOrderShipments,
-  transferOrderShipmentLines,
-  transferOrderLines,
+  products as coreProducts,
   locations,
+  organizations,
+  salesOrderLineItems,
+  salesOrders,
+  salesOrderShipmentLines,
+  salesOrderShipments,
+  transferOrderLines,
+  transferOrders,
+  transferOrderShipmentLines,
+  transferOrderShipments,
 } from '@herobm/db-schema';
 import { formatReportDate, formatReportDateTime } from '@herobm/shared';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { eq, sql } from 'drizzle-orm';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 
 export interface ShippingDocketData {
   header: {

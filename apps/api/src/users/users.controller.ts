@@ -1,34 +1,34 @@
 import { SystemResource } from '@herobm/shared';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiOkResponse,
-  ApiCreatedResponse,
-  ApiBody,
-} from '@nestjs/swagger';
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Param,
   Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
 } from '@nestjs/common';
-import { ApiPaginatedResponse } from '../common/pagination';
-import { UsersService } from './users.service';
-import { TwoFactorService } from '../auth/two-factor.service';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
-import { AuthUser } from '../auth/auth-user.decorator';
+import {
+  ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { JwtUser } from '../auth/auth-user.decorator';
+import { AuthUser } from '../auth/auth-user.decorator';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
+import { Reset2FaResponseDto } from '../auth/dto';
+import { TwoFactorService } from '../auth/two-factor.service';
+import { ApiPaginatedResponse } from '../common/pagination';
+import { TimelineEventDto } from '../dashboard/dto';
 import {
   CreateUserDto,
+  EmptyBodyDto,
   UpdateUserDto,
   UserResponseDto,
-  EmptyBodyDto,
 } from './dto';
-import { Reset2FaResponseDto } from '../auth/dto';
-import { TimelineEventDto } from '../dashboard/dto';
+import { UsersService } from './users.service';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 

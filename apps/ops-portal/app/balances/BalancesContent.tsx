@@ -19,18 +19,31 @@ export default function BalancesContent() {
   const tStates = useTranslations('common.states');
   const tAccounts = useTranslations('customers');
 
-  const { data: balances = [], isLoading } = useSWR(
+  const { data: response, isLoading } = useSWR(
     ['customers-aged-balances', agingBasis],
     async () => {
-      const response = await api.customersControllerGetAgedBalances({ agingBasis });
-      const rawData = response.data as unknown;
-      return (Array.isArray(rawData) ? rawData : (rawData as { data?: api.AgedBalanceResponseDto[] })?.data || []) as api.AgedBalanceResponseDto[];
+      const res = await api.customersControllerGetAgedBalances({
+        agingBasis,
+        limit: 1000,
+      });
+      return res.data;
     },
     {
       keepPreviousData: true,
       onError: (error) => reportError(error, 'BalancesContent_fetchBalances'),
     }
   );
+
+  const balances = useMemo(() => {
+    const rawData = response as unknown;
+    return (Array.isArray(rawData)
+      ? rawData
+      : (rawData as { data?: api.AgedBalanceResponseDto[] })?.data || []) as api.AgedBalanceResponseDto[];
+  }, [response]);
+
+  const serverTotals = useMemo(() => {
+    return (response as { totals?: api.AgedBalancesTotalsDto })?.totals;
+  }, [response]);
 
   const columns = useMemo<ColDef<api.AgedBalanceResponseDto>[]>(() => [
     { field: 'customerNumber', headerName: 'Account No.', width: 120 },
@@ -144,8 +157,11 @@ export default function BalancesContent() {
   }, [balances, quickFilter]);
 
   const totals = useMemo(() => {
+    if (quickFilter === 'all' && serverTotals) {
+      return serverTotals;
+    }
     return calculateAgedTotals(filteredBalances);
-  }, [filteredBalances]);
+  }, [filteredBalances, quickFilter, serverTotals]);
 
   const defaultCurrency = balances.length > 0 ? balances[0].currencyCode || 'USD' : 'USD';
 

@@ -7,21 +7,20 @@
  * Run with: npm run test:e2e
  * Requires: Postgres running with populated marts (make elt && make transform)
  */
-import { TestingModule } from '@nestjs/testing';
-import { createE2eModule } from './utils/e2e-module';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { AppModule } from '../src/app.module';
-import { DRIZZLE, DrizzleDB } from '../src/drizzle/drizzle.module';
-import { sql } from 'drizzle-orm';
 import {
-  salesOrders,
-  salesOrderLineItems,
-  taxCategories,
   binContents,
   products,
+  salesOrderLineItems,
+  salesOrders,
+  taxCategories,
 } from '@herobm/db-schema';
 import { SALES_ORDER_STATE } from '@herobm/shared';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { TestingModule } from '@nestjs/testing';
+import { sql } from 'drizzle-orm';
 import request from 'supertest';
+import { DRIZZLE, DrizzleDB } from '../src/drizzle/drizzle.module';
+import { createE2eModule } from './utils/e2e-module';
 
 describe('API E2E — Data Pipeline Verification', () => {
   let app: INestApplication;

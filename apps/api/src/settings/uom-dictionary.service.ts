@@ -1,19 +1,18 @@
+import { products, productUoms, uomDictionary } from '@herobm/db-schema';
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
   BadRequestException,
   ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
 } from '@nestjs/common';
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 import { eq, sql } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { uomDictionary, products, productUoms } from '@herobm/db-schema';
-import { CreateUomDto, UpdateUomDto } from './dto';
+import { AuditMode, calculateAuditTrail } from '../common/audit';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
-import { calculateAuditTrail, AuditMode } from '../common/audit';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { CreateUomDto, UpdateUomDto } from './dto';
 
 @Injectable()
 export class UomDictionaryService {

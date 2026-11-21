@@ -27,6 +27,7 @@
   "backToOrders": "← Back to Orders",
   "billSummary": "Bill Summary",
   "buttons": {
+    "addProduct": "New Product",
     "approveInvoice": "Approve Invoice",
     "change": "Change",
     "commentLine": "Add Comment",
@@ -315,6 +316,9 @@
   "subtitle": "Manage purchase orders",
   "supplierInvoice": {
     "addLine": "Add Line",
+    "addProduct": "New Product",
+    "adjustPrices": "Adjust Retail Prices",
+    "costIncreasedHint": "Unit cost is higher than standard cost — click to adjust retail prices",
     "fromPo": "From PO",
     "invoiceNumberLabel": "Supplier Invoice Number *",
     "noItems": "No items",

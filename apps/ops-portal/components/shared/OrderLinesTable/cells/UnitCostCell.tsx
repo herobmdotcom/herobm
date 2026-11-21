@@ -40,6 +40,10 @@ export function UnitCostCell({
           defaultValue={line.unitCost ? parseFloat(String(line.unitCost)).toFixed(2) : ''}
           key={`cost-${lineIdentifier}-${line.unitCost}`}
           placeholder="Auto"
+          onFocus={(e) => e.target.select()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.currentTarget.blur();
+          }}
           onBlur={(e) => {
             const val = e.target.value;
             if (!val) {
@@ -67,6 +71,7 @@ export function UnitCostCell({
         step="0.01"
         value={line.unitCost ?? ''}
         placeholder="Auto"
+        onFocus={(e) => e.target.select()}
         onChange={(e) => onUpdateLine?.(lineIdentifier, 'unitCost', e.target.value || null)}
       />
     );

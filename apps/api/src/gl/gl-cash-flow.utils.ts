@@ -7,10 +7,9 @@
  */
 
 import { Decimal } from 'decimal.js';
-import { DrizzleDB } from '../drizzle/drizzle.module';
 import { sql } from 'drizzle-orm';
+import { DrizzleDB } from '../drizzle/drizzle.module';
 import { roundCurrency } from './gl-financial-statements.utils';
-import { TAKE_ON_JOURNAL_SOURCE_TYPES } from '@herobm/shared';
 
 export interface CashFlowLineItem {
   id: string;

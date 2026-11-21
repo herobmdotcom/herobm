@@ -1,50 +1,50 @@
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
+  contacts,
+  crmSettings,
+  masterDataEvents,
+  organizationContactLinks,
+  organizationNotes,
+  organizationOrganizationLinks,
+  organizations,
+  users,
+} from '@herobm/db-schema';
+import { ORGANIZATION_STATE } from '@herobm/shared';
+import {
   BadRequestException,
+  Inject,
+  Injectable,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import {
-  eq,
-  ilike,
-  or,
-  sql,
   and,
   asc,
   desc,
+  eq,
   getTableColumns,
+  ilike,
+  or,
+  sql,
 } from 'drizzle-orm';
-import { parsePagination, withCursorPagination } from '../common/pagination';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  organizations,
-  organizationContactLinks,
-  organizationOrganizationLinks,
-  organizationNotes,
-  masterDataEvents,
-  contacts,
-  users,
-  crmSettings,
-} from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
-import { ORGANIZATION_STATE } from '@herobm/shared';
+import { parsePagination, withCursorPagination } from '../common/pagination';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import {
-  CreateOrganizationDto,
-  UpdateOrganizationDto,
-  OrganizationResponseDto,
-  UpdateOrganizationContactDto,
   CreateOrganizationContactDto,
-  CreateOrganizationNoteDto,
-  OrganizationNoteResponseDto,
+  CreateOrganizationDto,
   CreateOrganizationLinkDto,
-  OrganizationLinkResponseDto,
-  SuccessResponseDto,
-  OrganizationQueryDto,
+  CreateOrganizationNoteDto,
   CrmSettingsResponseDto,
+  OrganizationLinkResponseDto,
+  OrganizationNoteResponseDto,
+  OrganizationQueryDto,
+  OrganizationResponseDto,
+  SuccessResponseDto,
   UpdateCrmSettingsDto,
+  UpdateOrganizationContactDto,
+  UpdateOrganizationDto,
 } from './dto';
 
 @Injectable()
@@ -165,7 +165,7 @@ export class OrganizationsService {
   }
 
   async getOrganizations(query?: OrganizationQueryDto) {
-    const { page, limit, cursor, direction, searchTerm, includeArchived } =
+    const { limit, cursor, direction, searchTerm, includeArchived } =
       parsePagination(query);
 
     const rawSearchTerm = searchTerm ? searchTerm.replace(/^%+|%+$/g, '') : '';

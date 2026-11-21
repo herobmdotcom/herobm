@@ -1,26 +1,26 @@
 import { Module, forwardRef } from '@nestjs/common';
-import { SalesInvoiceService } from './sales-invoice.service';
-import { SalesInvoiceCreationService } from './sales-invoice-creation.service';
-import { SalesInvoiceProjectService } from './sales-invoice-project.service';
-import { SalesInvoiceQueryService } from './sales-invoice-query.service';
+import { EnrichmentModule } from '../enrichment/enrichment.module';
+import { GlModule } from '../gl/gl.module';
+import { OrdersModule } from '../orders/orders.module';
+import { TaxModule } from '../tax/tax.module';
+import { ExternalSyncController } from './external-sync.controller';
+import { GlobalNotesService } from './global-notes.service';
+import {
+  InvoiceDetailController,
+  PurchaseInvoiceController,
+  SalesInvoiceController,
+} from './invoices.controller';
 import { PurchaseInvoiceCoreService } from './purchase-invoice-core.service';
 import { PurchaseInvoiceDraftService } from './purchase-invoice-draft.service';
 import { PurchaseInvoicePostingService } from './purchase-invoice-posting.service';
 import { SalesCreditNoteService } from './sales-credit-note.service';
-import { GlobalNotesService } from './global-notes.service';
-import {
-  SalesInvoiceController,
-  PurchaseInvoiceController,
-  InvoiceDetailController,
-} from './invoices.controller';
-import { ExternalSyncController } from './external-sync.controller';
-import { OrdersModule } from '../orders/orders.module';
-import { GlModule } from '../gl/gl.module';
-import { TaxModule } from '../tax/tax.module';
-import { EnrichmentModule } from '../enrichment/enrichment.module';
+import { SalesInvoiceCreationService } from './sales-invoice-creation.service';
+import { SalesInvoiceProjectService } from './sales-invoice-project.service';
+import { SalesInvoiceQueryService } from './sales-invoice-query.service';
+import { SalesInvoiceService } from './sales-invoice.service';
 
-import { SalesCreditNotesController } from './sales-credit-notes.controller';
 import { GlobalNotesController } from './global-notes.controller';
+import { SalesCreditNotesController } from './sales-credit-notes.controller';
 
 @Module({
   imports: [

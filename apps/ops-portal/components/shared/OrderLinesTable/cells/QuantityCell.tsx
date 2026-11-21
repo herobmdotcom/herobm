@@ -131,6 +131,10 @@ export function QuantityCell({
               step="any"
               defaultValue={parseFloat(String(line.quantity || '0'))}
               key={`qty-${lineIdentifier}-${line.quantity}`}
+              onFocus={(e) => e.target.select()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') e.currentTarget.blur();
+              }}
               onBlur={(e) => {
                 if (e.target.value !== String(line.quantity)) {
                   onUpdateLine?.(lineIdentifier, 'quantity', e.target.value);
@@ -150,6 +154,7 @@ export function QuantityCell({
               min="0"
               step="any"
               value={line.quantity ?? ''}
+              onFocus={(e) => e.target.select()}
               onChange={(e) => onUpdateLine?.(lineIdentifier, 'quantity', e.target.value)}
             />
           )}

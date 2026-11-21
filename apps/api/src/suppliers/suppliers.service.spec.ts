@@ -1,16 +1,15 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { SuppliersService } from './suppliers.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { NotFoundException } from '@nestjs/common';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
-  suppliers,
   organizations,
   supplierGroups,
+  suppliers,
   taxPositions,
 } from '@herobm/db-schema';
-import { SUPPLIER_STATE, ORGANIZATION_STATE } from '@herobm/shared';
-import { eq } from 'drizzle-orm';
+import { ORGANIZATION_STATE, SUPPLIER_STATE } from '@herobm/shared';
+import { NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { SuppliersService } from './suppliers.service';
 
 describe('SuppliersService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

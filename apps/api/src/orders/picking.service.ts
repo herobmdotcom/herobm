@@ -1,10 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 
+import { PickingQueueQueryDto } from './dto';
+import { PickingActionService } from './picking-action.service';
 import { PickingQueryService } from './picking-query.service';
 import { PickingShippingQueryService } from './picking-shipping-query.service';
-import { PickingActionService } from './picking-action.service';
-import { PickingQueueQueryDto } from './dto';
 
 @Injectable()
 export class PickingService {

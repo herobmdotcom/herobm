@@ -1,4 +1,4 @@
-import { emitEvent, EmitEventParams } from './emit-event';
+import { emitEvent } from './emit-event';
 import { EntityType, EventType, OUTBOX_EVENT_TYPES } from './event-types';
 
 // ---------------------------------------------------------------------------
@@ -45,14 +45,12 @@ function createFailingTx(failOnTable?: unknown) {
 // ---------------------------------------------------------------------------
 
 import {
-  salesEvents,
-  procurementEvents,
-  masterDataEvents,
-  systemEvents,
-  warehouseEvents,
   financialEvents,
-  inventoryEvents,
+  masterDataEvents,
   outbox,
+  procurementEvents,
+  salesEvents,
+  warehouseEvents,
 } from '@herobm/db-schema';
 
 // ---------------------------------------------------------------------------

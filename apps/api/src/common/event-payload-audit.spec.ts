@@ -1,5 +1,5 @@
-import { Project, SyntaxKind, ObjectLiteralExpression } from 'ts-morph';
 import * as path from 'path';
+import { ObjectLiteralExpression, Project, SyntaxKind } from 'ts-morph';
 
 // Ids that MUST have a corresponding *Name field in the payload
 const INCLUDED_IDS = new Set([

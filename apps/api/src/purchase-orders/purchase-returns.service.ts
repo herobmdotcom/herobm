@@ -1,58 +1,50 @@
-import { Decimal } from 'decimal.js';
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
-import { eq, sql, and, desc, inArray } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  purchaseOrders,
   purchaseOrderLineItems,
-  purchaseOrderReturns,
   purchaseOrderReturnLines,
-  purchaseOrderReturnShipments,
+  purchaseOrderReturns,
   purchaseOrderReturnShipmentLines,
-  procurementEvents,
-  bins,
-  binContents,
-  zones,
-  products as coreProducts,
-  suppliers,
-  supplierGroups,
+  purchaseOrderReturnShipments,
+  purchaseOrders,
 } from '@herobm/db-schema';
-import { emitEvent } from '../common/emit-event';
-import { EntityType, EventType } from '../common/event-types';
-import { CreatePurchaseReturnDto, ShipPurchaseReturnDto } from './dto';
 import {
+  getValidStates,
+  PURCHASE_ORDER_STATE,
+  PURCHASE_RETURN_SHIPMENT_STATE,
   PURCHASE_RETURN_STATE,
   PURCHASE_RETURN_TRANSITIONS,
-  PURCHASE_RETURN_SHIPMENT_STATE,
-  PURCHASE_ORDER_STATE,
-  getValidStates,
-  PurchaseReturnState,
   PurchaseReturnShipmentState,
+  PurchaseReturnState,
   toDecimal,
 } from '@herobm/shared';
-import { AppConfigService } from '../settings/app-config.service';
-import { GlService } from '../gl/gl.service';
-import { getValuationStrategy } from '../inventory/valuation';
-import { getAccountingStrategy } from '../inventory/inventory-accounting';
-import { evaluatePOLifecycleRules } from './purchase-order-lifecycle-rules';
-import { InventoryMovementService } from '../inventory/inventory-movement.service';
-import { PurchaseOrdersWriteService } from './purchase-orders-write.service';
-import { forwardRef } from '@nestjs/common';
 import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { Decimal } from 'decimal.js';
+import { desc, eq, inArray } from 'drizzle-orm';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { GlService } from '../gl/gl.service';
+import { getAccountingStrategy } from '../inventory/inventory-accounting';
+import { InventoryMovementService } from '../inventory/inventory-movement.service';
+import { AppConfigService } from '../settings/app-config.service';
+import { CreatePurchaseReturnDto, ShipPurchaseReturnDto } from './dto';
+import { evaluatePOLifecycleRules } from './purchase-order-lifecycle-rules';
+import { PurchaseOrdersWriteService } from './purchase-orders-write.service';
+import {
+  executeStageReturnMovements,
+  executeUnstageReturnMovements,
   generateReturnNumber,
   generateShipmentNumber,
   getSupplierReturnsBinId,
   recalculateShipReturnWac,
   recalculateUnshipReturnWac,
-  executeStageReturnMovements,
-  executeUnstageReturnMovements,
 } from './purchase-returns.utils';
 
 const VALID_RETURN_STATES = getValidStates(PURCHASE_RETURN_TRANSITIONS);

@@ -1,5 +1,5 @@
-import postgres from 'postgres';
 import { resolve } from 'path';
+import postgres from 'postgres';
 
 // Assumes we are running from project root or inside apps/api
 const envPath = resolve(__dirname, '../../../../.env');

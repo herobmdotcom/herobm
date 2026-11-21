@@ -1,16 +1,9 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  glJournalLines,
-  glJournalEntries,
-  customers,
-  customerGroups,
-  tradingTerms,
-} from '@herobm/db-schema';
-import { eq, sql, and } from 'drizzle-orm';
-import { resolveEffectiveTradingTermsId } from './credit-control.utils';
+import { customers } from '@herobm/db-schema';
 import { SALES_INVOICE_STATE } from '@herobm/shared';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { eq, sql } from 'drizzle-orm';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 
 export interface CreditAssessmentResult {
   totalInvoiceBalance: number;

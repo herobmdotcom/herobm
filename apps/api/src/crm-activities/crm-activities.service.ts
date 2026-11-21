@@ -1,41 +1,41 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import {
-  eq,
-  ne,
-  and,
-  or,
-  ilike,
-  desc,
-  asc,
-  sql,
-  inArray,
-  exists,
-  isNotNull,
-} from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
+  contacts,
   crmActivities,
   crmActivityContacts,
-  organizations,
-  contacts,
   opportunities,
   opportunityContacts,
+  organizations,
   users,
 } from '@herobm/db-schema';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  exists,
+  ilike,
+  inArray,
+  isNotNull,
+  ne,
+  or,
+  sql,
+} from 'drizzle-orm';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import {
+  PaginatedResponse,
   parsePagination,
   withCursorPagination,
-  PaginatedResponse,
 } from '../common/pagination';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import {
+  ActivityContactDto,
   CreateCrmActivityDto,
-  UpdateCrmActivityDto,
   CrmActivityQueryDto,
   CrmActivityResponseDto,
-  ActivityContactDto,
+  UpdateCrmActivityDto,
 } from './dto';
 
 @Injectable()

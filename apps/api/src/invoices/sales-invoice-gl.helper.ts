@@ -1,11 +1,11 @@
-import { Decimal } from 'decimal.js';
+import { glAccounts } from '@herobm/db-schema';
+import { JOURNAL_ENTRY_SOURCE_TYPE } from '@herobm/shared';
 import { BadRequestException, Logger } from '@nestjs/common';
+import { Decimal } from 'decimal.js';
 import { sql } from 'drizzle-orm';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { glAccounts } from '@herobm/db-schema';
 import { GlService } from '../gl/gl.service';
 import { AppConfigService } from '../settings/app-config.service';
-import { JOURNAL_ENTRY_SOURCE_TYPE } from '@herobm/shared';
 
 export interface RevenueGroup {
   customerId: string;
@@ -60,7 +60,7 @@ export function calculateBaseTotalAmount(
         .toDecimalPlaces(2, Decimal.ROUND_HALF_UP),
     );
   }
-  for (const [acctId, taxAmt] of taxGroups.entries()) {
+  for (const taxAmt of taxGroups.values()) {
     if (taxAmt > 0) {
       totalRoundedCreditsDecTemp = totalRoundedCreditsDecTemp.plus(
         new Decimal(taxAmt)

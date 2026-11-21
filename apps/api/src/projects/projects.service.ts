@@ -1,54 +1,54 @@
-import { Decimal } from 'decimal.js';
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
-import { desc, eq, and, or, asc, sql, ilike, inArray } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  projects,
-  projectTasks,
+  binContents,
+  bins,
+  customerGroups,
+  customers,
+  discountMatrix,
+  products,
   projectLedgerEntries,
   projectNotes,
-  binContents,
-  products,
-  bins,
-  zones,
-  customers,
-  customerGroups,
-  tradingTerms,
-  discountMatrix,
-  salesInvoices,
+  projects,
+  projectTasks,
   salesInvoiceLines,
+  salesInvoices,
+  tradingTerms,
+  zones,
 } from '@herobm/db-schema';
 import {
-  CreateProjectDto,
-  UpdateProjectDto,
-  ProjectResponseDto,
-  ProjectQueryDto,
-  ProjectStateTransitionDto,
-} from './dto';
+  BIN_TYPE,
+  DiscountRule,
+  getAllowedTransitions,
+  PROJECT_BILLING_TYPE,
+  PROJECT_SOURCE_TYPE,
+  PROJECT_STATE,
+  PROJECT_TRANSITIONS,
+  resolveEffectiveDiscount,
+} from '@herobm/shared';
 import {
-  withCursorPagination,
-  PaginatedResponse,
-  parsePagination,
-} from '../common/pagination';
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { Decimal } from 'decimal.js';
+import { and, asc, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import {
-  PROJECT_STATE,
-  PROJECT_TRANSITIONS,
-  PROJECT_BILLING_TYPE,
-  PROJECT_SOURCE_TYPE,
-  getAllowedTransitions,
-  BIN_TYPE,
-  resolveEffectiveDiscount,
-  DiscountRule,
-} from '@herobm/shared';
+  PaginatedResponse,
+  parsePagination,
+  withCursorPagination,
+} from '../common/pagination';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import {
+  CreateProjectDto,
+  ProjectQueryDto,
+  ProjectResponseDto,
+  ProjectStateTransitionDto,
+  UpdateProjectDto,
+} from './dto';
 
 function generateProjectNumber(): string {
   const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');

@@ -1,35 +1,35 @@
 import { SystemResource } from '@herobm/shared';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiOkResponse,
-  ApiCreatedResponse,
-  ApiBody,
-} from '@nestjs/swagger';
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
   Body,
+  Controller,
+  Delete,
+  Get,
   Param,
+  Patch,
+  Post,
 } from '@nestjs/common';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
-import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
-import { LocationsService } from './locations.service';
 import {
+  ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
+import {
+  BinResponseDto,
+  CreateBinBulkDto,
+  CreateBinDto,
   CreateLocationDto,
   CreateZoneDto,
-  CreateBinDto,
-  CreateBinBulkDto,
+  LocationResponseDto,
+  UpdateBinDto,
   UpdateLocationDto,
   UpdateZoneDto,
-  UpdateBinDto,
-  LocationResponseDto,
   ZoneResponseDto,
-  BinResponseDto,
 } from './dto';
+import { LocationsService } from './locations.service';
 
 @ApiTags('Warehouse')
 @Controller('inventory')

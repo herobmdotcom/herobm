@@ -1,7 +1,7 @@
-import { Injectable, Inject, BadRequestException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { Enforcer } from 'casbin';
 import { CASBIN_ENFORCER } from '../auth/casbin.provider';
-import { PermissionDto, SetRolePermissionsDto } from './dto';
+import { SetRolePermissionsDto } from './dto';
 
 @Injectable()
 export class RolesService {

@@ -1,33 +1,33 @@
+import { SystemResource } from '@herobm/shared';
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Param,
   Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
   Query,
 } from '@nestjs/common';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiOkResponse,
-  ApiCreatedResponse,
   ApiBearerAuth,
   ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
 } from '@nestjs/swagger';
-import { SystemResource } from '@herobm/shared';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
-import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
+import { AuthUser } from '../auth/auth-user.decorator';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
 import { ApiPaginatedResponse } from '../common/pagination';
 import { CrmActivitiesService } from './crm-activities.service';
 import {
   CreateCrmActivityDto,
-  UpdateCrmActivityDto,
   CrmActivityQueryDto,
   CrmActivityResponseDto,
   EmptyBodyDto,
+  UpdateCrmActivityDto,
 } from './dto';
 
 @ApiTags('CRM Activities')

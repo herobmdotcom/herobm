@@ -1,6 +1,6 @@
 import {
-  calculateCashFlowStatement,
   calculateCashFlowLineDrilldown,
+  calculateCashFlowStatement,
 } from './gl-cash-flow.utils';
 
 describe('gl-cash-flow.utils', () => {

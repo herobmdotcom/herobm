@@ -1,24 +1,24 @@
+import { salesInvoices } from '@herobm/db-schema';
+import { SALES_INVOICE_STATE } from '@herobm/shared';
 import {
-  Injectable,
-  Inject,
-  Optional,
   BadRequestException,
+  Inject,
+  Injectable,
   Logger,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { salesInvoices } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { EnrichmentService } from '../enrichment/enrichment.service';
 import { GlService } from '../gl/gl.service';
-import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { OrganizationService } from '../settings/organization.service';
-import { EnrichmentService } from '../enrichment/enrichment.service';
+import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { CreateSalesInvoiceDto } from './dto';
-import { SALES_INVOICE_STATE } from '@herobm/shared';
 import { SalesInvoiceCreationService } from './sales-invoice-creation.service';
 import { SalesInvoiceProjectService } from './sales-invoice-project.service';
 import { SalesInvoiceQueryService } from './sales-invoice-query.service';

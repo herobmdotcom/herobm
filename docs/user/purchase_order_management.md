@@ -10,7 +10,7 @@ routes:
   - "/purchase-orders"
   - "/purchase-orders/new"
   - "/purchase-orders/:id"
-tags: ["purchasing", "po", "orders", "suppliers", "procurement", "receiving", "email", "supplier-hold", "rules"]
+tags: ["purchasing", "po", "orders", "suppliers", "procurement", "receiving", "email", "supplier-hold", "rules", "keyboard-shortcuts"]
 fields:
   vendor_id:
     title: "Supplier"
@@ -105,13 +105,25 @@ The PO lifecycle rules engine continuously monitors warehouse and accounting eve
 ### 1. Creating and Sending a Purchase Order
 1. Go to **Purchasing** → **Purchase Orders** (`/purchase-orders`).
 2. Click **New Purchase Order** (`/purchase-orders/new`).
-3. Select the **Supplier**. Currency, payment terms, and vendor addresses fill automatically.
-4. Set the **Expected Delivery Date** and destination **Receiving Warehouse**.
-5. Add line items, quantities, and agreed unit costs.
-6. Click **Save as Draft**, then click **Send to Supplier** to advance status to `Ordered`.
-7. Click **Email** to generate and transmit the branded Typst PDF purchase order.
+3. Select the **Supplier**, **Receiving Warehouse**, and optional **Expected Delivery Date**, then click **Create Purchase Order**.
+4. On the Purchase Order details page, add line items, quantities, and agreed unit costs.
+5. Click **Send to Supplier** to advance status to `Ordered`.
+6. Click **Email** to generate and transmit the branded Typst PDF purchase order.
 
-### 2. Receiving and Invoice Matching
+### 2. Rapid Keyboard Line Entry (No Mouse Required)
+On any editable Purchase Order's **Line Items** tab, you can add items continuously using only the keyboard:
+
+| Key / Step | Action |
+| :--- | :--- |
+| **`/`** | Focus the **Add product** search box from anywhere on the page. |
+| **Type + `↑` / `↓`** | Search by SKU or name and move the highlight (top match is highlighted automatically). |
+| **`Enter`** | Stage the highlighted product and focus the **Qty** box with `1` pre-selected. |
+| **Type qty + `Enter`** | Add the line item and return focus to the product search box for the next item. *(Press `Enter` twice for qty `1`.)* |
+| **`Esc`** | Cancel a staged product (or close search results) and return to the search box. |
+
+*Tip: Focusing any existing **Qty**, **Unit Price**, **Unit Cost**, or **Disc %** cell auto-selects its value — type the new number and press **`Enter`** to save. On draft orders, click **`+`** next to any line number to insert a new line directly above it, or drag the **`⋮⋮`** handle to reorder existing lines.*
+
+### 3. Receiving and Invoice Matching
 1. When goods arrive, dock staff receive items in **Inventory** → **Receiving**. The PO automatically updates to `Partially Received` or `Received`.
 2. When the vendor bill arrives, navigate to **Purchasing** → **Supplier Invoices** to match lines against the receipt note and post to Accounts Payable. Once fully billed, the PO moves to `Invoiced`.
 

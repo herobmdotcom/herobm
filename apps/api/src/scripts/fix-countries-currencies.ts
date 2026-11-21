@@ -1,9 +1,9 @@
-import postgres from 'postgres';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import { customers, suppliers, organizations } from '@herobm/db-schema';
-import { eq } from 'drizzle-orm';
+import { customers, organizations, suppliers } from '@herobm/db-schema';
 import * as dotenv from 'dotenv';
+import { eq } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/postgres-js';
 import * as path from 'path';
+import postgres from 'postgres';
 
 // Load environment variables
 dotenv.config({

@@ -1,11 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { users } from '@herobm/db-schema';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { Test, TestingModule } from '@nestjs/testing';
+import { eq } from 'drizzle-orm';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
-import { JwtService } from '@nestjs/jwt';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
-import { users } from '@herobm/db-schema';
-import { eq } from 'drizzle-orm';
 
 describe('Settings Import (e2e)', () => {
   let app: INestApplication;

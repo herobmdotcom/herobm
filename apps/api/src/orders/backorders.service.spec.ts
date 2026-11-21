@@ -1,30 +1,30 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { BackordersService } from './backorders.service';
+import {
+  backorders,
+  locations,
+  products,
+  salesOrderLineItems,
+  salesOrders,
+  taxCategories,
+  uomDictionary,
+  workOrders,
+} from '@herobm/db-schema';
 import type { InventoryGap } from '@herobm/shared';
 import {
-  SALES_ORDER_STATE,
-  PRODUCT_STATE,
   BACKORDER_STATE,
+  PRODUCT_STATE,
+  SALES_ORDER_STATE,
+  WORK_ORDER_STATE,
 } from '@herobm/shared';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { AppConfigService } from '../settings/app-config.service';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import {
-  salesOrders,
-  salesOrderLineItems,
-  backorders,
-  products,
-  locations,
-  uomDictionary,
-  taxCategories,
-} from '@herobm/db-schema';
+import { Test, TestingModule } from '@nestjs/testing';
 import { eq } from 'drizzle-orm';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
 import { InventoryQueryService } from '../inventory/inventory-query.service';
 import { WorkOrdersWriteService } from '../manufacturing/work-orders-write.service';
 import { PurchaseOrdersWriteService } from '../purchase-orders/purchase-orders-write.service';
-import { workOrders } from '@herobm/db-schema';
-import { WORK_ORDER_STATE } from '@herobm/shared';
+import { AppConfigService } from '../settings/app-config.service';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { BackordersService } from './backorders.service';
 
 describe('BackordersService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

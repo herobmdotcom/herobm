@@ -1,14 +1,12 @@
+import { INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { createE2eModule } from './utils/e2e-module';
-import { INestApplication } from '@nestjs/common';
-import { AppModule } from '../src/app.module';
 
-import request from 'supertest';
-import * as crypto from 'crypto';
-import { eq, and } from 'drizzle-orm';
 import { bins, zones } from '@herobm/db-schema';
+import * as crypto from 'crypto';
+import { and, eq } from 'drizzle-orm';
+import request from 'supertest';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
-import { CUSTOMER_STATE } from '@herobm/shared';
 
 describe('Freight and Non-Stock Lifecycle (e2e)', () => {
   let app: INestApplication;

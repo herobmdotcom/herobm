@@ -1,20 +1,19 @@
+import { userEvents, users, userTwoFactor } from '@herobm/db-schema';
+import { CUSTOMER_STATE } from '@herobm/shared';
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
   BadRequestException,
-  ConflictException,
+  Inject,
+  Injectable,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
-import { eq, and, sql } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { users, userEvents, userTwoFactor } from '@herobm/db-schema';
+import { and, eq, sql } from 'drizzle-orm';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { CreateUserDto, UpdateUserDto } from './dto';
-import { CUSTOMER_STATE } from '@herobm/shared';
 
 /**
  * Whitelisted columns for public responses — passwordHash is NEVER returned.
@@ -316,7 +315,7 @@ export class UsersService {
    * Throws if the target user is the last active admin, preventing lockout.
    * @param excludeId The userId being modified/removed — excluded from the count.
    */
-  private async assertNotLastAdmin(excludeId: string) {
+  private async assertNotLastAdmin(_excludeId: string) {
     const [{ count }] = await this.db
       .select({ count: sql<number>`count(*)::int` })
       .from(users)

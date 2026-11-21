@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/ban-ts-comment -- External API integration boundaries where exact types are unknown. */
 export {};
-import * as path from 'path';
 import * as dotenv from 'dotenv';
+import * as path from 'path';
 dotenv.config({
   path: path.resolve(
     __dirname,

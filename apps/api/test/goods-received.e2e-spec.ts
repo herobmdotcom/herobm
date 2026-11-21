@@ -9,16 +9,15 @@
  * Run with: npm run test:e2e -- --testPathPatterns goods-received
  * Requires: Docker stack running with Postgres + populated marts.
  */
-import { TestingModule } from '@nestjs/testing';
-import { createE2eModule } from './utils/e2e-module';
-import { INestApplication } from '@nestjs/common';
-import { AppModule } from '../src/app.module';
 import {
-  PURCHASE_ORDER_STATE,
   GOODS_RECEIVED_STATE,
   MATCH_STATUS,
+  PURCHASE_ORDER_STATE,
   PUTAWAY_STATUS,
 } from '@herobm/shared';
+import { INestApplication } from '@nestjs/common';
+import { TestingModule } from '@nestjs/testing';
+import { createE2eModule } from './utils/e2e-module';
 
 import request from 'supertest';
 

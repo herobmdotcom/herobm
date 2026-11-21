@@ -1,7 +1,7 @@
 export {
   EntityType,
-  type EntityTypeValue,
   EventType,
-  type EventTypeValue,
   OUTBOX_EVENT_TYPES,
+  type EntityTypeValue,
+  type EventTypeValue,
 } from '@herobm/shared';

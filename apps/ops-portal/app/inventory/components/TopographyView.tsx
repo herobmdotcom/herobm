@@ -1107,13 +1107,13 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
     >
       <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5">
         {!initialData?.bin && (
-          <div className="flex bg-[#f2f4f6] p-1 rounded-lg">
+          <div className="flex bg-[var(--bg-secondary)] p-1 rounded-lg">
             <Button
               type="button"
               variant={mode === 'single' ? 'secondary' : 'ghost'}
               onClick={() => setMode('single')}
               className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
-                mode === 'single' ? 'bg-white shadow text-[#041627]' : 'text-gray-500 hover:text-gray-800'
+                mode === 'single' ? 'bg-[var(--bg-card)] shadow text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               }`}
             >
               Single Bin
@@ -1123,7 +1123,7 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
               variant={mode === 'batch' ? 'secondary' : 'ghost'}
               onClick={() => setMode('batch')}
               className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
-                mode === 'batch' ? 'bg-white shadow text-[#041627]' : 'text-gray-500 hover:text-gray-800'
+                mode === 'batch' ? 'bg-[var(--bg-card)] shadow text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               }`}
             >
               Bulk Multi-Create
@@ -1143,8 +1143,8 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
             />
           </div>
         ) : (
-          <div className="flex flex-col gap-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-gray-700">Pattern Range Setup</h4>
+          <div className="flex flex-col gap-4 bg-[var(--bg-secondary)] p-4 rounded-lg border border-[var(--border)]">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Pattern Range Setup</h4>
             
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -1230,10 +1230,10 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
               />
             </div>
 
-            <div className="p-3 bg-white rounded border border-gray-200">
-              <div className="text-xs font-semibold text-gray-700 flex justify-between mb-1">
+            <div className="p-3 bg-[var(--bg-card)] rounded border border-[var(--border)]">
+              <div className="text-xs font-semibold text-[var(--text-secondary)] flex justify-between mb-1">
                 <span>Total Bins to Create:</span>
-                <span className="text-emerald-700 font-bold">{generatedBinNumbers.length.toLocaleString()}</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">{generatedBinNumbers.length.toLocaleString()}</span>
               </div>
               {generatedBinNumbers.length > 0 && (
                 <div className="text-[11px] text-gray-500 truncate">

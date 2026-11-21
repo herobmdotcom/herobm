@@ -1,15 +1,15 @@
+import { Inject, Injectable } from '@nestjs/common';
 import { Decimal } from 'decimal.js';
-import { Injectable, Inject } from '@nestjs/common';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { sql } from 'drizzle-orm';
 import {
+  paginatedResult,
   PaginationQuery,
   parsePagination,
-  paginatedResult,
-  withCursorPagination,
 } from '../common/pagination';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 
+// Note: withCursorPagination exemption: global-notes uses a unified raw SQL CTE query
 @Injectable()
 export class GlobalNotesService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}

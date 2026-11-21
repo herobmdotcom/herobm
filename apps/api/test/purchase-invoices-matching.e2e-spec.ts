@@ -1,11 +1,10 @@
 /**
  * E2E Tests — 3-Way Matching (PO -> Receipt -> Invoice) via Standalone AP Flow
  */
+import { MATCH_STATUS, PURCHASE_ORDER_STATE } from '@herobm/shared';
+import { INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { createE2eModule } from './utils/e2e-module';
-import { INestApplication } from '@nestjs/common';
-import { AppModule } from '../src/app.module';
-import { PURCHASE_ORDER_STATE, MATCH_STATUS } from '@herobm/shared';
 
 import request from 'supertest';
 

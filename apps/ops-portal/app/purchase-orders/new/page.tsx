@@ -4,44 +4,21 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
-import { formatAmount, CURRENCIES } from '@/lib/currency';
+import { CURRENCIES } from '@/lib/currency';
+import { resolveProductUnitPrice } from '@herobm/shared';
 import { useTranslations } from 'next-intl';
-import { computeLinePrice, computeOrderTotals, CUSTOM_LINE_ID, LineType } from '@herobm/shared';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
-import ProductSearchInput from '@/components/shared/ProductSearchInput';
-import type { Product } from '@/components/shared/ProductSearchInput';
 import LocationSelect from '@/components/shared/LocationSelect';
 import SupplierSelect from '@/components/shared/SupplierSelect';
-import { MobileCardField } from '@/components/shared/DataTable';
-import { getTaxLabel } from '../[id]/types';
-import { OrderLinesTable } from '@/components/shared/OrderLinesTable';
 import { useSettings } from '@/components/SettingsProvider';
 import { Button } from '@/components/shared/Button';
 
-interface TaxCategory {
-  taxCategoryId: string;
-  code: string;
-  title: string;
-  type: string;
-  rate: string;
-  isDefault: boolean;
-}
-
-interface Supplier {
-  vendorId: string;
-  vendorNumber: string;
-  name: string;
-  currencyCode: string;
-}
-
-interface LineItem {
-  key: number;
-  lineType?: string;
+interface InitialProductLine {
   productId: string;
   productNumber: string;
   productDescription: string;
@@ -49,53 +26,6 @@ interface LineItem {
   pricePerUnit: string;
   unitOfMeasure: string;
   discountPercentage: string;
-  taxCategoryId: string | null;
-  minPurchaseQty?: string | null;
-  purchaseUnit?: string | null;
-  purchaseUomId?: string | null;
-  purchaseUomCode?: string | null;
-  purchaseUomRatio?: string | number | null;
-  supplierPartNumber?: string | null;
-}
-
-let lineKey = 0;
-
-function emptyLine(defaultTaxCategoryId = ''): LineItem {
-  return {
-    key: ++lineKey,
-    lineType: LineType.PRODUCT,
-    productId: CUSTOM_LINE_ID,
-    productNumber: '',
-    productDescription: '',
-    quantity: '1',
-    pricePerUnit: '0.00',
-    unitOfMeasure: 'EA',
-    discountPercentage: '0',
-    taxCategoryId: defaultTaxCategoryId || null,
-  };
-}
-
-function emptyCommentLine(): LineItem {
-  return {
-    key: ++lineKey,
-    lineType: LineType.COMMENT,
-    productId: '',
-    productNumber: '',
-    productDescription: '',
-    quantity: '0',
-    pricePerUnit: '0',
-    unitOfMeasure: 'EA',
-    discountPercentage: '0',
-    taxCategoryId: null,
-  };
-}
-
-function useDebounce(fn: (...args: unknown[]) => void, delay: number) {
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  return useCallback((...args: unknown[]) => {
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => fn(...args), delay);
-  }, [fn, delay]);
 }
 
 function generateOrderNumber(): string {
@@ -113,25 +43,6 @@ export default function NewPurchaseOrderPage() {
   const initialVendorId = searchParams.get('vendorId') || '';
   const initialProductId = searchParams.get('productId') || '';
 
-  const [taxCategories, setTaxCategories] = useState<TaxCategory[]>([]);
-  const defaultTaxCategoryId = taxCategories.find((c) => c.isDefault)?.taxCategoryId || '';
-
-  useEffect(() => {
-    api.taxCategoriesControllerFindAll()
-      .then((res) => {
-        setTaxCategories(res.data.map(t => ({ ...t, taxCategoryId: t.taxCategoryId })) as TaxCategory[] || []);
-      })
-      .catch((err) => reportError(err, 'NewPurchaseOrderPage'));
-  }, []);
-
-  // When tax categories load, backfill the default onto lines that have none
-  useEffect(() => {
-    if (!defaultTaxCategoryId) return;
-    setLines((prev) =>
-      prev.map((l) => (l.taxCategoryId ? l : { ...l, taxCategoryId: defaultTaxCategoryId })),
-    );
-  }, [defaultTaxCategoryId]);
-
   const [vendorId, setVendorId] = useState(initialVendorId);
   const [currencyCode, setCurrencyCode] = useState(baseCurrency);
   const [name, setName] = useState('');
@@ -139,8 +50,10 @@ export default function NewPurchaseOrderPage() {
   const [referenceNumber, setReferenceNumber] = useState('');
   const [expectedDate, setExpectedDate] = useState('');
   const [notes, setNotes] = useState('');
+  const [initialLine, setInitialLine] = useState<InitialProductLine | null>(null);
 
-  const [lines, setLines] = useState<LineItem[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -155,7 +68,7 @@ export default function NewPurchaseOrderPage() {
           }
         } catch (err) {
           reportError(err, 'NewPurchaseOrderPage_initVendor');
-          setError(err instanceof Error ? err.message : String(err));
+          if (active) setError(err instanceof Error ? err.message : String(err));
         }
       }
 
@@ -165,17 +78,17 @@ export default function NewPurchaseOrderPage() {
           const prod = prodRes.data;
           if (!prod || !active) return;
 
-          let matchedSupplier: {
-            vendorId: string;
-            costPrice?: string | null;
-            discountPercent?: string | null;
-            minPurchaseQty?: string | null;
-            purchaseUnit?: string | null;
-            purchaseUomId?: string | null;
-            purchaseUomCode?: string | null;
-            purchaseUomRatio?: string | number | null;
-            isPreferred?: boolean;
-          } | undefined;
+          let matchedSupplier:
+            | {
+                vendorId: string;
+                costPrice?: string | null;
+                discountPercent?: string | null;
+                minPurchaseQty?: string | null;
+                purchaseUnit?: string | null;
+                purchaseUomCode?: string | null;
+                isPreferred?: boolean;
+              }
+            | undefined;
 
           try {
             const supRes = await api.suppliersControllerFindByProduct(initialProductId, { limit: 100 });
@@ -186,15 +99,13 @@ export default function NewPurchaseOrderPage() {
               discountPercent?: string | null;
               minPurchaseQty?: string | null;
               purchaseUnit?: string | null;
-              purchaseUomId?: string | null;
               purchaseUomCode?: string | null;
-              purchaseUomRatio?: string | number | null;
               isPreferred?: boolean;
             }> = Array.isArray(raw)
               ? raw
               : Array.isArray((raw as { data?: unknown })?.data)
-              ? ((raw as { data: unknown[] }).data as never)
-              : [];
+                ? ((raw as { data: unknown[] }).data as never)
+                : [];
 
             if (initialVendorId) {
               matchedSupplier = list.find((s) => s.vendorId === initialVendorId);
@@ -219,223 +130,34 @@ export default function NewPurchaseOrderPage() {
           if (!active) return;
 
           const moq = matchedSupplier?.minPurchaseQty ? String(matchedSupplier.minPurchaseQty) : '1';
-          const costPrice = matchedSupplier?.costPrice != null && matchedSupplier.costPrice !== ''
-            ? parseFloat(String(matchedSupplier.costPrice)).toFixed(2)
-            : parseFloat(prod.standardCost || prod.tradePrice || prod.listPrice || '0').toFixed(2);
+          const costPrice =
+            matchedSupplier?.costPrice != null && matchedSupplier.costPrice !== ''
+              ? parseFloat(String(matchedSupplier.costPrice)).toFixed(2)
+              : resolveProductUnitPrice(prod, { mode: 'purchase' }).toFixed(2);
           const discount = matchedSupplier?.discountPercent ? String(matchedSupplier.discountPercent) : '0';
           const uom = matchedSupplier?.purchaseUomCode || matchedSupplier?.purchaseUnit || prod.baseUom || 'EA';
 
-          setLines([
-            {
-              key: ++lineKey,
-              lineType: LineType.PRODUCT,
-              productId: prod.productId,
-              productNumber: prod.productNumber,
-              productDescription: prod.name,
-              quantity: moq,
-              pricePerUnit: costPrice,
-              unitOfMeasure: uom,
-              discountPercentage: discount,
-              taxCategoryId: prod.purchaseTaxCategoryId || defaultTaxCategoryId || null,
-              minPurchaseQty: matchedSupplier?.minPurchaseQty ?? null,
-              purchaseUnit: matchedSupplier?.purchaseUnit ?? null,
-              purchaseUomId: matchedSupplier?.purchaseUomId ?? null,
-              purchaseUomCode: matchedSupplier?.purchaseUomCode ?? null,
-              purchaseUomRatio: matchedSupplier?.purchaseUomRatio ?? null,
-              supplierPartNumber: (matchedSupplier as { supplierPartNumber?: string })?.supplierPartNumber ?? null,
-            },
-          ]);
+          setInitialLine({
+            productId: prod.productId,
+            productNumber: prod.productNumber,
+            productDescription: prod.name,
+            quantity: moq,
+            pricePerUnit: costPrice,
+            unitOfMeasure: uom,
+            discountPercentage: discount,
+          });
         } catch (err) {
           reportError(err, 'NewPurchaseOrderPage_initProduct');
-          setError(err instanceof Error ? err.message : String(err));
+          if (active) setError(err instanceof Error ? err.message : String(err));
         }
       }
     }
 
-    if (initialVendorId || initialProductId) {
-      initFromParams();
-    }
-
+    initFromParams();
     return () => {
       active = false;
     };
-  }, [initialVendorId, initialProductId, defaultTaxCategoryId]);
-  const prevLineCountRef = useRef<number | null>(null);
-  useEffect(() => {
-    if (prevLineCountRef.current !== null && lines.length > prevLineCountRef.current) {
-      const el = document.getElementById('new-po-lines-bottom');
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-    }
-    prevLineCountRef.current = lines.length;
-  }, [lines.length]);
-
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-
-
-
-  const addBlankLine = () => {
-    setLines((prev) => [
-      ...prev,
-      {
-        key: ++lineKey, // Assuming 'key' is still needed for React lists
-        productId: CUSTOM_LINE_ID,
-        productNumber: '', // Added to match LineItem interface
-        productDescription: '',
-        quantity: '1',
-        pricePerUnit: '0.00',
-        unitOfMeasure: 'EA',
-        discountPercentage: '0',
-        taxCategoryId: defaultTaxCategoryId || null,
-      },
-    ]);
-  };
-
-  const addLineFromProduct = async (p: Product) => {
-    let moq = '1';
-    let costPrice = parseFloat(p.standardCost || p.tradePrice || p.listPrice || '0').toFixed(2);
-    let discount = '0';
-    let uom = 'EA';
-    let suppInfo: {
-      minPurchaseQty?: string | null;
-      purchaseUnit?: string | null;
-      purchaseUomId?: string | null;
-      purchaseUomCode?: string | null;
-      purchaseUomRatio?: string | number | null;
-      supplierPartNumber?: string | null;
-    } | undefined;
-
-    if (vendorId) {
-      try {
-        const supRes = await api.suppliersControllerFindByProduct(p.productId, { limit: 100 });
-        const raw = supRes.data;
-        const list: Array<{
-          vendorId: string;
-          costPrice?: string | null;
-          discountPercent?: string | null;
-          minPurchaseQty?: string | null;
-          purchaseUnit?: string | null;
-          purchaseUomId?: string | null;
-          purchaseUomCode?: string | null;
-          purchaseUomRatio?: string | number | null;
-          supplierPartNumber?: string | null;
-        }> = Array.isArray(raw)
-          ? raw
-          : Array.isArray((raw as { data?: unknown })?.data)
-          ? ((raw as { data: unknown[] }).data as never)
-          : [];
-        const matched = list.find((s) => s.vendorId === vendorId);
-        if (matched) {
-          suppInfo = matched;
-          if (matched.minPurchaseQty) moq = String(matched.minPurchaseQty);
-          if (matched.costPrice != null && matched.costPrice !== '') {
-            costPrice = parseFloat(String(matched.costPrice)).toFixed(2);
-          }
-          if (matched.discountPercent) discount = String(matched.discountPercent);
-          if (matched.purchaseUomCode) {
-            uom = matched.purchaseUomCode;
-          } else if (matched.purchaseUnit) {
-            uom = matched.purchaseUnit;
-          } else if (p.baseUom) {
-            uom = p.baseUom;
-          }
-        }
-      } catch {
-        // ignore
-      }
-    }
-
-    setLines((prev) => [
-      ...prev,
-      {
-        key: ++lineKey,
-        lineType: LineType.PRODUCT,
-        productId: p.productId,
-        productNumber: p.productNumber,
-        productDescription: p.name,
-        quantity: moq,
-        pricePerUnit: costPrice,
-        unitOfMeasure: uom,
-        discountPercentage: discount,
-        taxCategoryId: defaultTaxCategoryId || null,
-        minPurchaseQty: suppInfo?.minPurchaseQty ?? null,
-        purchaseUnit: suppInfo?.purchaseUnit ?? null,
-        purchaseUomId: suppInfo?.purchaseUomId ?? null,
-        purchaseUomCode: suppInfo?.purchaseUomCode ?? null,
-        purchaseUomRatio: suppInfo?.purchaseUomRatio ?? null,
-        supplierPartNumber: suppInfo?.supplierPartNumber ?? null,
-      },
-    ]);
-  };
-
-  const updateLine = (keyOrIdx: number | string, field: keyof LineItem, value: string) => {
-    let sanitizedValue = value;
-    if (field === 'discountPercentage') {
-      const num = parseFloat(value);
-      if (!isNaN(num)) {
-        if (num < 0) sanitizedValue = '0';
-        else if (num > 100) sanitizedValue = '100';
-      }
-    }
-    setLines((prev) =>
-      prev.map((l, i) =>
-        l.key === keyOrIdx || String(l.key) === String(keyOrIdx) || i === Number(keyOrIdx)
-          ? { ...l, [field]: sanitizedValue }
-          : l,
-      ),
-    );
-  };
-
-  const removeLine = (keyOrIdx: number | string) => {
-    setLines((prev) =>
-      prev.filter(
-        (l, i) =>
-          l.key !== keyOrIdx &&
-          String(l.key) !== String(keyOrIdx) &&
-          i !== Number(keyOrIdx),
-      ),
-    );
-  };
-
-  const addLine = () => {
-    setLines((prev) => [...prev, emptyLine(defaultTaxCategoryId)]);
-  };
-
-  const addCommentLine = () => {
-    setLines((prev) => [...prev, emptyCommentLine()]);
-  };
-
-  const computeTax = (line: LineItem) => {
-    if (line.lineType === LineType.COMMENT) return 0;
-    const cat = taxCategories.find(c => c.taxCategoryId === line.taxCategoryId);
-    if (!cat) {
-      const defaultCat = taxCategories.find(c => c.isDefault);
-      if (!defaultCat) return 0;
-      return computeLinePrice({
-        quantity: parseFloat(line.quantity) || 0,
-        pricePerUnit: parseFloat(line.pricePerUnit) || 0,
-        discountPercentage: parseFloat(line.discountPercentage) || 0,
-        taxRate: parseFloat(defaultCat.rate) || 0,
-      }).tax;
-    }
-    return computeLinePrice({
-      quantity: parseFloat(line.quantity) || 0,
-      pricePerUnit: parseFloat(line.pricePerUnit) || 0,
-      discountPercentage: parseFloat(line.discountPercentage) || 0,
-      taxRate: parseFloat(cat.rate) || 0,
-    }).tax;
-  };
-
-  const computeAmount = (line: LineItem) => {
-    if (line.lineType === LineType.COMMENT) return 0;
-    return computeLinePrice({
-      quantity: parseFloat(line.quantity) || 0,
-      pricePerUnit: parseFloat(line.pricePerUnit) || 0,
-      discountPercentage: parseFloat(line.discountPercentage) || 0,
-    }).amount;
-  };
+  }, [initialVendorId, initialProductId]);
 
   const handleSubmit = async () => {
     if (!vendorId) {
@@ -444,20 +166,6 @@ export default function NewPurchaseOrderPage() {
     }
     if (!deliveryLocationId) {
       setError(t('common.errors.pleaseSelectLocation'));
-      return;
-    }
-    if (lines.length === 0 || !lines.some((l) => l.productId || l.lineType === LineType.COMMENT)) {
-      setError(t('common.errors.pleaseAddLineItem'));
-      return;
-    }
-
-    const hasInvalidDiscount = lines.some((l) => {
-      if (l.lineType === LineType.COMMENT) return false;
-      const d = parseFloat(l.discountPercentage || '0');
-      return isNaN(d) || d < 0 || d > 100;
-    });
-    if (hasInvalidDiscount) {
-      setError('Discount percentage must be between 0 and 100');
       return;
     }
 
@@ -475,18 +183,18 @@ export default function NewPurchaseOrderPage() {
         referenceNumber: referenceNumber || undefined,
         expectedDate: expectedDate ? new Date(expectedDate).toISOString() : undefined,
         notes: notes || undefined,
-        lines: lines
-          .filter((l) => l.productId || l.lineType === LineType.COMMENT)
-          .map((l) => ({
-            lineType: (l.lineType as api.CreateOrderLineDtoLineType) || api.CreateOrderLineDtoLineType.Product,
-            productId: l.lineType === LineType.COMMENT ? undefined : l.productId,
-            productDescription: l.productDescription,
-            quantity: l.lineType === LineType.COMMENT ? '0' : String(l.quantity),
-            pricePerUnit: l.lineType === LineType.COMMENT ? '0' : String(l.pricePerUnit),
-            unitOfMeasure: l.lineType === LineType.COMMENT ? undefined : l.unitOfMeasure,
-            discountPercentage: l.lineType === LineType.COMMENT ? '0' : String(l.discountPercentage),
-            taxCategoryId: l.lineType === LineType.COMMENT ? undefined : (l.taxCategoryId || undefined),
-          })),
+        lines: initialLine
+          ? [
+              {
+                productId: initialLine.productId,
+                productDescription: initialLine.productDescription,
+                quantity: initialLine.quantity,
+                pricePerUnit: initialLine.pricePerUnit,
+                unitOfMeasure: initialLine.unitOfMeasure,
+                discountPercentage: initialLine.discountPercentage,
+              },
+            ]
+          : [],
       });
       router.push(`/purchase-orders/${res.data.purchaseOrderId}`);
       return;
@@ -496,78 +204,63 @@ export default function NewPurchaseOrderPage() {
     }
   };
 
-  const mappedLines = lines.map(l => ({
-    amount: computeAmount(l),
-    tax: computeTax(l)
-  }));
-  const totals = computeOrderTotals(mappedLines);
-  const subtotal = totals.subtotal;
-  const totalTax = totals.totalTax;
-
   return (
-    <>
-      <DetailsLayout
-        showPrint={false}
-        header={
-          <EntityHeader
-            title={t('purchaseOrders.createTitle')}
-            isSaving={submitting}
-            actions={
-              <>
-                <Button
-                  variant="secondary" size="sm"
-                  onClick={() => router.push('/purchase-orders')}
-                  disabled={submitting}
-                >
-                  {t('common.cancel')}
-                </Button>
-                <Button
-                  variant="primary" size="sm"
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                >
-                  {submitting ? (
-                    <>
-                      <span className="loading loading-spinner loading-xs mr-1.5" />
-                      {t('common.saving')}
-                    </>
-                  ) : (
-                    t('purchaseOrders.buttons.createPO')
-                  )}
-                </Button>
-              </>
-            }
-            showPrint={false}
-          />
-        }
-      >
-        {error && (
-          <div
-            className="mb-4 px-4 py-3 rounded-lg text-sm bg-red-500/10 border border-red-500/30 text-red-400"
-          >
-            {error}
-          </div>
-        )}
+    <DetailsLayout
+      showPrint={false}
+      header={
+        <EntityHeader
+          title={t('purchaseOrders.createTitle')}
+          isSaving={submitting}
+          actions={
+            <>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => router.push('/purchase-orders')}
+                disabled={submitting}
+              >
+                {t('common.cancel')}
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleSubmit}
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <>
+                    <span className="loading loading-spinner loading-xs mr-1.5" />
+                    {t('common.saving')}
+                  </>
+                ) : (
+                  t('purchaseOrders.buttons.createPO')
+                )}
+              </Button>
+            </>
+          }
+          showPrint={false}
+        />
+      }
+    >
+      {error && (
+        <div className="mb-4 px-4 py-3 rounded-lg text-sm bg-red-500/10 border border-red-500/30 text-red-400">
+          {error}
+        </div>
+      )}
 
-        <div className="flex flex-col gap-3">
-          {/* Order header */}
-          <div className="card">
+      <div className="flex flex-col gap-3">
+        <div className="card">
           <h3 className="section-heading">
-            { }
             <span className="material-symbols-outlined">receipt_long</span>
             {t('purchaseOrders.orderDetails')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Supplier selector */}
             <div className="relative">
-              <label
-                className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]"
-              >
+              <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('purchaseOrders.labels.supplier')} *
                 {vendorId && (
-                  <span
-                    className="ml-2 px-1.5 py-0.5 rounded bg-blue-500/15 text-[var(--accent)] font-semibold text-[10px] tracking-wide"
-                  >
+                  <span className="ml-2 px-1.5 py-0.5 rounded bg-blue-500/15 text-[var(--accent)] font-semibold text-[10px] tracking-wide">
                     {currencyCode}
                   </span>
                 )}
@@ -583,7 +276,7 @@ export default function NewPurchaseOrderPage() {
               />
             </div>
 
-             <div>
+            <div>
               <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('purchaseOrders.labels.referenceNumber')}
               </label>
@@ -664,59 +357,9 @@ export default function NewPurchaseOrderPage() {
                 onChange={(e) => setNotes(e.target.value)}
               />
             </div>
-
-            </div>
           </div>
-
-        {/* Line items */}
-        <div className="card">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
-            <h3 className="section-heading !mb-0 shrink-0">
-              {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
-              <span className="material-symbols-outlined">list</span>
-              {t('purchaseOrders.lineItems')}
-            </h3>
-            <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-start lg:justify-end">
-              <div className="flex-1 min-w-[200px] max-w-sm">
-                <ProductSearchInput
-                  onSelect={addLineFromProduct}
-                  placeholder={t('purchaseOrders.placeholders.searchProduct')}
-                />
-              </div>
-              <Button variant="secondary" size="sm" className="whitespace-nowrap" onClick={addLine}>
-                {t('purchaseOrders.buttons.customLine')}
-              </Button>
-              <Button variant="secondary" size="sm" className="whitespace-nowrap" onClick={addCommentLine}>
-                {t('purchaseOrders.buttons.commentLine')}
-              </Button>
-            </div>
-          </div>
-
-          <OrderLinesTable
-            lines={lines}
-            currencyCode={currencyCode}
-            taxCategories={taxCategories}
-            mode="purchase"
-            isEditable={true}
-            allowCatalogDescriptionEdit={false}
-            subtotal={subtotal}
-            totalTax={totalTax}
-            onUpdateLine={(keyOrIdx: string | number, field: string, val: unknown) => updateLine(keyOrIdx as number, field as keyof LineItem, String(val))}
-            onUpdateLineFields={(keyOrIdx: string | number, fields: Record<string, unknown>) =>
-              setLines((prev) =>
-                prev.map((l, i) =>
-                  l.key === keyOrIdx || String(l.key) === String(keyOrIdx) || i === Number(keyOrIdx)
-                    ? { ...l, ...fields }
-                    : l,
-                ),
-              )
-            }
-            onRemoveLine={(keyOrIdx: string | number) => removeLine(keyOrIdx as number)}
-          />
-          <div id="new-po-lines-bottom" className="h-px w-full" />
         </div>
-        </div>
-      </DetailsLayout>
-    </>
+      </div>
+    </DetailsLayout>
   );
 }

@@ -1,12 +1,12 @@
+import { users } from '@herobm/db-schema';
+import { UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
+import * as bcrypt from 'bcrypt';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { AuthService } from './auth.service';
 import { TwoFactorService } from './two-factor.service';
-import { JwtService } from '@nestjs/jwt';
-import { UnauthorizedException } from '@nestjs/common';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import * as bcrypt from 'bcrypt';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { users } from '@herobm/db-schema';
 
 // eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols.
 const TEST_PASSWORD = 'test-admin-pw-xyz'; // TEST_CREDENTIAL

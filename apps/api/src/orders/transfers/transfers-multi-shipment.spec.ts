@@ -1,47 +1,43 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { TransfersStateService } from './transfers-state.service';
-import { TransfersCoreService } from './transfers-core.service';
-import { TransfersWriteService } from './transfers-write.service';
-import { InventoryMovementService } from '../../inventory/inventory-movement.service';
-import { InventoryQueryService } from '../../inventory/inventory-query.service';
-import { ProjectsInventoryService } from '../../projects/projects-inventory.service';
-import { DRIZZLE } from '../../drizzle/drizzle.module';
-import { setupPgliteSuite } from '../../test-utils/pglite-suite';
 import {
-  transferOrders,
+  binContents,
+  bins,
+  customers,
+  locations,
+  products,
+  projects,
+  taxCategories,
   transferOrderLines,
   transferOrderPicks,
-  transferOrderShipments,
-  transferOrderShipmentLines,
-  transferOrderReceipts,
   transferOrderReceiptLines,
-  locations,
-  zones,
-  bins,
-  binContents,
-  products,
+  transferOrders,
   uomDictionary,
-  taxCategories,
-  projects,
-  customers,
+  zones,
 } from '@herobm/db-schema';
-import { eq, and } from 'drizzle-orm';
 import {
-  TRANSFER_ORDER_STATE,
-  PRODUCT_STATE,
-  SHIPMENT_STATE,
-  PUTAWAY_STATUS,
   CUSTOMER_STATE,
-  PROJECT_STATE,
+  PRODUCT_STATE,
   PROJECT_BILLING_TYPE,
+  PROJECT_STATE,
+  PUTAWAY_STATUS,
+  TRANSFER_ORDER_STATE,
 } from '@herobm/shared';
 import { BadRequestException } from '@nestjs/common';
-import { BackordersService } from '../backorders.service';
-import { AppConfigService } from '../../settings/app-config.service';
-import { UomService } from '../../inventory/uom.service';
+import { Test, TestingModule } from '@nestjs/testing';
+import { and, eq } from 'drizzle-orm';
+import { DRIZZLE } from '../../drizzle/drizzle.module';
 import { GlService } from '../../gl/gl.service';
+import { InventoryMovementService } from '../../inventory/inventory-movement.service';
+import { InventoryQueryService } from '../../inventory/inventory-query.service';
+import { UomService } from '../../inventory/uom.service';
 import { WorkOrdersWriteService } from '../../manufacturing/work-orders-write.service';
+import { ProjectsInventoryService } from '../../projects/projects-inventory.service';
+import { AppConfigService } from '../../settings/app-config.service';
+import { setupPgliteSuite } from '../../test-utils/pglite-suite';
+import { BackordersService } from '../backorders.service';
 import { ReturnsWriteService } from '../returns-write.service';
+import { TransfersCoreService } from './transfers-core.service';
+import { TransfersStateService } from './transfers-state.service';
+import { TransfersWriteService } from './transfers-write.service';
 
 describe('Transfer Orders - Multi-Leg & Multi-Shipment Integration', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

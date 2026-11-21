@@ -1,10 +1,10 @@
+import { salesInvoices } from '@herobm/db-schema';
+import { SALES_INVOICE_STATE } from '@herobm/shared';
 import { Decimal } from 'decimal.js';
 import { eq } from 'drizzle-orm';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { salesInvoices } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
-import { SALES_INVOICE_STATE } from '@herobm/shared';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
 
 export interface SalesInvoiceLifecycleTrigger {
   entity: 'payment';

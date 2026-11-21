@@ -1,42 +1,42 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { desc, eq, ne, sql, and, or, asc, inArray } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
+  contacts,
+  masterDataEvents,
   opportunities,
-  opportunityNotes,
   opportunityContacts,
+  opportunityNotes,
   opportunityOrganizations,
   organizations,
-  contacts,
-  users,
-  salesOrders,
-  salesOrderLineItems,
   projects,
-  masterDataEvents,
+  salesOrderLineItems,
+  salesOrders,
+  users,
 } from '@herobm/db-schema';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { and, asc, desc, eq, inArray, ne, or, sql } from 'drizzle-orm';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 
-import {
-  CreateOpportunityDto,
-  UpdateOpportunityDto,
-  OpportunityResponseDto,
-  CreateOpportunityNoteDto,
-  OpportunityNoteResponseDto,
-  CreateOpportunityContactDto,
-  UpdateOpportunityContactDto,
-  CreateOpportunityOrganizationDto,
-  UpdateOpportunityOrganizationDto,
-  OpportunityQueryDto,
-} from './dto';
-import {
-  PaginationQuery,
-  withCursorPagination,
-  PaginatedResponse,
-  parsePagination,
-} from '../common/pagination';
+import { OPPORTUNITY_STATE } from '@herobm/shared';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
-import { OPPORTUNITY_STATE } from '@herobm/shared';
+import {
+  PaginatedResponse,
+  PaginationQuery,
+  parsePagination,
+  withCursorPagination,
+} from '../common/pagination';
+import {
+  CreateOpportunityContactDto,
+  CreateOpportunityDto,
+  CreateOpportunityNoteDto,
+  CreateOpportunityOrganizationDto,
+  OpportunityNoteResponseDto,
+  OpportunityQueryDto,
+  OpportunityResponseDto,
+  UpdateOpportunityContactDto,
+  UpdateOpportunityDto,
+  UpdateOpportunityOrganizationDto,
+} from './dto';
 
 @Injectable()
 export class OpportunitiesService {

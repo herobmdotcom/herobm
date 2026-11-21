@@ -1,16 +1,16 @@
-import { Module, Global } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { JwtStrategy } from './jwt.strategy';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { TwoFactorService } from './two-factor.service';
 import { CasbinGuard } from './casbin.guard';
-import { CasbinEnforcerProvider, CASBIN_ENFORCER } from './casbin.provider';
+import { CASBIN_ENFORCER, CasbinEnforcerProvider } from './casbin.provider';
+import { JwtStrategy } from './jwt.strategy';
+import { TwoFactorService } from './two-factor.service';
 
-import { ApiKeyStrategy } from './api-key.strategy';
 import { EnvService } from '../common/config/env.service';
 import { EncryptionService } from '../common/encryption.service';
+import { ApiKeyStrategy } from './api-key.strategy';
 
 @Global()
 @Module({

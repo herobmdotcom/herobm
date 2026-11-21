@@ -1,24 +1,24 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { manufacturingSettings } from '@herobm/db-schema';
+import type { WorkOrderState } from '@herobm/shared';
+import { Inject, Injectable } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
-import type { WorkOrderState } from '@herobm/shared';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { CreateWorkOrderDto } from './dto/create-work-order.dto';
-import {
-  UpdateWorkOrderDto,
-  UpdateWorkOrderComponentDto,
-} from './dto/update-work-order.dto';
 import { UpdateManufacturingSettingsDto } from './dto/manufacturing-settings.dto';
-
 import {
-  WorkOrdersQueryService,
+  UpdateWorkOrderComponentDto,
+  UpdateWorkOrderDto,
+} from './dto/update-work-order.dto';
+
+import { WorkOrdersExecutionService } from './work-orders-execution.service';
+import {
   WorkOrderRow,
+  WorkOrdersQueryService,
 } from './work-orders-query.service';
 import { WorkOrdersWriteService } from './work-orders-write.service';
-import { WorkOrdersExecutionService } from './work-orders-execution.service';
 
 export type { WorkOrderRow } from './work-orders-query.service';
 

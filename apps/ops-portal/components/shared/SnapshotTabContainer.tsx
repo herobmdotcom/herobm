@@ -119,11 +119,11 @@ export function SnapshotTabContainer<T extends SnapshotItem>({
 
             return (
               <div key={itemId} className="flex flex-col gap-4">
-                {index > 0 && <hr className="border-gray-200" />}
+                {index > 0 && <hr className="border-[var(--border)]" />}
 
                 {!isLatest ? (
                   <>
-                    <h4 className="text-sm font-semibold text-gray-800">
+                    <h4 className="text-sm font-semibold text-[var(--text-primary)]">
                       {(() => {
                         const fallbackName = 'Unnamed Snapshot';
                         return item.snapshotName || fallbackName;

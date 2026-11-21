@@ -12,10 +12,14 @@ import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import SupplierSelect from '@/components/shared/SupplierSelect';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
+import ProductQuickAddBar from '@/components/shared/ProductQuickAddBar';
 import { useSettings } from '@/components/SettingsProvider';
+import { useAuth } from '@/components/AuthGate';
 import { calculatePurchaseInvoiceableQuantities, PurchaseInvoice } from '@/lib/purchase-order-utils';
 import type { OrderDetail } from '@/app/purchase-orders/[id]/types';
 import { Button } from '@/components/shared/Button';
+import CreateProductSlideOver from '@/components/products/CreateProductSlideOver';
+import AdjustProductPricesSlideOver from '@/components/products/AdjustProductPricesSlideOver';
 
 interface LineItem {
   key: number;
@@ -25,6 +29,7 @@ interface LineItem {
   quantityInvoiced: string;
   pricePerUnit: string;
   purchaseOrderLineId?: string;
+  productStandardCost?: string | null;
 }
 
 let lineKey = 0;
@@ -40,6 +45,8 @@ function emptyLine(): LineItem {
 
 export default function NewPurchaseInvoicePage() {
   const { baseCurrency } = useSettings();
+  const { permissions } = useAuth();
+  const canEditProducts = permissions.some((p) => p.resource === 'products' && p.action === 'write');
   const t = useTranslations('purchaseOrders');
   const tCommon = useTranslations('common');
   useDocumentTitle('Enter Supplier Invoice');
@@ -59,6 +66,11 @@ export default function NewPurchaseInvoicePage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [loadingInitial, setLoadingInitial] = useState(!!initialPurchaseOrderId);
+  const [isCreateProductOpen, setIsCreateProductOpen] = useState(false);
+  const [adjustPriceTarget, setAdjustPriceTarget] = useState<{
+    productId: string;
+    invoiceUnitCost: number;
+  } | null>(null);
 
   // Auto-fill logic from PO
   useEffect(() => {
@@ -118,6 +130,30 @@ export default function NewPurchaseInvoicePage() {
 
   const addLine = () => {
     setLines((prev) => [...prev, emptyLine()]);
+  };
+
+  const handleAddProductLine = (
+    product: { productId: string; productNumber?: string; name: string; standardCost?: string | null },
+    quantity?: string,
+  ) => {
+    setLines((prev) => [
+      ...prev,
+      {
+        key: ++lineKey,
+        productId: product.productId,
+        productNumber: product.productNumber || product.productId.substring(0, 8),
+        productDescription: product.name,
+        quantityInvoiced: quantity || '1',
+        pricePerUnit: product.standardCost || '0.00',
+        productStandardCost: product.standardCost ?? null,
+      },
+    ]);
+  };
+
+  const hasCostIncrease = (line: LineItem) => {
+    const unitCost = parseFloat(line.pricePerUnit || '0');
+    const prevCost = parseFloat(line.productStandardCost || '0');
+    return Number.isFinite(unitCost) && Number.isFinite(prevCost) && prevCost > 0 && unitCost > prevCost + 0.001;
   };
 
   const computeAmount = (line: LineItem) => {
@@ -288,16 +324,40 @@ export default function NewPurchaseInvoicePage() {
           </div>
 
           <div className="card">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
               <h3 className="section-heading !mb-0">
                 {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                 <span className="material-symbols-outlined">list</span>
                 {t('lineItems')}
               </h3>
-              <div className="flex items-center gap-3">
-                <Button variant="secondary" size="sm" onClick={addLine}>
-                  {t('supplierInvoice.addLine')}
-                </Button>
+              <div className="flex flex-wrap items-center gap-2 flex-1 justify-end">
+                <div className="flex-1 min-w-[240px] max-w-md">
+                  <ProductQuickAddBar
+                    onAdd={handleAddProductLine}
+                    placeholder={t('placeholders.searchProduct')}
+                    disabled={submitting}
+                    enableShortcut={true}
+                  />
+                </div>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  icon="add_box"
+                  iconClassName="text-[18px]"
+                  onClick={() => setIsCreateProductOpen(true)}
+                  disabled={submitting}
+                  title={t('supplierInvoice.addProduct')}
+                  aria-label={t('supplierInvoice.addProduct')}
+                />
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  icon="playlist_add"
+                  iconClassName="text-[18px]"
+                  onClick={addLine}
+                  title={t('supplierInvoice.addLine')}
+                  aria-label={t('supplierInvoice.addLine')}
+                />
               </div>
             </div>
 
@@ -311,7 +371,7 @@ export default function NewPurchaseInvoicePage() {
                   <th className="w-[110px] text-right">{t('columns.qtyToBill')}</th>
                   <th className="w-[130px] text-right">{t('columns.unitPrice')}</th>
                   <th className="w-[130px] text-right">{t('columns.amount')}</th>
-                  <th className="w-[50px]"></th>
+                  <th className="w-[84px]"></th>
                 </tr>
               </thead>
               <tbody>
@@ -329,7 +389,17 @@ export default function NewPurchaseInvoicePage() {
                             setLines((prev) =>
                               prev.map((l, i) =>
                                 i === idx
-                                  ? { ...l, productId: p.productId, productNumber: p.productNumber, productDescription: l.productDescription || p.name }
+                                  ? {
+                                      ...l,
+                                      productId: p.productId,
+                                      productNumber: p.productNumber,
+                                      productDescription: l.productDescription || p.name,
+                                      pricePerUnit:
+                                        parseFloat(l.pricePerUnit || '0') > 0
+                                          ? l.pricePerUnit
+                                          : p.standardCost || '0.00',
+                                      productStandardCost: p.standardCost ?? null,
+                                    }
                                   : l,
                               ),
                             );
@@ -375,11 +445,42 @@ export default function NewPurchaseInvoicePage() {
                       {formatAmount(computeAmount(line), currencyCode)}
                     </td>
                     <td>
-                      {lines.length > 1 && (
-                        <Button variant="danger" size="sm" onClick={() => removeLine(idx)}>
-                          <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
-                        </Button>
-                      )}
+                      <div className="flex items-center justify-end gap-1">
+                        {canEditProducts && line.productId && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="relative !p-1.5 text-[var(--text-muted)] hover:text-[var(--accent)]"
+                            onClick={() =>
+                              setAdjustPriceTarget({
+                                productId: line.productId!,
+                                invoiceUnitCost: parseFloat(line.pricePerUnit || '0') || 0,
+                              })
+                            }
+                            title={
+                              hasCostIncrease(line)
+                                ? t('supplierInvoice.costIncreasedHint')
+                                : t('supplierInvoice.adjustPrices')
+                            }
+                            aria-label={t('supplierInvoice.adjustPrices')}
+                          >
+                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                            <span className="material-symbols-outlined text-[18px]">sell</span>
+                            {hasCostIncrease(line) && (
+                              <span
+                                className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-500"
+                                aria-hidden="true"
+                              />
+                            )}
+                          </Button>
+                        )}
+                        {lines.length > 1 && (
+                          <Button variant="danger" size="sm" onClick={() => removeLine(idx)}>
+                            <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
+                          </Button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -443,14 +544,45 @@ export default function NewPurchaseInvoicePage() {
             {/* Mobile Cards */}
             <div className="lg:hidden flex flex-col gap-4 mt-2">
               {lines.map((line, idx) => (
-                <div key={line.key} className="bg-white border border-slate-200 rounded-lg p-4 flex flex-col gap-3 relative">
-                  <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                <div key={line.key} className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-4 flex flex-col gap-3 relative">
+                  <div className="flex justify-between items-center pb-2 border-b border-[var(--border)]">
                     <span className="font-bold text-slate-500 text-sm">{t('lineItemPrefix')} {idx + 1}</span>
-                    {lines.length > 1 && (
-                      <Button className="text-gray-400 hover:text-red-500" onClick={() => removeLine(idx)}>
-                        <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-1">
+                      {canEditProducts && line.productId && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="relative !p-1.5 text-[var(--text-muted)] hover:text-[var(--accent)]"
+                          onClick={() =>
+                            setAdjustPriceTarget({
+                              productId: line.productId!,
+                              invoiceUnitCost: parseFloat(line.pricePerUnit || '0') || 0,
+                            })
+                          }
+                          title={
+                            hasCostIncrease(line)
+                              ? t('supplierInvoice.costIncreasedHint')
+                              : t('supplierInvoice.adjustPrices')
+                          }
+                          aria-label={t('supplierInvoice.adjustPrices')}
+                        >
+                          {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                          <span className="material-symbols-outlined text-[18px]">sell</span>
+                          {hasCostIncrease(line) && (
+                            <span
+                              className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-500"
+                              aria-hidden="true"
+                            />
+                          )}
+                        </Button>
+                      )}
+                      {lines.length > 1 && (
+                        <Button className="text-gray-400 hover:text-red-500" onClick={() => removeLine(idx)}>
+                          <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   
                   <div>
@@ -514,7 +646,7 @@ export default function NewPurchaseInvoicePage() {
                     </div>
                   </div>
                   
-                  <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+                  <div className="flex justify-between items-center pt-2 border-t border-[var(--border)]">
                     <span className="text-sm font-bold text-slate-500">{t('columns.amount')}</span>
                     <span className="font-semibold text-[15px] text-[var(--accent)] tabular-nums">{formatAmount(computeAmount(line), currencyCode)}</span>
                   </div>
@@ -527,7 +659,7 @@ export default function NewPurchaseInvoicePage() {
                 </div>
               )}
 
-              <div className="bg-white border border-slate-200 rounded-lg p-4 flex flex-col gap-3 mt-2">
+              <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-4 flex flex-col gap-3 mt-2">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-semibold text-slate-500">{tCommon('subtotal')}</span>
                   <span className="font-semibold tabular-nums">{formatAmount(subtotal, currencyCode)}</span>
@@ -558,7 +690,7 @@ export default function NewPurchaseInvoicePage() {
                   />
                 </div>
                 
-                <div className="flex justify-between items-center pt-3 border-t border-slate-100 bg-[rgba(59,130,246,0.02)] -mx-4 px-4 pb-1">
+                <div className="flex justify-between items-center pt-3 border-t border-[var(--border)] bg-[rgba(59,130,246,0.02)] -mx-4 px-4 pb-1">
                   <span className="font-bold text-[13px] text-slate-700">{tCommon('total')}</span>
                   <span className="font-extrabold text-lg text-[var(--accent)] tabular-nums">{formatAmount(grandTotal, currencyCode)}</span>
                 </div>
@@ -566,6 +698,35 @@ export default function NewPurchaseInvoicePage() {
             </div>
           </div>
         </div>
+
+        <CreateProductSlideOver
+          isOpen={isCreateProductOpen}
+          onClose={() => setIsCreateProductOpen(false)}
+          onSuccess={(prod) => {
+            handleAddProductLine(prod);
+            setIsCreateProductOpen(false);
+          }}
+          vendorId={vendorId || undefined}
+        />
+
+        <AdjustProductPricesSlideOver
+          isOpen={Boolean(adjustPriceTarget)}
+          onClose={() => setAdjustPriceTarget(null)}
+          productId={adjustPriceTarget?.productId ?? null}
+          invoiceUnitCost={adjustPriceTarget?.invoiceUnitCost ?? 0}
+          currencyCode={currencyCode || baseCurrency}
+          onSaved={(updated) => {
+            if (updated.standardCost !== undefined) {
+              setLines((prev) =>
+                prev.map((l) =>
+                  l.productId === updated.productId
+                    ? { ...l, productStandardCost: updated.standardCost }
+                    : l,
+                ),
+              );
+            }
+          }}
+        />
       </DetailsLayout>
     </>
   );

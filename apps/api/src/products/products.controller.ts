@@ -1,64 +1,66 @@
 import { SystemResource } from '@herobm/shared';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiOkResponse,
-  ApiCreatedResponse,
-  ApiBody,
-  ApiConsumes,
-  ApiParam,
-} from '@nestjs/swagger';
-import {
-  Controller,
-  Get,
-  Param,
-  Query,
-  Post,
-  Patch,
-  Body,
-  Delete,
-  UseInterceptors,
-  UploadedFile,
-  Req,
-  Res,
-  UseGuards,
-  NotFoundException,
   BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
   HttpCode,
   HttpStatus,
   Logger,
+  NotFoundException,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  Res,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
-import { RATE_LIMITS } from '../common/config/throttler.config';
+import {
+  ApiBody,
+  ApiConsumes,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+} from '@nestjs/swagger';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
-import { ProductsService } from './products.service';
-import { ProductsWriteService } from './products-write.service';
+import type { JwtUser } from '../auth/auth-user.decorator';
+import { AuthUser } from '../auth/auth-user.decorator';
+import { CasbinAction, CasbinResource, SkipCasbin } from '../auth/casbin.guard';
+import { Public } from '../auth/public.decorator';
+import { RATE_LIMITS } from '../common/config/throttler.config';
+import { ApiPaginatedResponse, PaginationQuery } from '../common/pagination';
 import { StorageService } from '../common/storage/storage.service';
 import {
-  AddSupplierDto,
-  CreateProductDto,
-  UpdateProductDto,
-  CopyProductDto,
-  LinkBinDto,
-  ProductResponseDto,
-  ProductCostSummaryResponseDto,
-  AddProductUomDto,
   AddProductComponentDto,
-  UpdateProductComponentDto,
-  EmptyBodyDto,
-  ProductSettingsResponseDto,
-  UpdateProductSettingsDto,
+  AddProductUomDto,
   AddServiceMemberDto,
+  AddSupplierDto,
+  BulkUpdateProductsDto,
+  CopyProductDto,
+  CreateProductDto,
+  EmptyBodyDto,
+  LinkBinDto,
+  ProductCostSummaryResponseDto,
+  ProductResponseDto,
+  ProductSettingsResponseDto,
   ServiceMemberResponseDto,
+  UpdateProductComponentDto,
+  UpdateProductDto,
+  UpdateProductSettingsDto,
 } from './dto';
-import { CasbinResource, CasbinAction, SkipCasbin } from '../auth/casbin.guard';
-import { Public } from '../auth/public.decorator';
-import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
-import { AuthUser } from '../auth/auth-user.decorator';
-import type { JwtUser } from '../auth/auth-user.decorator';
+import { ProductsWriteService } from './products-write.service';
+import { BulkUpdateResponseDto } from '../common/dto/bulk-update.dto';
+import { ProductsService } from './products.service';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
@@ -203,6 +205,19 @@ export class ProductsController {
   @ApiCreatedResponse({ type: ProductResponseDto })
   create(@Body() dto: CreateProductDto, @AuthUser() user: JwtUser) {
     return this.productsWriteService.create(dto, user.username);
+  }
+
+  @Patch('bulk-update')
+  @CasbinResource(SystemResource.BULK_WRITE)
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Bulk Update Products',
+    description:
+      'Bulk update curated fields across multiple selected products.',
+  })
+  @ApiOkResponse({ type: BulkUpdateResponseDto })
+  bulkUpdate(@Body() dto: BulkUpdateProductsDto, @AuthUser() user: JwtUser) {
+    return this.productsWriteService.bulkUpdate(dto, user.username);
   }
 
   @Patch(':id')

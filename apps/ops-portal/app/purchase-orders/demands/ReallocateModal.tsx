@@ -141,10 +141,9 @@ export default function ReallocateModal({
           </div>
         </div>
 
-        <div className="p-4 border-t border-[var(--border)] flex justify-end gap-3 bg-[#f8fafc] rounded-b-md">
+        <div className="p-4 border-t border-[var(--border)] flex justify-end gap-3 bg-[var(--bg-secondary)] rounded-b-md">
           <Button variant="secondary"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium border border-[var(--border)] rounded bg-white hover:bg-gray-50 transition-colors"
             disabled={isSubmitting}
           >
             {t('reallocateModal.cancel')}

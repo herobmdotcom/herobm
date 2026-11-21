@@ -1,79 +1,54 @@
 // security-ignore: sql-raw
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-  ConflictException,
-  Logger,
-} from '@nestjs/common';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  goodsReceived,
-  goodsReceivedLines,
-  suppliers,
-  supplierGroups,
-  locations,
-  products,
-  purchaseOrders,
-  purchaseOrderLineItems,
-  zones,
-  bins,
   binContents,
+  bins,
   glJournalEntries,
   glJournalLines,
+  goodsReceived,
+  goodsReceivedLines,
+  locations,
   organizations,
+  products,
+  purchaseOrderLineItems,
+  purchaseOrders,
+  supplierGroups,
+  suppliers,
+  zones,
 } from '@herobm/db-schema';
-import { emitEvent } from '../common/emit-event';
-import { EntityType, EventType } from '../common/event-types';
-import {
-  eq,
-  and,
-  sql,
-  desc,
-  or,
-  ilike,
-  asc,
-  inArray,
-  getTableColumns,
-} from 'drizzle-orm';
-import { randomUUID } from 'crypto';
-import {
-  PaginationQuery,
-  parsePagination,
-  withCursorPagination,
-} from '../common/pagination';
-import { AppConfigService } from '../settings/app-config.service';
-import { GlService } from '../gl/gl.service';
-import { getValuationStrategy } from '../inventory/valuation';
-import { getAccountingStrategy } from '../inventory/inventory-accounting';
-import { BackordersService } from '../orders/backorders.service';
-import { PurchaseOrdersService } from '../purchase-orders/purchase-orders.service';
-import { PurchaseOrdersWriteService } from '../purchase-orders/purchase-orders-write.service';
 import {
   GOODS_RECEIVED_STATE,
-  GoodsReceivedState,
-  GOODS_RECEIVED_TRANSITIONS,
-  PURCHASE_ORDER_STATE,
-  PURCHASE_ORDER_TRANSITIONS,
-  BACKORDER_STATE,
-  BACKORDER_TRANSITIONS,
-  getValidStates,
-  PurchaseOrderState,
-  BackorderState,
-  PUTAWAY_STATUS,
-  MATCH_STATUS,
   JOURNAL_ENTRY_SOURCE_TYPE,
+  MATCH_STATUS,
+  PURCHASE_ORDER_STATE,
+  PUTAWAY_STATUS,
   toFinancialDecimal,
 } from '@herobm/shared';
+import {
+  BadRequestException,
+  ConflictException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { and, eq, inArray, sql } from 'drizzle-orm';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { GlService } from '../gl/gl.service';
+import { getAccountingStrategy } from '../inventory/inventory-accounting';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
+import { getValuationStrategy } from '../inventory/valuation';
+import { BackordersService } from '../orders/backorders.service';
+import { PurchaseOrdersWriteService } from '../purchase-orders/purchase-orders-write.service';
+import { PurchaseOrdersService } from '../purchase-orders/purchase-orders.service';
+import { AppConfigService } from '../settings/app-config.service';
 
-const VALID_GRN_STATES = getValidStates(GOODS_RECEIVED_TRANSITIONS);
-
+import { UpdateGoodsReceivedDto } from './dto';
 import { GoodsReceivedCoreService } from './goods-received-core.service';
 import { GoodsReceivedStateService } from './goods-received-state.service';
-import { CreateGoodsReceivedDto, UpdateGoodsReceivedDto } from './dto';
 
 @Injectable()
 export class GoodsReceivedWriteService {

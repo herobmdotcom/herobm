@@ -8,13 +8,10 @@
  * Run with: npm run test:e2e -- --testPathPatterns orders-write
  * Requires: Docker stack running with Postgres + populated marts.
  */
+import { SALES_ORDER_STATE } from '@herobm/shared';
+import { INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { createE2eModule } from './utils/e2e-module';
-import { INestApplication } from '@nestjs/common';
-import { AppModule } from '../src/app.module';
-import { DRIZZLE } from '../src/drizzle/drizzle.module';
-import { sql } from 'drizzle-orm';
-import { SALES_ORDER_STATE, CUSTOMER_STATE } from '@herobm/shared';
 
 import request from 'supertest';
 

@@ -1,29 +1,29 @@
+import { SystemResource } from '@herobm/shared';
 import {
+  Body,
   Controller,
+  Delete,
   Get,
+  Param,
   Post,
   Put,
-  Delete,
-  Param,
-  Body,
   UseGuards,
 } from '@nestjs/common';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiOkResponse,
-  ApiCreatedResponse,
   ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
 } from '@nestjs/swagger';
-import { TaxPositionsService } from './tax-positions.service';
+import { ThrottlerGuard } from '@nestjs/throttler';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
 import {
   CreateTaxPositionDto,
-  UpdateTaxPositionDto,
   TaxPositionResponseDto,
+  UpdateTaxPositionDto,
 } from './tax-positions.dto';
-import { ThrottlerGuard } from '@nestjs/throttler';
-import { SystemResource } from '@herobm/shared';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
+import { TaxPositionsService } from './tax-positions.service';
 
 @ApiTags('Tax')
 @ApiBearerAuth()

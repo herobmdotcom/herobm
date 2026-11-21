@@ -1,13 +1,13 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { TwoFactorService } from './two-factor.service';
+import { users, userTwoFactor } from '@herobm/db-schema';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Test, TestingModule } from '@nestjs/testing';
+import * as bcrypt from 'bcrypt';
+import { generate, generateSecret } from 'otplib';
+import { EncryptionService } from '../common/encryption.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { users, userTwoFactor } from '@herobm/db-schema';
-import { EncryptionService } from '../common/encryption.service';
-import { ConfigService } from '@nestjs/config';
-import * as bcrypt from 'bcrypt';
-import { generateSecret, generate } from 'otplib';
+import { TwoFactorService } from './two-factor.service';
 
 // eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols.
 const TEST_PASSWORD = 'test-admin-pw-xyz'; // TEST_CREDENTIAL

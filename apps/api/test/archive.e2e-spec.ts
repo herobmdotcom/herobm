@@ -10,17 +10,16 @@
  * Run with: npm run test:e2e -- --testPathPatterns archive
  * Requires: Docker/Podman stack running with Postgres + populated marts.
  */
-import { TestingModule } from '@nestjs/testing';
-import { createE2eModule } from './utils/e2e-module';
-import { INestApplication } from '@nestjs/common';
-import { AppModule } from '../src/app.module';
 import {
   CUSTOMER_STATE,
   PRODUCT_STATE,
-  SUPPLIER_STATE,
-  SALES_ORDER_STATE,
   PURCHASE_ORDER_STATE,
+  SALES_ORDER_STATE,
+  SUPPLIER_STATE,
 } from '@herobm/shared';
+import { INestApplication } from '@nestjs/common';
+import { TestingModule } from '@nestjs/testing';
+import { createE2eModule } from './utils/e2e-module';
 
 import request from 'supertest';
 

@@ -1,16 +1,13 @@
-import { IsOptional, IsString } from 'class-validator';
-import { Transform } from 'class-transformer';
 import { applyDecorators, Type } from '@nestjs/common';
 import {
-  ApiOkResponse,
-  getSchemaPath,
-  ApiProperty,
   ApiExtraModels,
-  ApiHideProperty,
+  ApiOkResponse,
+  ApiProperty,
+  getSchemaPath,
 } from '@nestjs/swagger';
+import { PaginationQuery } from './pagination.dto';
 
 export * from './pagination.dto';
-import { PaginationQuery } from './pagination.dto';
 
 /**
  * Canonical paginated response.

@@ -1,36 +1,36 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { PurchaseOrdersService } from './purchase-orders.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { SuppliersService } from '../suppliers/suppliers.service';
-import { TaxCategoriesService } from '../tax/tax-categories.service';
-import { AppConfigService } from '../settings/app-config.service';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { BackordersService } from '../orders/backorders.service';
-import { TaxResolutionEngine } from '../tax/tax-resolution.engine';
 import {
-  purchaseOrders,
-  purchaseOrderLineItems,
+  exchangeRates,
   locations,
+  organizations,
+  procurementEvents,
   products,
   productSuppliers,
   productUoms,
-  uomDictionary,
-  taxCategories,
+  purchaseOrderLineItems,
+  purchaseOrders,
   suppliers,
-  organizations,
-  procurementEvents,
-  exchangeRates,
+  taxCategories,
+  uomDictionary,
 } from '@herobm/db-schema';
-import { eq } from 'drizzle-orm';
 import {
+  ORGANIZATION_STATE,
+  PRODUCT_STATE,
   PURCHASE_ORDER_STATE,
   SUPPLIER_STATE,
-  PRODUCT_STATE,
-  ORGANIZATION_STATE,
 } from '@herobm/shared';
+import { BadRequestException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { eq } from 'drizzle-orm';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
 import { InventoryQueryService } from '../inventory/inventory-query.service';
+import { BackordersService } from '../orders/backorders.service';
+import { AppConfigService } from '../settings/app-config.service';
+import { SuppliersService } from '../suppliers/suppliers.service';
+import { TaxCategoriesService } from '../tax/tax-categories.service';
+import { TaxResolutionEngine } from '../tax/tax-resolution.engine';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { PurchaseOrdersService } from './purchase-orders.service';
 
 import { PurchaseOrdersQueryService } from './purchase-orders-query.service';
 import { PurchaseOrdersStateService } from './purchase-orders-state.service';

@@ -1,6 +1,6 @@
 import {
-  getAvailableToInvoice,
   getAvailableToCredit,
+  getAvailableToInvoice,
 } from './order-math.utils';
 
 describe('order-math.utils', () => {

@@ -1,37 +1,37 @@
 import { SystemResource } from '@herobm/shared';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiQuery,
-  ApiOkResponse,
-  ApiCreatedResponse,
-  ApiBody,
-} from '@nestjs/swagger';
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
   Body,
+  Controller,
+  Delete,
+  Get,
   Param,
+  Patch,
+  Post,
   Query,
 } from '@nestjs/common';
-import { WorkOrdersService } from './work-orders.service';
 import {
-  WorkOrderResponseDto,
-  CreateWorkOrderDto,
-  UpdateWorkOrderDto,
-  UpdateWorkOrderComponentDto,
-  EmptyBodyDto,
-  PickWorkOrderComponentDto,
-  WorkOrderPickingSummaryDto,
-  UpdateManufacturingSettingsDto,
-  ManufacturingSettingsResponseDto,
-} from './dto';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
-import { AuthUser } from '../auth/auth-user.decorator';
+  ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { JwtUser } from '../auth/auth-user.decorator';
+import { AuthUser } from '../auth/auth-user.decorator';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
+import {
+  CreateWorkOrderDto,
+  EmptyBodyDto,
+  ManufacturingSettingsResponseDto,
+  PickWorkOrderComponentDto,
+  UpdateManufacturingSettingsDto,
+  UpdateWorkOrderComponentDto,
+  UpdateWorkOrderDto,
+  WorkOrderPickingSummaryDto,
+  WorkOrderResponseDto,
+} from './dto';
+import { WorkOrdersService } from './work-orders.service';
 
 @Controller('manufacturing/work-orders')
 @CasbinResource(SystemResource.WORK_ORDERS)

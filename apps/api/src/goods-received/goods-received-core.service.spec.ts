@@ -1,28 +1,27 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { GoodsReceivedCoreService } from './goods-received-core.service';
-import { NotFoundException } from '@nestjs/common';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
-  suppliers,
-  locations,
-  products,
   goodsReceived,
   goodsReceivedLines,
-  uomDictionary,
-  taxCategories,
+  locations,
   organizations,
+  products,
+  suppliers,
+  taxCategories,
+  uomDictionary,
   warehouseEvents,
 } from '@herobm/db-schema';
-import { eq } from 'drizzle-orm';
 import {
-  MATCH_STATUS,
-  PUTAWAY_STATUS,
   GOODS_RECEIVED_STATE,
-  SUPPLIER_STATE,
-  PRODUCT_STATE,
+  MATCH_STATUS,
   ORGANIZATION_STATE,
+  PRODUCT_STATE,
+  PUTAWAY_STATUS,
+  SUPPLIER_STATE,
 } from '@herobm/shared';
+import { NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { GoodsReceivedCoreService } from './goods-received-core.service';
 
 describe('GoodsReceivedCoreService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

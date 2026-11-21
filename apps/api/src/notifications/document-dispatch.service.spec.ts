@@ -1,14 +1,14 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
-import {
-  DocumentDispatchService,
-  DispatchDocumentDto,
-} from './document-dispatch.service';
-import { PdfTemplatesService } from '../pdf-templates/pdf-templates.service';
-import { EmailService } from '../email/email.service';
-import { AppConfigService } from '../settings/app-config.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
+import { Test, TestingModule } from '@nestjs/testing';
 import type { JwtUser } from '../auth/auth-user.decorator';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { EmailService } from '../email/email.service';
+import { PdfTemplatesService } from '../pdf-templates/pdf-templates.service';
+import { AppConfigService } from '../settings/app-config.service';
+import {
+  DispatchDocumentDto,
+  DocumentDispatchService,
+} from './document-dispatch.service';
 
 describe('DocumentDispatchService', () => {
   let service: DocumentDispatchService;

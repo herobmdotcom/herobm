@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/unbound-method -- Unbound methods are commonly used in Jest assertions and mock setups without issue. */
 import { Test, TestingModule } from '@nestjs/testing';
-import { AbrProvider } from './abr.provider';
 import { IntegrationLoggerService } from '../../common/integration-logger.service';
+import { AbrProvider } from './abr.provider';
 
 describe('AbrProvider', () => {
   let provider: AbrProvider;

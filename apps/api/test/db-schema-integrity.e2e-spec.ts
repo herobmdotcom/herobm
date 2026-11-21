@@ -1,11 +1,10 @@
-import { TestingModule } from '@nestjs/testing';
-import { createE2eModule } from './utils/e2e-module';
-import { AppModule } from '../src/app.module';
-import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import * as schema from '@herobm/db-schema';
-import { sql } from 'drizzle-orm';
 import { INestApplication } from '@nestjs/common';
+import { TestingModule } from '@nestjs/testing';
+import { sql } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { DRIZZLE } from '../src/drizzle/drizzle.module';
+import { createE2eModule } from './utils/e2e-module';
 
 describe('Database Schema Integrity (e2e) - ADV-103', () => {
   let app: INestApplication;

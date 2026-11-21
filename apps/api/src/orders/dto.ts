@@ -1,28 +1,28 @@
 import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  IsArray,
-  ValidateNested,
-  IsNumberString,
-  IsUUID,
-  IsEmail,
-  IsBoolean,
-  IsIn,
-  IsEnum,
-  IsInt,
-  Min,
-  Max,
-  ValidateIf,
-  IsObject,
-} from 'class-validator';
-import { Type } from 'class-transformer';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
+  LineType,
   RETURN_RESOLUTION,
   type ReturnResolution,
-  LineType,
 } from '@herobm/shared';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type, Transform } from 'class-transformer';
+import {
+  IsArray,
+  IsBoolean,
+  IsEmail,
+  IsEnum,
+  IsIn,
+  IsInt,
+  IsNotEmpty,
+  IsNumberString,
+  IsObject,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  Min,
+  ValidateIf,
+  ValidateNested,
+} from 'class-validator';
 import { IsPercentage } from '../common/validators/is-percentage.decorator';
 
 export class OrderCustomFieldsDto {
@@ -115,6 +115,23 @@ export class CreateOrderLineDto {
   @IsOptional()
   @IsString()
   fulfillmentLocationId?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Optional 1-based line number at which to insert the new line. Existing lines at or after this position will shift down.',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  insertAtLineNumber?: number;
+}
+
+export class ReorderOrderLinesDto {
+  @ApiProperty({ type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  lineIds!: string[];
 }
 
 export class UpdateOrderLineDto {
@@ -1179,4 +1196,120 @@ export class SalesSettingsResponseDto {
 
   @ApiProperty({ example: '2026-03-31T08:00:00Z' })
   modifiedOn!: string;
+}
+
+// ── Pricing History DTOs ──
+
+export class GetPricingHistoryQueryDto {
+  @ApiProperty({
+    description: 'Product UUID to fetch order pricing history for',
+  })
+  @IsUUID('4')
+  productId!: string;
+
+  @ApiPropertyOptional({
+    description: 'Optional customer ID to prioritize and rank first',
+  })
+  @IsOptional()
+  @IsUUID('4')
+  customerId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Optional sales order ID to exclude from history',
+  })
+  @IsOptional()
+  @IsUUID('4')
+  excludeOrderId?: string;
+
+  @ApiPropertyOptional({
+    description: '1-based page number (default: 1)',
+    default: 1,
+  })
+  @IsOptional()
+  @Transform(({ value }) => (value ? Number(value) : undefined))
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @ApiPropertyOptional({
+    description: 'Page size limit (default: 20)',
+    default: 20,
+  })
+  @IsOptional()
+  @Transform(({ value }) => (value ? Number(value) : undefined))
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number;
+
+  @ApiPropertyOptional({
+    description: 'Filter only to orders for customerId',
+  })
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  customerOnly?: boolean;
+}
+
+export class PricingHistoryEntryDto {
+  @ApiProperty()
+  salesOrderId!: string;
+
+  @ApiProperty()
+  orderNumber!: string;
+
+  @ApiPropertyOptional()
+  orderName?: string | null;
+
+  @ApiPropertyOptional()
+  customerId?: string | null;
+
+  @ApiProperty()
+  customerName!: string;
+
+  @ApiProperty()
+  isCurrentCustomer!: boolean;
+
+  @ApiProperty()
+  stateCode!: string;
+
+  @ApiProperty()
+  orderDate!: string;
+
+  @ApiProperty()
+  lineNumber!: number;
+
+  @ApiProperty()
+  quantity!: string;
+
+  @ApiPropertyOptional()
+  unitOfMeasure?: string | null;
+
+  @ApiProperty()
+  pricePerUnit!: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsPercentage()
+  discountPercentage?: string | null;
+
+  @ApiPropertyOptional()
+  lineTotal?: string | null;
+
+  @ApiProperty()
+  currencyCode!: string;
+}
+
+export class PaginatedPricingHistoryResponseDto {
+  @ApiProperty({ type: [PricingHistoryEntryDto] })
+  data!: PricingHistoryEntryDto[];
+
+  @ApiProperty()
+  total!: number;
+
+  @ApiProperty()
+  page!: number;
+
+  @ApiProperty()
+  limit!: number;
 }

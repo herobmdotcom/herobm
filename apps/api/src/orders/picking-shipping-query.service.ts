@@ -1,36 +1,36 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { eq, and, sql, desc, inArray } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
-  salesOrders,
-  salesOrderLineItems,
-  products as coreProducts,
-  locations,
-  salesOrderPicks,
-  salesOrderShipments,
-  salesOrderShipmentLines,
+  bins,
   customers as coreAccounts,
+  products as coreProducts,
   customerGroups,
-  transferOrders,
-  transferOrderLines,
-  transferOrderPicks,
-  transferOrderShipments,
-  transferOrderShipmentLines,
+  locations,
   organizations,
   projects,
-  bins,
+  salesOrderLineItems,
+  salesOrderPicks,
+  salesOrderShipmentLines,
+  salesOrderShipments,
+  salesOrders,
+  transferOrderLines,
+  transferOrderPicks,
+  transferOrderShipmentLines,
+  transferOrderShipments,
+  transferOrders,
 } from '@herobm/db-schema';
-import { findOrder, getCommittedPerLine } from './shipment-helpers';
-import { getCreditBlockedSql } from './orders.sql';
 import {
   SALES_ORDER_PICK_STATE,
   SALES_ORDER_STATE,
-  TRANSFER_ORDER_STATE,
   TRANSFER_ORDER_PICK_STATE,
+  TRANSFER_ORDER_STATE,
   toDecimal,
 } from '@herobm/shared';
+import { Inject, Injectable } from '@nestjs/common';
 import Decimal from 'decimal.js';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { getCreditBlockedSql } from './orders.sql';
+import { findOrder, getCommittedPerLine } from './shipment-helpers';
 
 @Injectable()
 export class PickingShippingQueryService {

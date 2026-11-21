@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import {
-  IEnrichmentProvider,
-  EnrichmentResult,
-} from './enrichment-provider.interface';
 import { IntegrationLoggerService } from '../../common/integration-logger.service';
+import {
+  EnrichmentResult,
+  IEnrichmentProvider,
+} from './enrichment-provider.interface';
 
 @Injectable()
 export class AbrProvider implements IEnrichmentProvider {

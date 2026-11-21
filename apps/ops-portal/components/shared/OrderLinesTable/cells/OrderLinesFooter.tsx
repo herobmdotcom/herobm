@@ -42,7 +42,7 @@ export function OrderLinesFooter({
         <td colSpan={colSpan} className="text-right font-semibold text-[var(--text-muted)]">
           {tCommon('subtotal')}
         </td>
-        <td className="text-right font-semibold tabular-nums">
+        <td className="text-right font-semibold tabular-nums whitespace-nowrap">
           {formatAmount(subtotal, currencyCode)}
         </td>
         {hasActionColumn && <td></td>}
@@ -53,7 +53,7 @@ export function OrderLinesFooter({
           <td colSpan={colSpan} className="text-right font-semibold">
             {tSales('columns.discountPct')}
           </td>
-          <td className="text-right font-semibold tabular-nums">
+          <td className="text-right font-semibold tabular-nums whitespace-nowrap">
             -{formatAmount(totalDiscount, currencyCode)}
           </td>
           {hasActionColumn && <td></td>}
@@ -67,7 +67,7 @@ export function OrderLinesFooter({
             ? ` (${taxPct % 1 === 0 ? taxPct.toFixed(0) : taxPct.toFixed(1)}%)`
             : ''}
         </td>
-        <td className="text-right font-semibold tabular-nums">
+        <td className="text-right font-semibold tabular-nums whitespace-nowrap">
           {isTaxStale ? (
             <span className="badge badge-warning text-xs font-normal ml-auto">
               {tCommon('pending')}
@@ -83,7 +83,7 @@ export function OrderLinesFooter({
         <td colSpan={colSpan} className="text-right font-bold text-[13px] text-[var(--text-primary)]">
           {tCommon('total')}
         </td>
-        <td className="text-right font-extrabold text-sm text-[var(--accent)] tabular-nums">
+        <td className="text-right font-extrabold text-sm text-[var(--accent)] tabular-nums whitespace-nowrap">
           {isTaxStale ? (
             <span className="badge badge-warning text-xs font-normal ml-auto">
               {tCommon('pending')}
@@ -100,7 +100,7 @@ export function OrderLinesFooter({
         <td className="py-1 text-xs font-medium text-slate-500 text-right pr-4">
           {tCommon('subtotal')}
         </td>
-        <td className="py-1 text-sm font-semibold text-right tabular-nums">
+        <td className="py-1 text-sm font-semibold text-right tabular-nums whitespace-nowrap">
           {formatAmount(subtotal, currencyCode)}
         </td>
       </tr>
@@ -110,7 +110,7 @@ export function OrderLinesFooter({
           <td className="py-1 text-xs font-medium text-right pr-4">
             {tSales('columns.discountPct')}
           </td>
-          <td className="py-1 text-sm font-semibold text-right tabular-nums">
+          <td className="py-1 text-sm font-semibold text-right tabular-nums whitespace-nowrap">
             -{formatAmount(totalDiscount, currencyCode)}
           </td>
         </tr>
@@ -120,7 +120,7 @@ export function OrderLinesFooter({
         <td className="py-1 text-xs font-medium text-slate-500 text-right pr-4">
           {tCommon('tax')}
         </td>
-        <td className="py-1 text-sm font-semibold text-right tabular-nums">
+        <td className="py-1 text-sm font-semibold text-right tabular-nums whitespace-nowrap">
           {isTaxStale ? (
             <span className="badge badge-warning text-[10px] font-normal inline-block">
               {tCommon('pending')}
@@ -135,7 +135,7 @@ export function OrderLinesFooter({
         <td className="py-2 text-sm font-bold text-[var(--accent)] text-right pr-4">
           {tCommon('total')}
         </td>
-        <td className="py-2 text-base font-bold text-[var(--accent)] text-right tabular-nums">
+        <td className="py-2 text-base font-bold text-[var(--accent)] text-right tabular-nums whitespace-nowrap">
           {isTaxStale ? (
             <span className="badge badge-warning text-[10px] font-normal inline-block">
               {tCommon('pending')}

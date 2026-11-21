@@ -1,21 +1,21 @@
-import { Injectable, Inject, OnModuleInit, Logger } from '@nestjs/common';
-import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
 import {
-  products,
-  locations,
+  binContents,
   bins,
-  zones,
-  inventoryLevels,
-  inventoryLedger,
   inventoryEntries,
+  inventoryLedger,
+  inventoryLevels,
+  locations,
   productDefaultBins,
   productGroups,
-  binContents,
+  products,
+  zones,
 } from '@herobm/db-schema';
-import { sql, eq, and, gte, lte } from 'drizzle-orm';
+import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { and, eq, sql } from 'drizzle-orm';
+import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { isQuarantineBinCondition } from './inventory-math.utils';
 
 @Injectable()
@@ -46,7 +46,7 @@ export class InventoryReportsService implements OnModuleInit {
     });
   }
 
-  async getInventoryValuation(filters: Record<string, unknown>) {
+  async getInventoryValuation(_filters: Record<string, unknown>) {
     const rows = await this.db
       .select({
         productNumber: products.productNumber,
@@ -116,7 +116,7 @@ export class InventoryReportsService implements OnModuleInit {
     return rows;
   }
 
-  async getInventoryReplenishment(filters: Record<string, unknown>) {
+  async getInventoryReplenishment(_filters: Record<string, unknown>) {
     const rows = await this.db
       .select({
         productNumber: products.productNumber,
@@ -150,7 +150,7 @@ export class InventoryReportsService implements OnModuleInit {
     }));
   }
 
-  async getInventoryQuarantine(filters: Record<string, unknown>) {
+  async getInventoryQuarantine(_filters: Record<string, unknown>) {
     const rows = await this.db
       .select({
         productNumber: products.productNumber,

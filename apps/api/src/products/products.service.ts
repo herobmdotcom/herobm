@@ -1,58 +1,58 @@
-import { Decimal } from 'decimal.js';
-import { toDecimal } from '@herobm/shared';
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
-import {
-  eq,
-  ilike,
-  or,
-  sql,
-  and,
-  getTableColumns,
-  asc,
-  desc,
-  inArray,
-} from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  products as coreProducts,
-  masterDataEvents,
-  productGroups,
-  productUoms,
-  productDefaultBins,
-  locations,
   bins,
+  products as coreProducts,
   inventoryLedger,
-  productComponents,
   inventoryLevels,
-  productImages,
-  productSuppliers,
-  suppliers,
+  locations,
+  masterDataEvents,
   organizations,
+  productComponents,
+  productDefaultBins,
+  productGroups,
+  productImages,
+  productSettings,
+  productSuppliers,
+  productUoms,
+  projectResources,
   purchaseOrderLineItems,
   purchaseOrders,
-  productSettings,
-  projectResources,
+  suppliers,
   users,
 } from '@herobm/db-schema';
+import {
+  PRODUCT_STATE,
+  ProductType,
+  RESOURCE_TYPE,
+  calculateAvailableQuantity,
+  toDecimal,
+} from '@herobm/shared';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { Decimal } from 'decimal.js';
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  getTableColumns,
+  ilike,
+  inArray,
+  or,
+  sql,
+} from 'drizzle-orm';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
 import {
   PaginationQuery,
   parsePagination,
   withCursorPagination,
 } from '../common/pagination';
-import {
-  PRODUCT_STATE,
-  RESOURCE_TYPE,
-  ProductType,
-  calculateAvailableQuantity,
-} from '@herobm/shared';
-import { emitEvent } from '../common/emit-event';
-import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { ProductCostSummaryResponseDto } from './dto';
 
 @Injectable()

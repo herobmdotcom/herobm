@@ -1,13 +1,13 @@
 import { SystemResource } from '@herobm/shared';
-import { Controller, Get, Param, NotFoundException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
-import { DataSourcesRegistry } from './data-sources.registry';
+import { Controller, Get, NotFoundException, Param } from '@nestjs/common';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
 import {
   DataSourceItemDto,
-  SampleReportDto,
   SampleRecordDto,
+  SampleReportDto,
 } from './data-sources.dto';
+import { DataSourcesRegistry } from './data-sources.registry';
 
 @ApiTags('System')
 @CasbinResource(SystemResource.BUSINESS_REPORT)

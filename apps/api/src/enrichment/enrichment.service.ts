@@ -1,17 +1,17 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import {
-  IEnrichmentProvider,
-  EnrichmentResult,
-} from './providers/enrichment-provider.interface';
-import { AbrProvider } from './providers/abr.provider';
-import { TaxJarProvider } from './providers/taxjar.provider';
-import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
 import { integrations } from '@herobm/db-schema';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
-import { EncryptionService } from '../common/encryption.service';
-import { AppConfigService } from '../settings/app-config.service';
 import { emitEvent } from '../common/emit-event';
+import { EncryptionService } from '../common/encryption.service';
 import { EntityType, EventType } from '../common/event-types';
+import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
+import { AppConfigService } from '../settings/app-config.service';
+import { AbrProvider } from './providers/abr.provider';
+import {
+  EnrichmentResult,
+  IEnrichmentProvider,
+} from './providers/enrichment-provider.interface';
+import { TaxJarProvider } from './providers/taxjar.provider';
 
 @Injectable()
 export class EnrichmentService {

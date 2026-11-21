@@ -1,12 +1,12 @@
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { ProductsController } from './products.controller';
-import { ProductsService } from './products.service';
-import { ProductsWriteService } from './products-write.service';
-import { StorageService } from '../common/storage/storage.service';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import * as fs from 'fs';
 import * as path from 'path';
+import { StorageService } from '../common/storage/storage.service';
+import { ProductsWriteService } from './products-write.service';
+import { ProductsController } from './products.controller';
+import { ProductsService } from './products.service';
 
 describe('ProductImages', () => {
   let controller: ProductsController;

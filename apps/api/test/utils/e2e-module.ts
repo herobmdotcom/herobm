@@ -1,7 +1,7 @@
-import { Test, TestingModuleBuilder } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { ConvertEmptyStringsToNullMiddleware } from '../../src/common/middleware/convert-empty-strings-to-null.middleware';
+import { Test, TestingModuleBuilder } from '@nestjs/testing';
 import { AppModule } from '../../src/app.module';
+import { ConvertEmptyStringsToNullMiddleware } from '../../src/common/middleware/convert-empty-strings-to-null.middleware';
 import { DRIZZLE, POSTGRES_CLIENT } from '../../src/drizzle/drizzle.module';
 // PGlite imports removed from static scope to prevent Node from evaluating
 // ES modules when PGlite is not in use (avoids ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING_FLAG)

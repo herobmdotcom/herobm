@@ -1,66 +1,64 @@
-import { randomUUID } from 'crypto';
-import { Decimal } from 'decimal.js';
 import {
-  Injectable,
-  Inject,
-  BadRequestException,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
-import { eq, and } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  salesOrders,
-  salesInvoices,
-  salesInvoiceLines,
-  salesOrderLineItems,
-  customers,
   products as coreProducts,
   customerGroups,
-  productGroups,
-  tradingTerms,
+  customers,
   organizations,
-  salesOrderReturns,
+  productGroups,
+  salesInvoiceLines,
+  salesInvoices,
+  salesOrderLineItems,
   salesOrderReturnLines,
+  salesOrderReturns,
+  salesOrders,
+  tradingTerms,
 } from '@herobm/db-schema';
-import { emitEvent } from '../common/emit-event';
-import { EntityType, EventType } from '../common/event-types';
-import { getExchangeRateForCurrency } from '../common/fx-helper';
-import { resolveGlDimensions } from '../common/utils/gl-resolution.util';
-import { calculateDueDate } from '../settings/trading-terms.utils';
-import {
-  resolveEffectiveTradingTermsId,
-  resolveEffectiveEarlyPaymentDiscount,
-} from '../customers/credit-control.utils';
-import { GlService } from '../gl/gl.service';
-import { TaxCategoriesService } from '../tax/tax-categories.service';
-import { getCommittedPerLine } from '../orders/shipment-helpers';
-import { evaluateLifecycleRules } from '../orders/order-lifecycle-rules';
 import {
   computeLinePrice,
   isStockedProductLine,
   RETURN_STATE,
-  toDecimal,
-} from '@herobm/shared';
-import { AppConfigService } from '../settings/app-config.service';
-import { OrganizationService } from '../settings/organization.service';
-import { EnrichmentService } from '../enrichment/enrichment.service';
-import { CreateSalesInvoiceDto } from './dto';
-import {
   SALES_INVOICE_STATE,
   SALES_ORDER_STATE,
   SalesOrderState,
+  toDecimal,
 } from '@herobm/shared';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { Decimal } from 'decimal.js';
+import { and, asc, eq } from 'drizzle-orm';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
+import { getExchangeRateForCurrency } from '../common/fx-helper';
+import { resolveGlDimensions } from '../common/utils/gl-resolution.util';
+import {
+  resolveEffectiveEarlyPaymentDiscount,
+  resolveEffectiveTradingTermsId,
+} from '../customers/credit-control.utils';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { EnrichmentService } from '../enrichment/enrichment.service';
+import { GlService } from '../gl/gl.service';
+import { evaluateLifecycleRules } from '../orders/order-lifecycle-rules';
 import { getAvailableToInvoice } from '../orders/order-math.utils';
-import { generateInvoiceNumber } from './sales-invoice-utils';
-import { changeSalesInvoiceStateHelper } from './sales-invoice-state.helper';
+import { getCommittedPerLine } from '../orders/shipment-helpers';
+import { AppConfigService } from '../settings/app-config.service';
+import { OrganizationService } from '../settings/organization.service';
+import { calculateDueDate } from '../settings/trading-terms.utils';
+import { TaxCategoriesService } from '../tax/tax-categories.service';
+import { CreateSalesInvoiceDto } from './dto';
 import {
   calculateBaseTotalAmount,
   postSalesInvoiceGlJournal,
   RevenueGroup,
 } from './sales-invoice-gl.helper';
+import { changeSalesInvoiceStateHelper } from './sales-invoice-state.helper';
 import { recordExternalSalesInvoiceTaxTransaction } from './sales-invoice-tax.helper';
+import { generateInvoiceNumber } from './sales-invoice-utils';
 
 @Injectable()
 export class SalesInvoiceCreationService {
@@ -257,7 +255,8 @@ export class SalesInvoiceCreationService {
         productGroups,
         eq(coreProducts.productGroupId, productGroups.productGroupId),
       )
-      .where(eq(salesOrderLineItems.salesOrderId, salesOrderId));
+      .where(eq(salesOrderLineItems.salesOrderId, salesOrderId))
+      .orderBy(asc(salesOrderLineItems.lineNumber));
 
     if (orderLines.length === 0) {
       throw new BadRequestException('Cannot invoice an empty order.');
@@ -336,16 +335,10 @@ export class SalesInvoiceCreationService {
     let defaultRevenueCostCenterId: string | null = null;
     let defaultRevenueActivityId: string | null = null;
 
-    let totalOrderedQty = 0;
-    let totalInvoicedSoFar = 0;
-    let totalInvoicingNow = 0;
-
     for (const line of orderLines) {
       const orderedQty = toDecimal(line.quantity).toNumber();
-      totalOrderedQty += orderedQty;
 
       const prevInvoicedQty = invoicedQtyByLine.get(line.salesOrderLineId) || 0;
-      totalInvoicedSoFar += prevInvoicedQty;
 
       const isStocked = isStockedProductLine({
         productId: line.productId,
@@ -391,8 +384,6 @@ export class SalesInvoiceCreationService {
           `Line ${line.lineNumber} exceeds available invoice quantity. Requested: ${qtyToInvoice}, Available: ${availableToInvoice}`,
         );
       }
-
-      totalInvoicingNow += qtyToInvoice;
 
       const price = new Decimal(line.pricePerUnit).toNumber();
       const disc = new Decimal(line.discountPercentage || '0').toNumber();

@@ -1,18 +1,17 @@
-import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  IsEmail,
-  IsUUID,
-  IsBoolean,
-  IsIn,
-  IsArray,
-  Matches,
-  IsEnum,
-  IsObject,
-} from 'class-validator';
-import { Transform } from 'class-transformer';
 import { ContactEntityType } from '@herobm/shared';
+import { Transform } from 'class-transformer';
+import {
+  IsArray,
+  IsBoolean,
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsObject,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Matches,
+} from 'class-validator';
 
 export class CreateContactDto {
   @IsOptional()

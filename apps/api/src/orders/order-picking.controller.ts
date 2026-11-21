@@ -1,36 +1,35 @@
 import { SystemResource } from '@herobm/shared';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiOkResponse,
-  ApiCreatedResponse,
-  ApiBody,
-  ApiQuery,
-} from '@nestjs/swagger';
-import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Param,
   Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
   Query,
 } from '@nestjs/common';
-import { PickingService } from './picking.service';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
-import { AuthUser } from '../auth/auth-user.decorator';
-import type { JwtUser } from '../auth/auth-user.decorator';
 import {
-  ShippingContextDto,
-  PickingQueueOrderDto,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
+import type { JwtUser } from '../auth/auth-user.decorator';
+import { AuthUser } from '../auth/auth-user.decorator';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
+import {
+  PickOrderLineDto,
+  PickingBarcodeDto,
   PickingQueueQueryDto,
   PickingQueueResponseDto,
   PickingSummaryDto,
-  ShippingQueueOrderDto,
-  PickOrderLineDto,
   PickingSummaryPickDto,
-  PickingBarcodeDto,
+  ShippingContextDto,
+  ShippingQueueOrderDto,
 } from './dto';
+import { PickingService } from './picking.service';
 
 @ApiTags('Warehouse')
 @Controller('sales-orders')

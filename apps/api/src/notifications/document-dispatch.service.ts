@@ -1,16 +1,16 @@
 import {
-  Injectable,
-  Inject,
-  Logger,
   BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
 } from '@nestjs/common';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { PdfTemplatesService } from '../pdf-templates/pdf-templates.service';
-import { EmailService } from '../email/email.service';
-import { AppConfigService } from '../settings/app-config.service';
 import type { JwtUser } from '../auth/auth-user.decorator';
 import { EntityTypeValue } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { EmailService } from '../email/email.service';
+import { PdfTemplatesService } from '../pdf-templates/pdf-templates.service';
+import { AppConfigService } from '../settings/app-config.service';
 
 export interface DispatchDocumentDto {
   /** ID to pass to the hook (e.g. SalesOrderId) */

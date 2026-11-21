@@ -1,7 +1,7 @@
-import { Module, Global } from '@nestjs/common';
-import { DocumentDispatchService } from './document-dispatch.service';
-import { PdfTemplatesModule } from '../pdf-templates/pdf-templates.module';
+import { Global, Module } from '@nestjs/common';
 import { EmailModule } from '../email/email.module';
+import { PdfTemplatesModule } from '../pdf-templates/pdf-templates.module';
+import { DocumentDispatchService } from './document-dispatch.service';
 
 @Global()
 @Module({

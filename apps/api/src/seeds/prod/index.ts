@@ -1,8 +1,8 @@
 import { SeedDB } from '../run';
-import { runCoreSeeds } from './core';
 import { seedBusinessReports } from './business-reports';
-import { seedDynamicReports } from './dynamic-reports';
+import { runCoreSeeds } from './core';
 
+export { seedDynamicReports } from './dynamic-reports';
 export async function runProdSeeds(db: SeedDB, dryRun: boolean) {
   console.log('--- Starting Production Seeds ---');
 

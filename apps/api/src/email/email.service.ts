@@ -1,8 +1,8 @@
+import { emailOutbox } from '@herobm/db-schema';
 import { Injectable, Logger } from '@nestjs/common';
-import { emailOutbox, outbox, systemEvents } from '@herobm/db-schema';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { EntityType, EventType, EntityTypeValue } from '../common/event-types';
 import { emitEvent } from '../common/emit-event';
+import { EntityType, EntityTypeValue, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
 
 export interface QueueEmailParams {
   entityType?: EntityTypeValue;

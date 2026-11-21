@@ -1,11 +1,10 @@
+import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsString,
   IsNotEmpty,
+  IsNumberString,
   IsOptional,
   IsUUID,
-  IsNumberString,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
 import { IsPercentage } from '../common/validators/is-percentage.decorator';
 
 export class CreateDiscountMatrixDto {

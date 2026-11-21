@@ -227,12 +227,12 @@ export default function FulfillmentSection({ orderId, pickingSummary, order }: P
                                                 </Link>
                                             ) : line.productNumber}
                                         </div>
-                                        <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">{line.lineNumber}</div>
+                                        <div className="text-xs text-[var(--text-muted)] bg-[var(--bg-secondary)] px-2 py-0.5 rounded font-medium">{line.lineNumber}</div>
                                     </div>
-                                    <div className="text-sm text-slate-600 font-medium mb-3">
+                                    <div className="text-sm text-[var(--text-secondary)] font-medium mb-3">
                                         {line.productDescription || '—'}
                                     </div>
-                                    <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
+                                    <div className="flex flex-col gap-0 border-t border-[var(--border)] pt-1">
                                         <MobileCardField label={t('columns.ordered')} value={
                                             <span className="font-semibold">{ordered.toLocaleString()}</span>
                                         } />

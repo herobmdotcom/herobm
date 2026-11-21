@@ -36,6 +36,10 @@ export function PriceCell({
           step="0.01"
           defaultValue={parseFloat(String(line.pricePerUnit || '0')).toFixed(2)}
           key={`price-${lineIdentifier}-${line.pricePerUnit}`}
+          onFocus={(e) => e.target.select()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.currentTarget.blur();
+          }}
           onBlur={(e) => {
             const val = parseFloat(e.target.value);
             const formatted = isNaN(val) ? '0.00' : val.toFixed(2);
@@ -55,6 +59,7 @@ export function PriceCell({
         min="0"
         step="0.01"
         value={line.pricePerUnit ?? ''}
+        onFocus={(e) => e.target.select()}
         onChange={(e) => onUpdateLine?.(lineIdentifier, 'pricePerUnit', e.target.value)}
         onBlur={(e) => {
           const val = parseFloat(e.target.value);

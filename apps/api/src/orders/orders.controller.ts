@@ -1,55 +1,61 @@
-import { SystemResource } from '@herobm/shared';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiOkResponse,
-  ApiCreatedResponse,
-  ApiBody,
-} from '@nestjs/swagger';
+  DATA_SOURCE_CONTEXT,
+  SALES_ORDER_STATE,
+  SystemResource,
+} from '@herobm/shared';
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Param,
-  Query,
   Body,
-  UseInterceptors,
+  Controller,
+  Delete,
+  Get,
   HttpCode,
   HttpException,
   HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseInterceptors,
 } from '@nestjs/common';
-import { OrdersService } from './orders.service';
-import { Idempotent } from '../common/idempotency/idempotent.decorator';
+import {
+  ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+import type { JwtUser } from '../auth/auth-user.decorator';
+import { AuthUser } from '../auth/auth-user.decorator';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
 import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interceptor';
+import { Idempotent } from '../common/idempotency/idempotent.decorator';
+import { ApiPaginatedResponse, PaginationQuery } from '../common/pagination';
+import { DocumentDispatchService } from '../notifications/document-dispatch.service';
+import { DirectFulfillmentService } from './direct-fulfillment.service';
+import {
+  ChangeOrderStateDto,
+  CreateOrderDto,
+  CreateOrderLineDto,
+  DirectFulfillmentResponseDto,
+  EmailDocumentDto,
+  EmptyBodyDto,
+  FulfillDirectOrderDto,
+  OrderResponseDto,
+  OverrideCreditHoldDto,
+  PaginatedPricingHistoryResponseDto,
+  ReorderOrderLinesDto,
+  SalesSettingsResponseDto,
+  GetPricingHistoryQueryDto,
+  UpdateOrderDto,
+  UpdateOrderLineDto,
+  UpdateSalesSettingsDto,
+} from './dto';
 import { OrderCreationService } from './order-creation.service';
 import { OrderLinesService } from './order-lines.service';
 import { OrderStateService } from './order-state.service';
 import { OrdersCoreService } from './orders-core.service';
 import { OrdersQueryService } from './orders-query.service';
-import { DocumentDispatchService } from '../notifications/document-dispatch.service';
-import { DATA_SOURCE_CONTEXT, SALES_ORDER_STATE } from '@herobm/shared';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
-import {
-  CreateOrderDto,
-  UpdateOrderDto,
-  CreateOrderLineDto,
-  UpdateOrderLineDto,
-  OrderResponseDto,
-  EmptyBodyDto,
-  ChangeOrderStateDto,
-  OverrideCreditHoldDto,
-  EmailDocumentDto,
-  FulfillDirectOrderDto,
-  DirectFulfillmentResponseDto,
-  UpdateSalesSettingsDto,
-  SalesSettingsResponseDto,
-} from './dto';
-import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
-import { AuthUser } from '../auth/auth-user.decorator';
-import type { JwtUser } from '../auth/auth-user.decorator';
-import { DirectFulfillmentService } from './direct-fulfillment.service';
+import { OrdersService } from './orders.service';
 
 /**
  * Core order CRUD and state transition endpoints.
@@ -114,6 +120,18 @@ export class OrdersController {
   @ApiPaginatedResponse(OrderResponseDto)
   findAll(@Query() query: PaginationQuery) {
     return this.ordersService.findAll(query);
+  }
+
+  @Get('pricing-history')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Product Pricing History',
+    description:
+      'Retrieve paginated historical sales orders for a specific product, ranking customer orders first.',
+  })
+  @ApiOkResponse({ type: PaginatedPricingHistoryResponseDto })
+  async getProductPricingHistory(@Query() query: GetPricingHistoryQueryDto) {
+    return this.ordersQueryService.getProductPricingHistory(query);
   }
 
   // -------------------------------------------------------------------------
@@ -309,6 +327,22 @@ export class OrdersController {
     @AuthUser() user: JwtUser,
   ) {
     return this.orderLinesService.addLine(id, body, user.username);
+  }
+
+  @Patch(':id/lines/reorder')
+  @ApiBody({ type: ReorderOrderLinesDto })
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Reorder Order Lines',
+    description: 'Reorder line items on a draft sales order.',
+  })
+  @ApiOkResponse({ type: OrderResponseDto })
+  reorderLines(
+    @Param('id') id: string,
+    @Body() body: ReorderOrderLinesDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.orderLinesService.reorderLines(id, body.lineIds, user.username);
   }
 
   @Patch(':id/lines/:lineId')

@@ -1,38 +1,38 @@
-import { AppConfigService } from '../settings/app-config.service';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PickingService } from './picking.service';
+import { AppConfigService } from '../settings/app-config.service';
+import { PickingActionService } from './picking-action.service';
 import { PickingQueryService } from './picking-query.service';
 import { PickingShippingQueryService } from './picking-shipping-query.service';
-import { PickingActionService } from './picking-action.service';
+import { PickingService } from './picking.service';
 
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
-  salesOrders,
+  bins,
+  customers,
+  locations,
+  organizations,
+  outbox,
+  products,
+  salesEvents,
   salesOrderLineItems,
   salesOrderPicks,
-  bins,
-  zones,
-  locations,
-  products,
-  customers,
+  salesOrders,
   taxCategories,
   uomDictionary,
-  salesEvents,
-  outbox,
-  organizations,
+  zones,
 } from '@herobm/db-schema';
-import { eq, and } from 'drizzle-orm';
 import {
-  SALES_ORDER_STATE,
-  SALES_ORDER_PICK_STATE,
-  PRODUCT_STATE,
   CUSTOMER_STATE,
   ORGANIZATION_STATE,
+  PRODUCT_STATE,
+  SALES_ORDER_PICK_STATE,
+  SALES_ORDER_STATE,
 } from '@herobm/shared';
+import { BadRequestException } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import { InventoryMovementService } from '../inventory/inventory-movement.service';
 import { InventoryQueryService } from '../inventory/inventory-query.service';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 
 describe('PickingService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

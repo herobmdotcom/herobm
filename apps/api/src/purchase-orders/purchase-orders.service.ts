@@ -1,16 +1,16 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { purchasingSettings } from '@herobm/db-schema';
+import type { PurchaseOrderState } from '@herobm/shared';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import type { PaginationQuery } from '../common/pagination';
-import type { PurchaseOrderState } from '@herobm/shared';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 import type {
   CreatePurchaseOrderDto,
-  UpdatePurchaseOrderDto,
   CreatePurchaseOrderLineDto,
+  UpdatePurchaseOrderDto,
   UpdatePurchaseOrderLineDto,
   UpdatePurchasingSettingsDto,
 } from './dto';
@@ -92,6 +92,14 @@ export class PurchaseOrdersService {
 
   async removeLine(orderId: string, lineId: string, actor: string = 'system') {
     return this.writeService.removeLine(orderId, lineId, actor);
+  }
+
+  async reorderLines(
+    orderId: string,
+    lineIds: string[],
+    actor: string = 'system',
+  ) {
+    return this.writeService.reorderLines(orderId, lineIds, actor);
   }
 
   async update(

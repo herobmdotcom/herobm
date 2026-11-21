@@ -50,6 +50,7 @@ export enum SystemResource {
   IMPORT = 'import',
   EVENTS = 'events',
   SYSTEM_LOGS = 'system_logs',
+  BULK_WRITE = 'bulk_write',
 }
 
 export interface Permission {

@@ -47,7 +47,12 @@
   [
     #text(9pt, weight: "bold", fill: theme.accentColor)[CUSTOMER] \
     #v(0.1cm)
-    #text(11pt, weight: "semibold")[#data.header.customerName]
+    #text(11pt, weight: "semibold")[#data.header.customerName] \
+    #if "customerAddress" in data.header and data.header.customerAddress != none and data.header.customerAddress != "" [
+      #text(9pt, fill: theme.mutedColor)[#data.header.customerAddress] \
+    ] else if "billingAddress" in data.header and data.header.billingAddress != none and data.header.billingAddress != "" [
+      #text(9pt, fill: theme.mutedColor)[#data.header.billingAddress] \
+    ]
   ],
   [
     #grid(

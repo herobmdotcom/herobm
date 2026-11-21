@@ -1,17 +1,17 @@
+import { products as coreProducts, productImages } from '@herobm/db-schema';
 import {
-  Injectable,
-  Inject,
-  NotFoundException,
   BadRequestException,
+  Inject,
+  Injectable,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { products as coreProducts, productImages } from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { StorageService } from '../common/storage/storage.service';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 
 @Injectable()
 export class ProductMediaService {

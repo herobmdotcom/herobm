@@ -1,9 +1,9 @@
 import {
-  classifyAndAggregateTrialBalance,
-  roundCurrency,
   RawTrialBalanceItem,
-  fetchProfitAndLoss,
+  classifyAndAggregateTrialBalance,
   fetchBalanceSheet,
+  fetchProfitAndLoss,
+  roundCurrency,
 } from './gl-financial-statements.utils';
 
 describe('gl-financial-statements.utils', () => {

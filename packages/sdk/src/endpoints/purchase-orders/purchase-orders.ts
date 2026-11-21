@@ -19,6 +19,7 @@ import type {
   PurchaseOrdersControllerFindPendingLinesParams,
   PurchaseOrdersControllerFindReturnableLinesParams,
   PurchasingSettingsResponseDto,
+  ReorderPurchaseOrderLinesDto,
   UpdatePurchaseOrderDto,
   UpdatePurchaseOrderLineDto,
   UpdatePurchasingSettingsDto
@@ -413,6 +414,44 @@ export const purchaseOrdersControllerAddLine = async (id: string,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       createPurchaseOrderLineDto,)
+  }
+);}
+
+
+/**
+ * Reorder line items on a draft purchase order.
+ * @summary Reorder Order Lines
+ */
+export type purchaseOrdersControllerReorderLinesResponse200 = {
+  data: PurchaseOrderResponseDto
+  status: 200
+}
+    
+export type purchaseOrdersControllerReorderLinesResponseSuccess = (purchaseOrdersControllerReorderLinesResponse200) & {
+  headers: Headers;
+};
+;
+
+export type purchaseOrdersControllerReorderLinesResponse = (purchaseOrdersControllerReorderLinesResponseSuccess)
+
+export const getPurchaseOrdersControllerReorderLinesUrl = (id: string,) => {
+
+
+  
+
+  return `/purchase-orders/${id}/lines/reorder`
+}
+
+export const purchaseOrdersControllerReorderLines = async (id: string,
+    reorderPurchaseOrderLinesDto: ReorderPurchaseOrderLinesDto, options?: RequestInit): Promise<purchaseOrdersControllerReorderLinesResponse> => {
+  
+  return customFetch<purchaseOrdersControllerReorderLinesResponse>(getPurchaseOrdersControllerReorderLinesUrl(id),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      reorderPurchaseOrderLinesDto,)
   }
 );}
 

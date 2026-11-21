@@ -1,16 +1,16 @@
-import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  IsEmail,
-  IsBoolean,
-  IsUUID,
-  IsArray,
-  IsIn,
-  IsObject,
-} from 'class-validator';
-import { Transform } from 'class-transformer';
 import { ApiProperty as SwaggerApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
+import {
+  IsArray,
+  IsBoolean,
+  IsEmail,
+  IsIn,
+  IsNotEmpty,
+  IsObject,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 import { PaginationQuery } from '../common/pagination';
 
 export class CreateOrganizationDto {

@@ -1,33 +1,33 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ProductsWriteService } from './products-write.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
-  products,
-  masterDataEvents,
-  uomDictionary,
-  productUoms,
-  productSuppliers,
-  productComponents,
-  suppliers,
-  organizations,
-  locations,
-  zones,
   bins,
+  locations,
+  masterDataEvents,
+  organizations,
+  productComponents,
   productDefaultBins,
+  products,
+  productSuppliers,
+  productUoms,
+  suppliers,
+  uomDictionary,
+  zones,
 } from '@herobm/db-schema';
-import { eq, sql, and } from 'drizzle-orm';
 import {
+  ORGANIZATION_STATE,
   PRODUCT_STATE,
   SUPPLIER_STATE,
-  ORGANIZATION_STATE,
 } from '@herobm/shared';
-import { EventType, EntityType } from '../common/event-types';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { and, eq, sql } from 'drizzle-orm';
+import { EntityType, EventType } from '../common/event-types';
 import { StorageService } from '../common/storage/storage.service';
-import { ProductCopyService } from './product-copy.service';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { ProductComponentsService } from './product-components.service';
+import { ProductCopyService } from './product-copy.service';
 import { ProductMediaService } from './product-media.service';
+import { ProductsWriteService } from './products-write.service';
 
 describe('ProductsWriteService', () => {
   const pg = setupPgliteSuite();
@@ -819,6 +819,97 @@ describe('ProductsWriteService', () => {
         'admin',
       );
       expect(removed).toEqual({ deleted: true });
+    });
+  });
+
+  describe('bulkUpdate', () => {
+    it('should bulk update fields across multiple products and emit events', async () => {
+      const p1 = await service.create(
+        {
+          productNumber: 'BULK-P1',
+          name: 'Bulk Product 1',
+          productType: 'inventory' as const,
+          baseUom: 'EA',
+        },
+        'admin',
+      );
+      const p2 = await service.create(
+        {
+          productNumber: 'BULK-P2',
+          name: 'Bulk Product 2',
+          productType: 'inventory' as const,
+          baseUom: 'EA',
+        },
+        'admin',
+      );
+
+      const res = await service.bulkUpdate(
+        {
+          ids: [p1.productId, p2.productId],
+          stateCode: PRODUCT_STATE.INACTIVE,
+        },
+        'admin',
+      );
+
+      expect(res).toEqual({ updatedCount: 2, skippedCount: 0 });
+
+      const updatedP1 = await pg.db
+        .select()
+        .from(products)
+        .where(eq(products.productId, p1.productId));
+      expect(updatedP1[0].stateCode).toBe(PRODUCT_STATE.INACTIVE);
+
+      const events = await pg.db
+        .select()
+        .from(masterDataEvents)
+        .where(eq(masterDataEvents.eventType, EventType.STATUS_CHANGED));
+      expect(events.length).toBe(2);
+    });
+
+    it('should skip updating records when values are unchanged', async () => {
+      const p = await service.create(
+        {
+          productNumber: 'BULK-P3',
+          name: 'Bulk Product 3',
+          productType: 'inventory' as const,
+          baseUom: 'EA',
+        },
+        'admin',
+      );
+
+      const res1 = await service.bulkUpdate(
+        { ids: [p.productId], stateCode: PRODUCT_STATE.INACTIVE },
+        'admin',
+      );
+      expect(res1.updatedCount).toBe(1);
+
+      // Re-applying same change should skip
+      const res2 = await service.bulkUpdate(
+        { ids: [p.productId], stateCode: PRODUCT_STATE.INACTIVE },
+        'admin',
+      );
+      expect(res2).toEqual({ updatedCount: 0, skippedCount: 1 });
+    });
+
+    it('should throw BadRequestException on invalid state transition', async () => {
+      const p = await service.create(
+        {
+          productNumber: 'BULK-P4',
+          name: 'Bulk Product 4',
+          productType: 'inventory' as const,
+          baseUom: 'EA',
+        },
+        'admin',
+      );
+
+      // p is active; transitioning to draft is invalid if draft not in allowed or vice versa
+      // active -> invalid state
+      await expect(
+        service.bulkUpdate(
+          { ids: [p.productId], stateCode: 'nonexistent' as any },
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });

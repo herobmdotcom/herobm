@@ -1,6 +1,6 @@
-import { CustomerOverdueNoticeService } from './customer-overdue-notice.service';
-import { NotFoundException } from '@nestjs/common';
 import { CUSTOMER_STATE } from '@herobm/shared';
+import { NotFoundException } from '@nestjs/common';
+import { CustomerOverdueNoticeService } from './customer-overdue-notice.service';
 
 describe('CustomerOverdueNoticeService', () => {
   let service: CustomerOverdueNoticeService;

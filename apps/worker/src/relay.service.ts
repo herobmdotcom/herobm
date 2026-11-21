@@ -142,6 +142,7 @@ export async function processEvent(job: Job, db: any) {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
+              'Accept-Encoding': 'identity',
               'x-herobm-signature': signature
             },
             body: payloadString

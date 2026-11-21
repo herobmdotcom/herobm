@@ -6,12 +6,12 @@
  * reversal symmetry, multi-currency stability, and trial balance consistency
  * across randomized transaction sequences against real PostgreSQL.
  */
-import { TestingModule } from '@nestjs/testing';
-import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
-import request from 'supertest';
+import { TestingModule } from '@nestjs/testing';
 import * as fc from 'fast-check';
 import postgres from 'postgres';
+import request from 'supertest';
+import { createE2eModule, setupE2eApp } from './utils/e2e-module';
 
 interface AccountNode {
   glAccountId: string;
@@ -45,8 +45,9 @@ describe('API E2E — General Ledger Fuzz & Robustness Suite', () => {
     ).compile();
 
     app = moduleFixture.createNestApplication();
-    app.setGlobalPrefix('api');
+    setupE2eApp(app);
     await app.init();
+    await app.listen(0);
 
     // Direct Postgres connection for deep invariant verification
     const user = process.env.POSTGRES_USER || 'postgres';

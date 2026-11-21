@@ -1,17 +1,17 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { SetupService } from './setup.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { AppConfigService } from '../settings/app-config.service';
 import {
+  customerGroups,
   customers,
   organizations,
-  customerGroups,
   systemEvents,
 } from '@herobm/db-schema';
-import { BadRequestException } from '@nestjs/common';
 import { CUSTOMER_STATE } from '@herobm/shared';
+import { BadRequestException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import { parse } from 'csv-parse/sync';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { AppConfigService } from '../settings/app-config.service';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { SetupService } from './setup.service';
 
 describe('CSV Export Engine (Unit)', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

@@ -1,24 +1,24 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { PurchasingReportsService } from './purchasing-reports.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
 import {
-  purchaseOrders,
-  purchaseOrderLineItems,
-  suppliers,
   locations,
-  taxCategories,
-  products,
-  uomDictionary,
   organizations,
+  products,
+  purchaseOrderLineItems,
+  purchaseOrders,
+  suppliers,
+  taxCategories,
+  uomDictionary,
 } from '@herobm/db-schema';
 import {
+  ORGANIZATION_STATE,
+  PRODUCT_STATE,
   PURCHASE_ORDER_STATE,
   SUPPLIER_STATE,
-  PRODUCT_STATE,
-  ORGANIZATION_STATE,
 } from '@herobm/shared';
+import { Test, TestingModule } from '@nestjs/testing';
+import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { PurchasingReportsService } from './purchasing-reports.service';
 
 describe('PurchasingReportsService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

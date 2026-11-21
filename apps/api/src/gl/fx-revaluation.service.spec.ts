@@ -2,41 +2,41 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { FxRevaluationService } from './fx-revaluation.service';
 import { GlService } from './gl.service';
 
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { randomUUID } from 'crypto';
 import {
-  glSettings,
+  customers,
   exchangeRates,
-  purchaseInvoices,
-  salesInvoices,
-  salesOrders,
-  goodsReceived,
-  goodsReceivedLines,
-  purchaseOrders,
   glAccounts,
   glJournalEntries,
   glJournalLines,
-  suppliers,
-  customers,
+  glSettings,
+  goodsReceived,
+  goodsReceivedLines,
   locations,
-  products,
-  uomDictionary,
   organizations,
+  products,
+  purchaseInvoices,
+  purchaseOrders,
+  salesInvoices,
+  salesOrders,
+  suppliers,
+  uomDictionary,
 } from '@herobm/db-schema';
-import { eq, and, asc } from 'drizzle-orm';
-import { DRIZZLE } from '../drizzle/drizzle.module';
 import {
-  MATCH_STATUS,
   CUSTOMER_STATE,
-  SUPPLIER_STATE,
-  ORGANIZATION_STATE,
   GOODS_RECEIVED_STATE,
+  JOURNAL_ENTRY_SOURCE_TYPE,
+  MATCH_STATUS,
+  ORGANIZATION_STATE,
   PRODUCT_STATE,
-  SALES_ORDER_STATE,
   PURCHASE_ORDER_STATE,
   PUTAWAY_STATUS,
-  JOURNAL_ENTRY_SOURCE_TYPE,
+  SALES_ORDER_STATE,
+  SUPPLIER_STATE,
 } from '@herobm/shared';
+import { randomUUID } from 'crypto';
+import { asc, eq } from 'drizzle-orm';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 
 describe('FxRevaluationService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

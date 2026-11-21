@@ -329,6 +329,7 @@ db-kill-connections:
 clean-db:
 	@$(PYTHON_CMD) tools/confirm.py "WARNING: This will drop and rebuild the herobm_core database while preserving raw extracted data (raw_* schemas). Continue?" $(if $(FORCE),--force,)
 	-$(MAKE) db-kill-connections
+	-@"$(PYTHON_CMD)" tools/preserve_currency.py
 	@echo "Resetting herobm_core and dbt transformation schemas..."
 	@podman exec -i postgres-custom psql -U $(or $(POSTGRES_USER),postgres) -d $(or $(POSTGRES_DB),herobm) -c "SET client_min_messages = warning; DROP SCHEMA IF EXISTS herobm_core CASCADE; DROP SCHEMA IF EXISTS abm_staging CASCADE; DROP SCHEMA IF EXISTS abm_intermediate CASCADE; DROP SCHEMA IF EXISTS odoo_staging CASCADE; DROP SCHEMA IF EXISTS odoo_intermediate CASCADE; CREATE SCHEMA herobm_core;"
 	$(MAKE) migrate
@@ -404,6 +405,13 @@ ifeq ($(PIPELINES_EXIST),0)
 	@echo "Pipeline targets require the herobm-ext repository. See documentation."
 else
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform SOURCE=<source>))
+ifeq ($(SOURCE),abm)
+ifeq ($(OS),Windows_NT)
+	@where npx >nul 2>nul && $(MAKE) test-abm || echo [transform] Skipping test-abm (npx not available in environment)
+else
+	@if command -v npx >/dev/null 2>&1; then $(MAKE) test-abm; else echo "[transform] Skipping test-abm (npx not available in environment)"; fi
+endif
+endif
 	"$(DBT)" seed $(if $(EXTRA_DBT_VARS),--vars '$(EXTRA_DBT_VARS)',) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 	"$(DBT)" run $(if $(EXTRA_DBT_VARS),--vars '$(EXTRA_DBT_VARS)',) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 ifeq ($(SOURCE),abm)
@@ -570,7 +578,7 @@ else
 endif
 
 rebuild-api:
-	podman build -t localhost/herobm_custom-api:latest -f Dockerfile.api .
+	podman build --pull -t localhost/herobm_custom-api:latest -f Dockerfile.api .
 	-$(COMPOSE_CMD) stop herobm-api
 	-$(COMPOSE_CMD) rm -f herobm-api
 	-podman stop herobm-api
@@ -579,7 +587,7 @@ rebuild-api:
 	$(COMPOSE_CMD) ps
 
 rebuild-portal:
-	podman build -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
+	podman build --pull -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
 	-$(COMPOSE_CMD) stop herobm-ui
 	-$(COMPOSE_CMD) rm -f herobm-ui
 	-podman stop herobm-ui
@@ -588,7 +596,7 @@ rebuild-portal:
 	$(COMPOSE_CMD) ps
 
 rebuild-pipeline:
-	podman build -t localhost/herobm_pipeline-runner:latest -f Dockerfile.pipeline .
+	podman build --pull -t localhost/herobm_pipeline-runner:latest -f Dockerfile.pipeline .
 	-$(COMPOSE_CMD) stop herobm-pipeline
 	-$(COMPOSE_CMD) rm -f herobm-pipeline
 	-podman stop herobm-pipeline
@@ -597,7 +605,7 @@ rebuild-pipeline:
 	$(COMPOSE_CMD) ps
 
 rebuild-worker:
-	podman build -t localhost/outbox-worker:latest -f Dockerfile.worker .
+	podman build --pull -t localhost/outbox-worker:latest -f Dockerfile.worker .
 	-$(COMPOSE_CMD) stop herobm-outbox
 	-$(COMPOSE_CMD) rm -f herobm-outbox
 	-podman stop herobm-outbox
@@ -606,10 +614,10 @@ rebuild-worker:
 	$(COMPOSE_CMD) ps
 
 build-images:
-	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v1.2.4-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_custom-api:latest -f Dockerfile.api .
-	podman build $(if $(GIT_VERSION),--build-arg APP_VERSION="v1.2.4-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
-	$(if $(wildcard Dockerfile.pipeline),podman build -t localhost/herobm_pipeline-runner:latest -f Dockerfile.pipeline .,)
-	podman build -t localhost/outbox-worker:latest -f Dockerfile.worker .
+	podman build --pull $(if $(GIT_VERSION),--build-arg APP_VERSION="v1.2.5-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_custom-api:latest -f Dockerfile.api .
+	podman build --pull $(if $(GIT_VERSION),--build-arg APP_VERSION="v1.2.5-$(GIT_VERSION)") $(if $(BUILD_TIMESTAMP),--build-arg BUILD_TIME="$(BUILD_TIMESTAMP)") -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
+	$(if $(wildcard Dockerfile.pipeline),podman build --pull -t localhost/herobm_pipeline-runner:latest -f Dockerfile.pipeline .,)
+	podman build --pull -t localhost/outbox-worker:latest -f Dockerfile.worker .
 
 rebuild-apps: build-images
 	-$(COMPOSE_CMD) stop herobm-api herobm-ui herobm-outbox $(if $(wildcard Dockerfile.pipeline),herobm-pipeline,)
@@ -779,9 +787,10 @@ fast-install: install-prereqs
 	$(MAKE) migrate
 	$(MAKE) bootstrap
 ifeq ($(OS),Windows_NT)
-	@powershell -NoProfile -Command "if (Test-Path '.startup_choice') { $$c = (Get-Content '.startup_choice').Trim(); Remove-Item '.startup_choice'; & make $$c } else { & make up }"
+	@powershell -NoProfile -Command "if (Test-Path '.setup_currency') { Remove-Item '.setup_currency' -Force -ErrorAction SilentlyContinue }; if (Test-Path '.startup_choice') { $$c = (Get-Content '.startup_choice').Trim(); Remove-Item '.startup_choice'; & make $$c } else { & make up }"
 else
-	@if [ -f .startup_choice ]; then \
+	@rm -f .setup_currency; \
+	if [ -f .startup_choice ]; then \
 		CHOICE=$$(cat .startup_choice); \
 		rm -f .startup_choice; \
 		$(MAKE) $$CHOICE; \

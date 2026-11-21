@@ -4,8 +4,8 @@ dotenv.config({
   path: path.join(process.cwd(), '..', '..', process.env.ENV_FILE || '.env'),
 });
 
-import { createMemoryDb } from '../../test/utils/memory-db';
 import * as fs from 'fs';
+import { createMemoryDb } from '../../test/utils/memory-db';
 
 async function generateSnapshot() {
   if (process.env.USE_PGLITE !== 'true') {

@@ -1,23 +1,19 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { PdfTemplatesService } from './pdf-templates.service';
-import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
-import { DRIZZLE } from '../drizzle/drizzle.module';
 import {
-  NotFoundException,
-  InternalServerErrorException,
-  ForbiddenException,
-} from '@nestjs/common';
-import { CASBIN_ENFORCER } from '../auth/casbin.provider';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import {
-  pdfTemplates,
   pdfTemplateHooks,
+  pdfTemplates,
   tenantSettings,
 } from '@herobm/db-schema';
-import { eq, sql } from 'drizzle-orm';
-import { StorageService } from '../common/storage/storage.service';
-import * as fs from 'fs';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import * as child_process from 'child_process';
+import { sql } from 'drizzle-orm';
+import * as fs from 'fs';
+import { CASBIN_ENFORCER } from '../auth/casbin.provider';
+import { StorageService } from '../common/storage/storage.service';
+import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { PdfTemplatesService } from './pdf-templates.service';
 
 jest.mock('../common/utils/security.util', () => ({
   verifySystemHealth: jest.fn().mockResolvedValue(true),

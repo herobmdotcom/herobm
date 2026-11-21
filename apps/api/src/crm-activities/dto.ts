@@ -1,18 +1,18 @@
 import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  IsUUID,
-  IsIn,
-  IsDateString,
-  IsBooleanString,
-} from 'class-validator';
+  type CrmActivityPriority,
+  type CrmActivityStatus,
+  type CrmActivityType,
+} from '@herobm/shared';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  type CrmActivityType,
-  type CrmActivityStatus,
-  type CrmActivityPriority,
-} from '@herobm/shared';
+  IsBooleanString,
+  IsDateString,
+  IsIn,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 import { PaginationQuery } from '../common/pagination';
 
 export class CreateCrmActivityDto {

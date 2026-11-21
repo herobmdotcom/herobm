@@ -1,14 +1,14 @@
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import {
   ApiBody,
-  ApiOkResponse,
   ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
   ApiProperty,
   ApiTags,
-  ApiOperation,
 } from '@nestjs/swagger';
-import { LicenseService, LicenseStatus } from './license.service';
 import { SkipCasbin } from '../auth/casbin.guard';
+import { LicenseService, LicenseStatus } from './license.service';
 
 import { ThrottlerGuard } from '@nestjs/throttler';
 

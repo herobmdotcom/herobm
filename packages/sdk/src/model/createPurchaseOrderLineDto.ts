@@ -7,6 +7,11 @@
  */
 
 export interface CreatePurchaseOrderLineDto {
+  /**
+   * Optional 1-based line number at which to insert the new line. Existing lines at or after this position will shift down.
+   * @minimum 1
+   */
+  insertAtLineNumber?: number;
   productId?: string;
   productDescription?: string;
   quantity?: string;

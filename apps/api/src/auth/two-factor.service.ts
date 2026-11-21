@@ -1,20 +1,20 @@
-import {
-  Injectable,
-  Inject,
-  BadRequestException,
-  NotFoundException,
-  Logger,
-} from '@nestjs/common';
-import { eq } from 'drizzle-orm';
-import * as bcrypt from 'bcrypt';
-import * as QRCode from 'qrcode';
-import { generateSecret, generateURI, verifySync } from 'otplib';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { users, userTwoFactor } from '@herobm/db-schema';
-import { EncryptionService } from '../common/encryption.service';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
+import { eq } from 'drizzle-orm';
+import { generateSecret, generateURI, verifySync } from 'otplib';
+import * as QRCode from 'qrcode';
 import { emitEvent } from '../common/emit-event';
+import { EncryptionService } from '../common/encryption.service';
 import { EntityType, EventType } from '../common/event-types';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 
 const BCRYPT_ROUNDS = 10;
 const BACKUP_CODE_COUNT = 8;

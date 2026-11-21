@@ -1,28 +1,28 @@
-import { Module, forwardRef, Inject, OnModuleInit } from '@nestjs/common';
+import { purchaseOrderReturns, purchaseOrders } from '@herobm/db-schema';
 import { DATA_SOURCE_CONTEXT, formatReportDate } from '@herobm/shared';
+import { forwardRef, Inject, Module, OnModuleInit } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
-import { purchaseOrders, purchaseOrderReturns } from '@herobm/db-schema';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
-import { AppConfigService } from '../settings/app-config.service';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { GlModule } from '../gl/gl.module';
+import { InventoryModule } from '../inventory/inventory.module';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { OrdersModule } from '../orders/orders.module';
+import { PurchaseReturnSlipService } from '../pdf-templates/purchase-return-slip.service';
 import { assembleOrderData } from '../pdf-templates/report-data.helper';
-import { PurchaseOrdersController } from './purchase-orders.controller';
-import { PurchaseOrdersService } from './purchase-orders.service';
+import { AppConfigService } from '../settings/app-config.service';
+import { SuppliersModule } from '../suppliers/suppliers.module';
+import { TaxModule } from '../tax/tax.module';
+import { GlobalPurchaseReturnsController } from './global-purchase-returns.controller';
 import { PurchaseOrdersQueryService } from './purchase-orders-query.service';
 import { PurchaseOrdersStateService } from './purchase-orders-state.service';
 import { PurchaseOrdersWriteService } from './purchase-orders-write.service';
+import { PurchaseOrdersController } from './purchase-orders.controller';
+import { PurchaseOrdersService } from './purchase-orders.service';
 import { PurchaseReturnsController } from './purchase-returns.controller';
 import { PurchaseReturnsService } from './purchase-returns.service';
-import { GlobalPurchaseReturnsController } from './global-purchase-returns.controller';
 import { PurchasingReportsService } from './purchasing-reports.service';
-import { PurchaseReturnSlipService } from '../pdf-templates/purchase-return-slip.service';
-import { InventoryModule } from '../inventory/inventory.module';
-import { SuppliersModule } from '../suppliers/suppliers.module';
-import { TaxModule } from '../tax/tax.module';
-import { GlModule } from '../gl/gl.module';
-import { OrdersModule } from '../orders/orders.module';
-import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [

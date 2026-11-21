@@ -1,40 +1,42 @@
-import { SystemResource, DATA_SOURCE_CONTEXT } from '@herobm/shared';
+import { DATA_SOURCE_CONTEXT, SystemResource } from '@herobm/shared';
 import {
+  Body,
   Controller,
   Get,
-  Param,
-  Query,
-  Post,
-  Patch,
-  Body,
   NotFoundException,
+  Param,
+  Patch,
+  Post,
+  Query,
 } from '@nestjs/common';
-import { CustomersService } from './customers.service';
-import { CustomersWriteService } from './customers-write.service';
-import { CreditAssessmentService } from './credit-assessment.service';
-import { DocumentDispatchService } from '../notifications/document-dispatch.service';
-import { EntityType } from '../common/event-types';
-import { AuthUser } from '../auth/auth-user.decorator';
-import type { JwtUser } from '../auth/auth-user.decorator';
-import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
-import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import {
-  CreateCustomerDto,
-  UpdateCustomerDto,
-  CustomerResponseDto,
-  CreditAssessmentResponseDto,
-  AgedBalanceResponseDto,
-  EmptyBodyDto,
-  EmailDocumentDto,
-} from './dto';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiOkResponse,
-  ApiCreatedResponse,
-  ApiQuery,
   ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
 } from '@nestjs/swagger';
+import type { JwtUser } from '../auth/auth-user.decorator';
+import { AuthUser } from '../auth/auth-user.decorator';
+import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
+import { EntityType } from '../common/event-types';
+import { ApiPaginatedResponse, PaginationQuery } from '../common/pagination';
+import { DocumentDispatchService } from '../notifications/document-dispatch.service';
+import { CreditAssessmentService } from './credit-assessment.service';
+import { CustomersWriteService } from './customers-write.service';
+import { CustomersService } from './customers.service';
+import {
+  AgedBalancesPaginatedResponseDto,
+  BulkUpdateCustomersDto,
+  CreateCustomerDto,
+  CreditAssessmentResponseDto,
+  CustomerResponseDto,
+  EmailDocumentDto,
+  EmptyBodyDto,
+  UpdateCustomerDto,
+} from './dto';
+import { BulkUpdateResponseDto } from '../common/dto/bulk-update.dto';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
@@ -74,7 +76,7 @@ export class CustomersController {
     enum: ['invoiceDate', 'dueDate'],
   })
   @ApiQuery({ name: 'quickFilter', required: false, type: String })
-  @ApiPaginatedResponse(AgedBalanceResponseDto)
+  @ApiOkResponse({ type: AgedBalancesPaginatedResponseDto })
   getAgedBalances(
     @Query() query: PaginationQuery,
     @Query('agingBasis') agingBasis?: 'invoiceDate' | 'dueDate',
@@ -120,6 +122,19 @@ export class CustomersController {
   @ApiCreatedResponse({ type: CustomerResponseDto })
   create(@Body() dto: CreateCustomerDto, @AuthUser() user: JwtUser) {
     return this.customersWriteService.create(dto, user.username);
+  }
+
+  @Patch('bulk-update')
+  @CasbinResource(SystemResource.BULK_WRITE)
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Bulk Update Customers',
+    description:
+      'Bulk update curated fields across multiple selected customers.',
+  })
+  @ApiOkResponse({ type: BulkUpdateResponseDto })
+  bulkUpdate(@Body() dto: BulkUpdateCustomersDto, @AuthUser() user: JwtUser) {
+    return this.customersWriteService.bulkUpdate(dto, user.username, user.role);
   }
 
   @Patch(':id')

@@ -1,6 +1,6 @@
-import { DrizzleAdapter } from './drizzle-adapter';
-import { Model } from 'casbin';
 import { casbinRule } from '@herobm/db-schema';
+import { Model } from 'casbin';
+import { DrizzleAdapter } from './drizzle-adapter';
 
 describe('DrizzleAdapter', () => {
   let adapter: DrizzleAdapter;

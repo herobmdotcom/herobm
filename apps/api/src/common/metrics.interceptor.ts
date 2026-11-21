@@ -1,12 +1,12 @@
+import { getMeter } from '@herobm/shared';
 import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
   CallHandler,
+  ExecutionContext,
+  Injectable,
   Logger,
+  NestInterceptor,
 } from '@nestjs/common';
 import { Observable, tap } from 'rxjs';
-import { getMeter } from '@herobm/shared';
 
 /**
  * Intercepts every HTTP request to:

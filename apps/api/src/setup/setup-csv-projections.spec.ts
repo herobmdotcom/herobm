@@ -1,37 +1,36 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { SetupService } from './setup.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { AppConfigService } from '../settings/app-config.service';
 import {
-  customers,
-  suppliers,
-  organizations,
   customerGroups,
-  supplierGroups,
-  tradingTerms,
-  taxPositions,
-  products,
-  productGroups,
-  uomDictionary,
-  salesOrders,
+  customers,
   locations,
+  organizations,
+  productGroups,
+  products,
+  salesOrders,
+  supplierGroups,
+  suppliers,
   systemEvents,
+  taxPositions,
+  tradingTerms,
+  uomDictionary,
 } from '@herobm/db-schema';
-import { BadRequestException } from '@nestjs/common';
 import {
   CUSTOMER_STATE,
-  SUPPLIER_STATE,
-  PRODUCT_STATE,
   ORGANIZATION_STATE,
+  PRODUCT_STATE,
   SALES_ORDER_STATE,
+  SUPPLIER_STATE,
 } from '@herobm/shared';
+import { BadRequestException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import { parse } from 'csv-parse/sync';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { AppConfigService } from '../settings/app-config.service';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   getAllCsvProjections,
-  getCsvProjection,
   hasCsvProjection,
 } from './setup-csv-projections';
+import { SetupService } from './setup.service';
 
 describe('CSV Extended Projections (Unit)', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

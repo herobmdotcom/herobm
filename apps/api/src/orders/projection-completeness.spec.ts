@@ -9,11 +9,11 @@
  * Root cause: the GST select widget bug in the Sales Order Detail page
  * was caused by `findOne` missing `taxCategoryId` in its projection.
  */
-import {
-  getSchemaColumns,
-  getFindOneProjectionFields,
-} from '../common/testing/schema-parity.utils';
 import * as path from 'path';
+import {
+  getFindOneProjectionFields,
+  getSchemaColumns,
+} from '../common/testing/schema-parity.utils';
 
 // ---------------------------------------------------------------------------
 // Schema-introspection approach

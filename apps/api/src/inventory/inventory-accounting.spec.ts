@@ -1,8 +1,8 @@
-import { getAccountingStrategy } from './inventory-accounting';
 import type {
   GlPostingContext,
   InventoryGlAccounts,
 } from './inventory-accounting';
+import { getAccountingStrategy } from './inventory-accounting';
 
 describe('PerpetualAccountingStrategy', () => {
   const accts: InventoryGlAccounts = {

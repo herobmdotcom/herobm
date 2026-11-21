@@ -36,12 +36,17 @@ export function resolveEffectiveCreditHold(
 export function resolveEffectiveCreditLimit(
   customer: CustomerCreditProfile,
 ): string {
-  if (customer.creditLimit !== null && customer.creditLimit !== undefined) {
+  if (
+    customer.creditLimit !== null &&
+    customer.creditLimit !== undefined &&
+    customer.creditLimit !== ''
+  ) {
     return customer.creditLimit;
   }
   if (
     customer.customerGroup?.creditLimit !== null &&
-    customer.customerGroup?.creditLimit !== undefined
+    customer.customerGroup?.creditLimit !== undefined &&
+    customer.customerGroup?.creditLimit !== ''
   ) {
     return customer.customerGroup.creditLimit;
   }
@@ -57,19 +62,22 @@ export function resolveEffectiveTradingTermsId(
 ): string | null {
   if (
     customer.tradingTermsId !== null &&
-    customer.tradingTermsId !== undefined
+    customer.tradingTermsId !== undefined &&
+    customer.tradingTermsId !== ''
   ) {
     return customer.tradingTermsId;
   }
   if (
     customer.customerGroup?.tradingTermsId !== null &&
-    customer.customerGroup?.tradingTermsId !== undefined
+    customer.customerGroup?.tradingTermsId !== undefined &&
+    customer.customerGroup?.tradingTermsId !== ''
   ) {
     return customer.customerGroup.tradingTermsId;
   }
   if (
     customer.systemDefaultCustomerTermsId !== null &&
-    customer.systemDefaultCustomerTermsId !== undefined
+    customer.systemDefaultCustomerTermsId !== undefined &&
+    customer.systemDefaultCustomerTermsId !== ''
   ) {
     return customer.systemDefaultCustomerTermsId;
   }
@@ -93,7 +101,8 @@ export function resolveEffectiveEarlyPaymentDiscount(customer: {
 } {
   if (
     customer.earlyPaymentDiscount !== null &&
-    customer.earlyPaymentDiscount !== undefined
+    customer.earlyPaymentDiscount !== undefined &&
+    customer.earlyPaymentDiscount !== ''
   ) {
     return {
       earlyPaymentDiscount: customer.earlyPaymentDiscount,
@@ -102,7 +111,8 @@ export function resolveEffectiveEarlyPaymentDiscount(customer: {
   }
   if (
     customer.customerGroup?.earlyPaymentDiscount !== null &&
-    customer.customerGroup?.earlyPaymentDiscount !== undefined
+    customer.customerGroup?.earlyPaymentDiscount !== undefined &&
+    customer.customerGroup?.earlyPaymentDiscount !== ''
   ) {
     return {
       earlyPaymentDiscount: customer.customerGroup.earlyPaymentDiscount,

@@ -1,19 +1,21 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
-import {
-  IsUUID,
-  IsString,
-  IsOptional,
-  IsNumber,
-  Min,
-  IsDateString,
-  IsNotEmpty,
-  IsEnum,
-  IsNumberString,
-  IsArray,
-  IsObject,
-  IsBoolean,
-} from 'class-validator';
 import { Transform } from 'class-transformer';
+import {
+  ArrayMinSize,
+  IsArray,
+  IsBoolean,
+  IsDateString,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsNumberString,
+  IsObject,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Min,
+} from 'class-validator';
+import { PRODUCT_STATE, type ProductState } from '@herobm/shared';
 import { IsPercentage } from '../common/validators/is-percentage.decorator';
 
 export class AddSupplierDto {
@@ -546,4 +548,54 @@ export class ServiceMemberResponseDto {
 
   @ApiPropertyOptional()
   createdOn?: Date;
+}
+
+export class BulkUpdateProductsDto {
+  @ApiProperty({
+    description: 'Array of product IDs to update',
+    type: [String],
+    example: ['a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'],
+  })
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsUUID('4', { each: true })
+  ids!: string[];
+
+  @ApiPropertyOptional({
+    description: 'New product group ID, or null to clear',
+    type: String,
+    nullable: true,
+  })
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
+  @IsUUID()
+  productGroupId?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Sales tax category ID, or null to clear',
+    type: String,
+    nullable: true,
+  })
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
+  @IsUUID()
+  salesTaxCategoryId?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Purchase tax category ID, or null to clear',
+    type: String,
+    nullable: true,
+  })
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
+  @IsUUID()
+  purchaseTaxCategoryId?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Target product lifecycle state',
+    enum: PRODUCT_STATE,
+  })
+  @IsOptional()
+  @IsString()
+  stateCode?: ProductState;
 }

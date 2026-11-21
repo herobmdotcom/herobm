@@ -1,11 +1,11 @@
+import { PGlite } from '@electric-sql/pglite';
+import * as schema from '@herobm/db-schema';
+import { appSettings, glSettings, locations } from '@herobm/db-schema';
 import { Test, TestingModule } from '@nestjs/testing';
-import { AppConfigService } from './app-config.service';
+import { drizzle } from 'drizzle-orm/pglite';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { glSettings, appSettings, locations } from '@herobm/db-schema';
-import { PGlite } from '@electric-sql/pglite';
-import { drizzle } from 'drizzle-orm/pglite';
-import * as schema from '@herobm/db-schema';
+import { AppConfigService } from './app-config.service';
 
 describe('AppConfigService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

@@ -6,6 +6,9 @@
  * OpenAPI spec version: 1.1
  */
 import type {
+  AgedBalancesPaginatedResponseDto,
+  BulkUpdateCustomersDto,
+  BulkUpdateResponseDto,
   CreateCustomerDto,
   CreateCustomerGroupDto,
   CreditAssessmentResponseDto,
@@ -17,7 +20,6 @@ import type {
   CustomersControllerFindAll200,
   CustomersControllerFindAllParams,
   CustomersControllerFindOneParams,
-  CustomersControllerGetAgedBalances200,
   CustomersControllerGetAgedBalancesParams,
   DeleteCustomerGroupResponseDto,
   EmailDocumentDto,
@@ -113,7 +115,7 @@ export const customersControllerCreate = async (createCustomerDto: CreateCustome
  * @summary Get Aged Balances
  */
 export type customersControllerGetAgedBalancesResponse200 = {
-  data: CustomersControllerGetAgedBalances200
+  data: AgedBalancesPaginatedResponseDto
   status: 200
 }
     
@@ -266,6 +268,43 @@ export const customersControllerGetCreditAssessment = async (id: string, options
     method: 'GET'
     
     
+  }
+);}
+
+
+/**
+ * Bulk update curated fields across multiple selected customers.
+ * @summary Bulk Update Customers
+ */
+export type customersControllerBulkUpdateResponse200 = {
+  data: BulkUpdateResponseDto
+  status: 200
+}
+    
+export type customersControllerBulkUpdateResponseSuccess = (customersControllerBulkUpdateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type customersControllerBulkUpdateResponse = (customersControllerBulkUpdateResponseSuccess)
+
+export const getCustomersControllerBulkUpdateUrl = () => {
+
+
+  
+
+  return `/customers/bulk-update`
+}
+
+export const customersControllerBulkUpdate = async (bulkUpdateCustomersDto: BulkUpdateCustomersDto, options?: RequestInit): Promise<customersControllerBulkUpdateResponse> => {
+  
+  return customFetch<customersControllerBulkUpdateResponse>(getCustomersControllerBulkUpdateUrl(),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      bulkUpdateCustomersDto,)
   }
 );}
 

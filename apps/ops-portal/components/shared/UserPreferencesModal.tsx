@@ -375,6 +375,7 @@ export default function UserPreferencesModal({ isOpen, onClose }: UserPreference
                 <div className="flex flex-col gap-4">
                   <h5 className="text-sm font-medium">{t2fa('setupStep1')}</h5>
                   <p className="text-xs text-[var(--text-muted)]">{t2fa('scanQrCode')}</p>
+                  {/* dark-mode-ok: QR codes require a white quiet zone to scan */}
                   <div className="bg-white p-2 w-fit rounded">
                     <img src={setupData.qrCodeDataUrl} alt="QR Code" className="w-32 h-32" />
                   </div>

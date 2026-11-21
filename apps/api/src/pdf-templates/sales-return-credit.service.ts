@@ -1,13 +1,4 @@
-import { Injectable, Inject, Logger, NotFoundException } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
-import { OrdersService } from '../orders/orders.service';
-import { OrdersQueryService } from '../orders/orders-query.service';
-import { ReturnsWriteService } from '../orders/returns-write.service';
-import { SalesCreditNoteService } from '../invoices/sales-credit-note.service';
-import { resolveOrderDetail } from './report-data.helper';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { taxCategories, locations } from '@herobm/db-schema';
+import { locations, taxCategories } from '@herobm/db-schema';
 import {
   computeLinePrice,
   computeReturnCreditSummary,
@@ -15,7 +6,16 @@ import {
   formatReportDateTime,
   toDecimal,
 } from '@herobm/shared';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { SalesCreditNoteService } from '../invoices/sales-credit-note.service';
+import { OrdersQueryService } from '../orders/orders-query.service';
+import { OrdersService } from '../orders/orders.service';
+import { ReturnsWriteService } from '../orders/returns-write.service';
 import { AppConfigService } from '../settings/app-config.service';
+import { resolveOrderDetail } from './report-data.helper';
 
 export interface SalesReturnCreditData {
   header: {

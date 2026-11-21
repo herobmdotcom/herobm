@@ -1,29 +1,29 @@
 import {
   Controller,
   Get,
-  Query,
-  Param,
   NotFoundException,
+  Param,
+  Query,
   UseGuards,
 } from '@nestjs/common';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
-import { SkipCasbin } from '../auth/casbin.guard';
 import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
-import { HelpService } from './help.service';
+import { SkipCasbin } from '../auth/casbin.guard';
 import {
   HelpContextQueryDto,
-  HelpSearchQueryDto,
   HelpContextResponseDto,
-  HelpTopicSummaryDto,
-  HelpTopicDto,
+  HelpSearchQueryDto,
   HelpSearchResultDto,
+  HelpTopicDto,
+  HelpTopicSummaryDto,
 } from './dto';
+import { HelpService } from './help.service';
 import {
   HelpContextResponse,
-  HelpTopicSummary,
-  HelpTopic,
   HelpSearchResult,
+  HelpTopic,
+  HelpTopicSummary,
 } from './help.types';
 
 @Controller('help')

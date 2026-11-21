@@ -1,35 +1,36 @@
-import { Injectable, Inject } from '@nestjs/common';
-import type { OnModuleInit } from '@nestjs/common';
 import {
-  eq,
-  ilike,
-  or,
-  sql,
-  inArray,
+  customers as coreAccounts,
+  opportunities,
+  organizations,
+  productGroups,
+  products,
+  salesInvoiceLines,
+  salesInvoices,
+  salesOrderLineItems,
+  salesOrders,
+  salesSettings,
+} from '@herobm/db-schema';
+import {
+  DATA_SOURCE_CONTEXT,
+  SALES_INVOICE_STATE,
+  SALES_ORDER_STATE,
+} from '@herobm/shared';
+import type { OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import {
   and,
   asc,
   desc,
+  eq,
+  ilike,
+  inArray,
+  or,
+  sql,
   type SQL,
-  type AnyColumn,
 } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  salesOrderLineItems,
-  customers as coreAccounts,
-  salesOrders,
-  products,
-  productGroups,
-  organizations,
-  salesInvoices,
-  salesInvoiceLines,
-  opportunities,
-  salesSettings,
-} from '@herobm/db-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
-import type { UpdateSalesSettingsDto } from './dto';
 import {
   PaginationQuery,
   parsePagination,
@@ -39,12 +40,10 @@ import {
   getAggregationPeriod,
   getAggregationSql,
 } from '../common/utils/date-range.util';
-import {
-  SALES_ORDER_STATE,
-  SALES_INVOICE_STATE,
-  DATA_SOURCE_CONTEXT,
-} from '@herobm/shared';
 import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import type { UpdateSalesSettingsDto } from './dto';
 
 export interface UnifiedOrderRow {
   id: string;

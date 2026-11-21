@@ -1,32 +1,32 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { OrdersService } from './orders.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
 import {
-  salesOrders,
-  salesOrderLineItems,
   customers,
   locations,
-  taxCategories,
-  products,
-  productGroups,
-  uomDictionary,
-  organizations,
-  salesInvoices,
-  salesInvoiceLines,
   opportunities,
+  organizations,
+  productGroups,
+  products,
+  salesInvoiceLines,
+  salesInvoices,
+  salesOrderLineItems,
+  salesOrders,
+  taxCategories,
+  uomDictionary,
 } from '@herobm/db-schema';
-import { eq } from 'drizzle-orm';
 import {
-  SALES_ORDER_STATE,
-  OPEN_SALES_ORDER_STATES,
-  SALES_INVOICE_STATE,
   CUSTOMER_STATE,
-  PRODUCT_STATE,
-  ORGANIZATION_STATE,
+  OPEN_SALES_ORDER_STATES,
   OPPORTUNITY_STATE,
+  ORGANIZATION_STATE,
+  PRODUCT_STATE,
+  SALES_INVOICE_STATE,
+  SALES_ORDER_STATE,
 } from '@herobm/shared';
+import { Test, TestingModule } from '@nestjs/testing';
+import { eq } from 'drizzle-orm';
+import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { OrdersService } from './orders.service';
 
 describe('OrdersService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

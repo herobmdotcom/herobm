@@ -1,10 +1,10 @@
 import { CUSTOMER_STATE } from '@herobm/shared';
+import { CreditAssessmentResult } from './credit-assessment.service';
 import {
-  CustomerProfile,
   CustomerGroupProfile,
+  CustomerProfile,
   resolveCustomerRiskProfile,
 } from './customer-risk.domain';
-import { CreditAssessmentResult } from './credit-assessment.service';
 
 describe('Customer Risk Domain', () => {
   const baseCustomer: CustomerProfile = {
@@ -111,5 +111,31 @@ describe('Customer Risk Domain', () => {
     );
     expect(result.isSalesBlocked).toBe(false);
     expect(result.salesBlockReasons).not.toContain('credit_limit_exceeded');
+  });
+
+  it('should inherit credit limit, terms, and discounts from group when customer fields are empty strings or null', () => {
+    const result = resolveCustomerRiskProfile(
+      {
+        ...baseCustomer,
+        creditLimit: '',
+        tradingTermsId: '',
+        earlyPaymentDiscount: '',
+        earlyPaymentDiscountDays: undefined,
+      },
+      {
+        ...baseGroup,
+        creditLimit: '1000',
+        tradingTermsId: 'terms_123',
+        earlyPaymentDiscount: '2.50',
+        earlyPaymentDiscountDays: 10,
+      },
+      baseAssessment,
+      0,
+      'hard',
+    );
+    expect(result.effectiveCreditLimit).toBe('1000');
+    expect(result.effectiveTradingTermsId).toBe('terms_123');
+    expect(result.earlyPaymentDiscount).toBe('2.50');
+    expect(result.earlyPaymentDiscountDays).toBe(10);
   });
 });

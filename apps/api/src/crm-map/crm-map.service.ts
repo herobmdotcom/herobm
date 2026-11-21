@@ -1,18 +1,18 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
-  organizations,
   contacts,
-  opportunities,
-  organizationOrganizationLinks,
-  organizationContactLinks,
-  opportunityOrganizations,
-  opportunityContacts,
-  salesOrders,
-  projects,
   customers,
+  opportunities,
+  opportunityContacts,
+  opportunityOrganizations,
+  organizationContactLinks,
+  organizationOrganizationLinks,
+  organizations,
+  projects,
+  salesOrders,
 } from '@herobm/db-schema';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 
 @Injectable()
 export class CrmMapService {
